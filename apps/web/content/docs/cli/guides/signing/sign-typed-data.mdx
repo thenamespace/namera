@@ -1,0 +1,69 @@
+---
+title: Sign Typed Data
+description: Sign an EIP-712 payload with explicit application context.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+Enable signature authority and permit the intended typed-data domain. Confirm
+the domain's chain ID and verifying contract before signing.
+
+## Prepare the Payload
+
+Save this example as `typed-data.json`, replacing the domain with your
+application's real values:
+
+```json title="typed-data.json"
+{
+  "domain": {
+    "name": "Namera Example",
+    "version": "1",
+    "chainId": 84532,
+    "verifyingContract": "0x2222222222222222222222222222222222222222"
+  },
+  "types": {
+    "Note": [
+      {
+        "name": "contents",
+        "type": "string"
+      }
+    ]
+  },
+  "primaryType": "Note",
+  "message": {
+    "contents": "Hello from Namera"
+  }
+}
+```
+
+The domain's numeric `chainId` and the CLI's selected network serve different
+roles. Keep them consistent for a payload intended for that network.
+
+## Sign the Payload
+
+```sh
+namera sign \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --type typed-data \
+  --typed-data "$(cat typed-data.json)"
+```
+
+<include>../../../../snippets/cli/output/typed-sign.md</include>
+
+With `--output json` on the signing command:
+
+<include>../../../../snippets/cli/output/typed-sign-json.md</include>
+
+Use `--output json` on the original invocation if another program will consume
+the signature. Keep the complete typed-data object unchanged for verification.
+Do not combine `--message` with `--typed-data`.
+
+The example signature is a fixture value. A signature may authorize an action
+even though this command itself does not submit a transaction.
+
+<include>../../../../snippets/cli/output-note.md</include>

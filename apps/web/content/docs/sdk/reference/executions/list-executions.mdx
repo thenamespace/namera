@@ -1,0 +1,163 @@
+---
+title: List Executions
+description: List confirmed executions with cursor pagination.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.executions.list(options?)` returns confirmed history. Pending submissions are not included.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`items`** (`readonly ExecutionListItemResponse[]`): Confirmed records accessible to your credential.
+- **`items[].details`** (`object`): id, namespace, chainId, transactionHash, and createdAt.
+- **`items[].wallet`** (`object`): id, namespace, address, and metadata.
+- **`items[].sessionKey`** (`object`): id, namespace, and metadata.
+- **`items[].actorType`** (`"user" | "api-key" | "mcp" | "cli"`): Submitting actor kind.
+- **`nextCursor`** (`string | null`): Pass as cursor for the next page; null ends pagination.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+{
+  "items": [
+    {
+      "details": {
+        "id": "0199dfe1-0000-7000-8000-000000000012",
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "createdAt": "2026-10-11T09:10:00.000Z"
+      },
+      "wallet": {
+        "id": "0199dfe1-0000-7000-8000-000000000001",
+        "namespace": "eip155",
+        "address": "0x1111111111111111111111111111111111111111",
+        "metadata": {
+          "version": 1,
+          "name": "Example account",
+          "logo": {
+            "type": "emoji",
+            "value": "👛"
+          },
+          "description": "SDK test account"
+        }
+      },
+      "sessionKey": {
+        "id": "0199dfe1-0000-7000-8000-000000000002",
+        "namespace": "eip155",
+        "metadata": {
+          "version": 1,
+          "name": "Example session",
+          "logo": {
+            "type": "emoji",
+            "value": "🔑"
+          },
+          "description": "Send test ETH on Base Sepolia"
+        }
+      },
+      "actorType": "api-key"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+</div>
+
+## Parameters
+
+The optional `options` object defaults to `{}`.
+
+### walletId
+
+- **Type:** `string`
+- **Optional**
+
+Restricts results to the account UUID, not its address. Combine with `sessionKeyId` to narrow the results further.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.executions.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### sessionKeyId
+
+- **Type:** `string`
+- **Optional**
+
+Restricts results to confirmed executions authorized by this session. Pending submissions are excluded.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.executions.list({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### cursor
+
+- **Type:** `string`
+- **Optional**
+
+Use `nextCursor` from the previous page. Omit for the first page and stop when it is `null`. Preserve the same filters across pages. There is no configurable page-size parameter.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const first = await namera.executions.list();
+if (!first.success) throw new Error(first.error.message);
+
+if (first.data.nextCursor !== null) {
+  const next = await namera.executions.list({
+    cursor: first.data.nextCursor, // [!code focus]
+  });
+  if (!next.success) throw new Error(next.error.message);
+  console.log(next.data);
+}
+```
+
+## Errors
+
+Invalid filter IDs return a contract error. API failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guide: [Track Transactions](/docs/sdk/guides/transactions/track-transactions).

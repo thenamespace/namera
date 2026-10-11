@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Button, Field, FieldError, FieldLabel, InputGroup } from "@namera-ai/ui";
 import { ArrowRight02Icon, Icon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
@@ -24,6 +25,7 @@ export const HeroCta = ({ idPrefix = "hero-waitlist" }: { idPrefix?: string }) =
   const errorId = `${emailId}-error`;
   const [joinedEmail, setJoinedEmail] = useState<string>();
   const [error, setError] = useState<string>();
+  const started = useRef(false);
 
   const form = useForm<WaitlistFormInput, unknown, WaitlistFormOutput>({
     resolver: standardSchemaResolver(WaitlistFormValidator),
@@ -69,6 +71,14 @@ export const HeroCta = ({ idPrefix = "hero-waitlist" }: { idPrefix?: string }) =
                   </FieldLabel>
                   <InputGroup.Input
                     {...field}
+                    onFocus={() => {
+                      if (!started.current) {
+                        started.current = true;
+                        captureAnalytics("waitlist_form_started", {
+                          placement: idPrefix === "hero-waitlist" ? "hero" : "closing",
+                        });
+                      }
+                    }}
                     id={emailId}
                     type="email"
                     autoComplete="email"

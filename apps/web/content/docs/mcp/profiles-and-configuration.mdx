@@ -1,0 +1,64 @@
+---
+title: Profiles and Configuration
+description: Separate client connections and configure where the MCP server runs.
+---
+
+## Give Each Client a Profile
+
+Use a distinct profile such as `codex`, `cursor`, or `openclaw`. The profile and
+API origin together identify the saved MCP connection.
+
+```sh
+namera mcp login --profile cursor
+namera mcp status --profile cursor
+```
+
+The client's launch arguments must match:
+
+```json
+{
+  "command": "namera",
+  "args": ["mcp", "serve", "--profile", "cursor"]
+}
+```
+
+This is the server entry, not a complete client config. Each
+[client guide](/docs/mcp/clients) shows its required wrapper.
+
+If omitted, the MCP profile is `default`. Profiles keep connections separate;
+they are not a security boundary between processes running as the same OS user.
+
+## Use the Same Machine and OS User
+
+Run login and the MCP server as the same OS user, with access to the same keyring
+and any imported keys. A login on your laptop does not authorize a server running
+inside a container, remote workspace, or another user's background service.
+
+For GUI clients, `namera` and Node.js must be available in the environment used
+to launch the server. If the executable is not found, see
+[Troubleshooting](/docs/mcp/troubleshooting#the-client-cannot-find-namera).
+
+## Use a Different API Origin
+
+For a local Namera development server:
+
+```sh
+namera mcp login --profile dev --host http://localhost:8080
+namera mcp status --profile dev --host http://localhost:8080
+```
+
+Set matching server arguments:
+
+```json
+{
+  "command": "namera",
+  "args": ["mcp", "serve", "--profile", "dev", "--host", "http://localhost:8080"]
+}
+```
+
+Use the same `--host` for logout. MCP commands default to `https://api.namera.ai`
+and do not use `NAMERA_API_URL` to select a host. The host is an API origin,
+not an MCP endpoint. Non-loopback origins must use HTTPS.
+
+See the CLI's [server options](/docs/cli/reference/mcp/serve) for the complete
+launch-command details.

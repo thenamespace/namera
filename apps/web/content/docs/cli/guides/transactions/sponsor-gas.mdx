@@ -1,0 +1,69 @@
+---
+title: Sponsor Gas
+description: Choose sponsored execution or approve a self-funded gas ceiling.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+The transfer amount and gas budget are different. Even with sponsored gas,
+the account must hold the assets you are transferring.
+
+## Use Sponsored Gas
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x \
+  --sponsor true
+```
+
+<include>../../../../snippets/cli/output/execute.md</include>
+
+Sponsored execution is subject to the account's permissions and Namera's
+applicable limits. An interactive execution prompts for sponsorship and defaults
+to Yes.
+
+## Pay Gas from the Account
+
+Set sponsorship to false and approve an explicit maximum total gas cost in wei:
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x \
+  --sponsor false \
+  --max-gas-cost-wei 1000000000000000
+```
+
+Here the transfer is 0.001 ETH and the gas ceiling is another 0.001 ETH. The ceiling
+is not a gas estimate or a promise that this amount will be spent. An operation
+whose prepared cost exceeds the ceiling is rejected.
+
+For `--params`, put `"sponsor": false` in the request and pass
+`--max-gas-cost-wei` as a separate CLI option.
+
+## Set an Agent's Ceiling
+
+```sh
+namera mcp serve --profile agent --max-gas-cost-wei 1000000000000000
+```
+
+Configure that option in the command your MCP client launches. Without a ceiling,
+the process permits sponsored operations only. A tool call cannot raise it.
+
+Save the submission ID and [track it](/docs/cli/guides/transactions/track-transactions).
+Do not repeat the execution to check progress.
+
+<include>../../../../snippets/cli/output-note.md</include>

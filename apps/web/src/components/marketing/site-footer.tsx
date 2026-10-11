@@ -2,9 +2,16 @@ import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { GithubIcon, Icon, LinkedinIcon, NameraIcon, NewTwitterIcon } from "@namera-ai/ui/icons";
+import {
+  BrandGithubIcon,
+  BrandLinkedinIcon,
+  BrandXIcon,
+  EmailIcon,
+  NameraIcon,
+} from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
+import { AnalyticsPreference } from "#/components/analytics-preference";
 import { Container } from "#/components/marketing/primitives";
 import { linked, SITE_LINKS } from "#/lib/site-links";
 
@@ -45,9 +52,10 @@ const COLUMNS: readonly { readonly title: string; readonly links: readonly Foote
 ];
 
 const SOCIALS = [
-  { icon: GithubIcon, label: "GitHub", href: SITE_LINKS.github },
-  { icon: NewTwitterIcon, label: "X", href: SITE_LINKS.x },
-  { icon: LinkedinIcon, label: "LinkedIn", href: SITE_LINKS.linkedin },
+  { icon: BrandGithubIcon, label: "GitHub", href: SITE_LINKS.github },
+  { icon: BrandXIcon, label: "X", href: SITE_LINKS.x },
+  { icon: BrandLinkedinIcon, label: "LinkedIn", href: SITE_LINKS.linkedin },
+  { icon: EmailIcon, label: "Email Namera", href: SITE_LINKS.contact },
 ];
 
 const linkClass = cn(
@@ -78,6 +86,12 @@ export const SiteFooter = () => {
               The permission layer for agent wallets.
             </p>
 
+            {SITE_LINKS.contact ? (
+              <a href={SITE_LINKS.contact} className={cn(linkClass, "tap-target self-start")}>
+                {SITE_LINKS.contact.replace(/^mailto:/, "")}
+              </a>
+            ) : null}
+
             {socials.length > 0 ? (
               <ul className="-ml-2.5 mt-1 flex items-center gap-1">
                 {socials.map((social) => (
@@ -91,7 +105,7 @@ export const SiteFooter = () => {
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
                       )}
                     >
-                      <Icon icon={social.icon} aria-hidden strokeWidth={1.6} className="size-4" />
+                      <social.icon aria-hidden className="size-4" />
                     </a>
                   </li>
                 ))}
@@ -130,6 +144,7 @@ export const SiteFooter = () => {
             © {year} Namespace Inc. All rights reserved.
           </p>
           <nav aria-label="Legal" className="flex items-center gap-5">
+            <AnalyticsPreference />
             {SITE_LINKS.privacy ? (
               <Link to={SITE_LINKS.privacy} className={cn(linkClass, "tap-target text-xs")}>
                 Privacy Policy

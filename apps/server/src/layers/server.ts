@@ -7,12 +7,14 @@ import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 import { ServerConfig } from "#/config";
 import {
   ApplicationLive,
+  AnalyticsWorkerLive,
   BillingWorkerLive,
   EmailWorkerLive,
   ExecutionWorkerLive,
   SessionKeyWorkerLive,
   ServicesLive,
 } from "#/layers/services";
+import { AnalyticsMiddleware } from "#/middlewares/analytics";
 import {
   CorsMiddleware,
   ClientAddressMiddleware,
@@ -74,6 +76,7 @@ const Routes = Layer.mergeAll(
   BillingWorkerLive,
   ExecutionWorkerLive,
   SessionKeyWorkerLive,
+  AnalyticsWorkerLive,
 );
 
 // ServerLive is the transport composition root. Middleware order is intentional:
@@ -84,7 +87,9 @@ export const ServerLive = HttpRouter.serve(Routes, {
   middleware: (httpEffect) =>
     SecurityHeadersMiddleware(
       ClientAddressMiddleware(
-        TelemetryMiddleware(RateLimitMiddleware(RequestBodyLimitMiddleware(httpEffect))),
+        TelemetryMiddleware(
+          RateLimitMiddleware(RequestBodyLimitMiddleware(AnalyticsMiddleware(httpEffect))),
+        ),
       ),
     ),
 }).pipe(

@@ -17,8 +17,10 @@
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/inter": "catalog:",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@hookform/resolvers": "catalog:",
     "@namera-ai/protocol": "workspace:*",
+    "@namera-ai/telemetry": "workspace:*",
     "@namera-ai/ui": "workspace:*",
     "@number-flow/react": "^0.6.2",
     "@paper-design/shaders-react": "^0.0.81",
@@ -33,9 +35,11 @@
     "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-hook-form": "catalog:"
+    "react-hook-form": "catalog:",
+    "takumi-js": "^2.14.0"
   },
   "devDependencies": {
+    "@posthog/rollup-plugin": "^1.6.1",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-cli": "catalog:web",
     "@types/mdx": "catalog:",

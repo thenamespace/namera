@@ -1,0 +1,70 @@
+---
+title: Other Clients
+description: Connect any client that can launch a local stdio MCP server.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Check Local Server Support
+
+Your client must support **stdio** servers with a command and arguments. If it
+only accepts a remote URL, it cannot connect directly to the current Namera MCP
+server. Do not use the Namera API address as an MCP endpoint.
+
+## Configure the Server
+
+Use these values in your client's local-server settings:
+
+| Field     | Value                                |
+| --------- | ------------------------------------ |
+| Name      | `namera`                             |
+| Transport | stdio                                |
+| Command   | `namera`                             |
+| Arguments | `mcp`, `serve`, `--profile`, `agent` |
+
+For clients that use a `mcpServers` JSON object:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "agent"]
+    }
+  }
+}
+```
+
+The wrapper and config location depend on the client. VS Code, Zed, and OpenCode
+use different formats; follow their [specific guides](/docs/mcp/clients).
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+The client starts and stops the process. Do not run a second server manually,
+background the command, or redirect its stdout: stdio carries the MCP protocol.
+
+## Authorize
+
+```sh
+namera mcp login --profile agent
+namera mcp status --profile agent
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+Choose a different profile for each additional client and use it consistently
+in the launch, login, status, and logout commands.
+
+## Use Namera
+
+Restart the client's server connection and check that its tools are available.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile agent
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

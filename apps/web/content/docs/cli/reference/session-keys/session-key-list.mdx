@@ -1,0 +1,47 @@
+---
+title: namera session-key list
+description: List the session keys available to your credential.
+---
+
+List the session keys available to your credential.
+
+## Usage
+
+```sh
+namera session-key list --wallet 0199dfe1-0000-7000-8000-000000000001
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/session-key-list.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+```sh
+namera --output json session-key list --wallet 0199dfe1-0000-7000-8000-000000000001
+```
+
+<include>../../../../snippets/cli/output/session-key-list-json.md</include>
+
+## Options
+
+### --wallet
+
+- **Type:** `string` (account ID)
+- **Default:** no account filter
+
+Restrict the result to one account. Omit the flag to list all keys available to
+your credential. The result is not paginated.
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+Human output groups keys by account and shows networks whose installations are
+active within their permission window. JSON retains the complete records,
+including pending and expired installation details.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

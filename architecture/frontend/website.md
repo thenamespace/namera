@@ -27,7 +27,53 @@ the application database.
 Article reads do not mutate application state. The landing-page waitlist form
 calls the public waitlist API; admission, deduplication and confirmation email
 are owned by the [waitlist workflow](../auth/waitlist.md). `/docs/$` renders the
-repository-owned Fumadocs content.
+repository-owned Fumadocs content. `/docs` renders Introduction, and
+`/docs/why-namera` explains the permission model. These are Dashboard pages,
+not global pinned links. `getDocsSection` classifies the first segment after
+`/docs`: SDK, CLI, and MCP select their sections; everything else selects Dashboard.
+Dashboard filters section root folders from its sidebar tree. Other sections
+use their own root folders. The same classification drives search, SEO, and OG cards.
+Retired `/docs/dashboard` URLs redirect permanently (308) to `/docs`. SDK, CLI, and MCP
+folders contain their own documentation. SDK starts with Overview, Installation,
+and a managed-session Base Sepolia Getting Started walkthrough; CLI and MCP have overview pages.
+The source-derived sitemap, search, and LLM index list only those actual pages.
+The Spacious layout uses Fumadocs' native rounded inset panel and highlighted table of contents,
+a Dashboard-first section picker, a section-specific responsive sidebar,
+and heading-derived table of contents. A server function resolves the page and
+serializes its tree; the route preloads only the selected MDX module. Unknown
+paths return not found. `/api/docs/search` serves Fumadocs search results from
+the repository-owned collection's structured content, tagged by Dashboard, SDK, CLI, or MCP
+for the search dialog's section filter. Search sits below the section picker.
+Page header actions copy or open processed Markdown served by
+the page's `.md` URL; content is bundled at build time rather than read from
+the filesystem at runtime. Unknown Markdown pages return 404, and Markdown
+responses carry `X-Robots-Tag: noindex, follow` and a canonical link to HTML.
+Public docs are indexable and included in the programmatic sitemap.
+The legacy Markdown API remains compatible.
+Global Start request middleware in `src/start.ts` serves `/llms.txt`,
+`/llms-full.txt`, `.md` URLs and Fumadocs Accept negotiation. HTML and Markdown
+responses vary on Accept; text exports have bounded caching. Pricing Markdown
+shares the existing plan and FAQ data. Development discovery URLs use the request
+origin, while production uses the configured canonical site origin.
+Article and legal URLs also expose Markdown from bundled authored content.
+The homepage and blog listing remain server-rendered HTML rather than duplicated
+text exports; site-wide afdocs checks report this as partial Markdown coverage.
+
+Doc compilation reads the latest Git author timestamp when a checkout is available,
+bundling it for the page's last-updated footer. Missing history or uncommitted
+files produce no date, not a build-time substitute. Edit links map the source
+path to `thenamespace/namera` on `main`; newly added pages need to be
+published there before those links resolve.
+
+`/og/docs/$` resolves a docs page ending in `/image.png` and renders a 1200×630
+PNG through Takumi using a custom Namera React template. Section, title,
+and description come from repository-owned content, not arbitrary query
+parameters. Missing pages or invalid suffixes return 404. The renderer uses
+bundled fonts and inline SVG, avoiding request-time external assets. Docs SEO
+sets the generated absolute image URL and page-specific alt text for Open Graph
+and Twitter; other pages retain their existing image. Production responses use
+bounded browser/CDN caching, with no caching in development. Public docs images
+are indexable alongside their pages.
 
 SEO uses a shared permissions-focused site identity. Server-rendered route heads
 connect WebPage, WebSite, Organization, SoftwareApplication and BlogPosting
@@ -35,6 +81,17 @@ entities through stable IDs. The blog index emits CollectionPage, Blog and
 ItemList JSON-LD for only the visible page of articles; pagination has its own
 canonical URL, and empty later pages are noindex. Article metadata retains
 author, publication/update dates, image and canonical/noindex overrides.
+Docs add TechArticle and BreadcrumbList entities and `Page title | Namera Docs` titles.
+Sitemap entries derive from the docs collection and published blog catalog;
+modification dates use actual content history, never request time. RSS uses
+published article metadata and excludes noindex entries. Root discovery links
+advertise the sitemap, RSS, and LLM index. The manifest has docs/blog shortcuts.
 The homepage does not advertise an offer while its primary action is a waitlist.
 
 Authoring commands and frontmatter examples live in the package README.
+
+Pricing cards and the comparison table use provider-neutral user-owned account,
+managed account, local session key and managed session key labels. Free limits
+match Free v2; paid figures remain provisional, with no checkout. Eight pricing
+FAQs share their content with FAQPage structured data. The shared footer exposes
+the contact email from `SITE_LINKS` as a mailto link.

@@ -1,0 +1,74 @@
+---
+title: namera session-key import
+description: Import a dashboard-encrypted session key onto this machine.
+---
+
+Import a dashboard-encrypted session key onto this machine.
+
+## Usage
+
+```sh
+namera session-key import <encrypted-export> --host https://api.namera.ai
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/import.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+The command prompts for `Export passphrase` before printing this result. In JSON
+mode it returns `status`, `sessionKeyId`, `walletId`, and `chains`:
+
+<include>../../../../snippets/cli/output/import-json.md</include>
+
+## Arguments
+
+### encrypted-export
+
+- **Type:** base64url string
+- **Required:** yes
+
+Copy the full encrypted export from the dashboard's import command. It is not
+a private key or a file path. The export must match the expected API origin.
+Enter its passphrase at the hidden prompt; there is no passphrase flag.
+
+## Options
+
+### --host
+
+- **Type:** absolute API URL
+- **Default:** environment or profile origin
+
+Use the host shown in the dashboard import command. Resolution order is
+`--host`, `NAMERA_API_URL`, then the saved CLI profile. An unsaved `personal`
+profile defaults to `https://api.namera.ai`; a new custom profile needs `--host`.
+
+### --profile
+
+- **Type:** `string`
+- **Default:** `personal`
+
+Used to find the expected API origin when neither `--host` nor
+`NAMERA_API_URL` is provided. Import does not create a login profile.
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Storage and Recovery
+
+No API login is required. The CLI decrypts the export, then saves an encrypted
+file protected by an independent OS-keyring secret. It never falls back to plaintext.
+
+Import does not install the key onchain or grant access to a CLI/MCP connection.
+Approve a network in the dashboard, then authorize the active key during login.
+An already imported key is not overwritten.
+
+If import fails, preserve your encrypted export. Check the passphrase, origin,
+and OS-keyring access. On Linux, use persistent Secret Service; a memory-only
+keyring cannot retain unlock secrets across reboots. Do not use `sudo` or
+delete existing keys as a recovery shortcut.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

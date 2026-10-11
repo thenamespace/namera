@@ -1,0 +1,108 @@
+@import "fumadocs-ui/css/generated/spacious.css";
+@import "fumadocs-ui/css/preset.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+@theme inline {
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-muted: var(--docs-surface, var(--surface));
+  --color-fd-muted-foreground: var(--muted);
+  --color-fd-popover: var(--docs-overlay, var(--background));
+  --color-fd-popover-foreground: var(--foreground);
+  --color-fd-card: var(--docs-surface, var(--surface));
+  --color-fd-card-foreground: var(--foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--docs-primary, var(--foreground));
+  --color-fd-primary-foreground: var(--background);
+  --color-fd-secondary: var(--docs-overlay, var(--surface));
+  --color-fd-secondary-foreground: var(--foreground);
+  --color-fd-accent: var(--docs-hover, var(--surface));
+  --color-fd-accent-foreground: var(--foreground);
+  --color-fd-ring: var(--docs-primary, var(--focus));
+}
+
+.docs-response [role="region"] {
+  height: 15rem;
+}
+
+/* Portaled menus and search inherit the active docs theme from the body. */
+body:has(.namera-docs) {
+  --color-fd-info: var(--docs-focus);
+  --color-fd-warning: var(--warning);
+  --color-fd-error: var(--danger);
+  --color-fd-success: var(--success);
+  --color-fd-idea: var(--warning);
+  --radius: 0.55rem;
+  --docs-sdk-accent: color-mix(in oklab, var(--accent) 65%, var(--foreground));
+  --docs-cli-accent: var(--chart-3);
+  --docs-mcp-accent: var(--chart-4);
+  --docs-section-accent: var(--docs-sdk-accent);
+  --docs-surface: color-mix(in oklab, var(--background) 65%, var(--surface));
+  --docs-overlay: color-mix(in oklab, var(--background) 25%, var(--surface));
+  --docs-primary: var(--foreground);
+  --docs-hover: var(--surface);
+  --docs-focus: color-mix(in oklab, var(--docs-section-accent) 80%, var(--foreground));
+}
+
+body:has(.namera-docs[data-docs-section="cli"]) {
+  --docs-section-accent: var(--docs-cli-accent);
+}
+
+body:has(.namera-docs[data-docs-section="mcp"]) {
+  --docs-section-accent: var(--docs-mcp-accent);
+}
+
+.namera-docs {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+}
+
+.namera-docs :is(pre, code) {
+  font-family: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+.namera-docs pre {
+  font-size: 15px;
+}
+
+.namera-docs pre code {
+  font-size: inherit;
+}
+
+.namera-docs #nd-toc {
+  --docs-primary: var(--docs-focus);
+}
+
+.namera-docs #nd-sidebar a[data-active="true"] {
+  color: var(--docs-focus);
+  background: color-mix(in oklab, var(--docs-section-accent) 10%, var(--docs-surface));
+}
+
+body:has(.namera-docs) [role="menu"]:has(.docs-section-icon) {
+  border-radius: 0.75rem;
+  --docs-primary: var(--docs-focus);
+}
+
+body:has(.namera-docs) :is(.docs-section-icon, span:has(> .docs-section-icon)) {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.docs-section-icon--sdk,
+.docs-section-icon--dashboard {
+  color: var(--docs-sdk-accent);
+}
+
+.docs-section-icon--cli {
+  color: var(--docs-cli-accent);
+}
+
+.docs-section-icon--mcp {
+  color: var(--docs-mcp-accent);
+}
+
+.namera-docs :is(a, button):focus-visible {
+  outline: 2px solid var(--docs-focus);
+  outline-offset: 3px;
+}

@@ -1,0 +1,230 @@
+---
+title: Simulate
+description: Simulate calls and evaluate the selected session key’s API policies.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.executions.simulate(request)` does not sign, submit, or sponsor an operation.
+
+## Usage
+
+Install `@namera-ai/sdk` and `viem`. Replace the example IDs and recipient with your own. The selected session must permit these calls on Base Sepolia.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`walletId`** (`string`): Account UUID.
+- **`chainId`** (`SupportedEvmChainId`): Simulation network.
+- **`account`** (`` `0x${string}` ``): Smart-account address.
+- **`callsSucceeded`** (`boolean`): Whether the simulated calls succeeded.
+- **`simulation`** (`EvmIntentSimulation`): userOperation gas estimates and calls results, assetChanges, and transfers.
+- **`allowed`** (`boolean`): Point-in-time policy decision; not a guarantee of later execution.
+- **`sessionKeyId`** (`string`): Present when allowed is true.
+- **`denials`** (`readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]`): Nonempty when allowed is false; absent when allowed is true.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "callsSucceeded": true,
+  "simulation": {
+    "userOperation": {
+      "source": "eth_estimateUserOperationGas",
+      "callGasLimit": "50000",
+      "verificationGasLimit": "100000",
+      "preVerificationGas": "50000",
+      "maxFeePerGas": "1000000000",
+      "maxPriorityFeePerGas": "1000000"
+    },
+    "calls": {
+      "source": "viem.simulateCalls",
+      "results": [
+        {
+          "status": "success",
+          "returnData": "0x",
+          "gasUsed": "21000"
+        }
+      ],
+      "assetChanges": [],
+      "transfers": [
+        {
+          "callIndex": 0,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000"
+        }
+      ]
+    }
+  },
+  "allowed": true,
+  "sessionKeyId": "0199dfe1-0000-7000-8000-000000000002"
+}
+```
+
+</div>
+
+## Parameters
+
+Pass a `SimulateExecutionRequest` object. Simulation does not accept a `sponsor` field.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+<include>../../../../snippets/sdk/simulate-calls.md</include>
+
+## Errors
+
+Execution, authorization, and network failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.
+
+Guide: [Simulate Transactions](/docs/sdk/guides/transactions/simulate-transactions).

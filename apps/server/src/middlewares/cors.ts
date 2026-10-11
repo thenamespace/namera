@@ -29,7 +29,7 @@ export const CorsMiddleware = Layer.unwrap(
         ...Option.toArray(config.waitlistOrigin).map((url) => url.origin),
       ],
       allowedMethods: ["POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Content-Type", "X-Namera-Analytics"],
       credentials: false,
       maxAge: 86400,
     });

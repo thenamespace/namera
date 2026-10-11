@@ -1,0 +1,53 @@
+---
+title: Gemini CLI
+description: Add Namera to Gemini CLI's local MCP servers.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+With Gemini CLI installed, add this to `~/.gemini/settings.json` for your user,
+or `.gemini/settings.json` for the current project:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "gemini"],
+      "trust": false
+    }
+  }
+}
+```
+
+`trust: false` keeps tool approval prompts instead of trusting all calls from
+the server. See [Gemini CLI's MCP setup](https://geminicli.com/docs/tools/mcp-server/).
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+## Authorize
+
+```sh
+namera mcp login --profile gemini
+namera mcp status --profile gemini
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Start a new Gemini CLI session and run `/mcp` to inspect the connected servers
+and available tools. If Namera is excluded by your MCP settings, enable it before
+testing the connection.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile gemini
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

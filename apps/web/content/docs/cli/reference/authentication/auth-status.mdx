@@ -1,0 +1,42 @@
+---
+title: namera auth status
+description: Inspect the credential and permissions used by ordinary CLI commands.
+---
+
+Inspect the credential and permissions used by ordinary CLI commands.
+
+## Usage
+
+```sh
+namera auth status
+```
+
+## Output
+
+With `NAMERA_API_KEY` supplied through the environment:
+
+<include>../../../../snippets/cli/output/auth-status.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+```sh
+namera --output json auth status
+```
+
+<include>../../../../snippets/cli/output/auth-status-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+Human output may also read accounts and session keys to show their names and
+installation expiry when your scopes permit those reads. JSON returns `profile`
+and the full `actor` without those additional requests. This is an authenticated
+API check, not just a check for a saved token.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

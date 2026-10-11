@@ -1,0 +1,62 @@
+---
+title: Networks
+description: Understand network-specific balances, permissions, and transaction status.
+---
+
+An account operates on a specific blockchain network for each transaction.
+The network determines which balances, contracts, permissions, and activity
+apply to that operation.
+
+## Supported Networks
+
+Namera supports these EVM mainnets and testnets:
+
+| Mainnet      | Testnet          |
+| ------------ | ---------------- |
+| Ethereum     | Ethereum Sepolia |
+| Base         | Base Sepolia     |
+| Arbitrum One | Arbitrum Sepolia |
+| OP Mainnet   | OP Sepolia       |
+
+All eight use ETH as their native gas currency. Testnet ETH is separate from
+mainnet ETH. Use a testnet, such as Base Sepolia, when trying a new integration.
+
+For the exact identifiers used in code, see
+[Supported Networks in the SDK](/docs/sdk/supported-networks).
+
+## Balances Belong to a Network
+
+ETH held on Base is not an Ethereum balance. Selecting another network does
+not move or bridge assets, even if the account address looks the same.
+
+A token's symbol is not enough to identify it. Check its network and contract
+address, and check the recipient's network before funding an account or sending
+assets. A contract address on one network does not imply the same contract
+exists on another.
+
+## Permissions Are Installed per Network
+
+A session key needs owner-approved installation on every network where it will
+operate. An installation on Base does not authorize Ethereum or Base Sepolia.
+
+Each installation has its own status and approved authorization. The key can
+be active because one installation succeeded while another is still pending.
+Check the requested network, not only the key's overall status.
+
+Removing installed permissions is also network-specific. Revoking access through
+Namera starts the cutoff, but onchain removal must finish on each installed
+network. See [Session Keys](/docs/concepts/session-keys#ending-access).
+
+## Transactions and Gas
+
+Gas pays for execution on the selected network. Sponsorship, when available,
+covers gas; it does not supply the ETH or tokens you intend to transfer.
+Self-funded execution requires sufficient native currency for gas as well as
+any amount being sent.
+
+Transactions have their own submission and confirmation state. Check activity
+and explorer links on the network used by the operation.
+
+If Namera pauses a supported network, new operations can be rejected while
+status checks remain available. A pause is not cancellation of an operation
+already signed or submitted.

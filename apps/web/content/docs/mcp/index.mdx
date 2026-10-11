@@ -1,0 +1,40 @@
+---
+title: Overview
+icon: BookOpen01Icon
+description: Give your AI client access to Namera accounts within the permissions you choose.
+---
+
+Namera connects your AI client to accounts, session keys, transactions, and
+signatures through the Model Context Protocol (MCP). You approve access in your
+browser. The agent discovers the available tools and uses them on your behalf.
+
+## What You Can Ask
+
+### Inspect Your Accounts
+
+> List my Namera accounts and show which networks each session key can use.
+
+### Check Activity
+
+> Show the recent confirmed transactions for my Namera account.
+
+### Prepare an Action
+
+> Check whether my Namera session key allows the transfer I describe. Simulate
+> it, explain the result, and wait for my approval before submitting anything.
+
+Your session key's permissions remain the limit, regardless of what you ask the
+agent to do. Prompts guide the agent; they do not grant or restrict server-side
+authority. Configure that in the [dashboard](https://dashboard.namera.ai).
+
+## How It Connects
+
+The Namera CLI includes a local MCP server. Your client starts it automatically
+and communicates over **stdio**. You do not run a background daemon or paste an
+API key into a client configuration.
+
+The process runs on your machine and calls the Namera API. It is not an offline
+wallet, and there is no hosted Namera MCP URL to add to cloud-only clients.
+
+Start with [Installation](/docs/mcp/installation), then
+[choose your client](/docs/mcp/clients).

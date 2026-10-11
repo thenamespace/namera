@@ -1,0 +1,129 @@
+---
+title: Transfer Assets
+description: Send native tokens or ERC-20 tokens from your account.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Use `executions.execute()` to transfer assets. The examples below send ETH and
+an ERC-20 token on **Base Sepolia**.
+
+## Before You Start
+
+Set up [authentication](/docs/sdk/authentication) and choose an
+[account and session key](/docs/sdk/accounts-and-session-keys). The key must be
+installed on Base Sepolia and allow the transfer. Fund the account with the
+asset you want to send.
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+Replace the example account ID, session-key ID, and recipient with your own:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const walletId = "0199dfe1-0000-7000-8000-000000000001";
+const sessionKeyId = "0199dfe1-0000-7000-8000-000000000002";
+const recipient = "0x2222222222222222222222222222222222222222";
+```
+
+Choose one of the transfer examples below and add it after this setup.
+
+## Transfer Native Tokens
+
+This sends **0.001 test ETH**. Allow the recipient and a native-token allowance
+that covers the transfer in your session key's permissions.
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+
+const transfer = await namera.executions.execute({
+  namespace: "eip155",
+  walletId,
+  sessionKeyId,
+  chainId: "eip155:84532",
+  calls: [{ to: recipient, value: parseEther("0.001"), data: "0x" }],
+  sponsor: true,
+});
+
+if (!transfer.success) throw new Error(transfer.error.message);
+
+console.log(transfer.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+## Transfer ERC-20 Tokens
+
+Call the token contract's `transfer` function. This example sends **1 token**
+with **6 decimals**. Replace the token address and decimals with those of your
+token on Base Sepolia. The session key must allow that token transfer.
+
+```ts title="index.ts"
+import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
+
+const tokenAddress = "0x3333333333333333333333333333333333333333";
+const decimals = 6;
+
+const tokenTransfer = await namera.executions.execute({
+  namespace: "eip155",
+  walletId,
+  sessionKeyId,
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: tokenAddress,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [recipient, parseUnits("1", decimals)],
+      }),
+    },
+  ],
+  sponsor: true,
+});
+
+if (!tokenTransfer.success) throw new Error(tokenTransfer.error.message);
+
+console.log(tokenTransfer.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000011",
+  "status": "prepared",
+  "userOperationHash": "0x2222222222222222222222222222222222222222222222222222222222222222"
+}
+```
+
+</div>
+
+`to` is the token contract; the recipient and amount are encoded in `data`.
+`value: 0n` means the call sends no native ETH.
+
+<Callout title="Gas is separate from the transfer">
+  Sponsorship covers gas, not the assets being sent. Your account must hold the ETH or tokens you
+  are transferring.
+</Callout>
+
+These are illustrative submission values. Use the `submissionId` returned by
+your request to [track the transaction](/docs/sdk/guides/transactions/track-transactions).
+`prepared` means queued, not confirmed.

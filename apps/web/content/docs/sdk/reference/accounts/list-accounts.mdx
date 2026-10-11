@@ -1,0 +1,102 @@
+---
+title: List Accounts
+description: Read the accounts available to your credential.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.wallets.list()` returns accounts reachable through your active grants.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.list();
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+An array of complete records. An empty array means no matching resources are available. The method is not paginated.
+
+- **`id`** (`string`): Account ID.
+- **`organizationId`** (`string`): Owning organization ID.
+- **`metadata`** (`object`): version and name, with optional logo and description.
+- **`status`** (`"active" | "frozen" | "archived"`): Account lifecycle status.
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`address`** (`` `0x${string}` ``): Smart-account address.
+- **`owner`** (`object`): Public signing-key identity, custody, algorithm, and provider-specific protection details.
+- **`implementation`** (`"alchemy-modular-v2"`): Smart-account implementation.
+- **`data`** (`object`): Account configuration, discriminated by validatorType and accountMode. Includes deployment and version fields.
+- **`createdAt`** (`DateTime.Utc`): Creation time.
+- **`updatedAt`** (`DateTime.Utc`): Last update time.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+[
+  {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": {
+        "type": "emoji",
+        "value": "👛"
+      },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  }
+]
+```
+
+</div>
+
+## Parameters
+
+None. `wallets.list()` does not accept filters or pagination options.
+
+## Errors
+
+API failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.

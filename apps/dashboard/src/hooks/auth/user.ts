@@ -3,6 +3,7 @@ import { QueryKeys } from "@/atoms/query-keys";
 import { toMutation } from "@/hooks/atom";
 
 export const useUpdateUser = toMutation(updateUserMutation, {
+  analyticsAction: "profile_update",
   invalidates: [
     ...QueryKeys.session.current,
     ...QueryKeys.organization.lists,

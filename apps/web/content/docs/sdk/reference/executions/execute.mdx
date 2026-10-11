@@ -1,0 +1,228 @@
+---
+title: Execute
+description: Prepare, authorize, and submit one or more EVM calls.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.executions.execute(request)` validates and signs the prepared operation, then queues it for broadcast. Each invocation starts a new submission.
+
+## Usage
+
+Install `@namera-ai/sdk` and `viem`. Replace the example IDs and recipient with your own. The selected session must permit these calls on Base Sepolia.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`submissionId`** (`string`): ID to pass to executions.getStatus().
+- **`status`** (`"prepared" | "submitted" | "confirmed" | "failed"`): Current submission state. Prepared is queued, not confirmed.
+- **`userOperationHash`** (`` `0x${string}` ``): ERC-4337 user-operation hash, not a transaction hash.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+## Parameters
+
+Pass an `ExecuteRequest` object. Fields below are required unless marked optional.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<include>../../../../snippets/sdk/calls.md</include>
+
+### sponsor
+
+- **Type:** `boolean`
+- **Optional**
+- **Default:** `true`
+
+Sponsorship covers gas, not transferred assets, and remains subject to workspace allowances and policies.
+
+Set `false` to pay from the account. Fund both the transfer and gas, and configure [maxGasCostWei](/docs/sdk/reference/client/namera-client#maxgascostwei). A custom signer must carry its own fee ceiling.
+
+See [Sponsor Gas](/docs/sdk/guides/transactions/sponsor-gas) for a complete self-funded example.
+
+```ts title="index.ts"
+import { namera } from "./client";
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true, // [!code focus]
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+## Behavior
+
+Use [Get Submission Status](/docs/sdk/reference/executions/get-submission-status) to track this submission. Do not call execute again to poll. Internal preparation retries reuse one idempotency key; completion retries reuse the same submission.
+
+## Errors
+
+Policy, authorization, billing, and execution failures return `success: false`. Prepared-operation validation failures use `kind: "signer"`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.
+
+Guide: [Transfer Assets](/docs/sdk/guides/transactions/transfer-assets).

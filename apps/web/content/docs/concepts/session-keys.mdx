@@ -1,0 +1,68 @@
+---
+title: Session Keys
+description: Give an application or agent bounded access to one account.
+---
+
+A **session key** is a signing key with permissions attached to one account.
+It lets an application or agent act without receiving the account owner's key.
+
+Each session key has its own allowed actions, network installations, and
+execution lifetime. Creating separate keys for different tasks makes their
+permissions and access easier to manage independently.
+
+## Three Different Kinds of Access
+
+| Item                                   | Purpose                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| Account owner                          | Approves installing or removing onchain authority.                                   |
+| Session key                            | Signs operations within the authority installed for it.                              |
+| API key or connected-app authorization | Authenticates a client and grants it access to selected session keys through Namera. |
+
+An API key is not a session private key. Authorizing an app does not install
+permissions onchain, and installing a session key does not authorize every app
+to use it.
+
+## Registration and Network Approval
+
+A newly created session key starts **pending**. Its permissions must be approved
+by the account owner and installed on a network before it can be used there.
+
+The key becomes **active** after an installation is confirmed. That status does
+not mean every requested network is ready: each network has its own installation
+and validity period. A pending approval on Base is not made usable by a confirmed
+installation on Ethereum.
+
+The client also needs an active grant to the key. Namera evaluates the selected
+key's complete permissions for each operation; it does not combine partial
+permissions from different keys to make an action pass.
+
+## Where the Signing Key Lives
+
+A local session key signs on the machine where it was imported. A managed
+session key signs through 1Claw. Both use the same delegated-access model and
+require the appropriate network installation and Namera authorization.
+
+Follow any encrypted import and backup instructions provided during creation.
+Importing a key alone does not approve its network permissions or connect an app.
+Do not share a private key or export passphrase with an agent.
+
+## Changing Permissions
+
+A session key's permission configuration is fixed when it is created. To use a
+different permission set, create a replacement key and authorize the intended
+clients to use it. Revoke the old key when it is no longer needed.
+
+## Ending Access
+
+Revoking a session key cuts off its grants through Namera immediately and starts
+revocation. Any installed onchain permissions still require owner-approved
+removal on each network. The key remains **revoking** while those operations
+are unresolved; **revoked** means the removal lifecycle has finished.
+
+Execution expiry and signature authority are different. Expiry does not remove
+onchain message-signing authority. See
+[Permissions and Policies](/docs/concepts/permissions-and-policies#signature-permissions)
+before enabling signatures.
+
+Revocation is not a way to cancel a transaction that has already been submitted.
+Track that submission separately.

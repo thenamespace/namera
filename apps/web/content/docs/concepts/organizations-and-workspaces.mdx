@@ -1,0 +1,58 @@
+---
+title: Organizations and Workspaces
+description: Understand how Namera groups accounts, members, and connected applications.
+---
+
+A **workspace** groups your Namera accounts, session keys, members, client
+authorizations, and billing. The API calls this an **organization**. These are
+two names for the same boundary, not separate levels of a hierarchy.
+
+## Your Active Workspace
+
+You can belong to multiple workspaces. Your dashboard session selects one active
+workspace at a time, and its pages show the resources you are allowed to access
+there.
+
+Switching workspaces changes that context. It does not move accounts, transfer
+funds, or give a connected application access to the newly selected workspace.
+If an expected account is missing, check the active workspace and your membership.
+
+## Members and Roles
+
+Your role determines which management actions you can perform in the workspace.
+Namera has built-in **Owner**, **Admin**, and **Member** roles. The Member role
+is read-oriented; management actions such as creating accounts or granting
+client access require the corresponding permissions.
+
+A person who can manage members cannot assign authority beyond their own.
+Account ownership remains separate: having a workspace role does not give you
+another person's owner passkey or replace an account's required owner approval.
+
+Membership and permissions are checked on subsequent requests. Losing workspace
+access does not transfer an account's assets or change its onchain owner.
+
+## Connected Applications
+
+An API key, CLI connection, or MCP connection receives grants to selected
+session keys. It does not inherit the dashboard user's entire workspace role.
+
+For example, a workspace can contain accounts for several projects while one
+agent is authorized to use only a session key for a single account. Its accessible
+accounts and operations follow that grant and the key's permissions.
+
+Changing the active workspace in your browser does not change a saved CLI or MCP
+connection. Review that connection's authorization when changing its access.
+
+## Workspace Owner and Account Owner
+
+The **workspace Owner** is a membership role in Namera. The **account owner** is
+the signing authority that approves onchain permission changes. One describes
+management access; the other describes control of a smart account.
+
+Keep these boundaries separate when planning team access. Removing a member or
+revoking an app connection is not the same operation as removing a session key's
+onchain permissions.
+
+Continue with [Accounts](/docs/concepts/accounts) for account ownership or
+[Permissions and Policies](/docs/concepts/permissions-and-policies) for delegated
+authority.

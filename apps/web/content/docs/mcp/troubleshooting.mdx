@@ -1,0 +1,90 @@
+---
+title: Troubleshooting
+description: Resolve startup, browser approval, keyring, and access problems.
+---
+
+## The Client Cannot Find Namera
+
+Check the installation in a terminal:
+
+```sh
+node --version
+namera --version
+```
+
+Use Node.js 24.14+. If the terminal works but the app does not, find the executable:
+
+```sh
+command -v namera
+```
+
+On Windows, use `where.exe namera`. Replace the client's `command` with the
+returned absolute executable path. If Windows returns a `.cmd` shim that your
+client cannot launch directly, use that client's documented Windows command
+launcher. Node.js must also be on the child process's PATH. Restart the client
+after changing its environment.
+
+## The Client Asks for a Server URL
+
+Choose its local command or stdio option. Namera does not provide a hosted MCP
+endpoint. An API URL is not an MCP URL. URL-only clients cannot connect directly;
+see [Other Clients](/docs/mcp/clients/other-clients).
+
+## Tools Appear, but Login Is Required
+
+Tool discovery does not require login. Authorize the exact profile configured
+in the server arguments:
+
+```sh
+namera mcp login --profile agent
+namera mcp status --profile agent
+```
+
+Replace `agent` with your profile. Use the same custom `--host`, if configured.
+Retry the original read request after approval. Do not use ordinary `namera login`
+or add an API key to the MCP config.
+
+## Browser Approval Does Not Finish
+
+Run manual login on the machine that starts the MCP server. Open the URL printed
+by the command and complete approval before it expires. For remote environments,
+the browser must be able to reach the login process's loopback callback; a
+browser on a different machine may not be able to complete it.
+
+Start a fresh login if the previous attempt expired or was cancelled.
+
+## Credentials or Keys Are Unavailable
+
+Unlock the OS keyring and run the client as the same OS user used for login and
+import. On Linux, check that a persistent Secret Service is available to that
+process. There is no plaintext credential fallback.
+
+Do not delete the key store to fix an error. If the dashboard provided a key
+import, complete it on this machine. Follow the
+[import instructions](/docs/cli/reference/session-keys/session-key-import) if
+you need to restore from your encrypted backup.
+
+## No Accounts or Session Keys Are Returned
+
+Check the connection's selected keys in the dashboard. Confirm the key is active,
+its network installation is approved, and the connection still has read access.
+Authorize again if you need to select a different key.
+
+## An Action Is Denied
+
+Read the tool's error and recovery instruction. Check the connection's execution
+access, session expiry, network installation, and permissions for that exact
+action. Change permissions in the dashboard only if you intend to grant more
+access. The agent cannot bypass a policy denial.
+
+## A Request Stops After Submission
+
+If you have a submission ID, ask the agent to check that submission rather than
+repeat the transaction. A missing response does not prove the operation failed.
+
+## Report a Problem
+
+Include the client name, Namera version, operation, and error code or message.
+Remove credentials, private keys, encrypted exports, and sensitive account details
+from logs. The client owns the server process; inspect its MCP logs rather than
+redirecting protocol stdout into a log file.

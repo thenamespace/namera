@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { cn } from "@namera-ai/ui/utils";
 
 import { ActionAnchor, Reveal } from "#/components/marketing/primitives";
@@ -7,8 +8,8 @@ import { Check } from "./check";
 import { PLANS } from "./plans";
 
 /*
- * Columns divided by hairlines rather than boxed in cards, two rules inside
- * each one, and the actions aligned along the bottom whatever the lists above
+ * Columns divided by hairlines rather than boxed in cards, with the
+ * actions aligned along the bottom whatever the lists above
  * them do. The buttons keep this site's 8px radius rather than the reference's
  * pill, because every other button on the site is 8px (DESIGN.md).
  */
@@ -33,22 +34,13 @@ export const PlanCards = () => (
           </h2>
 
           <p className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-[1.25rem] tracking-[-0.02em] text-foreground">{plan.price}</span>
+            <span className="text-[1.25rem] tracking-[-0.02em] text-foreground">{plan.price}</span>{" "}
             {plan.cadence === undefined ? null : (
               <span className="text-[0.9375rem] text-ink-subtle">{plan.cadence}</span>
             )}
           </p>
 
-          <p
-            className={cn(
-              "mt-6 border-t-1 border-border py-5 text-[0.875rem]",
-              plan.available ? "text-muted" : "text-ink-subtle",
-            )}
-          >
-            {plan.summary}
-          </p>
-
-          <ul className="flex flex-col gap-3.5 border-t-1 border-border pt-7">
+          <ul className="mt-6 flex flex-col gap-3.5 border-t-1 border-border pt-7">
             {plan.features.map((feature) => (
               <li key={feature} className="flex items-start gap-3">
                 <Check className="mt-px" />
@@ -61,6 +53,9 @@ export const PlanCards = () => (
             {plan.action === "waitlist" ? (
               <ActionAnchor
                 href="/#waitlist"
+                onClick={() =>
+                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "waitlist" })
+                }
                 variant="light"
                 className="h-11 w-full justify-center text-[0.9375rem]"
               >
@@ -69,6 +64,9 @@ export const PlanCards = () => (
             ) : plan.action === "contact" && SITE_LINKS.contact !== null ? (
               <ActionAnchor
                 href={SITE_LINKS.contact}
+                onClick={() =>
+                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "contact" })
+                }
                 variant="secondary"
                 className="h-11 w-full justify-center text-[0.9375rem]"
               >

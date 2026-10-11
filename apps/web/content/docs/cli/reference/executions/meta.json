@@ -1,0 +1,4 @@
+{
+  "title": "Executions",
+  "pages": ["simulate", "execute", "status", "list"]
+}

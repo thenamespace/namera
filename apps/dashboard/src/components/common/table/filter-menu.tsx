@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Button, Checkbox, Dropdown, Header, Label, type DataGridSelection } from "@namera-ai/ui";
 import { FilterHorizontalIcon, FilterRemoveIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
@@ -65,11 +66,28 @@ function TableFilterCheckbox({ isSelected, label }: { isSelected: boolean; label
 }
 
 export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuProps) {
+  const trackedFacets = useMemo(
+    () =>
+      facets.map((facet) => ({
+        ...facet,
+        onSelectionChange: (selection: DataGridSelection) => {
+          captureAnalytics("table_filter_changed", {
+            action: "select",
+            result_count: selection === "all" ? facet.options.length : selection.size,
+          });
+          facet.onSelectionChange(selection);
+        },
+      })),
+    [facets],
+  );
   const activeFilterCount = facets.filter(
     (facet) => !selectionsMatch(facet.selectedKeys, facet.defaultSelectedKeys ?? emptySelection),
   ).length;
   const handleRootAction = useEventCallback((key: string | number) => {
-    if (key === "clear") onClear();
+    if (key === "clear") {
+      captureAnalytics("table_filter_changed", { action: "clear" });
+      onClear();
+    }
   });
 
   return (
@@ -91,54 +109,58 @@ export function TableFilterMenu({ ariaLabel, facets, onClear }: TableFilterMenuP
 
       <Dropdown.Popover className="min-w-72" placement="bottom end">
         <Dropdown.Menu onAction={handleRootAction}>
-          {facets.map((facet) => (
-            <Dropdown.SubmenuTrigger key={facet.id}>
-              <Dropdown.Item id={facet.id} textValue={facet.label}>
-                {facet.icon}
-                <Label>{facet.label}</Label>
-                <span className="ml-auto max-w-24 truncate text-xs text-muted">
-                  {selectionSummary(facet)}
-                </span>
-                <Dropdown.SubmenuIndicator />
-              </Dropdown.Item>
-              <Dropdown.Popover className="min-w-64">
-                <Dropdown.Menu
-                  selectedKeys={facet.selectedKeys}
-                  selectionMode={facet.selectionMode ?? "multiple"}
-                  {...(facet.disallowEmptySelection === undefined
-                    ? {}
-                    : { disallowEmptySelection: facet.disallowEmptySelection })}
-                  onSelectionChange={facet.onSelectionChange}
-                >
-                  {facet.options.length === 0 ? (
-                    <Dropdown.Item
-                      id="empty"
-                      isDisabled
-                      textValue={facet.emptyLabel ?? "No options"}
-                    >
-                      <Label>{facet.emptyLabel ?? "No options"}</Label>
-                    </Dropdown.Item>
-                  ) : null}
-                  {facet.groups
-                    ? facet.groups.map((group) => {
-                        const options = facet.options.filter((option) => option.group === group);
-                        if (options.length === 0) return null;
-                        return (
-                          <Dropdown.Section key={group}>
-                            <Header className="px-2 py-2 text-xs font-medium text-muted">
-                              {group}
-                            </Header>
-                            {options.map((option) =>
-                              renderFilterOption(option, facet.selectedKeys),
-                            )}
-                          </Dropdown.Section>
-                        );
-                      })
-                    : facet.options.map((option) => renderFilterOption(option, facet.selectedKeys))}
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown.SubmenuTrigger>
-          ))}
+          {trackedFacets.map((facet) => {
+            return (
+              <Dropdown.SubmenuTrigger key={facet.id}>
+                <Dropdown.Item id={facet.id} textValue={facet.label}>
+                  {facet.icon}
+                  <Label>{facet.label}</Label>
+                  <span className="ml-auto max-w-24 truncate text-xs text-muted">
+                    {selectionSummary(facet)}
+                  </span>
+                  <Dropdown.SubmenuIndicator />
+                </Dropdown.Item>
+                <Dropdown.Popover className="min-w-64">
+                  <Dropdown.Menu
+                    selectedKeys={facet.selectedKeys}
+                    selectionMode={facet.selectionMode ?? "multiple"}
+                    {...(facet.disallowEmptySelection === undefined
+                      ? {}
+                      : { disallowEmptySelection: facet.disallowEmptySelection })}
+                    onSelectionChange={facet.onSelectionChange}
+                  >
+                    {facet.options.length === 0 ? (
+                      <Dropdown.Item
+                        id="empty"
+                        isDisabled
+                        textValue={facet.emptyLabel ?? "No options"}
+                      >
+                        <Label>{facet.emptyLabel ?? "No options"}</Label>
+                      </Dropdown.Item>
+                    ) : null}
+                    {facet.groups
+                      ? facet.groups.map((group) => {
+                          const options = facet.options.filter((option) => option.group === group);
+                          if (options.length === 0) return null;
+                          return (
+                            <Dropdown.Section key={group}>
+                              <Header className="px-2 py-2 text-xs font-medium text-muted">
+                                {group}
+                              </Header>
+                              {options.map((option) =>
+                                renderFilterOption(option, facet.selectedKeys),
+                              )}
+                            </Dropdown.Section>
+                          );
+                        })
+                      : facet.options.map((option) =>
+                          renderFilterOption(option, facet.selectedKeys),
+                        )}
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown.SubmenuTrigger>
+            );
+          })}
 
           <Dropdown.Item id="clear" isDisabled={activeFilterCount === 0} textValue="Clear filters">
             <HugeiconsIcon className="size-4 text-muted" icon={FilterRemoveIcon} />

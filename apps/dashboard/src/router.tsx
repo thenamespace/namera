@@ -6,6 +6,7 @@ import { AtomRegistry } from "effect/reactivity";
 import { DashboardSeo } from "@/components/dashboard-seo";
 import { DataLoading } from "@/components/data-loading";
 import { RouteState } from "@/components/page/route-state";
+import { ProductAnalytics } from "@/components/product-analytics";
 import { RouterError, RouterNotFound } from "@/components/route-failure";
 import { routeTree } from "@/routeTree.gen";
 
@@ -38,6 +39,7 @@ export function getRouter() {
     InnerWrap: ({ children }) => (
       <>
         <DashboardSeo />
+        <ProductAnalytics />
         {children}
       </>
     ),

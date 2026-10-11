@@ -1,0 +1,181 @@
+---
+title: NameraClient
+description: Create and configure the Namera SDK client.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`new NameraClient(config)` creates a client. Construction does not authenticate or send an API request.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const accounts = await namera.wallets.list();
+if (!accounts.success) throw new Error(accounts.error.message);
+
+console.log(accounts.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+A `NameraClient` instance. Creating it does not make a network request.
+
+- **`wallets`** (`WalletClient`): list() and get(walletId).
+- **`sessionKeys`** (`SessionKeyClient`): list(options?) and get(sessionKeyId).
+- **`executions`** (`ExecutionClient`): execute, simulate, getStatus, list, and get. Also exposes low-level prepare and complete.
+- **`sign`** (`(request: SignRequest) => Promise<NameraResult>`): Sign a message or typed data.
+- **`verifySignature`** (`(request: VerifySignatureRequest) => Promise<NameraResult>`): Verify a smart-account signature.
+- **`signatures`** (`SignatureClient`): Advanced prepare and complete transport, plus sign.
+- **`auth`** (`AuthClient`): Read the authenticated actor with currentActor().
+
+## Parameters
+
+Pass a `NameraClientConfig` object. Exactly one of `apiKey`, `accessToken`, or `getAccessToken` is required.
+
+### apiKey
+
+- **Type:** `string`
+- **Optional**
+
+Authenticates server-side requests using the `x-api-key` header. Keep API keys out of browser bundles and source control. Do not combine this with an OAuth option.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!, // [!code focus]
+});
+```
+
+### accessToken
+
+- **Type:** `string`
+- **Optional**
+
+The OAuth token used for requests. Pass only the token; the SDK adds the `Bearer` prefix. Use `getAccessToken` if your application needs to supply refreshed tokens.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  accessToken: process.env.NAMERA_ACCESS_TOKEN!, // [!code focus]
+});
+```
+
+### getAccessToken
+
+- **Type:** `() => Promise<string>`
+- **Optional**
+
+An asynchronous token supplier invoked when requests need authentication. It must resolve to a token string. Your application owns refresh and storage.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  getAccessToken: async () => process.env.NAMERA_ACCESS_TOKEN!, // [!code focus]
+});
+```
+
+Replace this environment lookup with your application’s token store or refresh flow.
+
+### baseUrl
+
+- **Type:** `string`
+- **Optional**
+- **Default:** `https://api.namera.ai`
+
+The API deployment to connect to. Omit for Namera’s hosted API. Use another URL only for an alternative deployment; do not include endpoint paths or credentials.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+  baseUrl: "http://localhost:8080", // [!code focus]
+});
+```
+
+### fetch
+
+- **Type:** `NameraFetch`
+- **Optional**
+- **Default:** `platform fetch`
+
+Overrides the Fetch implementation used for HTTP requests. Preserve the supplied request and authentication headers when wrapping it.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+  fetch: (input, init) => globalThis.fetch(input, init), // [!code focus]
+});
+```
+
+### maxGasCostWei
+
+- **Type:** `bigint`
+- **Optional**
+
+Maximum approved gas cost in wei for a self-funded operation. Set before executing with `sponsor: false`. This is a ceiling, not a gas price or an extra payment; preparations above it are rejected.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+export const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+  maxGasCostWei: parseEther("0.0001"), // [!code focus]
+});
+```
+
+Install `viem` for `parseEther`. Applies to managed and automatically resolved local executions. Custom signers use their own fee ceiling.
+
+### localSigning
+
+- **Type:** `false`
+- **Optional**
+
+Set to `false` to prevent automatic Node.js key-store access. Omitting this option enables resolution for imported local keys. It does not disable an explicit `resolveSessionSigner`.
+
+```ts title="client.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+export const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+  localSigning: false, // [!code focus]
+});
+```
+
+### resolveSessionSigner
+
+- **Type:** `ResolveSessionSigner`
+- **Optional**
+
+Overrides resolution for applications with their own key store. Returns a `LocalSessionSigner` with a trusted `binding`, `signMessage`, optional `signTypedData`, and optional `maxGasCostWei`.
+
+Use owner-reviewed configuration for the binding, never the preparation response. Signature operations require a typed-data callback and approved signature authority. Standard Node.js integrations using imported keys can omit this option.
+
+## Result Handling
+
+API methods return `NameraResult<T, E>`. Check `success` before reading `data`. On success `error` is null; on failure `data` is null. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors).
+
+## Advanced Signing
+
+Node.js resolves imported local session keys automatically. An explicit resolver takes precedence. Browser bundles do not include native key storage.
+
+Prefer `execute()` and `sign()` over low-level prepare and complete methods, whose callers must independently validate what they sign.

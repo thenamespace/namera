@@ -1,0 +1,149 @@
+---
+title: Get Submission Status
+description: Read the current state of an execution submission.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.executions.getStatus(submissionId)` tracks a submission before and after confirmation.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`submissionId`** (`string`): Requested submission UUID.
+- **`status`** (`"reserved" | "prepared" | "submitted" | "confirmed" | "failed"`): Discriminator for the response shape.
+- **`userOperationHash`** (`` `0x${string}` | null ``): Present only for reserved, prepared, and submitted.
+- **`execution`** (`ExecutionResponse`): Complete confirmed execution record. Present only for confirmed.
+
+### Pending Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "submitted",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+### Confirmed Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "confirmed",
+  "execution": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "executionSubmissionId": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "sessionKeyGrantId": "0199dfe1-0000-7000-8000-000000000013",
+    "namespace": "eip155",
+    "data": {
+      "version": 1,
+      "chainId": "eip155:84532",
+      "calls": [
+        {
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000",
+          "data": "0x"
+        }
+      ],
+      "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "receipt": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "blockHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "blockNumber": "32000000",
+        "sender": "0x1111111111111111111111111111111111111111",
+        "nonce": "0",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "paymaster": null,
+        "actualGasCost": "0",
+        "actualGasUsed": "120000",
+        "success": true,
+        "reason": null
+      }
+    },
+    "createdAt": "2026-10-11T09:10:00.000Z"
+  }
+}
+```
+
+</div>
+
+### Failed Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "failed"
+}
+```
+
+</div>
+
+## Parameters
+
+### submissionId
+
+- **Type:** `string`
+- **Required**
+
+The `submissionId` returned by `execute()`. Save it to resume tracking after a restart. It is neither the confirmed execution ID nor an onchain transaction hash.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Polling
+
+Check the same submission while its status is `reserved`, `prepared`, or `submitted`. Stop on `confirmed` or `failed`. This method performs one read; it does not poll automatically. Do not call `execute()` again to check progress.
+
+## Errors
+
+`EXECUTION_SUBMISSION_NOT_FOUND` means the submission is missing or unavailable to your credential. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guide: [Track Transactions](/docs/sdk/guides/transactions/track-transactions).

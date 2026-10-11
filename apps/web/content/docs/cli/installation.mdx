@@ -1,0 +1,63 @@
+---
+title: Installation
+icon: Download04Icon
+description: Install Namera and prepare your terminal.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Requirements
+
+Use **Node.js 24.14+**. Browser login and imported session keys require an
+accessible OS keyring. On Linux, use a persistent Secret Service session for
+keys that must remain usable after reboot.
+
+## Install
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+<Tab value="npm">
+
+```sh
+npm install -g @namera-ai/cli
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```sh
+pnpm add -g @namera-ai/cli
+```
+
+</Tab>
+<Tab value="yarn">
+
+```sh
+yarn global add @namera-ai/cli
+```
+
+</Tab>
+<Tab value="bun">
+
+```sh
+bun add -g @namera-ai/cli
+```
+
+</Tab>
+</Tabs>
+
+The Yarn command requires Yarn Classic. With modern Yarn, use npm or pnpm for
+a global install. Bun can install the package; the executable still runs on Node.js.
+
+```sh
+namera --version
+namera --help
+```
+
+## Update
+
+```sh
+npm install -g @namera-ai/cli@latest
+```
+
+Updating does not remove saved profiles or imported keys. Continue to
+[Getting Started](/docs/cli/getting-started).

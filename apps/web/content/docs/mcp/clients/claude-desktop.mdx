@@ -1,0 +1,52 @@
+---
+title: Claude Desktop
+description: Configure Namera as a local server in the Claude desktop app.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+In Claude Desktop, open **Settings → Developer → Edit Config**. Add Namera to
+`claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "claude-desktop"]
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+Use the desktop app's local-server configuration, not a remote connector URL.
+See the [official local-server setup](https://modelcontextprotocol.io/docs/develop/connect-local-servers)
+for the configuration location on your OS.
+
+## Authorize
+
+```sh
+namera mcp login --profile claude-desktop
+namera mcp status --profile claude-desktop
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Fully quit and reopen Claude Desktop after saving the config. Check that Namera
+appears among the available local tools.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile claude-desktop
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

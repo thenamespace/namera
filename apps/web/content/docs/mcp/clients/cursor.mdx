@@ -1,0 +1,52 @@
+---
+title: Cursor
+description: Make Namera available to Cursor Agent through a local MCP connection.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+Add this to `~/.cursor/mcp.json` for your user, or `.cursor/mcp.json` in a project
+for project-specific configuration:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "cursor"]
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+Project configuration takes precedence when both files define `namera`.
+This is a local Cursor Agent setup, not a cloud-agent endpoint. See
+[Cursor's MCP configuration](https://cursor.com/help/customization/mcp).
+
+## Authorize
+
+```sh
+namera mcp login --profile cursor
+namera mcp status --profile cursor
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Open Cursor's MCP settings and check that Namera is enabled. Restart its server
+or reload Cursor if the new tools do not appear. Use Agent mode for tool calls.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile cursor
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

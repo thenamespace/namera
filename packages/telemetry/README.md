@@ -107,3 +107,39 @@ const requestMagicLink = Effect.gen(function* () {
 ```
 
 Effect logs emitted inside spans are exported with their trace and span IDs.
+
+## Product analytics
+
+The `analytics/browser` subpath owns PostHog initialization, identity, event
+filtering, web vitals, error capture, public heatmaps, and survey scheduling.
+It is separate from OTLP and does not export from the root Node entry point.
+Both browser apps use `VITE_POSTHOG_KEY`, the public project token, at build time.
+Collection requires a production build on a Namera production hostname. Local
+and preview builds do not send events. The managed proxy is `https://t.namera.ai`;
+the project UI is in the EU region.
+
+Session recording and generic autocapture are disabled. Typed events explicitly
+allow IDs and names, but exclude request bodies, credentials, form values, raw
+query strings, and exception messages. Error frames retain asset locations for
+source-map resolution. Browser opt-out, Do Not Track, and Global Privacy Control
+disable capture. Workspace context uses ordinary event properties; the paid
+Group Analytics add-on is not activated by the code.
+
+Run `pnpm --filter @namera-ai/telemetry test` for capture-boundary regressions.
+
+The `analytics/server` subpath provides `ProductAnalytics.layer`. It requires
+`NODE_ENV=production` and `POSTHOG_PROJECT_TOKEN`; otherwise it is a no-op.
+Capture is best-effort with a bounded queue and scoped shutdown flush. HTTP
+outcomes include retries and must not be interpreted as unique committed changes.
+
+Committed milestones are queued transactionally by `application`/`database` and
+delivered by the server analytics worker using `ProductAnalytics.deliver`. Delivery
+uses stable event UUIDs and timestamps, acknowledges provider acceptance, and keeps
+retryable failures outside business requests. `AnalyticsCollection` carries the
+server-owned request/worker eligibility; its default is disabled. The adapter does
+not query the database or infer user identity from unverified inputs.
+
+Production frontend CI also requires environment variables `VITE_POSTHOG_KEY`,
+`POSTHOG_CLI_PROJECT_ID`, and the secret `POSTHOG_CLI_API_KEY` for private source
+maps. The Docker build mounts that secret only during compilation. It is not a
+runtime environment variable and must never use the `VITE_` prefix.

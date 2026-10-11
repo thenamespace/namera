@@ -1,0 +1,80 @@
+---
+title: Batch Transactions
+description: Submit multiple calls in one execution.
+---
+
+Put multiple calls in the `calls` array to submit them together. A batch uses
+one account, one session key, and one network, with a single submission ID to track.
+
+## Before You Start
+
+Set up [authentication](/docs/sdk/authentication). Your session key must be
+installed on **Base Sepolia**, allow both recipients, and permit the combined
+**0.002 ETH** transfer. Fund the account with **0.002 test ETH**.
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+## Submit a Batch
+
+Replace the IDs and both recipients with your own. Calls are executed in array order.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const batch = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+    {
+      to: "0x4444444444444444444444444444444444444444",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!batch.success) throw new Error(batch.error.message);
+
+console.log(batch.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+Every call must pass the selected session key's permissions and policies.
+Native spending limits apply to the sum of all call values, not each transfer
+individually. A batch cannot combine authority from different session keys.
+
+## Combine Different Calls
+
+The array can contain native transfers and
+[encoded contract calls](/docs/sdk/guides/transactions/interact-with-contracts).
+For dependent calls, such as approval followed by a contract interaction, put
+the prerequisite first and ensure both calls are permitted.
+
+[Simulate the full batch](/docs/sdk/guides/transactions/simulate-transactions)
+before submitting it, then
+[track its submission](/docs/sdk/guides/transactions/track-transactions).

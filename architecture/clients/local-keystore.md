@@ -58,7 +58,27 @@ collection and third-party signing libraries prevent guaranteed memory erasure.
 No private key, passphrase, decrypted JSON or raw schema/provider exception may
 be sent to telemetry, the Namera API, shell arguments, or command history.
 
-## CLI storage and resolution
+## Shared Node storage and resolution
+
+`packages/sdk/src/node` owns encrypted storage, the OS-keyring adapter, platform
+configuration paths, and signer resolution. CLI and local MCP reuse the SDK's
+`@namera-ai/sdk/node` exports, retaining the existing filenames, encryption format,
+and `namera-session-keystore` credential service. No migration or re-import is
+needed for existing accessible imports.
+
+The SDK root export selects `index.node` on Node and the universal `index` in
+browser bundlers. Only the Node client supplies an automatic resolver; native
+keyring code is dynamically imported when a local challenge needs a signer.
+Read and managed operations never open storage. Explicit resolvers win;
+`localSigning: false` disables the default. `maxGasCostWei` is passed to the
+automatic resolver as the caller's self-funded gas ceiling. Decrypted material
+is not cached between operations, and existing independent validation remains
+mandatory before signatures are submitted.
+
+The keyring adapter preserves the CLI's backend selection. Linux Secret Service
+is preferred, with a memory-only keyutils fallback that does not survive reboot.
+Persistent Linux installations need Secret Service. Browser and headless callers
+without this storage must supply a custom resolver; there is no plaintext fallback.
 
 `session-key import` decodes the encrypted export, prompts for a hidden
 passphrase, and checks its exact API origin without requiring login. Expected
@@ -98,3 +118,6 @@ Focused SDK and CLI tests cover encrypted round trips, tampering, origin and
 signer mismatches, duplicate import preservation, private file modes, and
 unavailable keyring failures. OS-keyring integration is opt-in; see
 [testing](../engineering/testing.md).
+SDK Node integration tests use real encrypted files and signing with a substituted
+keyring, covering automatic execution/signing, missing/locked storage, origin and
+wallet isolation, managed bypass, custom overrides, and disabled/browser behavior.

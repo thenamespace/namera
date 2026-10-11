@@ -1,0 +1,78 @@
+---
+title: Transfer Assets
+description: Send native tokens or ERC-20 tokens from your account.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+## Transfer ETH
+
+Fund the account with test ETH. Permit the recipient and a 0.001 ETH transfer
+in the session's network permissions.
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x \
+  --sponsor true
+```
+
+`--value 1000000000000000` is **0.001 ETH in wei**. `--data 0x` sends no
+contract calldata.
+
+<include>../../../../snippets/cli/output/execute.md</include>
+
+## Transfer an ERC-20 Token
+
+Permit the token contract, recipient, and amount in the session key. Encode the
+token's `transfer` call with viem; install it in your working project first:
+
+```sh
+npm install viem
+```
+
+Save this as `transfer.mjs`. Replace the recipient, token amount, and decimals
+with values verified for your token:
+
+```js title="transfer.mjs"
+import { encodeFunctionData, parseAbi, parseUnits } from "viem";
+
+console.log(
+  encodeFunctionData({
+    abi: parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]),
+    functionName: "transfer",
+    args: ["0x2222222222222222222222222222222222222222", parseUnits("1", 6)],
+  }),
+);
+```
+
+Use the token contract as the target, not the recipient. The token amount is
+encoded in calldata; `--value 0` attaches no ETH:
+
+```sh
+calldata=$(node transfer.mjs)
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to <token-contract-address> \
+  --value 0 \
+  --data "$calldata" \
+  --sponsor true
+```
+
+The command returns the same submission shape shown above. Simulate unfamiliar
+token calls before executing them.
+
+Save the submission ID and [track it](/docs/cli/guides/transactions/track-transactions).
+Do not repeat the execution to check progress.
+
+<include>../../../../snippets/cli/output-note.md</include>

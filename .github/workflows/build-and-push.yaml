@@ -116,9 +116,30 @@ jobs:
           DOTENV: ${{ inputs.dotenv }}
           DOCKERFILE: ${{ inputs.dockerfile }}
           IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: ${{ vars.POSTHOG_CLI_PROJECT_ID }}
+          POSTHOG_PUBLIC_KEY: ${{ vars.VITE_POSTHOG_KEY }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           IMAGE="$REGISTRY/$REPOSITORY/$IMAGE_NAME:$IMAGE_TAG"
-          docker build -f "$DOCKERFILE" --build-arg DOTENV="$DOTENV" -t "$IMAGE" .
+          if [[ "$DOCKERFILE" == apps/web/Dockerfile || "$DOCKERFILE" == apps/dashboard/Dockerfile ]]; then
+            if [[ "$DEPLOY_ENVIRONMENT" == prod ]]; then
+              if [[ -z "$POSTHOG_PUBLIC_KEY" || -z "$POSTHOG_CLI_API_KEY" || -z "$POSTHOG_CLI_PROJECT_ID" ]]; then
+                echo "::error::Configure PostHog production variables and source-map secret before building."
+                exit 1
+              fi
+              DOTENV+=$'\n'"VITE_POSTHOG_KEY=$POSTHOG_PUBLIC_KEY"
+            else
+              DOTENV+=$'\n'"VITE_POSTHOG_KEY="
+              POSTHOG_CLI_API_KEY=""
+            fi
+          else
+            POSTHOG_CLI_API_KEY=""
+          fi
+          docker build -f "$DOCKERFILE" --build-arg DOTENV="$DOTENV" \
+            --build-arg POSTHOG_CLI_PROJECT_ID="$POSTHOG_CLI_PROJECT_ID" \
+            --build-arg POSTHOG_RELEASE_VERSION="$GITHUB_SHA" \
+            --secret id=posthog_api_key,env=POSTHOG_CLI_API_KEY -t "$IMAGE" .
           docker push "$IMAGE"
 
       - name: Repository Dispatch

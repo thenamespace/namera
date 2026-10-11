@@ -15,6 +15,10 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
+    "analytics/browser": "src/analytics/browser.ts",
+    "analytics/contract": "src/analytics/contract.ts",
+    "analytics/server": "src/analytics/server.ts",
+    "analytics/collection": "src/analytics/collection.ts",
   },
   publint: "ci-only",
   unbundle: true,

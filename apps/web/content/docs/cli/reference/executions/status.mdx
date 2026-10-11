@@ -1,0 +1,58 @@
+---
+title: namera execution status
+description: Read the state of an existing transaction submission.
+---
+
+Read the state of an existing transaction submission.
+
+## Usage
+
+```sh
+namera execution status 0199dfe1-0000-7000-8000-000000000003
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/status.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/status-json.md</include>
+
+## Arguments
+
+### submission-id
+
+- **Type:** `string` (UUID)
+- **Required:** yes
+
+Use the `submissionId` returned by execution, not a transaction hash, UserOp hash,
+or confirmed execution ID. The command checks once; repeat the read to poll.
+
+## Options
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Statuses
+
+| JSON status | Human label          | Meaning                                  |
+| ----------- | -------------------- | ---------------------------------------- |
+| `reserved`  | Awaiting signature   | Signing has not completed                |
+| `prepared`  | Queued               | Signed and queued for broadcast          |
+| `submitted` | Pending confirmation | Observed by the bundler                  |
+| `confirmed` | Confirmed            | Successful execution record is available |
+| `failed`    | Failed               | Submission did not complete successfully |
+
+Confirmed JSON includes `execution`; failed JSON has no fabricated reason or
+hash. See [Get Submission Status](/docs/sdk/reference/executions/get-submission-status)
+for complete response variants. Human confirmed output makes an additional
+execution-details read to show account and actor names.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

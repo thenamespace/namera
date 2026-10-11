@@ -1,0 +1,223 @@
+---
+title: List Session Keys
+description: Read authorized session keys, optionally filtered by account.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.sessionKeys.list(options?)` lists session keys available to your credential.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.list({ walletId: "0199dfe1-0000-7000-8000-000000000001" });
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+An array of complete records. An empty array means no matching resources are available. The method is not paginated.
+
+- **`id`** (`string`): Session-key ID.
+- **`organizationId`** (`string`): Owning organization.
+- **`walletId`** (`string`): Account ID.
+- **`signingKeyId`** (`string`): Signing-key identity.
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`metadata`** (`object`): version and name, with optional logo and description.
+- **`policies`** (`readonly Policy[]`): Additional API policies.
+- **`policyHash`** (`string`): Stored policy hash.
+- **`status`** (`"pending" | "active" | "revoking" | "revoked"`): Session lifecycle status.
+- **`revokedAt`** (`DateTime.Utc | null`): Revocation time, if revoked.
+- **`createdAt`** (`DateTime.Utc`): Creation time.
+- **`signer`** (`object`): Public signer identity and custody. No private key.
+- **`wallet`** (`WalletResponse`): Complete account record.
+- **`creator`** (`object`): Creating organizationMember, user, and organizationRole.
+- **`installations`** (`readonly Installation[]`): Each has id, chainId, status, authorization, installTransactionHash, and uninstallTransactionHash. Authorization includes permissions, signature authority, and validity timestamps.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+[
+  {
+    "id": "0199dfe1-0000-7000-8000-000000000002",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000006",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Example session",
+      "logo": {
+        "type": "emoji",
+        "value": "🔑"
+      },
+      "description": "Send 0.001 test ETH on Base Sepolia"
+    },
+    "policies": [],
+    "policyHash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "active",
+    "revokedAt": null,
+    "createdAt": "2026-10-11T09:05:00.000Z",
+    "signer": {
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1",
+      "publicKey": "0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000000001",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+      "metadata": {
+        "version": 1,
+        "name": "Example account",
+        "logo": {
+          "type": "emoji",
+          "value": "👛"
+        },
+        "description": "SDK test account"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x1111111111111111111111111111111111111111",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+        "custody": "namera-managed",
+        "provider": "1claw",
+        "algorithm": "secp256k1"
+      },
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "ecdsa_secp256k1",
+        "entryPointVersion": "0.7",
+        "accountMode": "7702",
+        "delegationVersion": "v1.1.0"
+      },
+      "createdAt": "2026-10-11T09:00:00.000Z",
+      "updatedAt": "2026-10-11T09:00:00.000Z"
+    },
+    "creator": {
+      "organizationMember": {
+        "id": "0199dfe1-0000-7000-8000-000000000007",
+        "userId": "0199dfe1-0000-7000-8000-000000000008",
+        "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+        "organizationRoleId": "0199dfe1-0000-7000-8000-000000000009",
+        "joinedAt": "2026-10-11T08:00:00.000Z"
+      },
+      "user": {
+        "id": "0199dfe1-0000-7000-8000-000000000008",
+        "email": "developer@example.com",
+        "emailVerified": true,
+        "metadata": {
+          "version": 1,
+          "name": "Example developer",
+          "image": {
+            "type": "emoji",
+            "value": "👤"
+          }
+        },
+        "lastLoginAt": "2026-10-11T08:55:00.000Z"
+      },
+      "organizationRole": {
+        "id": "0199dfe1-0000-7000-8000-000000000009",
+        "key": "developer",
+        "metadata": {
+          "version": 1,
+          "name": "Developer",
+          "logo": {
+            "type": "emoji",
+            "value": "💻"
+          },
+          "description": "Manage test accounts and session keys"
+        },
+        "type": "custom",
+        "permissions": [
+          "wallet:read",
+          "wallet:create",
+          "session-key:read",
+          "session-key:create",
+          "api-key:create"
+        ],
+        "systemRoleId": null
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000000010",
+        "chainId": "eip155:84532",
+        "status": "installed",
+        "authorization": {
+          "version": 1,
+          "entityId": 1,
+          "signerAddress": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+          "permissions": [
+            {
+              "type": "contract-access",
+              "address": "0x2222222222222222222222222222222222222222"
+            },
+            {
+              "type": "native-token-transfer",
+              "allowance": "1000000000000000"
+            }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1791709200,
+          "validUntil": 1794387600
+        },
+        "installTransactionHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "uninstallTransactionHash": null
+      }
+    ]
+  }
+]
+```
+
+</div>
+
+## Parameters
+
+The optional `options` object defaults to `{}`.
+
+### walletId
+
+- **Type:** `string`
+- **Optional**
+
+Filters keys to one account UUID. Omit options or pass `{}` to list all keys available to your credential across accounts. This does not broaden its grants.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const sessions = await namera.sessionKeys.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+});
+if (!sessions.success) throw new Error(sessions.error.message);
+
+console.log(sessions.data);
+```
+
+## Errors
+
+A filtered request can return `WALLET_NOT_FOUND`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.

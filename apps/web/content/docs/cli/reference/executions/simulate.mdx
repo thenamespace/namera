@@ -1,0 +1,57 @@
+---
+title: namera execution simulate
+description: Preview calls and check session-key policies without submitting a transaction.
+---
+
+Preview calls and check session-key policies without submitting a transaction.
+
+## Usage
+
+```sh
+namera execution simulate \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/simulate.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/simulate-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/scope-options.md</include>
+
+<include>../../../../snippets/cli/session-option.md</include>
+
+<include>../../../../snippets/cli/transaction-options.md</include>
+
+<include>../../../../snippets/cli/params-option.md</include>
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Interpreting the Preview
+
+Check both `allowed` and `callsSucceeded`. A returned denial is a successful
+simulation response, not necessarily a nonzero process exit. Denied responses
+include policy denials; inspect JSON for details. Simulation does not reserve
+permission, guarantee later execution, or submit calls.
+
+This command has no `--sponsor` or `--max-gas-cost-wei` flag.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

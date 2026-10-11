@@ -1,0 +1,71 @@
+---
+title: namera login
+description: Authorize a terminal connection through your browser.
+---
+
+Authorize a terminal connection through your browser.
+
+## Usage
+
+```sh
+namera login
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/login.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+Before approval, the verification URL and code are printed to stderr. The
+successful JSON result contains `profile`, `status: "connected"`, and the full
+CLI `actor` record. No access or refresh token is printed.
+
+<include>../../../../snippets/cli/output/login-json.md</include>
+
+## Options
+
+### --profile
+
+- **Type:** `string`
+- **Default:** `personal`
+
+Save the connection under this name. Pass it to later commands with `--profile`.
+Logging in again replaces that profile's saved connection.
+
+### --host
+
+- **Type:** absolute API URL
+- **Default:** `https://api.namera.ai`
+
+Connect to this API origin. Login uses this flag, not `NAMERA_API_URL`.
+For local development, pass `--host http://localhost:8080`.
+
+### --device-name
+
+- **Type:** `string`
+- **Default:** `Namera CLI on <platform>`
+
+Name shown during consent and in CLI execution history. Choose a recognizable
+device name without secrets:
+
+```sh
+namera login --profile work --device-name "Work laptop"
+```
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Browser Approval
+
+Approve access only to the active session keys this connection needs. If the
+browser cannot open, visit the printed URL and enter the code. Login waits for
+approval and expires if you do not complete it in time.
+
+Credentials are saved in the OS keyring. Imported signing keys are separate
+from the login connection. Use [Authentication](/docs/cli/authentication) for
+API-key automation and sign-out behavior.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

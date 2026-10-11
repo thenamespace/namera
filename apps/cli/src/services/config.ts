@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+
+import { nameraConfigDirectory } from "@namera-ai/sdk/node";
 
 import { cliFailure } from "./error-feedback.js";
 
@@ -16,18 +17,9 @@ export interface CliConfig {
   readonly profiles: Readonly<Record<string, CliProfile>>;
 }
 
-const configDirectory = () => {
-  if (process.env.XDG_CONFIG_HOME) return join(process.env.XDG_CONFIG_HOME, "namera");
-  if (process.platform === "darwin")
-    return join(homedir(), "Library", "Application Support", "namera");
-  if (process.platform === "win32") {
-    return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "Namera");
-  }
-  return join(homedir(), ".config", "namera");
-};
-
-export const cliConfigPath = join(configDirectory(), "config.json");
-export const cliLockPath = (profile: string) => join(configDirectory(), `${profile}.refresh.lock`);
+export const cliConfigPath = join(nameraConfigDirectory(), "config.json");
+export const cliLockPath = (profile: string) =>
+  join(nameraConfigDirectory(), `${profile}.refresh.lock`);
 
 export const readCliConfig = async (): Promise<CliConfig> => {
   try {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Icon, PlusSignIcon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -43,6 +44,8 @@ export const Accordion = ({
                 aria-expanded={open}
                 aria-controls={panelId}
                 onClick={() => {
+                  if (!open)
+                    captureAnalytics("faq_opened", { section: idPrefix, result_rank: index + 1 });
                   setOpenIndex(open ? null : index);
                 }}
                 className={cn(

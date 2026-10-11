@@ -1,0 +1,63 @@
+---
+title: OpenClaw
+description: Connect Namera to agents running through your OpenClaw Gateway.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+For OpenClaw, that machine is the **Gateway host**, which may be different from
+the device where you send messages. Its OS user needs access to Namera's keyring
+and any imported keys. A container without a usable keyring is not sufficient.
+
+## Add Namera
+
+In the Control UI, open **Settings → MCP → Add server**. Enter:
+
+| Field     | Value                                   |
+| --------- | --------------------------------------- |
+| Name      | `namera`                                |
+| Transport | Stdio                                   |
+| Command   | `namera`                                |
+| Arguments | `mcp`, `serve`, `--profile`, `openclaw` |
+
+Save the server. If the form accepts one command line, enter
+`namera mcp serve --profile openclaw`. Server definitions live under `mcp.servers`;
+do not paste another client's `mcpServers` wrapper into OpenClaw's config.
+See [OpenClaw's MCP setup](https://docs.openclaw.ai/tools/mcp).
+
+## Authorize
+
+On the Gateway host, as the user that runs it:
+
+```sh
+namera mcp login --profile openclaw
+namera mcp status --profile openclaw
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+Browser approval must reach the login process's loopback callback. If the Gateway
+runs on a remote host without browser access, resolve that environment requirement
+before using Namera; authorizing only on your laptop will not connect it.
+
+## Use Namera
+
+Check server discovery on the Gateway host:
+
+```sh
+openclaw mcp doctor namera --probe
+```
+
+Make Namera available to the intended agent and session through OpenClaw's tool
+policy. Connecting a server does not bypass those controls. Start with a private
+conversation, not a shared channel whose participants should not control the account.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile openclaw
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

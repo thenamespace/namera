@@ -1,0 +1,52 @@
+---
+title: namera execution list
+description: Read confirmed transaction history.
+---
+
+Read confirmed transaction history.
+
+## Usage
+
+```sh
+namera execution list
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/execution-list.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/execution-list-json.md</include>
+
+## Options
+
+### --cursor
+
+- **Type:** `string` (execution ID)
+- **Default:** first page
+
+Use the previous JSON response's `nextCursor` to continue. Stop when it is
+`null`. Keep the same credential and profile between requests.
+
+```sh
+namera --output json execution list --cursor <next-cursor>
+```
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+The CLI currently accepts only a cursor, not wallet, session-key, or page-size
+filters. Human output loads execution details to show readable names. JSON returns
+the original `items` and `nextCursor` without those extra reads.
+
+History contains confirmed executions only. An empty list does not establish
+that an interrupted submission failed; use its submission ID to check status.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

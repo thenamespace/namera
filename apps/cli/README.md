@@ -74,6 +74,8 @@ namera session-key import <encrypted-export> --host https://api.namera.ai
 The export passphrase is entered privately. The CLI re-encrypts the key with an
 independent OS-keyring secret and stores an encrypted local file. It never falls
 back to plaintext storage. Keep your encrypted backup and passphrase safe.
+The Node SDK automatically uses these same imported keys when running as the
+same OS user against the same API origin; no `resolveSessionSigner` is needed.
 Importing does not install the key onchain or grant a client access to it.
 Return to the dashboard and approve at least one network, then run `namera login`
 and select the now-active key. Other networks can be approved later.
@@ -238,8 +240,10 @@ CLI logout removes this device's saved connection, not its imported signing keys
 or server authorization. Revoke the authorization in the dashboard to end its
 server-side access. MCP logout revokes its separate MCP authorization. macOS
 Keychain integration is tested; Windows/Linux still need platform verification.
-Headless Linux needs an accessible Secret Service/keyring. There is no plaintext
-or in-memory fallback.
+Headless Linux needs an accessible keyring. The keyring library prefers Secret
+Service but can fall back to memory-only keyutils, whose unlock secrets do not
+survive reboot. Use persistent Secret Service for durable imports. There is no
+plaintext fallback.
 
 See [local MCP](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-mcp.md)
 and [key storage](https://github.com/thenamespace/namera/blob/main/architecture/clients/local-keystore.md).

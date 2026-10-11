@@ -31,8 +31,21 @@
   },
   "exports": {
     ".": {
-      "namera-source": "./src/index.ts",
+      "namera-source": {
+        "node": "./src/index.node.ts",
+        "default": "./src/index.ts"
+      },
+      "node": "./dist/index.node.js",
       "default": "./dist/index.js"
+    },
+    "./node": {
+      "browser": null,
+      "namera-source": {
+        "node": "./src/node/index.ts",
+        "default": "./src/node/index.ts"
+      },
+      "node": "./dist/node.js",
+      "default": "./dist/node.js"
     },
     "./package.json": "./package.json"
   },
@@ -41,7 +54,15 @@
       "#/*": "./dist/*.js"
     },
     "exports": {
-      ".": "./dist/index.js",
+      ".": {
+        "node": "./dist/index.node.js",
+        "default": "./dist/index.js"
+      },
+      "./node": {
+        "browser": null,
+        "node": "./dist/node.js",
+        "default": "./dist/node.js"
+      },
       "./package.json": "./package.json"
     },
     "access": "public",
@@ -63,6 +84,7 @@
     "@alchemy/smart-accounts": "catalog:",
     "@namera-ai/api": "workspace:*",
     "@namera-ai/protocol": "workspace:*",
+    "@napi-rs/keyring": "catalog:",
     "effect": "catalog:",
     "viem": "catalog:"
   },

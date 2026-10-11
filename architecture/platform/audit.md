@@ -38,3 +38,23 @@ have no acting member.
 
 Events exclude credentials, raw signed content where not required, signatures,
 arbitrary provider errors, and complete transaction call payloads.
+
+## Product analytics projection
+
+The Audit service also enqueues explicitly selected product milestones in
+`jobs.analytics_jobs` inside the same transaction. This is a projection, not an
+export of audit data: only event name, verified actor identity, workspace/resource
+IDs, chain, namespace, and bounded lifecycle categories are selected. Credentials,
+addresses, signed content, device names, IPs, and user agents are not exported.
+
+HTTP eligibility is set at the server boundary (production token present, no
+DNT/GPC/analytics opt-out, no internal route). Background execution and session
+installation outcomes require a durable eligibility key from the opted-in prepare
+operation; pre-existing and opted-out operations are not backfilled. The actor is
+resolved from the persisted membership, not request parameters. A workspace's first
+confirmed execution or completed signature queues `workspace_activated` once.
+
+Audit and outbox insertion roll back with the business transaction. The separate
+server worker performs provider I/O after commit. Outbox insertion errors remain
+database failures; provider outages never fail the business request. Waitlist joins
+enqueue directly in their creation transaction and ignore duplicate submissions.

@@ -26,7 +26,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 ARG DOTENV=""
 RUN printf '%s\n' "${DOTENV:-VITE_API_URL=https://api.namera.ai}" > apps/dashboard/.env.production
 
-RUN pnpm --filter @namera-ai/dashboard build
+ARG POSTHOG_CLI_PROJECT_ID=""
+ARG POSTHOG_RELEASE_VERSION=""
+RUN pnpm rebuild @posthog/cli
+RUN --mount=type=secret,id=posthog_api_key \
+    export POSTHOG_CLI_API_KEY="$(cat /run/secrets/posthog_api_key 2>/dev/null || true)"; \
+    pnpm --filter @namera-ai/dashboard build
+RUN test -z "$(find apps/dashboard/dist -name '*.map' -print -quit)"
 RUN node apps/dashboard/tooling/nginx-headers.mjs
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runner

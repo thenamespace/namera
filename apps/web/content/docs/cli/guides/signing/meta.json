@@ -1,0 +1,4 @@
+{
+  "title": "Signing",
+  "pages": ["sign-messages", "sign-typed-data", "verify-signatures"]
+}

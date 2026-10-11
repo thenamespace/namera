@@ -1,0 +1,43 @@
+---
+title: Claude Code
+description: Add Namera to Claude Code using a user-scoped stdio connection.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+With Claude Code installed:
+
+```sh
+claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude-code
+```
+
+User scope makes the registration available across your projects. To limit it to
+the current project instead, use `--scope local`. The `--` separates Claude's
+options from Namera's launch command. See
+[Claude Code's MCP documentation](https://code.claude.com/docs/en/mcp).
+
+## Authorize
+
+```sh
+namera mcp login --profile claude-code
+namera mcp status --profile claude-code
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Start Claude Code and run `/mcp` to check the connection. If you added the server
+during an existing session, restart that session before testing.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile claude-code
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

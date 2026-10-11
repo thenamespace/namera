@@ -1,0 +1,113 @@
+---
+title: Getting Started
+icon: Rocket01Icon
+description: Create an account, give a session key limited access, and connect your first client.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Set up an account and a session key, then connect an agent, terminal, or application.
+This walkthrough starts on **Base Sepolia**, a test network, and checks access
+before sending any transaction.
+
+## Open Your Workspace
+
+Sign in to the [Namera dashboard](https://dashboard.namera.ai) and check the
+workspace selected in the sidebar. Your accounts and session keys belong to
+that workspace.
+
+You need permission to create accounts and session keys and authorize a client.
+If those actions are unavailable, ask your workspace owner or admin for access.
+
+## Create an Account
+
+Open **Accounts** and select **Create account**. Enter a name you can recognize,
+such as `Test account`, and choose an available ownership option:
+
+- **User-owned passkey:** complete the passkey prompt to create the account's
+  owner credential.
+- **1Claw Managed:** create an account whose owner signing is managed through 1Claw.
+
+After creation, open the account and confirm its name and address. You can also
+use an existing account in this workspace.
+
+<Callout type="warn" title="Keep your owner passkey available">
+  If you choose a passkey-owned account, keep access to that passkey. Your Namera login cannot
+  restore it, and you need it to approve onchain permission changes.
+</Callout>
+
+## Create a Session Key
+
+Open **Session Keys** and select **Create session key**. Choose your account and
+give the key a task-specific name, such as `Test transfers`.
+
+For a small test transfer, configure:
+
+- **Network:** Base Sepolia.
+- **Recipient:** a separate address you control, permitted as a call target.
+- **Native spending limit:** 0.001 ETH.
+- **Expiry:** a future date that covers your test.
+
+Leave signature authority and unrestricted account access disabled for this
+transfer-only key. Review the final permission summary before creating it.
+See [Permissions and Policies](/docs/concepts/permissions-and-policies) if you
+are unsure what a restriction controls.
+
+If creation provides an encrypted key export, complete the displayed encryption
+and CLI import instructions on the machine that will run your client. Save the
+encrypted backup and its passphrase securely before leaving the page. Never paste
+the private key or passphrase into an agent conversation.
+
+## Approve Network Access
+
+In **Enable networks**, review the Base Sepolia installation and select
+**Approve**. Complete the owner approval required by your account.
+
+Wait for the installation to be confirmed. A registered key is initially pending;
+it is not ready simply because creation succeeded. Before continuing, confirm
+that the key is active and Base Sepolia is enabled.
+
+If you skipped network approval during creation, return to the session key's
+overview to finish it. Approval on another network does not enable Base Sepolia.
+
+## Connect Your Client
+
+Choose how you want to use the account:
+
+| Client                 | Next step                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| AI agent               | Follow the [MCP guide for your client](/docs/mcp/clients), then approve its browser connection.                |
+| Terminal               | Follow [CLI Getting Started](/docs/cli/getting-started) and sign in with `namera login`.                       |
+| TypeScript application | Follow [SDK Getting Started](/docs/sdk/getting-started) and create an API key with access to this session key. |
+
+Grant the client access only to the session key you prepared. A dashboard login
+does not automatically authorize an API key, CLI installation, or MCP connection.
+
+## Check Access First
+
+Use your client to list accounts and session keys. For an agent, ask:
+
+> List my Namera accounts and inspect the Test transfers session key. Confirm
+> its Base Sepolia access, recipient permission, spending limit, and expiry.
+> Do not submit transactions or sign anything.
+
+Confirm that the returned account and permissions match what you configured.
+An empty list usually means the connection has no active grant to the key;
+check the authorized keys and installation status in the dashboard.
+
+You do not need to fund the account to perform these read-only checks.
+
+## Try a Test Transaction
+
+When you are ready to transfer, fund the account address with **0.001 Base Sepolia
+test ETH**. Use sponsored gas if available; self-funded gas requires additional
+test ETH and the client's gas-limit configuration.
+
+Continue with the [SDK](/docs/sdk/getting-started) or
+[CLI](/docs/cli/getting-started) walkthrough, or ask your connected agent to simulate
+the transfer and explain the result before you approve execution.
+
+Check the resulting submission until it is confirmed or failed. Do not repeat
+the transfer just to check progress. After testing, revoke access you no longer
+need; [session-key revocation](/docs/concepts/session-keys#ending-access) also
+requires removal of any installed onchain permissions.

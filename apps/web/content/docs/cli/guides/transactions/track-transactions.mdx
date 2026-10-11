@@ -1,0 +1,46 @@
+---
+title: Track Transactions
+description: Follow an existing submission and inspect confirmed history.
+---
+
+## Check a Submission
+
+Use the ID returned by `execution execute`, not a transaction or UserOp hash:
+
+```sh
+namera execution status 0199dfe1-0000-7000-8000-000000000003
+```
+
+<include>../../../../snippets/cli/output/status.md</include>
+
+The command checks once. Repeat this read until it reaches Confirmed or Failed.
+Queued and Pending confirmation are not terminal states.
+
+## Save Machine-Readable Status
+
+```sh
+namera --output json execution status 0199dfe1-0000-7000-8000-000000000003
+```
+
+<include>../../../../snippets/cli/output/status-json.md</include>
+
+A confirmed response includes the full execution record. A failed response
+contains its submission ID and status, without an invented failure reason.
+See [execution status](/docs/cli/reference/executions/status) for the state list.
+
+## Read Confirmed History
+
+```sh
+namera execution list
+```
+
+<include>../../../../snippets/cli/output/execution-list.md</include>
+
+Use JSON to obtain `items` and `nextCursor`. When the cursor is not `null`,
+pass it to `--cursor` on the next read.
+
+History contains confirmed executions only. It is not a list of pending
+submissions. If a result was lost, follow
+[Handle Retries and Recovery](/docs/cli/guides/transactions/handle-retries-and-recovery).
+
+<include>../../../../snippets/cli/output-note.md</include>

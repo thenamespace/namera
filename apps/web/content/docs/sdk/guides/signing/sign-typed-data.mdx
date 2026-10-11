@@ -1,0 +1,101 @@
+---
+title: Sign Typed Data
+description: Sign structured EIP-712 data with your account.
+---
+
+Use `namera.sign()` with `type: "typed-data"` for EIP-712 payloads. The domain,
+types, primary type, and message together define what is signed.
+
+## Before You Start
+
+Use an [authenticated client](/docs/sdk/authentication) and a session key
+installed on **Base Sepolia** with signature authority. Its API signature
+policy must allow `typed-data` and match any configured domain rules.
+
+```sh
+npm install @namera-ai/sdk
+```
+
+## Define the Payload
+
+This example signs a `Greeting` for your application. Replace the verifying
+contract with your application's contract on Base Sepolia, and use the domain
+and types expected by that application.
+
+```ts title="index.ts"
+import { NameraClient, type EvmTypedData } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const typedData = {
+  domain: {
+    name: "Namera Example",
+    version: "1",
+    chainId: 84532,
+    verifyingContract: "0x3333333333333333333333333333333333333333",
+  },
+  types: {
+    Greeting: [{ name: "contents", type: "string" }],
+  },
+  primaryType: "Greeting",
+  message: { contents: "Hello from Namera" },
+} satisfies EvmTypedData;
+```
+
+The domain uses the numeric chain ID `84532`. The SDK request uses the network
+identifier `eip155:84532`.
+
+## Sign the Payload
+
+Replace the account and session-key IDs with your own:
+
+```ts title="index.ts"
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "typed-data",
+  typedData,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "signature": "0x0000000100222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222221b",
+  "type": "typed-data"
+}
+```
+
+</div>
+
+The signature above is illustrative. Keep the actual signature and the exact
+payload you signed for [verification](/docs/sdk/guides/signing/verify-signatures).
+
+## Use Integer Values
+
+Typed-data messages must be JSON-compatible. For large integer fields such as
+`uint256`, use decimal strings rather than JavaScript `bigint` values or
+numbers that lose precision. This differs from transaction `value`, which
+accepts a `bigint`.
+
+## Match Your Signature Policy
+
+When your session has typed-data rules, one rule must match the chain,
+verifying contract, primary type, and any configured domain name and version.
+Domain names and versions are case-sensitive.
+
+These rules restrict the payload's domain and type, not the amounts inside a
+permit or other authorization. Review the actual message before signing.
+
+Signing returns a signature; it does not submit the payload to the target contract.

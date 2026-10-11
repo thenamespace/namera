@@ -1,0 +1,55 @@
+---
+title: Kiro
+description: Connect the Kiro IDE to Namera through a local MCP server.
+---
+
+<include>../../../snippets/mcp/before-connect.md</include>
+
+## Add Namera
+
+In the Kiro IDE command palette, run **Kiro: Open user MCP config (JSON)** for all
+workspaces, or **Kiro: Open workspace MCP config (JSON)** for the current workspace.
+Add this to the file it opens:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "kiro"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
+
+<include>../../../snippets/mcp/config-note.md</include>
+
+IDE configs live at `~/.kiro/settings/mcp.json` or `.kiro/settings/mcp.json`.
+Save the file to reconnect servers. Keep `autoApprove` empty so this entry does
+not automatically approve tools. See [Kiro's MCP configuration](https://kiro.dev/docs/mcp/configuration/).
+
+## Authorize
+
+```sh
+namera mcp login --profile kiro
+namera mcp status --profile kiro
+```
+
+<include>../../../snippets/mcp/authorize.md</include>
+
+## Use Namera
+
+Enable MCP support in Kiro's settings if it is disabled. Check the Namera server
+in the MCP panel, then open a new chat with the agent.
+
+<include>../../../snippets/mcp/first-request.md</include>
+
+## Disconnect
+
+```sh
+namera mcp logout --profile kiro
+```
+
+<include>../../../snippets/mcp/disconnect.md</include>

@@ -1,0 +1,77 @@
+---
+title: Accounts and Session Keys
+description: Find an account and choose the session key your application will use.
+---
+
+An **account** holds assets. A **session key** lets your application act on that
+account within its permissions. Create both in the
+[Namera dashboard](https://dashboard.namera.ai), then use the SDK to find them.
+
+## List Accounts
+
+Use a client configured with your [API key](/docs/sdk/authentication):
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+
+const wallets = await namera.wallets.list();
+if (!wallets.success) throw new Error(wallets.error.message);
+
+console.log(wallets.data);
+```
+
+Each account includes its `id`, `address`, and `metadata`. Use the account's
+`id` as `walletId` in SDK calls, not its address.
+
+## Find Session Keys for an Account
+
+Replace the example ID with an account ID from the list:
+
+```ts title="index.ts"
+const walletId = "0199dfe1-0000-7000-8000-000000000001";
+const sessions = await namera.sessionKeys.list({ walletId });
+
+if (!sessions.success) throw new Error(sessions.error.message);
+
+console.log(sessions.data);
+```
+
+Omit `walletId` to list all session keys available to your credential.
+Each key includes its `walletId`, `policies`, and network `installations`.
+
+## Use a Specific Session Key
+
+Once you have chosen a key, keep its ID in your application's configuration.
+Retrieve it directly instead of relying on list order:
+
+```ts title="index.ts"
+const sessionKeyId = "0199dfe1-0000-7000-8000-000000000002";
+const result = await namera.sessionKeys.get(sessionKeyId);
+
+if (!result.success) throw new Error(result.error.message);
+
+const session = result.data;
+console.log(result.data);
+```
+
+Use `session.walletId` and `session.id` together when executing or signing.
+The key must be active, installed on the target network, and permitted to
+perform the operation. See [Permissions](/docs/sdk/permissions).
+
+## Get an Account by ID
+
+```ts title="index.ts"
+const wallet = await namera.wallets.get(session.walletId);
+if (!wallet.success) throw new Error(wallet.error.message);
+
+console.log(wallet.data);
+```
+
+An empty list means no resources are available to this credential. Check the
+session-key grants and whether the key is still active in the dashboard.
+
+For a complete example using these resources, see [Getting Started](/docs/sdk/getting-started).

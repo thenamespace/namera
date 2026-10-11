@@ -1,0 +1,53 @@
+---
+title: Sign Messages
+description: Create an account signature for a UTF-8 message.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+The key must allow message signing on that network. Transfer-only permissions
+are not sufficient.
+
+## Sign the Message
+
+```sh
+namera sign \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --type message \
+  --message 'Hello from Namera'
+```
+
+<include>../../../../snippets/cli/output/sign.md</include>
+
+The command does not broadcast a transaction. The signature is for the smart
+account, not a plain externally owned account signature.
+
+## Save the Signature
+
+Use `--output json` when passing the signature to another application:
+
+```sh
+namera --output json sign \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --type message \
+  --message 'Hello from Namera'
+```
+
+This is another signing operation, not a read of the previous result. Choose the
+output mode before signing rather than rerunning just to change formatting.
+
+<include>../../../../snippets/cli/output/sign-json.md</include>
+
+Keep the original message, account, and network with the signature. Use
+[Verify Signatures](/docs/cli/guides/signing/verify-signatures) to check it.
+The fixture signature shown here is illustrative, not a signature to reuse.
+
+<include>../../../../snippets/cli/output-note.md</include>

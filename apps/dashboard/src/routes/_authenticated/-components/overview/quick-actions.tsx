@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { buttonVariants, Typography, Widget } from "@namera-ai/ui";
 import {
   ApiIcon,
@@ -47,10 +48,18 @@ const actions = [
   },
 ] as const;
 
+const trackedActions = actions.map((action) => ({
+  label: action.label,
+  icon: action.icon,
+  to: action.to,
+  permissions: action.permissions,
+  onClick: () => captureAnalytics("overview_quick_action_clicked", { destination: action.to }),
+}));
+
 export function QuickActions() {
   const currentUser = useCurrentUser();
   const permissions = currentUser.data?.role.permissions ?? [];
-  const availableActions = actions.filter((action) =>
+  const availableActions = trackedActions.filter((action) =>
     hasPermissions(permissions, action.permissions),
   );
 
@@ -62,27 +71,30 @@ export function QuickActions() {
       <div className="flex-1 px-2 pb-2">
         {availableActions.length > 0 ? (
           <nav aria-label="Quick actions" className="grid gap-1">
-            {availableActions.map((action) => (
-              <Link
-                className={buttonVariants({
-                  variant: "ghost",
-                  className:
-                    "h-14 w-full justify-start gap-3 rounded-lg bg-default/40 px-2 transition-colors hover:bg-default/80",
-                })}
-                key={action.to}
-                to={action.to}
-              >
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface/60">
-                  <HugeiconsIcon aria-hidden className="size-4 text-muted" icon={action.icon} />
-                </span>
-                {action.label}
-                <HugeiconsIcon
-                  aria-hidden
-                  className="ml-auto size-4 shrink-0 text-muted"
-                  icon={ArrowRight01Icon}
-                />
-              </Link>
-            ))}
+            {availableActions.map((action) => {
+              return (
+                <Link
+                  className={buttonVariants({
+                    variant: "ghost",
+                    className:
+                      "h-14 w-full justify-start gap-3 rounded-lg bg-default/40 px-2 transition-colors hover:bg-default/80",
+                  })}
+                  key={action.to}
+                  to={action.to}
+                  onClick={action.onClick}
+                >
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface/60">
+                    <HugeiconsIcon aria-hidden className="size-4 text-muted" icon={action.icon} />
+                  </span>
+                  {action.label}
+                  <HugeiconsIcon
+                    aria-hidden
+                    className="ml-auto size-4 shrink-0 text-muted"
+                    icon={ArrowRight01Icon}
+                  />
+                </Link>
+              );
+            })}
           </nav>
         ) : (
           <Typography.Paragraph color="muted" size="sm">

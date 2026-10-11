@@ -1,0 +1,43 @@
+---
+title: namera mcp status
+description: Read the locally saved MCP connection state.
+---
+
+Read the locally saved MCP connection state.
+
+## Usage
+
+```sh
+namera mcp status --profile default
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/mcp-default.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/mcp-default-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/mcp-options.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Status Values
+
+- **`connected`**: a saved credential has not expired.
+- **`refresh-required`**: the token has expired and a refresh token is saved.
+- **`login-required`**: no usable saved connection is available.
+
+This checks local state. It does not make an API request or prove server-side
+authorization remains valid. `scopes` lists saved scopes, which may remain
+present even when a new login is needed.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

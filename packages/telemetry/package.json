@@ -15,6 +15,22 @@
       "namera-source": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./analytics/browser": {
+      "namera-source": "./src/analytics/browser.ts",
+      "default": "./dist/analytics/browser.js"
+    },
+    "./analytics/collection": {
+      "namera-source": "./src/analytics/collection.ts",
+      "default": "./dist/analytics/collection.js"
+    },
+    "./analytics/contract": {
+      "namera-source": "./src/analytics/contract.ts",
+      "default": "./dist/analytics/contract.js"
+    },
+    "./analytics/server": {
+      "namera-source": "./src/analytics/server.ts",
+      "default": "./dist/analytics/server.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -23,6 +39,10 @@
     },
     "exports": {
       ".": "./dist/index.js",
+      "./analytics/browser": "./dist/analytics/browser.js",
+      "./analytics/collection": "./dist/analytics/collection.js",
+      "./analytics/contract": "./dist/analytics/contract.js",
+      "./analytics/server": "./dist/analytics/server.js",
       "./package.json": "./package.json"
     }
   },
@@ -33,15 +53,19 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "posthog-js": "^1.438.7",
+    "posthog-node": "^5.55.1"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

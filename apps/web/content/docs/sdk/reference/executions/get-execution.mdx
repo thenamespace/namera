@@ -1,0 +1,188 @@
+---
+title: Get Execution
+description: Read a confirmed execution, receipt, and related resources.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.executions.get(executionId)` returns the full confirmed record.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.get("0199dfe1-0000-7000-8000-000000000012");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`execution`** (`ExecutionResponse`): id, executionSubmissionId, organizationId, sessionKeyGrantId, namespace, data, and createdAt.
+- **`execution.data`** (`EvmExecutionData`): version, namespace, chainId, calls, userOperationHash, transactionHash, and receipt.
+- **`execution.data.receipt`** (`SuccessfulEvmExecutionReceipt`): Successful user-operation receipt including block, gas, sender, and EntryPoint.
+- **`wallet`** (`WalletResponse`): Complete account record.
+- **`sessionKey`** (`SessionKeySummaryResponse`): Session identity, metadata, policies, lifecycle, and creation fields without expanded relations.
+- **`actor`** (`ExecutionActorDetailsResponse`): Discriminated by type. user has member; api-key has apiKey; cli and mcp have authorization. Includes id and public credential details, never raw secrets.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+{
+  "execution": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "executionSubmissionId": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "sessionKeyGrantId": "0199dfe1-0000-7000-8000-000000000013",
+    "namespace": "eip155",
+    "data": {
+      "version": 1,
+      "chainId": "eip155:84532",
+      "calls": [
+        {
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000",
+          "data": "0x"
+        }
+      ],
+      "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "receipt": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "blockHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "blockNumber": "32000000",
+        "sender": "0x1111111111111111111111111111111111111111",
+        "nonce": "0",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "paymaster": null,
+        "actualGasCost": "0",
+        "actualGasUsed": "120000",
+        "success": true,
+        "reason": null
+      }
+    },
+    "createdAt": "2026-10-11T09:10:00.000Z"
+  },
+  "wallet": {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": {
+        "type": "emoji",
+        "value": "👛"
+      },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  },
+  "sessionKey": {
+    "id": "0199dfe1-0000-7000-8000-000000000002",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000006",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Example session",
+      "logo": {
+        "type": "emoji",
+        "value": "🔑"
+      },
+      "description": "Send 0.001 test ETH on Base Sepolia"
+    },
+    "policies": [],
+    "policyHash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "active",
+    "revokedAt": null,
+    "createdAt": "2026-10-11T09:05:00.000Z"
+  },
+  "actor": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "type": "api-key",
+    "apiKey": {
+      "id": "0199dfe1-0000-7000-8000-000000000013",
+      "metadata": {
+        "version": 1,
+        "name": "Example integration",
+        "logo": {
+          "type": "emoji",
+          "value": "🔑"
+        },
+        "description": "SDK examples"
+      },
+      "keyStart": "example",
+      "expiresAt": null,
+      "lastUsedAt": "2026-10-11T09:10:00.000Z",
+      "revokedAt": null,
+      "createdAt": "2026-10-11T09:00:00.000Z",
+      "updatedAt": "2026-10-11T09:00:00.000Z"
+    }
+  }
+}
+```
+
+</div>
+
+## Parameters
+
+### executionId
+
+- **Type:** `string`
+- **Required**
+
+The confirmed execution’s `id`, returned by `executions.list()` or inside the confirmed `getStatus()` execution record. Submission IDs and transaction hashes are different identifiers and cannot be used here.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.executions.get("0199dfe1-0000-7000-8000-000000000012"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Errors
+
+`EXECUTION_NOT_FOUND` means the confirmed record is missing or unavailable to your credential. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.

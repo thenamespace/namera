@@ -10,6 +10,16 @@ and `api`; adapters do not hand-build competing request schemas.
 returning a discriminated `NameraResult`. It supports `x-api-key`, a fixed bearer
 token, or an asynchronous bearer supplier for refreshable interactive clients.
 
+SDK client input types are derived from protocol DTOs with brands removed:
+IDs are strings, addresses and bytes are `0x`-prefixed strings, and amounts are
+bigints. Namespace and the eight supported CAIP-2 chain literals stay narrow.
+The SDK exports these input types directly. A shared type-side schema decoder
+validates inputs before transport or signer access, retaining bigint values for
+the generated client's wire encoder. Invalid inputs return a `contract` result
+without a request, retry, or signing callback. Protocol/server contracts and
+decoded response types remain unchanged. Transport tests cover plain inputs,
+malformed values, and retained compile-time literal constraints.
+
 Supported surface:
 
 - `wallets.list` and `wallets.get`;
@@ -36,11 +46,11 @@ Preparation owns an internal retry-stable idempotency key. Completion retries
 the identical submission/signature and preserves the queued `prepared` status;
 it does not claim chain confirmation.
 
-`executions.execute` resolves a local signer before preparation, validates the
+For local custody, `executions.execute` resolves a signer after preparation, validates the
 server preparation against its locally trusted installation binding and the
 original calls, recomputes the canonical EntryPoint 0.7 hash, signs its raw bytes
 with EIP-191, verifies the signer address, then completes. Missing local custody
-fails closed without contacting the server. A signing callback is invoked once;
+fails closed without completing the operation. A signing callback is invoked once;
 completion retries preserve the exact signature. A self-funded request requires
 an explicit local maximum gas cost. BSO requests reject nonzero gas fees and
 paymaster substitution. Local key exceptions are not returned to callers.
@@ -70,6 +80,13 @@ tools, grants and profiles; no provider credential or custody cache is added.
 Managed signature completion is never automatically retried; execution completion
 reuses its durable submission. Self-funded managed execution uses the existing
 user-configured fee cap.
+
+Node SDK clients automatically resolve imported local keys using the shared
+SDK-owned encrypted store. No application callback is required after CLI import;
+custom resolvers remain an override and `localSigning: false` opts out. Conditional
+exports keep native storage out of browser bundles. The resolver forwards the
+configured fee cap and preserves independent binding validation; see
+[local keystore](local-keystore.md). No server contract or audit behavior changes.
 
 ## CLI
 

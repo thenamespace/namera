@@ -1,8 +1,9 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 
+import { ProductAnalytics } from "#/components/product-analytics";
 import { jsonLd, ORGANIZATION, SITE, WEBSITE } from "#/lib/seo";
 
-import styles from "#/styles.css?url";
+import styles from "#/styles/index.css?url";
 
 /*
  * Site-wide head. Anything a page overrides (title, description, canonical,
@@ -45,6 +46,18 @@ export const Route = createRootRoute({
       },
       { rel: "manifest", href: "/site.webmanifest" },
       { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
+      {
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: "Namera Blog",
+        href: `${SITE.origin}/blog/rss.xml`,
+      },
+      {
+        rel: "alternate",
+        type: "text/plain",
+        title: "Documentation for AI agents",
+        href: "/llms.txt",
+      },
     ],
     scripts: [
       jsonLd({
@@ -63,7 +76,13 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body className="min-h-screen overflow-x-clip bg-background font-sans text-foreground">
+        <p className="sr-only">
+          For AI agents: read the <a href="/llms.txt">documentation index</a>. Documentation pages
+          are available as Markdown by appending .md to their URL, or requesting Accept:
+          text/markdown.
+        </p>
         <Outlet />
+        <ProductAnalytics />
         <Scripts />
       </body>
     </html>

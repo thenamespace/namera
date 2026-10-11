@@ -1,0 +1,89 @@
+---
+title: namera execution execute
+description: Submit a transaction using an authorized session key.
+---
+
+Submit a transaction using an authorized session key.
+
+## Usage
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x \
+  --sponsor true
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/execute.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`, the successful submission data is:
+
+<include>../../../../snippets/cli/output/execute-json.md</include>
+
+Success means the request completed, not that the transaction is confirmed.
+Save `submissionId` and check it with `namera execution status`.
+
+## Options
+
+<include>../../../../snippets/cli/scope-options.md</include>
+
+<include>../../../../snippets/cli/session-option.md</include>
+
+<include>../../../../snippets/cli/transaction-options.md</include>
+
+### --sponsor
+
+- **Type:** `true | false`
+- **Required:** for non-interactive input flags
+
+Choose sponsored gas or payment from the account. The interactive prompt defaults
+to Yes. In `--params` JSON, omitting `sponsor` uses the API's sponsored default.
+
+### --max-gas-cost-wei
+
+- **Type:** non-negative integer string, in wei
+- **Required:** for self-funded execution
+
+Set the largest gas cost you approve, separate from the transfer amount.
+This ceiling may be supplied alongside `--params`. With individual flags,
+an interactive self-funded request prompts if the ceiling is missing.
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x \
+  --sponsor false \
+  --max-gas-cost-wei 1000000000000000
+```
+
+<include>../../../../snippets/cli/params-option.md</include>
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Submission Safety
+
+The command submits once inputs are complete. It has no dry-run flag; use
+[simulate](/docs/cli/reference/executions/simulate) first. A new invocation starts
+a new operation. Follow [recovery guidance](/docs/cli/guides/transactions/handle-retries-and-recovery)
+before repeating a command after a lost response.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

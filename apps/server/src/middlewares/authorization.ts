@@ -17,6 +17,7 @@ import {
   toSessionResponse,
   toUserResponse,
 } from "#/helpers/dto";
+import { makeProductOperationObserver } from "#/helpers/product-analytics";
 
 export const AuthorizationLive = Layer.effect(
   Authorization,
@@ -25,6 +26,7 @@ export const AuthorizationLive = Layer.effect(
     const repository = yield* Repository;
     const cookieConfig = yield* AuthCookieConfig;
     const authConfig = yield* AuthConfig;
+    const observeProductOperation = yield* makeProductOperationObserver;
 
     return Authorization.of({
       // Machine actors carry their active grants in CurrentActor so downstream
@@ -71,6 +73,7 @@ export const AuthorizationLive = Layer.effect(
           Metric.withAttributes(authenticationResults, { method: "api_key", result: "success" }),
           1,
         );
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       bearer: Effect.fn("server.authorization.bearer")(function* (httpEffect, { credential }) {
@@ -155,6 +158,7 @@ export const AuthorizationLive = Layer.effect(
           Metric.withAttributes(authenticationResults, { method: "bearer", result: "success" }),
           1,
         );
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
       // A user session is valid only while its active organization membership
@@ -217,6 +221,7 @@ export const AuthorizationLive = Layer.effect(
           },
         };
 
+        yield* observeProductOperation(actor);
         return yield* Effect.provideService(httpEffect, CurrentActor, actor);
       }),
     });

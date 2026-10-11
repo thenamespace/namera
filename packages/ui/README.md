@@ -21,6 +21,8 @@ the UI package boundary.
   safely both inside checkboxes and inside modal dialogs with description-only slots.
 - `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
 - `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
+  `BrandGithubIcon`, `BrandXIcon`, and `BrandLinkedinIcon` are React SVG marks
+  sourced from theSVG, with source URLs in each component and inherited text color.
 - `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
   Dashboard and admin use `bg-app-canvas` for the outer shell and `bg-background`
   for page panels. Sidebar row sizing and hover treatments are shared here.

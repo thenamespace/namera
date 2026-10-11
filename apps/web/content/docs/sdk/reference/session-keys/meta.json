@@ -1,0 +1,4 @@
+{
+  "title": "Session Keys",
+  "pages": ["list-session-keys", "get-session-key"]
+}

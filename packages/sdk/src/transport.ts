@@ -21,7 +21,9 @@ type NameraClientBaseConfig = {
   readonly baseUrl?: string;
   readonly fetch?: NameraFetch;
   readonly resolveSessionSigner?: ResolveSessionSigner;
-  /** Caller-approved fee ceiling for self-funded managed executions. */
+  /** Disable automatic Node key-store access. Explicit resolvers still take precedence. */
+  readonly localSigning?: false;
+  /** Caller-approved fee ceiling for managed and automatically resolved local executions. */
   readonly maxGasCostWei?: bigint;
 };
 

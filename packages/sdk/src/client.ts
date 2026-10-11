@@ -1,11 +1,15 @@
-import type { PrepareSignatureRequest, VerifySignatureRequest } from "@namera-ai/protocol/dto";
+import { VerifySignatureRequest } from "@namera-ai/protocol/dto";
 
 import { AuthClient } from "#/auth";
 import { ExecutionClient } from "#/executions";
+import { inputDecoder } from "#/input-validation";
+import type * as Input from "#/inputs";
 import { SessionKeyClient } from "#/session-keys";
 import { SignatureClient } from "#/signatures";
 import { NameraTransport, type NameraClientConfig } from "#/transport";
 import { WalletClient } from "#/wallets";
+
+const decodeVerify = inputDecoder(VerifySignatureRequest);
 
 export class NameraClient {
   readonly auth: AuthClient;
@@ -29,11 +33,14 @@ export class NameraClient {
     this.signatures = new SignatureClient(this.#transport, config.resolveSessionSigner);
   }
 
-  sign(request: PrepareSignatureRequest) {
+  sign(request: Input.PrepareSignatureRequest) {
     return this.signatures.sign(request);
   }
 
-  verifySignature(request: VerifySignatureRequest) {
+  async verifySignature(input: Input.VerifySignatureRequest) {
+    const decoded = decodeVerify(input);
+    if (!decoded.success) return decoded;
+    const request = decoded.data;
     if (request.type === "message") {
       return this.#transport.requestWithRetry(
         this.#transport.client.signature.verify({ payload: request }),

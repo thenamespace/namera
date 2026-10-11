@@ -1,0 +1,9 @@
+{
+  "title": "Automation",
+  "pages": [
+    "run-in-scripts-and-ci",
+    "connect-codex",
+    "connect-claude-code",
+    "connect-other-mcp-clients"
+  ]
+}

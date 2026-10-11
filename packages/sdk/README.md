@@ -1,8 +1,8 @@
 # @namera-ai/sdk
 
 A TypeScript client for Namera's self-custodial agent wallets. Inspect accounts
-and session keys, simulate transactions, and execute or sign using a local
-session signer. Methods return promises with typed success/error results.
+and session keys, simulate transactions, and execute or sign using local or managed
+session keys. Methods return promises with typed success/error results.
 
 ## Installation
 
@@ -80,6 +80,41 @@ For managed sessions set `maxGasCostWei` on `NameraClient`; local resolvers reta
 their `maxGasCostWei` setting.
 Submission is not confirmation: check the returned submission's status.
 
+### Send a transaction
+
+Use an account and session key from your workspace. The session must allow the
+recipient, amount, and selected network. Install `viem` to use `parseEther`.
+
+```ts
+import { NameraClient, type ExecuteRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+} satisfies ExecuteRequest;
+
+const result = await namera.executions.execute(request);
+if (result.success) {
+  console.log(await namera.executions.getStatus(result.data.submissionId));
+}
+```
+
+Replace the example IDs and recipient with your own. This sends test ETH on Base
+Sepolia; gas sponsorship does not fund the transfer.
+
 ## Session signing
 
 The same `executions.execute()` and `sign()` calls support local and 1Claw-managed
@@ -94,7 +129,49 @@ Execution retries reuse the same submission, not a new transfer.
 
 ### Local signing
 
-For local session keys, configure `resolveSessionSigner` to execute or sign. It returns a
+In Node.js, the SDK automatically opens keys imported by the Namera CLI. Import
+your encrypted dashboard export once on the machine running your application:
+
+```sh
+npx @namera-ai/cli session-key import <encrypted-export> --host https://api.namera.ai
+```
+
+Enter the export passphrase at the hidden prompt. After network approval and an
+API-key grant, use the ordinary client; no signer callback is required:
+
+```ts
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+```
+
+The SDK uses the same OS user, API origin, encrypted files, and keyring as the
+CLI and local MCP. It loads storage only for a local signing challenge, never
+for managed signing or read requests. Missing files or unavailable keyring access
+return `LOCAL_SIGNER_UNAVAILABLE` without exposing native diagnostics. It never
+creates a replacement key, changes custody, or falls back to plaintext storage.
+
+Set `localSigning: false` to disable automatic storage access. An explicit
+`resolveSessionSigner` takes precedence, including when automatic access is disabled.
+For custom Node import workflows, `@namera-ai/sdk/node` exports `getSessionKeystore()`;
+its `importKey(encryptedExport, redactedPassphrase, apiOrigin)` shares the CLI format.
+
+Default encrypted-file directories:
+
+| OS      | Directory                                           |
+| ------- | --------------------------------------------------- |
+| macOS   | `~/Library/Application Support/namera/session-keys` |
+| Windows | `%APPDATA%\\Namera\\session-keys`                   |
+| Linux   | `~/.config/namera/session-keys`                     |
+
+`XDG_CONFIG_HOME`, when set, overrides these with `$XDG_CONFIG_HOME/namera/session-keys`.
+The unlock secret is separate in the OS keyring. Linux uses Secret Service when
+available; its keyutils fallback is memory-only and does not survive reboot.
+Use an available persistent Secret Service for durable Linux imports. Headless
+containers need provisioned storage and keyring access, or a custom resolver.
+
+Browser bundles do not include native storage. Browsers and custom key stores
+still use `resolveSessionSigner`. It returns a
 `LocalSessionSigner` with a trusted installation binding and callbacks backed
 by your local key store. The interface does not require exposing private-key bytes.
 
@@ -103,8 +180,7 @@ preparation response. Before signing, the SDK validates identity, chain, calls,
 authority, expiry, operation hash, and gas consent. Missing signers fail closed;
 there is no root-key fallback.
 
-The CLI provides a ready-made encrypted local key store and resolver. Custom
-integrations can implement `ResolveSessionSigner` and use
+Custom integrations can implement `ResolveSessionSigner` and use
 `sealLocalSessionKey` / `openLocalSessionKey` for portable encrypted exports.
 
 Low-level `executions.prepare/complete` and `signatures.prepare/complete` provide

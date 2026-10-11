@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import {
   Button,
   ListBox,
@@ -78,18 +79,26 @@ export function TableViewOptions({
   onVisibleColumnsChange,
 }: TableViewOptionsProps) {
   const handleGroupingChange = useEventCallback((key: string | number | null) => {
-    if (typeof key === "string") onGroupingChange?.(key);
+    if (typeof key === "string") {
+      if (key !== grouping) captureAnalytics("table_view_changed", { action: "grouping" });
+      onGroupingChange?.(key);
+    }
   });
   const handleSortColumnChange = useEventCallback((key: string | number | null) => {
-    if (key !== null) onSortChange({ ...sort, column: key });
+    if (key !== null) {
+      if (key !== sort.column) captureAnalytics("table_view_changed", { action: "sort_column" });
+      onSortChange({ ...sort, column: key });
+    }
   });
   const toggleSortDirection = useEventCallback(() => {
+    captureAnalytics("table_view_changed", { action: "sort_direction" });
     onSortChange({
       ...sort,
       direction: sort.direction === "ascending" ? "descending" : "ascending",
     });
   });
   const handleColumnToggle = useEventCallback((id: string, selected: boolean) => {
+    captureAnalytics("table_view_changed", { action: selected ? "show_column" : "hide_column" });
     const next =
       visibleColumns === "all"
         ? new Set(columnOptions.map((column) => column.id))

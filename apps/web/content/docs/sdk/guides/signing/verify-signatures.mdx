@@ -1,0 +1,121 @@
+---
+title: Verify Signatures
+description: Check a smart-account signature against its original message or typed data.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Use `verifySignature()` with the original payload, account ID, network, and
+signature. Verification is read-only and does not need a `sessionKeyId`.
+Your credential must still have access to the account.
+
+## Verify a Message
+
+This runnable example signs a message, then verifies the returned signature.
+Use [authentication](/docs/sdk/authentication) and replace the IDs with an
+account and session key configured for [message signing](/docs/sdk/guides/signing/sign-messages).
+
+```sh
+npm install @namera-ai/sdk
+```
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const walletId = "0199dfe1-0000-7000-8000-000000000001";
+const sessionKeyId = "0199dfe1-0000-7000-8000-000000000002";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId,
+  sessionKeyId,
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId,
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "valid": true,
+  "type": "message"
+}
+```
+
+</div>
+
+If you already have a signature, skip `sign()` and pass that signature to
+`verifySignature()`. Preserve the original message exactly, including whitespace.
+
+## Verify Typed Data
+
+After [signing typed data](/docs/sdk/guides/signing/sign-typed-data), add this
+snippet to that example. It uses the existing `namera`, `typedData`, and successful
+`signed` result from that page:
+
+```ts title="index.ts"
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "typed-data",
+  typedData,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "valid": true,
+  "type": "typed-data"
+}
+```
+
+</div>
+
+Supply the same domain, types, primary type, and message that were signed.
+Changing a field changes the payload being verified.
+
+## Read the Outcome
+
+`success: true` means the verification request completed. Only `data.valid: true`
+means the signature was accepted for that account and payload. Treat
+`valid: false` as an invalid signature; handle `success: false` as a request error.
+
+<Callout title="Verify the smart account, not an EOA">
+  Namera returns smart-account signatures. Recovering an EOA address from the signature is not a
+  substitute for checking the account's signature validation.
+</Callout>

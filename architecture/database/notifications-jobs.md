@@ -150,6 +150,23 @@ Encrypted durable email outbox with retry scheduling and an exclusive processing
 
 ## Transaction and worker boundary
 
+### `jobs.analytics_jobs`
+
+An independent product-analytics outbox holds narrow protocol-validated payloads.
+`id` is a UUIDv7 reused as the provider event UUID; `dedupe_key` is unique.
+`created_at` is preserved as the event timestamp. `available_at`, `attempts`, and
+`lease_token` support bounded-backoff delivery with a two-minute claim lease.
+The pending index covers `available_at`; claiming uses `FOR UPDATE SKIP LOCKED`.
+Both acknowledgement and retry require the current lease token, so stale workers
+cannot overwrite a reclaimed job. `delivered_at` records ingestion acknowledgement,
+not an independently verified event appearing in a query.
+
+Delivery clears `payload` and `lease_token`. The small dedupe row remains to prevent
+duplicate first-use/activation milestones and preserve opted-in operation eligibility.
+No credential or request body belongs in this table. Ordinary event keys reference
+audit UUIDs; first-use keys reference integration actors/workspaces. This table has
+no foreign keys and is not a product-history API or a replacement for the audit log.
+
 ```mermaid
 sequenceDiagram
   participant UseCase as Product use case

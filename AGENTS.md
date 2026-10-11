@@ -66,6 +66,111 @@ before changing a cross-package flow. Read
 [`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)
 before adding or changing traces, logs, metrics, or browser OTLP behavior.
 
+## Public docs writing style
+
+Apply these conventions to `apps/web/content/docs`. Use the SDK Overview,
+Installation, and Getting Started pages as the reference structure.
+
+- Write for humans first, with explicit names and context that also help AI
+  agents. Use short sentences, direct instructions, and only the information
+  needed for the current task. Avoid filler, implementation trivia, repeated
+  caveats, and explanations of obvious language features.
+- Keep Overview brief: explain what the integration does, then show practical
+  examples one after another under H3 headings. Do not put different tasks in tabs.
+- Keep Installation focused on requirements and install commands. A short page
+  is fine; do not pad it with import checks or redundant setup explanations.
+- Order Getting Started as installation, account/session setup in the dashboard,
+  client creation, listing accounts, listing session keys, executing a transaction,
+  and checking submission status. Use ordinary H2/H3 headings, not numbered
+  Fumadocs Steps wrappers. Short ordered lists within setup sections are fine.
+- Use Fumadocs components when they help: package-manager tabs and semantically
+  colored info/warning callouts. Keep essential prerequisites and safety notes
+  close to the action; do not turn every paragraph into a callout.
+- Use `index.ts` for simple examples. Include helper imports in the snippet
+  where they are used. Prefer readable helpers such as `parseEther("0.001")`
+  over raw wei literals, and include imported packages in installation commands.
+- Keep examples short without making them incorrect. Avoid repeated environment
+  guards and elaborate scaffolding; retain error handling needed to use results
+  safely. Log the complete result `.data` rather than the SDK envelope or mapped fields.
+- Keep secrets such as API keys in environment variables. Put clearly labeled
+  example recipients and nonsecret values in code. Select returned session keys
+  directly when appropriate, and state the setup assumptions instead of silently
+  choosing an arbitrary key with different permissions.
+- Show JSON responses inline in fixed-height, scrollable code blocks using the
+  `docs-response` wrapper. Do not hide them in accordions or add Show more controls.
+  Omit response-block titles. Verify examples against current SDK exports and API
+  schemas. Show complete data shapes with illustrative values, without omitting
+  fields or adding shortened-response notes; never invent response fields.
+- Keep amounts, networks, variable names, and permissions consistent across
+  prose and snippets. Distinguish submission from confirmation where relevant.
+- Write finished documentation, not preview filler. Do not describe unsupported
+  functionality as available; omit it or state the actual limitation concisely.
+
+### Guides and reference pages
+
+- Guides teach one task: state the outcome and prerequisites, then show the
+  working code and full response in task order. Explain decisions that affect
+  the outcome and link to reference for exhaustive parameter details. Use plain
+  headings, not Steps wrappers, and do not hide separate tasks in tabs.
+- Reference pages document one constructor or method. Follow this order:
+  method name and purpose, Usage, Returns, Parameters, then relevant behavior
+  and errors. Use viem-style prose sections, not TypeTable components.
+- Usage examples show `index.ts` and `client.ts` as two file tabs for the same
+  example. Export the authenticated client from `client.ts`; import it in
+  `index.ts`. File tabs are not tabs for unrelated tasks. Include all helper
+  imports and identify additional dependencies such as viem.
+- Give each parameter an H3 heading using its exact SDK name, a type, required
+  or conditional status, and its default when one exists. Explain what it does,
+  where its value comes from, constraints, and omission behavior. Avoid one-word
+  descriptions. Add a working method-call example with the relevant lines
+  focused using `[!code focus]`; do not imply that a code fragment is a complete
+  script or silently depend on variables from another example.
+- Use H4 sections for nested parameter fields. Distinguish identifiers from
+  addresses and hashes, wei from token units, and CAIP-2 IDs from numeric chain
+  IDs. Document discriminated payloads and conditional return fields explicitly.
+- Returns describes the successful SDK data and includes complete illustrative
+  JSON without a response-block title. Explain the result envelope and decoded
+  date-time/bigint representation once through the shared result snippet.
+- Reuse genuinely repeated Markdown through Fumadocs `<include>` snippets in
+  `apps/web/content/snippets/sdk/`, outside the routed docs collection. Keep
+  method-specific examples in the page. Includes must appear in rendered pages,
+  headings, search, and processed Markdown; never replace readable content with
+  an opaque runtime-only component.
+- Typecheck both usage files and parameter examples against SDK source. Validate
+  JSON examples against protocol response schemas. Check Markdown exports and
+  internal links, not just the visual page. Do not send live transactions to
+  verify documentation examples.
+
+### CLI documentation
+
+- Keep Introduction, Essentials, Guides, and Reference aligned with the SDK
+  navigation. Guides teach tasks; reference titles use exact command names.
+- Reference order is Usage, Output, Arguments, Options, then relevant behavior
+  and errors. Explain flag types, defaults, required conditions, and interactions.
+- Capture output from the actual CLI or its production formatters with
+  schema-validated fixtures. Label fixture values, preserve complete JSON, and
+  distinguish stdout, stderr, and exit status. Never run live transactions to
+  produce documentation examples.
+- Verify shell examples and flags against current commands. Explain wei units,
+  non-interactive requirements, profile/host precedence, and separate MCP login
+  where relevant. Do not imply SDK-only options exist in the CLI.
+
+### MCP documentation
+
+- Keep MCP docs setup-focused: Introduction, Essentials, and client connection
+  guides. Do not add transaction/signing walkthroughs or a tool reference;
+  agents discover the tool schemas themselves.
+- Each client guide covers prerequisites, its exact registration command or
+  config format, authorization with a matching profile, a read-only first
+  request, and disconnection. Cite the client's official setup documentation.
+- Verify each client's transport, config wrapper, location, and approval
+  behavior. Do not copy one client's JSON format into all clients. Distinguish
+  documented setup from a connection actually tested in that application.
+- Be explicit when a URL-only client cannot use the local stdio server. Never
+  invent a hosted MCP endpoint or present an unauthenticated bridge as setup.
+- Reuse common instructions in `apps/web/content/snippets/mcp/`. Keep
+  client-specific configuration and profile commands in each page.
+
 ## Architecture knowledge base
 
 Stable technical architecture is recorded in [`architecture/`](architecture/README.md).

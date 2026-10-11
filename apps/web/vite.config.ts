@@ -1,10 +1,17 @@
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
+import posthog from "@posthog/rollup-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { fumadocsMdx } from "fumadocs-mdx/vite";
 import { nitro } from "nitro/vite";
 import { defaultClientConditions, defineConfig } from "vite";
+
+const posthogProjectId = process.env.POSTHOG_CLI_PROJECT_ID ?? "";
+const posthogRelease = process.env.POSTHOG_RELEASE_VERSION ?? "";
+if (process.env.POSTHOG_CLI_API_KEY && (!posthogProjectId || !posthogRelease)) {
+  throw new Error("PostHog source-map uploads require a project ID and release version");
+}
 
 export default defineConfig({
   resolve: {
@@ -34,5 +41,20 @@ export default defineConfig({
       exportConditions: ["namera-source"],
     }),
     viteReact(),
+    ...(process.env.POSTHOG_CLI_API_KEY
+      ? [
+          posthog({
+            personalApiKey: process.env.POSTHOG_CLI_API_KEY,
+            projectId: posthogProjectId,
+            host: "https://eu.posthog.com",
+            sourcemaps: {
+              enabled: true,
+              releaseName: "namera-web",
+              releaseVersion: posthogRelease,
+              deleteAfterUpload: true,
+            },
+          }),
+        ]
+      : []),
   ],
 });

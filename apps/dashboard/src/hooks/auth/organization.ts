@@ -12,6 +12,7 @@ export const useUserOrganizations = toQuery(() => userOrganizationsAtom);
 export const useOrganization = toQuery(organizationAtom);
 
 export const useCreateOrganization = toMutation(createOrganizationMutation, {
+  analyticsAction: "workspace_create",
   invalidates: [
     ...QueryKeys.session.current,
     ...QueryKeys.session.lists,
@@ -21,6 +22,7 @@ export const useCreateOrganization = toMutation(createOrganizationMutation, {
 });
 
 export const useSwitchOrganization = toMutation(switchOrganizationMutation, {
+  analyticsAction: "workspace_switch",
   invalidates: [
     ...QueryKeys.session.current,
     ...QueryKeys.session.lists,
@@ -29,6 +31,7 @@ export const useSwitchOrganization = toMutation(switchOrganizationMutation, {
 });
 
 export const useUpdateOrganization = toMutation(updateOrganizationMutation, {
+  analyticsAction: "workspace_update",
   invalidates: [
     ...QueryKeys.session.current,
     ...QueryKeys.organization.active,

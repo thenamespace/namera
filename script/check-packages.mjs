@@ -146,11 +146,14 @@ try {
       `
     import assert from 'node:assert/strict';
     import { NameraClient } from '@namera-ai/sdk';
+    import { getSessionKeystore } from '@namera-ai/sdk/node';
     import { NameraApi } from '@namera-ai/api';
     import { WalletId } from '@namera-ai/protocol';
     import '@namera-ai/protocol/dto';
     import { Schema } from 'effect';
     import { OpenApi } from 'effect/http-api';
+    assert.ok(import.meta.resolve('@namera-ai/sdk').endsWith('/dist/index.node.js'));
+    assert.equal(typeof getSessionKeystore, 'function');
     assert.ok(OpenApi.fromApi(NameraApi).paths['/wallets']);
     assert.equal(Schema.decodeSync(WalletId)('01a00407-5961-75cf-933e-9cfd0336ec16'), '01a00407-5961-75cf-933e-9cfd0336ec16');
     let requested = false;

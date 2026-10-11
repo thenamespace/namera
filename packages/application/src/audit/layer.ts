@@ -1,7 +1,7 @@
 import { Context, Effect, Layer, Option } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
-import { Repository } from "@namera-ai/database";
+import { Repository, TransactionService } from "@namera-ai/database";
 import type { DatabaseError } from "@namera-ai/protocol";
 import type {
   AuditEventSource,
@@ -10,6 +10,8 @@ import type {
   UserEvent,
   UserEventInsert,
 } from "@namera-ai/protocol/model";
+
+import { makeAuditAnalytics } from "./analytics.js";
 
 type AuditFields = "correlationId" | "requestId" | "source" | "traceId";
 type AuditInput<Event> = Event extends unknown ? Omit<Event, AuditFields> : never;
@@ -39,6 +41,8 @@ export class Audit extends Context.Service<Audit, AuditService>()("@namera-ai/ap
     Effect.gen(function* () {
       const crypto = yield* CryptoService;
       const repository = yield* Repository;
+      const transaction = yield* TransactionService;
+      const analytics = yield* makeAuditAnalytics;
 
       const fields = Effect.fnUntraced(function* (options?: AuditOptions) {
         const span = yield* Effect.option(Effect.currentSpan);
@@ -52,16 +56,28 @@ export class Audit extends Context.Service<Audit, AuditService>()("@namera-ai/ap
 
       return Audit.of({
         user: Effect.fn("application.audit.user")(function* (input, options) {
-          return yield* repository.audit.user.insert({
-            ...input,
-            ...(yield* fields(options)),
-          } as UserEventInsert);
+          return yield* transaction.run(
+            Effect.gen(function* () {
+              const event = yield* repository.audit.user.insert({
+                ...input,
+                ...(yield* fields(options)),
+              } as UserEventInsert);
+              yield* analytics.user(event);
+              return event;
+            }),
+          );
         }),
         organization: Effect.fn("application.audit.organization")(function* (input, options) {
-          return yield* repository.audit.organization.insert({
-            ...input,
-            ...(yield* fields(options)),
-          } as OrganizationEventInsert);
+          return yield* transaction.run(
+            Effect.gen(function* () {
+              const event = yield* repository.audit.organization.insert({
+                ...input,
+                ...(yield* fields(options)),
+              } as OrganizationEventInsert);
+              yield* analytics.organization(event);
+              return event;
+            }),
+          );
         }),
       });
     }),

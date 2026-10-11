@@ -1,0 +1,59 @@
+---
+title: namera verify-signature
+description: Check an account signature against its original payload.
+---
+
+Check an account signature against its original payload.
+
+## Usage
+
+```sh
+namera verify-signature \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --network 'Base Sepolia' \
+  --type message \
+  --message 'Hello from Namera' \
+  --signature <hex-signature>
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/verify.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/verify-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/scope-options.md</include>
+
+<include>../../../../snippets/cli/signature-options.md</include>
+
+### --signature
+
+- **Type:** even-length `0x`-prefixed hex
+- **Required:** for non-interactive input flags
+
+Pass the complete signature returned by `namera sign`, with the same account,
+network, and original message or typed data. Do not strip its smart-account prefix.
+
+<include>../../../../snippets/cli/params-option.md</include>
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+There is no `--session-key` option. Verification establishes whether the account
+accepts the signature; it does not identify which session key signed.
+
+A successful command may return `valid: false`. Scripts must inspect this
+field rather than treating exit code zero as proof of validity.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

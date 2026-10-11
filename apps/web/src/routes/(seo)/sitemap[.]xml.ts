@@ -1,0 +1,62 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+import { blogPath, xmlEscape } from "#/lib/blog/catalog";
+import { getPublishedPosts } from "#/lib/blog/source.server";
+import { docsSource } from "#/lib/docs/source.server";
+import { SITE } from "#/lib/seo";
+
+const PAGES = [
+  { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/pricing", changefreq: "monthly", priority: "0.8" },
+  { path: "/blog", changefreq: "weekly", priority: "0.7" },
+  { path: "/terms", changefreq: "yearly", priority: "0.3" },
+  { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
+] as const;
+
+export const Route = createFileRoute("/(seo)/sitemap.xml")({
+  server: {
+    handlers: {
+      GET: async ({ request }) => {
+        const origin = import.meta.env.DEV ? new URL(request.url).origin : SITE.origin;
+        const urls = PAGES.map(
+          (page) => `  <url>
+    <loc>${xmlEscape(origin + page.path)}</loc>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`,
+        ).join("\n");
+        const articles = (await getPublishedPosts())
+          .filter((post) => !post.seo?.noindex && !post.seo?.canonical)
+          .map(
+            (post) =>
+              `<url><loc>${xmlEscape(origin + blogPath(post.slug))}</loc><lastmod>${post.updated ?? post.date}</lastmod></url>`,
+          )
+          .join("\n");
+        const documentation = (
+          await Promise.all(
+            docsSource.getPages().map(async (page) => {
+              const { lastModified } = await page.data.load();
+              return `<url><loc>${xmlEscape(origin + page.url)}</loc>${lastModified ? `<lastmod>${lastModified.toISOString()}</lastmod>` : ""}</url>`;
+            }),
+          )
+        ).join("\n");
+
+        return new Response(
+          `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+${articles}
+${documentation}
+</urlset>
+`,
+          {
+            headers: {
+              "content-type": "application/xml; charset=utf-8",
+              "cache-control": "public, max-age=300, must-revalidate",
+            },
+          },
+        );
+      },
+    },
+  },
+});

@@ -21,14 +21,14 @@ sequenceDiagram
   Process->>Roles: Synchronize owner/admin/member definitions
   Process->>DB: Upgrade remaining Free v1 subscriptions to v2 under billing locks
   Process->>DB: Bootstrap configured platform owner if none exists
-  Process->>Workers: Start email, execution, billing, and session-operation workers
+  Process->>Workers: Start email, execution, billing, session-operation, and analytics workers
   Process->>HTTP: Bind configured host and port
 ```
 
 Effect scopes close the server, workers, provider clients, exporters, and
 database resources during shutdown.
 
-HTTP and all four workers await the shared `BillingStartupUpgrade` layer after
+HTTP and all five workers await the shared `BillingStartupUpgrade` layer after
 migrations. The temporary upgrade uses existing server database credentials,
 fails startup on errors, and skips subscriptions already on v2. See
 [billing rollout](../billing/README.md#rollout-and-historical-periods) for
@@ -103,6 +103,15 @@ minute through the same billing application service.
 Every five seconds, reconciles persisted installation/removal operations through
 the session-key application service. Recovery uses the same receipt transitions
 as foreground requests. Unsigned owner approvals are not broadcast by workers.
+
+### Product analytics delivery
+
+When production collection is enabled, claims committed analytics jobs with
+leases and delivers their allowlisted payloads to PostHog. Retries preserve the
+event UUID and original timestamp; acknowledgment clears the payload but retains
+the deduplication key. Idle polling is untraced and waits five seconds. Provider
+outages do not block the originating business transaction. See
+[analytics outbox](../database/notifications-jobs.md) for persistence boundaries.
 
 ## Rate limiting
 

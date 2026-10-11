@@ -1,0 +1,109 @@
+---
+title: Getting Started
+icon: Rocket01Icon
+description: Connect your terminal, inspect an account, and send a test transaction.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+## Install the CLI
+
+```sh
+npm install -g @namera-ai/cli
+```
+
+Use Node.js 24.14+ and an unlocked OS keyring.
+
+## Set Up Your Account
+
+In the [Namera dashboard](https://dashboard.namera.ai), create or choose an account.
+Choose a separate recipient address you control on **Base Sepolia**.
+
+Create a session key that permits a **0.001 ETH** transfer to that recipient.
+If the dashboard gives you an encrypted import command, run it on this machine
+and enter the export passphrase privately:
+
+```sh
+namera session-key import <encrypted-export> --host https://api.namera.ai
+```
+
+Approve the key's installation on Base Sepolia in the dashboard. Wait until it
+is active, and fund the account with test ETH. Importing alone does not approve
+network access.
+
+## Sign In
+
+```sh
+namera login
+```
+
+Approve the requested access and select your active session key in the browser.
+After approval:
+
+<include>../../snippets/cli/output/login.md</include>
+
+## List Accounts and Session Keys
+
+```sh
+namera wallet list
+```
+
+<include>../../snippets/cli/output/wallet-list.md</include>
+
+```sh
+namera session-key list
+```
+
+<include>../../snippets/cli/output/session-key-list.md</include>
+
+Use `namera wallet get` or `namera session-key get` to choose a resource and
+inspect its details. Use `--output json` when you need IDs for scripts.
+
+## Simulate the Transfer
+
+```sh
+namera execution simulate
+```
+
+Choose EVM, your account and session key, then Base Sepolia. Enter your recipient,
+`1000000000000000` for the amount in wei (0.001 ETH), and `0x` for calldata.
+
+<include>../../snippets/cli/output/simulate.md</include>
+
+Simulation does not submit a transaction. An allowed preview is not a guarantee
+that a later execution will succeed.
+
+## Execute the Transfer
+
+```sh
+namera execution execute
+```
+
+Enter the same inputs and choose sponsored gas when prompted. This command
+submits the transaction; prompts collect inputs, not a dry run.
+
+<Callout type="warn" title="Use the test network">
+  Select Base Sepolia and a recipient you control. The amount is entered in wei: `1000000000000000`
+  is 0.001 ETH.
+</Callout>
+
+<include>../../snippets/cli/output/execute.md</include>
+
+## Check the Submission
+
+Use the submission ID printed by your command:
+
+```sh
+namera execution status 0199dfe1-0000-7000-8000-000000000003
+```
+
+<include>../../snippets/cli/output/status.md</include>
+
+Keep checking that ID until the status is Confirmed or Failed. Do not rerun
+`execute` to check progress.
+
+<include>../../snippets/cli/output-note.md</include>
+
+Next, use [Transfer Assets](/docs/cli/guides/transactions/transfer-assets) for
+explicit flags or [Connect Codex](/docs/cli/guides/automation/connect-codex) to
+give an agent access.

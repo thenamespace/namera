@@ -10,23 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BlogRouteImport } from './routes/blog'
+import { Route as BlogRouteRouteImport } from './routes/blog/route'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as BlogIndexRouteImport } from './routes/blog.index'
-import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as BlogRssDotxmlRouteImport } from './routes/blog_.rss[.]xml'
+import { Route as legalPrivacyPolicyRouteImport } from './routes/(legal)/privacy-policy'
+import { Route as legalTermsRouteImport } from './routes/(legal)/terms'
+import { Route as seoRobotsDottxtRouteImport } from './routes/(seo)/robots[.]txt'
+import { Route as seoSitemapDotxmlRouteImport } from './routes/(seo)/sitemap[.]xml'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
+import { Route as ApiDocsSearchRouteImport } from './routes/api/docs/search'
+import { Route as seoOgDocsSplatRouteImport } from './routes/(seo)/og/docs/$'
+import { Route as ApiDocsMarkdownSplatRouteImport } from './routes/api/docs/markdown/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogRoute = BlogRouteImport.update({
+const BlogRouteRoute = BlogRouteRouteImport.update({
   id: '/blog',
   path: '/blog',
   getParentRoute: () => rootRouteImport,
@@ -36,85 +39,109 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
-  id: '/privacy-policy',
+const legalPrivacyPolicyRoute = legalPrivacyPolicyRouteImport.update({
+  id: '/(legal)/privacy-policy',
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
+const legalTermsRoute = legalTermsRouteImport.update({
+  id: '/(legal)/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const seoRobotsDottxtRoute = seoRobotsDottxtRouteImport.update({
+  id: '/(seo)/robots.txt',
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
+const seoSitemapDotxmlRoute = seoSitemapDotxmlRouteImport.update({
+  id: '/(seo)/sitemap.xml',
   path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => BlogRoute,
+  getParentRoute: () => BlogRouteRoute,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
-  getParentRoute: () => BlogRoute,
+  getParentRoute: () => BlogRouteRoute,
 } as any)
 const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
-  id: '/blog_/rss.xml',
-  path: '/blog/rss.xml',
-  getParentRoute: () => rootRouteImport,
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => BlogRouteRoute,
 } as any)
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: '/docs/$',
   path: '/docs/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDocsSearchRoute = ApiDocsSearchRouteImport.update({
+  id: '/api/docs/search',
+  path: '/api/docs/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const seoOgDocsSplatRoute = seoOgDocsSplatRouteImport.update({
+  id: '/(seo)/og/docs/$',
+  path: '/og/docs/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocsMarkdownSplatRoute = ApiDocsMarkdownSplatRouteImport.update({
+  id: '/api/docs/markdown/$',
+  path: '/api/docs/markdown/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/blog': typeof BlogRouteWithChildren
+  '/blog': typeof BlogRouteRouteWithChildren
   '/pricing': typeof PricingRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/robots.txt': typeof RobotsDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/terms': typeof TermsRoute
+  '/privacy-policy': typeof legalPrivacyPolicyRoute
+  '/terms': typeof legalTermsRoute
+  '/robots.txt': typeof seoRobotsDottxtRoute
+  '/sitemap.xml': typeof seoSitemapDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/docs/$': typeof DocsSplatRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/docs/search': typeof ApiDocsSearchRoute
+  '/og/docs/$': typeof seoOgDocsSplatRoute
+  '/api/docs/markdown/$': typeof ApiDocsMarkdownSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/robots.txt': typeof RobotsDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/terms': typeof TermsRoute
+  '/privacy-policy': typeof legalPrivacyPolicyRoute
+  '/terms': typeof legalTermsRoute
+  '/robots.txt': typeof seoRobotsDottxtRoute
+  '/sitemap.xml': typeof seoSitemapDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/docs/$': typeof DocsSplatRoute
   '/blog': typeof BlogIndexRoute
+  '/api/docs/search': typeof ApiDocsSearchRoute
+  '/og/docs/$': typeof seoOgDocsSplatRoute
+  '/api/docs/markdown/$': typeof ApiDocsMarkdownSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/blog': typeof BlogRouteWithChildren
+  '/blog': typeof BlogRouteRouteWithChildren
   '/pricing': typeof PricingRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/robots.txt': typeof RobotsDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/terms': typeof TermsRoute
+  '/(legal)/privacy-policy': typeof legalPrivacyPolicyRoute
+  '/(legal)/terms': typeof legalTermsRoute
+  '/(seo)/robots.txt': typeof seoRobotsDottxtRoute
+  '/(seo)/sitemap.xml': typeof seoSitemapDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
-  '/blog_/rss.xml': typeof BlogRssDotxmlRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/docs/$': typeof DocsSplatRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/docs/search': typeof ApiDocsSearchRoute
+  '/(seo)/og/docs/$': typeof seoOgDocsSplatRoute
+  '/api/docs/markdown/$': typeof ApiDocsMarkdownSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -123,50 +150,61 @@ export interface FileRouteTypes {
     | '/blog'
     | '/pricing'
     | '/privacy-policy'
+    | '/terms'
     | '/robots.txt'
     | '/sitemap.xml'
-    | '/terms'
     | '/blog/$slug'
     | '/blog/rss.xml'
     | '/docs/$'
     | '/blog/'
+    | '/api/docs/search'
+    | '/og/docs/$'
+    | '/api/docs/markdown/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pricing'
     | '/privacy-policy'
+    | '/terms'
     | '/robots.txt'
     | '/sitemap.xml'
-    | '/terms'
     | '/blog/$slug'
     | '/blog/rss.xml'
     | '/docs/$'
     | '/blog'
+    | '/api/docs/search'
+    | '/og/docs/$'
+    | '/api/docs/markdown/$'
   id:
     | '__root__'
     | '/'
     | '/blog'
     | '/pricing'
-    | '/privacy-policy'
-    | '/robots.txt'
-    | '/sitemap.xml'
-    | '/terms'
+    | '/(legal)/privacy-policy'
+    | '/(legal)/terms'
+    | '/(seo)/robots.txt'
+    | '/(seo)/sitemap.xml'
     | '/blog/$slug'
-    | '/blog_/rss.xml'
+    | '/blog/rss.xml'
     | '/docs/$'
     | '/blog/'
+    | '/api/docs/search'
+    | '/(seo)/og/docs/$'
+    | '/api/docs/markdown/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BlogRoute: typeof BlogRouteWithChildren
+  BlogRouteRoute: typeof BlogRouteRouteWithChildren
   PricingRoute: typeof PricingRoute
-  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
-  RobotsDottxtRoute: typeof RobotsDottxtRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TermsRoute: typeof TermsRoute
-  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
+  legalPrivacyPolicyRoute: typeof legalPrivacyPolicyRoute
+  legalTermsRoute: typeof legalTermsRoute
+  seoRobotsDottxtRoute: typeof seoRobotsDottxtRoute
+  seoSitemapDotxmlRoute: typeof seoSitemapDotxmlRoute
   DocsSplatRoute: typeof DocsSplatRoute
+  ApiDocsSearchRoute: typeof ApiDocsSearchRoute
+  seoOgDocsSplatRoute: typeof seoOgDocsSplatRoute
+  ApiDocsMarkdownSplatRoute: typeof ApiDocsMarkdownSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,7 +220,7 @@ declare module '@tanstack/react-router' {
       id: '/blog'
       path: '/blog'
       fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
+      preLoaderRoute: typeof BlogRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -192,32 +230,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/privacy-policy': {
-      id: '/privacy-policy'
+    '/(legal)/privacy-policy': {
+      id: '/(legal)/privacy-policy'
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      preLoaderRoute: typeof legalPrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
+    '/(legal)/terms': {
+      id: '/(legal)/terms'
       path: '/terms'
       fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
+      preLoaderRoute: typeof legalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(seo)/robots.txt': {
+      id: '/(seo)/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof seoRobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(seo)/sitemap.xml': {
+      id: '/(seo)/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof seoSitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/': {
@@ -225,21 +263,21 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof BlogRouteRoute
     }
     '/blog/$slug': {
       id: '/blog/$slug'
       path: '/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof BlogRouteRoute
     }
-    '/blog_/rss.xml': {
-      id: '/blog_/rss.xml'
-      path: '/blog/rss.xml'
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/rss.xml'
       fullPath: '/blog/rss.xml'
       preLoaderRoute: typeof BlogRssDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BlogRouteRoute
     }
     '/docs/$': {
       id: '/docs/$'
@@ -248,41 +286,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/docs/search': {
+      id: '/api/docs/search'
+      path: '/api/docs/search'
+      fullPath: '/api/docs/search'
+      preLoaderRoute: typeof ApiDocsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(seo)/og/docs/$': {
+      id: '/(seo)/og/docs/$'
+      path: '/og/docs/$'
+      fullPath: '/og/docs/$'
+      preLoaderRoute: typeof seoOgDocsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/docs/markdown/$': {
+      id: '/api/docs/markdown/$'
+      path: '/api/docs/markdown/$'
+      fullPath: '/api/docs/markdown/$'
+      preLoaderRoute: typeof ApiDocsMarkdownSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
-interface BlogRouteChildren {
+interface BlogRouteRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
-const BlogRouteChildren: BlogRouteChildren = {
+const BlogRouteRouteChildren: BlogRouteRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
 
-const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+const BlogRouteRouteWithChildren = BlogRouteRoute._addFileChildren(
+  BlogRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BlogRoute: BlogRouteWithChildren,
+  BlogRouteRoute: BlogRouteRouteWithChildren,
   PricingRoute: PricingRoute,
-  PrivacyPolicyRoute: PrivacyPolicyRoute,
-  RobotsDottxtRoute: RobotsDottxtRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TermsRoute: TermsRoute,
-  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
+  legalPrivacyPolicyRoute: legalPrivacyPolicyRoute,
+  legalTermsRoute: legalTermsRoute,
+  seoRobotsDottxtRoute: seoRobotsDottxtRoute,
+  seoSitemapDotxmlRoute: seoSitemapDotxmlRoute,
   DocsSplatRoute: DocsSplatRoute,
+  ApiDocsSearchRoute: ApiDocsSearchRoute,
+  seoOgDocsSplatRoute: seoOgDocsSplatRoute,
+  ApiDocsMarkdownSplatRoute: ApiDocsMarkdownSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

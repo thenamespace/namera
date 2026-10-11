@@ -1,0 +1,10 @@
+{
+  "title": "Core Concepts",
+  "pages": [
+    "accounts",
+    "session-keys",
+    "permissions-and-policies",
+    "networks",
+    "organizations-and-workspaces"
+  ]
+}

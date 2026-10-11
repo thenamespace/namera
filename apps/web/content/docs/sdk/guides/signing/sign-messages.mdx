@@ -1,0 +1,98 @@
+---
+title: Sign Messages
+description: Sign a text message with your account and an authorized session key.
+---
+
+Use `namera.sign()` with `type: "message"` to sign a UTF-8 string. Signing a
+message does not submit a transaction.
+
+## Before You Start
+
+Set up [authentication](/docs/sdk/authentication) and a session key installed
+on **Base Sepolia**. The installation needs signature authority, and its API
+signature policy must allow `message` signing.
+See [Permissions](/docs/sdk/permissions#message-and-typed-data-signing).
+
+```sh
+npm install @namera-ai/sdk
+```
+
+## Sign a Message
+
+Replace the IDs with your account and session key:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "signature": "0x0000000100111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111b",
+  "type": "message"
+}
+```
+
+</div>
+
+The response values are illustrative. Use the actual `signature` returned by
+your request, with the original message, account, and network.
+
+## Verify the Signature
+
+```ts title="index.ts"
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "valid": true,
+  "type": "message"
+}
+```
+
+</div>
+
+Check `verification.data.valid`, not just `success`. These are smart-account
+signatures; use [Verify Signatures](/docs/sdk/guides/signing/verify-signatures)
+rather than comparing a recovered EOA address.
+
+For structured payloads, use [Sign Typed Data](/docs/sdk/guides/signing/sign-typed-data).

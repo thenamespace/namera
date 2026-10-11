@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Icon, InformationCircleIcon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
@@ -42,12 +43,13 @@ const Value = ({ value }: { readonly value: string }) => {
 
 const RowLabel = ({ label, note }: { readonly label: string; readonly note?: string }) => (
   <span className="flex items-center gap-2">
-    <span className="text-[0.875rem] text-muted">{label}</span>
+    <span className="text-[0.875rem] text-muted">{label}</span>{" "}
     {note === undefined ? null : (
       <span className="group/tip relative inline-flex">
         <button
           type="button"
           aria-label={`What ${label.toLowerCase()} means`}
+          onFocus={() => captureAnalytics("pricing_explanation_opened", { action: label })}
           className={cn(
             "grid size-5 place-items-center rounded-full text-ink-subtle opacity-0",
             "transition-opacity duration-150 ease-out-quad",
@@ -114,6 +116,8 @@ export const Comparison = () => {
             type="button"
             aria-pressed={item.id === plan}
             onClick={() => {
+              if (item.id !== plan)
+                captureAnalytics("pricing_comparison_plan_selected", { plan: item.id });
               setPlan(item.id);
             }}
             className={cn(
@@ -157,17 +161,20 @@ export const Comparison = () => {
         </thead>
 
         {GROUPS.map((group) => (
-          <tbody key={group.title}>
-            <tr>
-              <th scope="colgroup" colSpan={PLANS.length + 1} className="pt-12 pb-4 pl-3 text-left">
-                <span className="text-[0.9375rem] font-medium tracking-[-0.015em] text-foreground">
-                  {group.title}
-                </span>
-                {group.note ? (
-                  <p className="mt-2 max-w-2xl text-sm font-normal text-muted">{group.note}</p>
-                ) : null}
-              </th>
-            </tr>
+          <tbody key={group.rows[0]?.label}>
+            {group.title ? (
+              <tr>
+                <th
+                  scope="colgroup"
+                  colSpan={PLANS.length + 1}
+                  className="pt-12 pb-4 pl-3 text-left"
+                >
+                  <span className="text-[0.9375rem] font-medium tracking-[-0.015em] text-foreground">
+                    {group.title}
+                  </span>
+                </th>
+              </tr>
+            ) : null}
 
             {group.rows.map((row) => {
               const values = PLANS.map((item) => row.values[item.id]);

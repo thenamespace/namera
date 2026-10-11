@@ -1,0 +1,91 @@
+---
+title: Handling Results and Errors
+description: Read SDK results, handle failures, and check transaction outcomes.
+---
+
+SDK requests return a result with `success`, `data`, and `error`. Check
+`success` before using the response data.
+
+## Read a Result
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+
+const wallets = await namera.wallets.list();
+
+if (wallets.success) {
+  console.log(wallets.data);
+} else {
+  console.error(wallets.error.message);
+}
+```
+
+On success, `data` contains the response and `error` is `null`. On failure,
+`data` is `null` and `error` describes what went wrong.
+
+## Handle an API Error
+
+Use `error.kind` to identify the category. For API errors, `error.cause` retains
+the endpoint's typed error details. For example, a rate-limit error includes
+the number of seconds to wait:
+
+```ts title="index.ts"
+const sessions = await namera.sessionKeys.list();
+
+if (sessions.success) {
+  console.log(sessions.data);
+} else if (sessions.error.kind === "api" && sessions.error.cause._tag === "RateLimitExceeded") {
+  console.error(`Try again in ${sessions.error.cause.retryAfterSeconds} seconds.`);
+} else {
+  console.error(sessions.error.message);
+}
+```
+
+### Error Categories
+
+- **`api`**: Namera rejected the request. Check `cause` and, when provided,
+  `code` for the specific reason.
+- **`contract`**: an input or response does not match the expected schema.
+  Check IDs and request fields; if the inputs are valid, check your SDK version.
+- **`network`**: the API could not be reached. Check connectivity before retrying.
+- **`signer`**: signing could not proceed or a prepared operation failed validation.
+  Follow the error message; do not bypass validation.
+- **`unexpected`**: another failure occurred. Keep the error details for diagnosis.
+
+Use error tags or codes for program logic, not message text. `error.status`
+can be `null`, including for API errors.
+
+## Check the Transaction Outcome
+
+A successful `execute()` request does not mean the transaction is confirmed.
+Use its `submissionId` to check progress. Replace the example ID with the one
+returned by your execution:
+
+```ts title="index.ts"
+const status = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003");
+if (!status.success) throw new Error(status.error.message);
+
+console.log(status.data);
+
+if (status.data.status === "confirmed") {
+  console.log(status.data.execution);
+}
+```
+
+Check the same submission after a short delay while its status is `reserved`,
+`prepared`, or `submitted`. Stop polling on `confirmed` or `failed`.
+
+## Retry Carefully
+
+The execution flow already retries transient preparation and completion
+failures using the same operation. It does not retry policy denials.
+
+Calling `execute()` again starts a new operation. Once you have a submission ID,
+check that submission instead of resending the transaction. A network failure
+alone does not prove that nothing was submitted.
+
+For a complete transaction walkthrough, see [Getting Started](/docs/sdk/getting-started).

@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import {
   CancelCircleIcon,
   ChainIcon,
@@ -289,6 +290,11 @@ export const Playground = () => {
                       type="button"
                       aria-pressed={network === id}
                       onClick={() => {
+                        if (id !== network)
+                          captureAnalytics("playground_option_changed", {
+                            action: "network",
+                            destination: id,
+                          });
                         setNetwork(id);
                         reset();
                       }}
@@ -354,6 +360,10 @@ export const Playground = () => {
                     type="button"
                     aria-label={`Reverse: pay in ${to} instead`}
                     onClick={() => {
+                      captureAnalytics("playground_option_changed", {
+                        action: "asset",
+                        destination: to,
+                      });
                       setFrom(to);
                       setValue(DEFAULT_AMOUNT[to]);
                       reset();
@@ -398,6 +408,12 @@ export const Playground = () => {
                   type="button"
                   disabled={running}
                   onClick={() => {
+                    captureAnalytics("playground_run_completed", {
+                      action: "local_demo",
+                      destination: network,
+                      section: from,
+                      outcome: firstFailure === -1 ? "allowed" : "blocked",
+                    });
                     setCursor(0);
                   }}
                   className={

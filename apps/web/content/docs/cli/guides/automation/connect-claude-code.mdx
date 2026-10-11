@@ -1,0 +1,57 @@
+---
+title: Connect Claude Code
+description: Give Claude Code access to Namera through local MCP.
+---
+
+Install the [Namera CLI](/docs/cli/installation) and Claude Code
+on the machine that will run the agent. Make sure `namera` is on that process's
+PATH. Complete account setup and any required key import on the same machine.
+
+## Register Namera
+
+```sh
+claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude
+```
+
+User scope makes the connection available across your local Claude Code projects.
+The client launches a local stdio process. You do not need to start a background
+daemon or configure a hosted MCP URL.
+
+## Authorize the Connection
+
+You can authorize before the first tool call:
+
+```sh
+namera mcp login --profile claude
+namera mcp status --profile claude
+```
+
+<include>../../../../snippets/cli/output/mcp-claude.md</include>
+
+Approve only the active session keys and permissions this agent needs. Ordinary
+`namera login` and `NAMERA_API_KEY` do not authorize the MCP connection.
+
+If you skip manual login, the first authenticated tool call opens browser consent
+and asks you to retry after approval. If the browser cannot open, follow the URL
+printed by `namera mcp login`.
+
+## Check Read Access First
+
+Ask the agent to list your Namera accounts and inspect a session key before
+requesting an execution. Read access and execute/sign access are separate.
+To send transactions, the selected key must also permit the target network
+and action.
+
+For self-funded gas, configure an explicit ceiling on the `mcp serve` command.
+Tools cannot raise that ceiling; see [Sponsor Gas](/docs/cli/guides/transactions/sponsor-gas).
+
+## Disconnect
+
+```sh
+namera mcp logout --profile claude
+```
+
+This revokes the MCP connection without deleting imported keys. Remove the MCP
+registration from the agent client separately if you no longer want it launched.
+
+<include>../../../../snippets/cli/output-note.md</include>

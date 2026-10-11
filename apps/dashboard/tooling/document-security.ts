@@ -10,13 +10,13 @@ export const documentSecurity = (apiUrl: string) => {
     "default-src 'none'",
     "base-uri 'none'",
     "object-src 'none'",
-    "script-src 'self'",
+    "script-src 'self' https://t.namera.ai",
     // UIKit positioning, charts and Motion set inline styles, not inline scripts.
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "manifest-src 'self'",
     "img-src 'self' https: data: blob:",
-    `connect-src 'self' ${api.origin}`,
+    `connect-src 'self' ${api.origin} https://t.namera.ai`,
     "form-action 'self'",
   ].join("; ");
   const headers = {

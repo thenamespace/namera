@@ -1,0 +1,186 @@
+---
+title: Sign
+description: Sign a UTF-8 message or EIP-712 typed data.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.sign(request)` prepares, validates, and completes a signature using the selected session key. It does not send a transaction.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`. Replace example IDs with resources available to your credential.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+- **`namespace`** (`"eip155"`): Chain namespace.
+- **`walletId`** (`string`): Account UUID.
+- **`chainId`** (`SupportedEvmChainId`): Signing network.
+- **`account`** (`` `0x${string}` ``): Smart-account address.
+- **`signature`** (`` `0x${string}` ``): Smart-account signature, not a bare EOA signature.
+- **`type`** (`"message" | "typed-data"`): Payload kind.
+
+### Example Response
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "signature": "0x0000000100111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111b",
+  "type": "message"
+}
+```
+
+</div>
+
+## Parameters
+
+Pass a `SignRequest` object. The selected session needs installed signature authority and an API policy permitting the payload.
+
+<include>../../../../snippets/sdk/namespace.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/wallet-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/session-key-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002", // [!code focus]
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/chain-id.md</include>
+
+```ts title="index.ts"
+import { namera } from "./client";
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532", // [!code focus]
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+<include>../../../../snippets/sdk/signature-payload.md</include>
+
+#### Sign typed data
+
+Use `type: "typed-data"` with the complete payload. The session’s signature policy
+must permit its domain and primary type. Replace the domain’s contract address
+with the one expected by your application.
+
+```ts title="index.ts"
+import type { EvmTypedData } from "@namera-ai/sdk";
+import { namera } from "./client";
+
+const typedData = {
+  domain: {
+    name: "Namera Example",
+    version: "1",
+    chainId: 84532,
+    verifyingContract: "0x3333333333333333333333333333333333333333",
+  },
+  types: {
+    Greeting: [{ name: "contents", type: "string" }],
+  },
+  primaryType: "Greeting",
+  message: { contents: "Hello from Namera" },
+} satisfies EvmTypedData;
+```
+
+## Errors
+
+Signature policy, authorization, billing, and signing failures return `success: false`. Prepared-payload or signature validation failures use `kind: "signer"`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guides: [Sign Messages](/docs/sdk/guides/signing/sign-messages) and [Sign Typed Data](/docs/sdk/guides/signing/sign-typed-data).

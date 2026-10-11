@@ -1,0 +1,17 @@
+{
+  "title": "MCP",
+  "root": true,
+  "pages": [
+    "---Introduction---",
+    "index",
+    "installation",
+    "getting-started",
+    "---Essentials---",
+    "authentication",
+    "permissions",
+    "profiles-and-configuration",
+    "troubleshooting",
+    "---Connect Your Client---",
+    "clients"
+  ]
+}

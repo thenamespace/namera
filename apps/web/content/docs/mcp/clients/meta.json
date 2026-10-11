@@ -1,0 +1,20 @@
+{
+  "title": "Discover Clients",
+  "pages": [
+    "index",
+    "codex",
+    "claude-code",
+    "claude-desktop",
+    "cursor",
+    "vscode",
+    "gemini-cli",
+    "openclaw",
+    "cline",
+    "windsurf",
+    "opencode",
+    "kiro",
+    "zed",
+    "grok",
+    "other-clients"
+  ]
+}

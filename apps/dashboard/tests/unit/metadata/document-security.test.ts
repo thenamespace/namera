@@ -7,9 +7,9 @@ describe("dashboard document security", () => {
     const { headers } = documentSecurity("https://api.example.com/base?ignored=value");
     const policy = headers["Content-Security-Policy"];
 
-    expect(policy).toContain("connect-src 'self' https://api.example.com;");
+    expect(policy).toContain("connect-src 'self' https://api.example.com https://t.namera.ai;");
     expect(policy).not.toContain("ignored");
-    expect(policy).toContain("script-src 'self';");
+    expect(policy).toContain("script-src 'self' https://t.namera.ai;");
     expect(policy).toContain("manifest-src 'self';");
     expect(policy).not.toContain("'unsafe-eval'");
     expect(policy).toContain("frame-ancestors 'none'");

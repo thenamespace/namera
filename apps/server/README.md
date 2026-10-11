@@ -358,6 +358,14 @@ when omitted, so supply a meaningful value in production.
 
 ## Commands
 
+Production product analytics uses `POSTHOG_PROJECT_TOKEN`. Startup migrations add
+the analytics outbox before its worker starts; no separate scheduler or migration
+command is needed during normal server startup. A provider outage retains jobs for
+retry without failing wallet requests. Monitor `analytics.delivery.retry` and
+`analytics.worker.failed` in operational logs. Deploy the server and both frontends
+from the same release before checking the new milestone dashboards. Browser-only
+success events and server-confirmed outcomes intentionally have different names.
+
 ```sh
 pnpm --filter @namera-ai/server dev
 pnpm --filter @namera-ai/server build

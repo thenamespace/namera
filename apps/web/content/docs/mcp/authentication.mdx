@@ -1,0 +1,57 @@
+---
+title: Authentication
+description: Authorize a client, check its connection, and revoke access.
+---
+
+Each MCP connection uses browser authorization. You choose the session keys and
+access it receives. Credentials stay in your OS keyring, not in the client config.
+
+## Connect
+
+Use the profile from your client's `mcp serve` arguments. For example:
+
+```sh
+namera mcp login --profile codex
+```
+
+Open the printed authorization URL if the browser does not open automatically.
+Approve only the access this client needs.
+
+You can also start from the client: the first authenticated tool call opens
+consent when no usable connection exists. After approval, retry that request.
+Simply seeing tools in the client does not mean you have signed in.
+
+Ordinary `namera login`, your client's own account login, and `NAMERA_API_KEY`
+do not authorize the Namera MCP connection.
+
+## Check the Connection
+
+```sh
+namera mcp status --profile codex
+```
+
+Status reports the saved connection on this machine. It is not a live check of
+server-side access. A revoked grant can still appear locally connected until a
+tool request checks it.
+
+If login is required, run `namera mcp login` with that profile again. Saved
+credentials normally allow the client to reconnect without a new browser approval.
+
+## Change Access
+
+Manage the connection and session-key permissions in the dashboard. If you need
+to select a different set of keys, authorize the same profile again. A client
+cannot expand its own permissions through a tool call.
+
+## Disconnect
+
+```sh
+namera mcp logout --profile codex
+```
+
+Logout disables the local credentials and requests revocation of the MCP
+authorization. If revocation fails, follow the error's instructions to revoke
+the connection in the dashboard. Imported session keys are not deleted.
+
+Also remove or disable the server in your client. Removing its configuration
+alone does not revoke the authorization.

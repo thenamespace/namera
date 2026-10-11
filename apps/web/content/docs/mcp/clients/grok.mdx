@@ -1,0 +1,34 @@
+---
+title: Grok
+description: Understand the transport requirement before connecting Grok to Namera.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+<Callout type="info" title="No direct connection yet">
+  Grok's documented MCP connectors require a remote server URL. Namera currently provides a local
+  stdio server, so there is no Namera MCP URL to enter in Grok.
+</Callout>
+
+## Why a URL Does Not Work
+
+Grok connects to a server over the network. It cannot launch
+`namera mcp serve` on your computer through that URL-based connector.
+The [xAI remote MCP API](https://docs.x.ai/developers/tools/remote-mcp) likewise
+requires a server URL.
+
+The Namera API address is not an MCP endpoint. A tunnel alone also does not
+convert a stdio process into an HTTP server; Grok's
+[tunneling instructions](https://docs.x.ai/grok/connectors/custom-mcp-tunneling)
+assume you already have a network-listening server.
+
+## Use a Local Client
+
+Connect through [Cursor](/docs/mcp/clients/cursor),
+[OpenCode](/docs/mcp/clients/opencode), or another
+[local MCP client](/docs/mcp/clients). If that client offers a Grok model with
+tool support, it is the client, not Grok's hosted connector, that launches Namera.
+Model availability depends on the client and your account.
+
+These docs do not provide an unauthenticated HTTP bridge or instructions to
+expose a locally authorized wallet connection to the internet.

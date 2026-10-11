@@ -96,7 +96,7 @@ export const SiteHeader = () => {
             <ActionAnchor
               href={SITE_LINKS.app}
               variant="light"
-              className="h-8 rounded-md px-3 text-[0.8125rem]"
+              className="h-7 rounded-md px-2.5 text-xs"
             >
               Get started
             </ActionAnchor>

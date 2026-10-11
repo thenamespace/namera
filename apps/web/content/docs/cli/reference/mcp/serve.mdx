@@ -1,0 +1,53 @@
+---
+title: namera mcp serve
+description: Start the local stdio MCP server for an agent client.
+---
+
+Start the local stdio MCP server for an agent client.
+
+## Usage
+
+```sh
+namera mcp serve --profile default
+```
+
+## Output
+
+This is a long-running protocol process, not a command that prints a result.
+Stdout contains MCP messages only; diagnostics and authorization instructions
+go to stderr. The client starts and stops the process. Closing stdin ends it.
+
+## Options
+
+<include>../../../../snippets/cli/mcp-options.md</include>
+
+### --max-gas-cost-wei
+
+- **Type:** non-negative integer string, in wei
+- **Default:** sponsored operations only
+
+Approve a maximum gas cost for self-funded executions. MCP tools cannot raise
+this process-level ceiling. Omit it unless you intend to allow the agent to pay
+gas from the account.
+
+```sh
+namera mcp serve --profile default --max-gas-cost-wei 1000000000000000
+```
+
+`--output` and `--quiet` do not turn the stdio protocol into ordinary command
+output. Do not redirect stdout into a log file.
+
+## Authorization
+
+Register this command with your MCP client instead of running a daemon manually.
+The first authenticated tool call starts browser authorization when needed.
+After approving it, retry the tool. Ordinary CLI login and `NAMERA_API_KEY` do
+not authorize MCP.
+
+Supported protocol versions are `2026-07-28`, `2025-11-25`, and `2025-06-18`.
+Negotiation is automatic; there is no protocol-version flag.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

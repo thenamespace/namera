@@ -36,5 +36,14 @@
   "id": "/",
   "lang": "en-US",
   "categories": ["developer", "finance", "productivity"],
-  "orientation": "portrait-primary"
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Documentation",
+      "short_name": "Docs",
+      "url": "/docs",
+      "description": "Namera developer documentation"
+    },
+    { "name": "Blog", "url": "/blog", "description": "Namera updates and engineering" }
+  ]
 }

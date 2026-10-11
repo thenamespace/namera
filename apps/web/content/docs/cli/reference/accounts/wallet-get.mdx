@@ -1,0 +1,46 @@
+---
+title: namera wallet get
+description: Read one account by ID or choose it interactively.
+---
+
+Read one account by ID or choose it interactively.
+
+## Usage
+
+```sh
+namera wallet get 0199dfe1-0000-7000-8000-000000000001
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/wallet-get.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+```sh
+namera --output json wallet get 0199dfe1-0000-7000-8000-000000000001
+```
+
+<include>../../../../snippets/cli/output/wallet-get-json.md</include>
+
+## Arguments
+
+### wallet-id
+
+- **Type:** `string` (UUID)
+- **Required:** outside an interactive terminal
+
+Use an ID returned by `wallet list --output json`, not an address. Omit it in an
+interactive terminal to open a picker. The picker is unavailable with JSON output,
+quiet mode, or redirected streams.
+
+## Options
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

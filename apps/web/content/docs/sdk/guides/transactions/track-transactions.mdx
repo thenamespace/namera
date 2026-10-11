@@ -1,0 +1,194 @@
+---
+title: Track Transactions
+description: Follow a submission to confirmation and read its execution record.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Save the `submissionId` returned by `executions.execute()`. Use it to check
+progress without submitting the transaction again.
+
+## Check a Submission
+
+Use your [API key](/docs/sdk/authentication) and replace the example submission
+ID with the one returned by your execution:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const submissionId = "0199dfe1-0000-7000-8000-000000000003";
+
+const status = await namera.executions.getStatus(submissionId);
+if (!status.success) throw new Error(status.error.message);
+
+console.log(status.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "submitted",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+## Follow the Status
+
+- **`reserved`**: waiting for a signature.
+- **`prepared`**: signed and queued for broadcast.
+- **`submitted`**: observed by the bundler; not yet confirmed.
+- **`confirmed`**: completed successfully, with an execution record.
+- **`failed`**: did not complete successfully.
+
+Poll the same submission until it reaches a terminal status. This example
+checks every three seconds for up to one minute:
+
+```ts title="index.ts"
+for (let attempt = 0; attempt < 20; attempt++) {
+  const latest = await namera.executions.getStatus(submissionId);
+  if (!latest.success) throw new Error(latest.error.message);
+
+  console.log(latest.data);
+
+  if (latest.data.status === "confirmed" || latest.data.status === "failed") break;
+
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+```
+
+If it is still pending, keep the ID and check again later. Reaching the polling
+limit does not mean the transaction failed.
+
+<Callout type="warn" title="Do not resubmit to check progress">
+  Each new `execute()` call starts a new operation. Poll `getStatus()` instead. A failed or missing
+  response alone does not prove that no transaction was submitted.
+</Callout>
+
+## Read a Confirmed Execution
+
+Once confirmed, `data.execution` contains the calls, transaction hash, and
+receipt. For the 0.001 ETH transfer, a confirmed response has this shape:
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "confirmed",
+  "execution": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "executionSubmissionId": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "sessionKeyGrantId": "0199dfe1-0000-7000-8000-000000000013",
+    "namespace": "eip155",
+    "data": {
+      "version": 1,
+      "chainId": "eip155:84532",
+      "calls": [
+        {
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000",
+          "data": "0x"
+        }
+      ],
+      "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "receipt": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "blockHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "blockNumber": "32000000",
+        "sender": "0x1111111111111111111111111111111111111111",
+        "nonce": "0",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "paymaster": null,
+        "actualGasCost": "0",
+        "actualGasUsed": "120000",
+        "success": true,
+        "reason": null
+      }
+    },
+    "createdAt": "2026-10-11T09:10:00.000Z"
+  }
+}
+```
+
+</div>
+
+Hashes and receipt values are illustrative. Quantities shown as decimal strings
+in JSON are `bigint` values in the SDK.
+
+Use `execution.data.transactionHash` to look up the transaction on the network's
+block explorer. The `userOperationHash` identifies the account operation and is
+not the transaction hash.
+
+## Read Execution History
+
+Filter confirmed executions by account or session key:
+
+```ts title="index.ts"
+const history = await namera.executions.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+});
+
+if (!history.success) throw new Error(history.error.message);
+
+console.log(history.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "items": [
+    {
+      "details": {
+        "id": "0199dfe1-0000-7000-8000-000000000012",
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "createdAt": "2026-10-11T09:10:00.000Z"
+      },
+      "wallet": {
+        "id": "0199dfe1-0000-7000-8000-000000000001",
+        "namespace": "eip155",
+        "address": "0x1111111111111111111111111111111111111111",
+        "metadata": {
+          "version": 1,
+          "name": "Example account",
+          "logo": { "type": "emoji", "value": "👛" },
+          "description": "SDK test account"
+        }
+      },
+      "sessionKey": {
+        "id": "0199dfe1-0000-7000-8000-000000000002",
+        "namespace": "eip155",
+        "metadata": {
+          "version": 1,
+          "name": "Example session",
+          "logo": { "type": "emoji", "value": "🔑" },
+          "description": "Send test ETH on Base Sepolia"
+        }
+      },
+      "actorType": "api-key"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+</div>
+
+When `nextCursor` is not `null`, pass it as `cursor` with the same filters to get
+the next page. History contains confirmed executions; use `getStatus()` for
+pending or failed submissions.

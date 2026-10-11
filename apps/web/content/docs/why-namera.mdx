@@ -1,0 +1,78 @@
+---
+title: Why Namera
+icon: HelpCircleIcon
+description: A brief primer on why we built Namera
+---
+
+Giving an agent the ability to act onchain sounds simple until you try to put
+boundaries around it. The moment it can move funds, sign messages, or interact
+with contracts, you need to decide what it should be allowed to do and what
+should remain outside its control.
+
+Namera is built around that question: how do you give an agent useful access to
+a wallet without giving it the authority of the wallet owner?
+
+## The Problem with Agent Wallets
+
+Passing a wallet's private key through a `.env` file gets you to a working
+integration quickly. But the key does not know which task the agent is carrying
+out. If it controls the account, it can authorize whatever the account allows,
+not just the operation you intended.
+
+You can add checks to your application, but those checks are separate from the
+authority of the key itself. A spending rule in a prompt is not a spending
+limit on a wallet. Giving several agents the same owner key also makes it
+harder to separate their access or withdraw permission from just one of them.
+
+Moving the key behind an API changes where it is held. It does not, on its own,
+define what each caller should be allowed to do. Key custody and delegated
+permissions are different problems. Both need an explicit answer.
+
+## What Namera Does Differently
+
+Namera does not ask an agent to act as the account owner. It gives you a way to
+issue scoped session keys and grant each integration access to the keys it needs.
+
+Depending on the permissions you configure, you can restrict:
+
+- which networks the session key can use
+- which contracts and functions it can call
+- which tokens it can transfer and how much it can spend
+- how much native value and gas it can use
+- when execution access starts and expires
+- whether it can sign messages or typed data
+
+The current EVM accounts use Alchemy Modular Account V2. Session permissions
+are installed on the smart account with owner approval on each network.
+Additional API policies can narrow what Namera will authorize. These are
+separate layers: an API restriction is not automatically an onchain restriction.
+
+The same distinction matters when withdrawing access. Revoking a session key
+blocks its use through Namera. Removing its onchain permissions requires a
+separate owner-approved operation on each network where it was installed.
+Onchain signature authority is explicitly enabled and is not removed simply
+because execution access expires.
+
+Permissions limit authority, not judgment. An allowed transaction can still be
+a bad decision. The goal is to define the access a task needs and avoid granting
+more than that.
+
+## Choose How You Hold Keys
+
+Account ownership and session-key custody are independent choices. A user-owned
+passkey account or a 1Claw-managed account can use local or managed session keys.
+
+With a local session key, your client holds the private key and signs locally.
+With a managed session key, Namera requests signatures through 1Claw. Neither
+choice turns the session key into an account owner; its installed permissions
+and Namera authorization still determine what it can do.
+
+## Designed to Work with Your Tools
+
+You should not need a different permission model every time you change how an
+agent connects. The [SDK](/docs/sdk), [CLI](/docs/cli), and [MCP](/docs/mcp)
+clients use the same grant-scoped execution and signing capabilities.
+
+Use the SDK from a TypeScript application, the CLI from your terminal, or MCP
+from a compatible agent client. The interface changes. The account, session
+key, and permissions behind it stay the same.

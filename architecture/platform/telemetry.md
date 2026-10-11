@@ -206,6 +206,80 @@ not a claim of successful production ingestion or verification.
 
 ## Verification
 
+### Product analytics
+
+PostHog is independent of Axiom and audit records. The web and dashboard apps
+initialize the shared `@namera-ai/telemetry/analytics/browser` module with the
+public `VITE_POSTHOG_KEY`. Production collection is enabled on `namera.ai`,
+`www.namera.ai`, and `dashboard.namera.ai`; development and preview hosts are
+excluded. Events go through the managed `https://t.namera.ai` proxy.
+
+The dashboard identifies only verified user IDs, with an optional display name.
+Workspace IDs/names are event properties, not a paid Groups integration. An
+identity change resets the SDK before identifying the new user. Mutation
+completion events are discarded if identity/workspace changes during the request.
+UI success means the request succeeded, not onchain confirmation or a unique
+resource creation. Never use UI counts as authoritative billing or audit data.
+
+Session replay, arbitrary DOM autocapture, and application feature flags are
+disabled. Public home/pricing heatmaps are coordinate-only. The event boundary
+excludes credentials, request bodies, URL queries/fragments, arbitrary profile
+metadata, free-text survey responses, and raw exception messages. Explicit IDs
+and names are allowed. Exception frames retain asset paths and line/column data.
+
+Survey delivery samples 10% of browser app instances, waits 60 seconds on an
+eligible visible page, and enforces a cross-subdomain 30-day cooldown. Auth,
+settings, creation, account-detail, execution, and approval routes are excluded.
+The footer and dashboard profile settings expose browser analytics preferences;
+Do Not Track and Global Privacy Control also prevent collection.
+
+Provider dashboards, billing caps, survey definitions, deployment verification,
+and privacy/terms reconciliation are tracked in the ignored research plan.
+Provider query retention must not be described as a physical deletion guarantee.
+
+The server `ProductAnalytics` layer uses `POSTHOG_PROJECT_TOKEN` only when
+`NODE_ENV=production`. Authorization registers a pre-response observer after
+resolving the actor. It records normalized routes, status, duration, actor kind,
+and workspace context, never request/response bodies. DNT, GPC, and the browser
+opt-out cookie suppress these observations. Internal routes and actor/session
+polling are excluded. These are HTTP outcomes, not deduplicated domain milestones:
+retries and reads count separately. PostHog has a bounded queue, two retries and
+a five-second shutdown flush; delivery failure must not fail wallet operations.
+
+Committed milestones use a separate transactional outbox. The Audit service projects
+signup, login, workspace/account/session-key creation, installation outcomes,
+integration authorization, execution lifecycle, and signatures into narrow payloads.
+Waitlist creation is queued in its own transaction. `workspace_activated` is the
+first confirmed execution or signature per workspace, not a visit or submission.
+`integration_first_request_succeeded` is deduplicated per integration actor; polling
+routes do not qualify. Its best-effort enqueue runs after a successful response and
+is not an execution milestone.
+
+The server analytics worker claims committed rows, sends an immediate capture with
+a stable UUID/timestamp, and acknowledges only after provider acceptance. Retries
+back off from one minute to one hour. Crashed workers release via a two-minute
+lease. Payloads clear after acceptance; dedupe/eligibility keys remain. Execution
+and installation workers only emit for opted-in prepare operations. Public waitlist
+requests forward browser opt-out through `X-Namera-Analytics: off` without sending
+auth cookies. No new environment variables are required.
+
+Public interaction coverage includes clipboard-success-only docs copy, package/file
+tabs, search filters, assistant links, demo outcomes, pricing choices, foreground
+reading time, scroll thresholds, and first waitlist focus. Clipboard/form contents
+never enter events. Dashboard setup entry, quick actions, shared table controls,
+route failures/retries, and domain mutation outcomes use code-owned action labels.
+Section impressions require one second at 50% visibility. Reading engagement means
+30 foreground seconds; it does not prove comprehension or completion.
+
+Web/dashboard production builds upload hidden source maps with
+`@posthog/rollup-plugin`, then remove maps before assembling runtime images.
+The reusable build workflow reads `VITE_POSTHOG_KEY` and `POSTHOG_CLI_PROJECT_ID`
+from GitHub environment variables and `POSTHOG_CLI_API_KEY` from its environment
+secrets. The personal token enters Docker only through a BuildKit secret mount,
+never DOTENV or a build argument. Releases use the dispatch commit SHA. Staging
+clears the public token and does not upload maps. Runtime images reject public
+`.map` files. Test the upload in CI; ordinary local builds never upload symbols.
+
 After instrumentation changes, inspect one read and one mutation. Confirm one
 cross-service trace, stable route names, bounded metric attributes, structured
 log fields with trace correlation, no `/t/*` trace loop, and no idle-worker or

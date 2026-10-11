@@ -1,0 +1,43 @@
+---
+title: namera logout
+description: Remove a saved CLI connection from this device.
+---
+
+Remove a saved CLI connection from this device.
+
+## Usage
+
+```sh
+namera logout --profile personal
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/logout.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+<include>../../../../snippets/cli/output/logout-json.md</include>
+
+## Options
+
+### --profile
+
+- **Type:** `string`
+- **Default:** `personal`
+
+Remove this named CLI profile and its keyring credentials. This command targets
+the saved profile even if `NAMERA_API_KEY` is present.
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+## What Remains
+
+Imported signing keys are unchanged. Logout does not revoke the server-side OAuth
+authorization or an API key. Revoke access in the dashboard when necessary.
+Use `namera mcp logout` for the separate MCP connection.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).
