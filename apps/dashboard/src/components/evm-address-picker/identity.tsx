@@ -40,8 +40,8 @@ export function AddressIdentity({
             chain={network.name}
             className={
               compact
-                ? "bg-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-1 ring-surface"
-                : "bg-surface absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-1 ring-surface"
+                ? "bg-surface absolute -right-0.5 -bottom-1 size-2.5 rounded-full ring-1 ring-surface"
+                : "bg-surface absolute -right-0.5 -bottom-1 size-3 rounded-full ring-1 ring-surface"
             }
           />
         ) : null}
