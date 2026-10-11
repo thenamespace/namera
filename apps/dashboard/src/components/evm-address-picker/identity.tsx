@@ -21,18 +21,18 @@ export function AddressIdentity({
   return (
     <span className="flex min-w-0 flex-1 items-center gap-3 text-left">
       <span className="relative shrink-0">
-        <Avatar size="sm" className={compact ? "size-5" : undefined}>
-          {metadata ? (
+        {metadata ? (
+          <Avatar size="sm" className={compact ? "size-5" : undefined}>
             <Avatar.Image src={`https://cdn.namera.ai/${metadata.display.logo}`} alt="" />
-          ) : null}
-          <Avatar.Fallback>
-            {metadata ? (
-              metadata.display.name.slice(0, 2).toUpperCase()
-            ) : (
-              <HugeiconsIcon icon={ContractsIcon} className="size-4" aria-hidden />
-            )}
-          </Avatar.Fallback>
-        </Avatar>
+            <Avatar.Fallback>{metadata.display.name.slice(0, 2).toUpperCase()}</Avatar.Fallback>
+          </Avatar>
+        ) : (
+          <span
+            className={`bg-default text-foreground flex shrink-0 items-center justify-center rounded-full ${compact ? "size-5" : "size-8"}`}
+          >
+            <HugeiconsIcon icon={ContractsIcon} className="size-4" aria-hidden />
+          </span>
+        )}
         {network ? (
           <ChainIcon
             aria-hidden
