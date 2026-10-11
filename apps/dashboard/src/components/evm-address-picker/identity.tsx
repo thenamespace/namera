@@ -24,7 +24,7 @@ export function AddressIdentity({
             {metadata ? metadata.display.name.slice(0, 2).toUpperCase() : "0x"}
           </Avatar.Fallback>
         </Avatar>
-        {network ? (
+        {network && metadata?.type !== "contract" ? (
           <ChainIcon
             aria-hidden
             namespace="eip155"
