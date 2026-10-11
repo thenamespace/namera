@@ -35,6 +35,13 @@ Workspace package imports continue to use their package names.
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
   email addresses, dates, roles, and future table cells.
+- `src/components/evm-function-picker/` — controlled ABI function selection with
+  `selectionMode="single"` (`string | null`) or `"multiple"` (`readonly string[]`).
+  Values are canonical signatures, not names or four-byte selectors, so overloads
+  remain distinct. Search matches signatures, selectors and mutability. Select all
+  applies to visible results and preserves hidden selections; deselect all clears
+  everything. Non-function ABI entries are excluded. Unknown values are marked
+  invalid; consumers must validate selections against their current ABI before saving.
 - `src/components/evm-chain-select.tsx` — controlled single-chain selector scoped
   by allowed CAIP-2 chain IDs, with Mainnets/Testnets groups and chain icons.
   Supports field variants and React Hook Form trigger refs and blur handling.

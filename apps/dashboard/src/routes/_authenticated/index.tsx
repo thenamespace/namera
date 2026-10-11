@@ -9,6 +9,7 @@ import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 
 import { AddressPickerPreview, ContractPickerPreview } from "./-components/address-picker-preview";
+import { FunctionPickerPreview } from "./-components/function-picker-preview";
 import { Overview } from "./-components/overview";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -34,6 +35,7 @@ function OverviewPage() {
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
         <AddressPickerPreview />
         <ContractPickerPreview />
+        <FunctionPickerPreview />
         <Overview />
       </DashboardPage.Content>
     </DashboardPage>

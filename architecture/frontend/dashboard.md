@@ -183,6 +183,16 @@ The home-page preview is temporary and saves nothing; policy editors are not yet
 wired to the picker. Consumers must validate their current filter scope before
 submission if the allowed chains/types change after selection.
 
+`components/evm-function-picker` accepts a supplied ABI and controlled single or
+multiple canonical-signature values. It makes no network requests. Function-only
+options show signatures, mutability and four-byte selectors; overloads retain
+separate signature identities. Search matches all three fields. Multi-select
+bulk selection adds visible results without dropping hidden selections, while
+deselect-all clears the entire selection. Stale values are marked invalid and
+must be checked by consumers before saving against a changed ABI. The temporary
+home preview uses the standard ERC-721 ABI in both modes; policy editor wiring
+and contract-interface fetching are not part of this component.
+
 Forms use Effect Schema via `Schema.toStandardSchemaV1`, the Standard Schema
 React Hook Form resolver, native forms, `Controller` and UIKit fields. Controls
 adapt selection/value handlers explicitly. Read-only forms do not autosave or
