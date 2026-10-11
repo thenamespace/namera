@@ -138,7 +138,7 @@ function DocumentationPage() {
                 Namera <span className="font-normal text-fd-muted-foreground">Docs</span>
               </span>
             ),
-            url: "/",
+            url: "/docs",
           }}
           themeSwitch={{ enabled: false }}
           tabs={[
