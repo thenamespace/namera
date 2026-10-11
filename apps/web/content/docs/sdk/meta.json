@@ -12,6 +12,9 @@
     "permissions",
     "supported-networks",
     "handling-results-and-errors",
-    "guides"
+    "---Guides---",
+    "...guides",
+    "---Reference---",
+    "...reference"
   ]
 }

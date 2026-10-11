@@ -1,0 +1,145 @@
+---
+title: List Executions
+description: List confirmed executions with cursor pagination.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.executions.list(options?)` returns confirmed history. Pending submissions are not included.
+
+## Usage
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.executions.list({
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Parameters
+
+<TypeTable
+  type={{
+    options: {
+      type: "ListExecutionsOptions",
+      description: "Optional filters.",
+      default: "{}",
+    },
+    "options.walletId": {
+      type: "string",
+      description: "Filter by account UUID.",
+    },
+    "options.sessionKeyId": {
+      type: "string",
+      description: "Filter by session-key UUID.",
+    },
+    "options.cursor": {
+      type: "string",
+      description: "nextCursor from the previous response. Omit for the first page.",
+    },
+  }}
+/>
+
+There is no page-size parameter. Keep the same filters when requesting the next cursor.
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+These fields describe successful `data`. JSON values are illustrative; date-time
+values use ISO strings and bigint values use decimal strings in JSON.
+
+<TypeTable
+  type={{
+    items: {
+      type: "readonly ExecutionListItemResponse[]",
+      description: "Confirmed records accessible to your credential.",
+      required: true,
+    },
+    "items[].details": {
+      type: "object",
+      description: "id, namespace, chainId, transactionHash, and createdAt.",
+      required: true,
+    },
+    "items[].wallet": {
+      type: "object",
+      description: "id, namespace, address, and metadata.",
+      required: true,
+    },
+    "items[].sessionKey": {
+      type: "object",
+      description: "id, namespace, and metadata.",
+      required: true,
+    },
+    "items[].actorType": {
+      type: '"user" | "api-key" | "mcp" | "cli"',
+      description: "Submitting actor kind.",
+      required: true,
+    },
+    nextCursor: {
+      type: "string | null",
+      description: "Pass as cursor for the next page; null ends pagination.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "items": [
+    {
+      "details": {
+        "id": "0199dfe1-0000-7000-8000-000000000012",
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "createdAt": "2026-10-11T09:10:00.000Z"
+      },
+      "wallet": {
+        "id": "0199dfe1-0000-7000-8000-000000000001",
+        "namespace": "eip155",
+        "address": "0x1111111111111111111111111111111111111111",
+        "metadata": {
+          "version": 1,
+          "name": "Example account",
+          "logo": {
+            "type": "emoji",
+            "value": "👛"
+          },
+          "description": "SDK test account"
+        }
+      },
+      "sessionKey": {
+        "id": "0199dfe1-0000-7000-8000-000000000002",
+        "namespace": "eip155",
+        "metadata": {
+          "version": 1,
+          "name": "Example session",
+          "logo": {
+            "type": "emoji",
+            "value": "🔑"
+          },
+          "description": "Send test ETH on Base Sepolia"
+        }
+      },
+      "actorType": "api-key"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+</div>
+
+## Errors
+
+Invalid filter IDs return a contract error. API failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guide: [Track Transactions](/docs/sdk/guides/transactions/track-transactions).

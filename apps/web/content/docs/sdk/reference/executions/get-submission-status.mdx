@@ -1,0 +1,162 @@
+---
+title: Get Submission Status
+description: Read the current state of an execution submission.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.executions.getStatus(submissionId)` tracks a submission before and after confirmation.
+
+## Usage
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.executions.getStatus("0199dfe1-0000-7000-8000-000000000003");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Parameters
+
+<TypeTable
+  type={{
+    submissionId: {
+      type: "string",
+      description: "Submission UUID returned by execute. Not an execution ID or transaction hash.",
+      required: true,
+    },
+  }}
+/>
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+These fields describe successful `data`. JSON values are illustrative; date-time
+values use ISO strings and bigint values use decimal strings in JSON.
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    submissionId: {
+      type: "string",
+      description: "Requested submission UUID.",
+      required: true,
+    },
+    status: {
+      type: '"reserved" | "prepared" | "submitted" | "confirmed" | "failed"',
+      description: "Discriminator for the response shape.",
+      required: true,
+    },
+    userOperationHash: {
+      type: "`0x${string}` | null",
+      description: "Present only for reserved, prepared, and submitted.",
+    },
+    execution: {
+      type: "ExecutionResponse",
+      description: "Complete confirmed execution record. Present only for confirmed.",
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "submitted",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+### Confirmed
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "confirmed",
+  "execution": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "executionSubmissionId": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "sessionKeyGrantId": "0199dfe1-0000-7000-8000-000000000013",
+    "namespace": "eip155",
+    "data": {
+      "version": 1,
+      "chainId": "eip155:84532",
+      "calls": [
+        {
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000",
+          "data": "0x"
+        }
+      ],
+      "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "receipt": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "blockHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "blockNumber": "32000000",
+        "sender": "0x1111111111111111111111111111111111111111",
+        "nonce": "0",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "paymaster": null,
+        "actualGasCost": "0",
+        "actualGasUsed": "120000",
+        "success": true,
+        "reason": null
+      }
+    },
+    "createdAt": "2026-10-11T09:10:00.000Z"
+  }
+}
+```
+
+</div>
+
+### Failed
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "failed"
+}
+```
+
+</div>
+
+## States
+
+- `reserved`: awaiting authorization.
+- `prepared`: signed and queued for broadcast.
+- `submitted`: observed by the bundler.
+- `confirmed`: includes the successful execution record.
+- `failed`: terminal failure; no execution or hash field.
+
+Poll the same ID while pending; stop on confirmed or failed. This method does not poll automatically.
+
+## Errors
+
+`EXECUTION_SUBMISSION_NOT_FOUND` means the submission is missing or unavailable to your credential. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guide: [Track Transactions](/docs/sdk/guides/transactions/track-transactions).

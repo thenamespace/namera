@@ -1,0 +1,152 @@
+---
+title: List Accounts
+description: Read the accounts available to your credential.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.wallets.list()` returns accounts reachable through your active grants.
+
+## Usage
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.wallets.list();
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Parameters
+
+None. This method has no filters or pagination options.
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+The fields below describe successful `data`. JSON values are illustrative;
+SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+
+<TypeTable
+  type={{
+    data: {
+      type: "readonly WalletResponse[]",
+      description: "Complete account records. Empty when no accounts are available.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+[
+  {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": {
+        "type": "emoji",
+        "value": "👛"
+      },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  }
+]
+```
+
+</div>
+
+Each element includes the following fields:
+
+<TypeTable
+  type={{
+    id: {
+      type: "string",
+      description: "Account ID.",
+      required: true,
+    },
+    organizationId: {
+      type: "string",
+      description: "Owning organization ID.",
+      required: true,
+    },
+    metadata: {
+      type: "object",
+      description: "version and name, with optional logo and description.",
+      required: true,
+    },
+    status: {
+      type: '"active" | "frozen" | "archived"',
+      description: "Account lifecycle status.",
+      required: true,
+    },
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    address: {
+      type: "`0x${string}`",
+      description: "Smart-account address.",
+      required: true,
+    },
+    owner: {
+      type: "object",
+      description:
+        "Public signing-key identity, custody, algorithm, and provider-specific protection details.",
+      required: true,
+    },
+    implementation: {
+      type: '"alchemy-modular-v2"',
+      description: "Smart-account implementation.",
+      required: true,
+    },
+    data: {
+      type: "object",
+      description:
+        "Account configuration, discriminated by validatorType and accountMode. Includes deployment and version fields.",
+      required: true,
+    },
+    createdAt: {
+      type: "DateTime.Utc",
+      description: "Creation time.",
+      required: true,
+    },
+    updatedAt: {
+      type: "DateTime.Utc",
+      description: "Last update time.",
+      required: true,
+    },
+  }}
+/>
+
+## Errors
+
+API failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.

@@ -1,0 +1,196 @@
+---
+title: Simulate
+description: Simulate calls and evaluate the selected session key’s API policies.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.executions.simulate(request)` does not sign, submit, or sponsor an operation.
+
+## Usage
+
+Install `viem` for `parseEther`. Replace the example IDs and recipient.
+
+```ts title="index.ts"
+import { NameraClient, type SimulateExecutionRequest } from "@namera-ai/sdk";
+import { parseEther } from "viem";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const request = {
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+} satisfies SimulateExecutionRequest;
+
+const simulation = await namera.executions.simulate(request);
+if (!simulation.success) throw new Error(simulation.error.message);
+
+console.log(simulation.data);
+```
+
+## Parameters
+
+`request` is a `SimulateExecutionRequest`. It has no `sponsor` parameter.
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Required chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    sessionKeyId: {
+      type: "string",
+      description: "Authorized session-key UUID installed on chainId.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      typeDescriptionLink: "/docs/sdk/supported-networks",
+      description: "Supported CAIP-2 chain ID, such as eip155:84532. See Supported Networks.",
+      required: true,
+    },
+    calls: {
+      type: "readonly Call[]",
+      description: "One or more calls, executed in array order.",
+      required: true,
+    },
+    "calls[].to": {
+      type: "`0x${string}`",
+      description: "20-byte recipient or contract address.",
+      required: true,
+    },
+    "calls[].value": {
+      type: "bigint",
+      description: "Nonnegative native-token amount in wei. Use parseEther for ETH.",
+      required: true,
+    },
+    "calls[].data": {
+      type: "`0x${string}`",
+      description: "Encoded calldata; use 0x for a native transfer.",
+      required: true,
+    },
+  }}
+/>
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+The fields below describe successful `data`. JSON values are illustrative;
+SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      description: "Simulation network.",
+      required: true,
+    },
+    account: {
+      type: "`0x${string}`",
+      description: "Smart-account address.",
+      required: true,
+    },
+    callsSucceeded: {
+      type: "boolean",
+      description: "Whether the simulated calls succeeded.",
+      required: true,
+    },
+    simulation: {
+      type: "EvmIntentSimulation",
+      description: "userOperation gas estimates and calls results, assetChanges, and transfers.",
+      required: true,
+    },
+    allowed: {
+      type: "boolean",
+      description: "Point-in-time policy decision; not a guarantee of later execution.",
+      required: true,
+    },
+    sessionKeyId: {
+      type: "string",
+      description: "Present when allowed is true.",
+    },
+    denials: {
+      type: "readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]",
+      description: "Nonempty when allowed is false; absent when allowed is true.",
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "callsSucceeded": true,
+  "simulation": {
+    "userOperation": {
+      "source": "eth_estimateUserOperationGas",
+      "callGasLimit": "50000",
+      "verificationGasLimit": "100000",
+      "preVerificationGas": "50000",
+      "maxFeePerGas": "1000000000",
+      "maxPriorityFeePerGas": "1000000"
+    },
+    "calls": {
+      "source": "viem.simulateCalls",
+      "results": [
+        {
+          "status": "success",
+          "returnData": "0x",
+          "gasUsed": "21000"
+        }
+      ],
+      "assetChanges": [],
+      "transfers": [
+        {
+          "callIndex": 0,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000"
+        }
+      ]
+    }
+  },
+  "allowed": true,
+  "sessionKeyId": "0199dfe1-0000-7000-8000-000000000002"
+}
+```
+
+</div>
+
+Both `callsSucceeded` and `allowed` must be true before proceeding. A denied policy decision can still be a successful SDK response.
+
+## Errors
+
+Execution, authorization, and network failures return `success: false`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.
+
+Guide: [Simulate Transactions](/docs/sdk/guides/transactions/simulate-transactions).

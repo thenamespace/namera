@@ -1,0 +1,4 @@
+{
+  "title": "Accounts",
+  "pages": ["list-accounts", "get-account"]
+}

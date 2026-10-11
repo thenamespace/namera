@@ -1,0 +1,186 @@
+---
+title: Sign
+description: Sign a UTF-8 message or EIP-712 typed data.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.sign(request)` prepares, validates, and completes a signature using the selected session key. It does not send a transaction.
+
+## Usage
+
+Replace the example IDs with an account and installed session key that allow message signing.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+console.log(signed.data);
+```
+
+## Parameters
+
+`request` is a `SignRequest`:
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    sessionKeyId: {
+      type: "string",
+      description: "Authorized session-key UUID installed for this account and network.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      typeDescriptionLink: "/docs/sdk/supported-networks",
+      description: "CAIP-2 network ID, such as eip155:84532.",
+      required: true,
+    },
+    type: {
+      type: '"message" | "typed-data"',
+      description: "Selects the payload shape.",
+      required: true,
+    },
+    message: {
+      type: "string",
+      description: "Required for message. Exact UTF-8 text, not raw bytes.",
+    },
+    typedData: {
+      type: "EvmTypedData",
+      description: "Required for typed-data; omit message.",
+    },
+  }}
+/>
+
+### Typed Data
+
+<TypeTable
+  type={{
+    "typedData.domain": {
+      type: "object",
+      description: "EIP-712 domain. All domain fields are optional.",
+      required: true,
+    },
+    "typedData.domain.name": {
+      type: "string",
+      description: "Domain name.",
+    },
+    "typedData.domain.version": {
+      type: "string",
+      description: "Domain version.",
+    },
+    "typedData.domain.chainId": {
+      type: "number",
+      description: "Nonnegative integer chain ID, such as 84532, not a CAIP-2 string.",
+    },
+    "typedData.domain.verifyingContract": {
+      type: "`0x${string}`",
+      description: "20-byte contract address.",
+    },
+    "typedData.domain.salt": {
+      type: "`0x${string}`",
+      description: "32-byte domain salt.",
+    },
+    "typedData.types": {
+      type: "Record<string, readonly { name: string; type: string }[]>",
+      description: "Named structs with nonempty field arrays.",
+      required: true,
+    },
+    "typedData.primaryType": {
+      type: "string",
+      description: "Nonempty root struct name.",
+      required: true,
+    },
+    "typedData.message": {
+      type: "Record<string, Json>",
+      description: "JSON-compatible values. Encode large integers as decimal strings, not bigint.",
+      required: true,
+    },
+  }}
+/>
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+These fields describe successful `data`. JSON values are illustrative; date-time
+values use ISO strings and bigint values use decimal strings in JSON.
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      description: "Signing network.",
+      required: true,
+    },
+    account: {
+      type: "`0x${string}`",
+      description: "Smart-account address.",
+      required: true,
+    },
+    signature: {
+      type: "`0x${string}`",
+      description: "Smart-account signature, not a bare EOA signature.",
+      required: true,
+    },
+    type: {
+      type: '"message" | "typed-data"',
+      description: "Payload kind.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "signature": "0x0000000100111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111b",
+  "type": "message"
+}
+```
+
+</div>
+
+The signature value above is illustrative. Verify the actual returned signature against the original payload.
+
+## Errors
+
+Signature policy, authorization, billing, and signing failures return `success: false`. Prepared-payload or signature validation failures use `kind: "signer"`. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guides: [Sign Messages](/docs/sdk/guides/signing/sign-messages) and [Sign Typed Data](/docs/sdk/guides/signing/sign-typed-data).

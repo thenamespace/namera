@@ -1,0 +1,208 @@
+---
+title: Get Execution
+description: Read a confirmed execution, receipt, and related resources.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.executions.get(executionId)` returns the full confirmed record.
+
+## Usage
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.executions.get("0199dfe1-0000-7000-8000-000000000012");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Parameters
+
+<TypeTable
+  type={{
+    executionId: {
+      type: "string",
+      description: "Confirmed execution UUID from list or getStatus(). Not a submission ID.",
+      required: true,
+    },
+  }}
+/>
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+These fields describe successful `data`. JSON values are illustrative; date-time
+values use ISO strings and bigint values use decimal strings in JSON.
+
+<TypeTable
+  type={{
+    execution: {
+      type: "ExecutionResponse",
+      description:
+        "id, executionSubmissionId, organizationId, sessionKeyGrantId, namespace, data, and createdAt.",
+      required: true,
+    },
+    "execution.data": {
+      type: "EvmExecutionData",
+      description:
+        "version, namespace, chainId, calls, userOperationHash, transactionHash, and receipt.",
+      required: true,
+    },
+    "execution.data.receipt": {
+      type: "SuccessfulEvmExecutionReceipt",
+      description:
+        "Successful user-operation receipt including block, gas, sender, and EntryPoint.",
+      required: true,
+    },
+    wallet: {
+      type: "WalletResponse",
+      description: "Complete account record.",
+      required: true,
+    },
+    sessionKey: {
+      type: "SessionKeySummaryResponse",
+      description:
+        "Session identity, metadata, policies, lifecycle, and creation fields without expanded relations.",
+      required: true,
+    },
+    actor: {
+      type: "ExecutionActorDetailsResponse",
+      description:
+        "Discriminated by type. user has member; api-key has apiKey; cli and mcp have authorization. Includes id and public credential details, never raw secrets.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "execution": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "executionSubmissionId": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "sessionKeyGrantId": "0199dfe1-0000-7000-8000-000000000013",
+    "namespace": "eip155",
+    "data": {
+      "version": 1,
+      "chainId": "eip155:84532",
+      "calls": [
+        {
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "1000000000000000",
+          "data": "0x"
+        }
+      ],
+      "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "receipt": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:84532",
+        "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "transactionHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "blockHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "blockNumber": "32000000",
+        "sender": "0x1111111111111111111111111111111111111111",
+        "nonce": "0",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "paymaster": null,
+        "actualGasCost": "0",
+        "actualGasUsed": "120000",
+        "success": true,
+        "reason": null
+      }
+    },
+    "createdAt": "2026-10-11T09:10:00.000Z"
+  },
+  "wallet": {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": {
+        "type": "emoji",
+        "value": "👛"
+      },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  },
+  "sessionKey": {
+    "id": "0199dfe1-0000-7000-8000-000000000002",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000006",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Example session",
+      "logo": {
+        "type": "emoji",
+        "value": "🔑"
+      },
+      "description": "Send 0.001 test ETH on Base Sepolia"
+    },
+    "policies": [],
+    "policyHash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "active",
+    "revokedAt": null,
+    "createdAt": "2026-10-11T09:05:00.000Z"
+  },
+  "actor": {
+    "id": "0199dfe1-0000-7000-8000-000000000012",
+    "type": "api-key",
+    "apiKey": {
+      "id": "0199dfe1-0000-7000-8000-000000000013",
+      "metadata": {
+        "version": 1,
+        "name": "Example integration",
+        "logo": {
+          "type": "emoji",
+          "value": "🔑"
+        },
+        "description": "SDK examples"
+      },
+      "keyStart": "example",
+      "expiresAt": null,
+      "lastUsedAt": "2026-10-11T09:10:00.000Z",
+      "revokedAt": null,
+      "createdAt": "2026-10-11T09:00:00.000Z",
+      "updatedAt": "2026-10-11T09:00:00.000Z"
+    }
+  }
+}
+```
+
+</div>
+
+For an unconfirmed submission, use [Get Submission Status](/docs/sdk/reference/executions/get-submission-status).
+
+## Errors
+
+`EXECUTION_NOT_FOUND` means the confirmed record is missing or unavailable to your credential. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.

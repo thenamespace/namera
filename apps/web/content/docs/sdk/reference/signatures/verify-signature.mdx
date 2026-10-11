@@ -1,0 +1,152 @@
+---
+title: Verify Signature
+description: Verify a smart-account signature against its original payload.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.verifySignature(request)` performs read-only verification. It requires access to the account, but no session-key ID.
+
+## Usage
+
+This example signs a message, then verifies the returned signature. If you already have a signature, call only `verifySignature()` with its original payload.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const message = "Hello from Namera";
+
+const signed = await namera.sign({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000002",
+  chainId: "eip155:84532",
+  type: "message",
+  message,
+});
+
+if (!signed.success) throw new Error(signed.error.message);
+
+const verification = await namera.verifySignature({
+  namespace: "eip155",
+  walletId: signed.data.walletId,
+  chainId: signed.data.chainId,
+  type: "message",
+  message,
+  signature: signed.data.signature,
+});
+
+if (!verification.success) throw new Error(verification.error.message);
+
+console.log(verification.data);
+```
+
+## Parameters
+
+`request` is a `VerifySignatureRequest`:
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      typeDescriptionLink: "/docs/sdk/supported-networks",
+      description: "CAIP-2 network ID, such as eip155:84532.",
+      required: true,
+    },
+    type: {
+      type: '"message" | "typed-data"',
+      description: "Selects the payload shape.",
+      required: true,
+    },
+    message: {
+      type: "string",
+      description: "Required for message. Exact UTF-8 text, not raw bytes.",
+    },
+    typedData: {
+      type: "EvmTypedData",
+      description: "Required for typed-data; omit message.",
+    },
+    signature: {
+      type: "`0x${string}`",
+      description: "Smart-account signature to verify.",
+      required: true,
+    },
+  }}
+/>
+
+For `type: "typed-data"`, supply the original [EvmTypedData fields](/docs/sdk/reference/signatures/sign#typed-data) instead of message.
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+These fields describe successful `data`. JSON values are illustrative; date-time
+values use ISO strings and bigint values use decimal strings in JSON.
+
+<TypeTable
+  type={{
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account UUID.",
+      required: true,
+    },
+    chainId: {
+      type: "SupportedEvmChainId",
+      description: "Verification network.",
+      required: true,
+    },
+    account: {
+      type: "`0x${string}`",
+      description: "Smart-account address.",
+      required: true,
+    },
+    valid: {
+      type: "boolean",
+      description: "Whether the account accepts this signature for the payload.",
+      required: true,
+    },
+    type: {
+      type: '"message" | "typed-data"',
+      description: "Payload kind.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "chainId": "eip155:84532",
+  "account": "0x1111111111111111111111111111111111111111",
+  "valid": true,
+  "type": "message"
+}
+```
+
+</div>
+
+`success: true` does not imply a valid signature. Check `data.valid`.
+
+## Errors
+
+`VERIFICATION_FAILED` indicates verification could not be completed; `valid: false` is a completed check that rejected the signature. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for shared authentication, transport, and contract errors.
+
+Guide: [Verify Signatures](/docs/sdk/guides/signing/verify-signatures).

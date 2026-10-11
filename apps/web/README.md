@@ -48,6 +48,11 @@ guides cover asset transfers, contract calls, batching, simulation, tracking,
 and sponsorship. Signing guides cover messages, typed data, and smart-account
 verification. Examples use Base Sepolia and illustrative IDs and response values;
 verify TypeScript against the SDK and JSON against the protocol response schemas.
+Reference follows Guides with Client, Accounts, Session Keys, Executions, and
+Signatures groups. Method pages use Fumadocs type tables for parameters and return
+fields, typed examples, and complete illustrative response data. SDK metadata
+uses section separators and extracted folders so Essentials, Guides, and Reference
+share the same heading style and spacing without changing page URLs.
 The walkthrough uses current SDK exports to discover resources, execute a managed-session
 test transaction on Base Sepolia, and read its submission status. Example JSON is
 illustrative; snippets log complete result `.data`, and the response examples

@@ -1,0 +1,266 @@
+---
+title: Get Session Key
+description: Read a session key and its network installations.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`namera.sessionKeys.get(sessionKeyId)` returns the key, its account, creator, and installations.
+
+## Usage
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.sessionKeys.get("0199dfe1-0000-7000-8000-000000000002");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Parameters
+
+<TypeTable
+  type={{
+    sessionKeyId: {
+      type: "string",
+      description: "Required session-key UUID.",
+      required: true,
+    },
+  }}
+/>
+
+## Returns
+
+Returns a promise containing a [NameraResult](/docs/sdk/handling-results-and-errors).
+The fields below describe successful `data`. JSON values are illustrative;
+SDK timestamps are decoded date-time values and bigint fields are decimal strings in JSON.
+
+<TypeTable
+  type={{
+    id: {
+      type: "string",
+      description: "Session-key ID.",
+      required: true,
+    },
+    organizationId: {
+      type: "string",
+      description: "Owning organization.",
+      required: true,
+    },
+    walletId: {
+      type: "string",
+      description: "Account ID.",
+      required: true,
+    },
+    signingKeyId: {
+      type: "string",
+      description: "Signing-key identity.",
+      required: true,
+    },
+    namespace: {
+      type: '"eip155"',
+      description: "Chain namespace.",
+      required: true,
+    },
+    metadata: {
+      type: "object",
+      description: "version and name, with optional logo and description.",
+      required: true,
+    },
+    policies: {
+      type: "readonly Policy[]",
+      description: "Additional API policies.",
+      required: true,
+    },
+    policyHash: {
+      type: "string",
+      description: "Stored policy hash.",
+      required: true,
+    },
+    status: {
+      type: '"pending" | "active" | "revoking" | "revoked"',
+      description: "Session lifecycle status.",
+      required: true,
+    },
+    revokedAt: {
+      type: "DateTime.Utc | null",
+      description: "Revocation time, if revoked.",
+      required: true,
+    },
+    createdAt: {
+      type: "DateTime.Utc",
+      description: "Creation time.",
+      required: true,
+    },
+    signer: {
+      type: "object",
+      description: "Public signer identity and custody. No private key.",
+      required: true,
+    },
+    wallet: {
+      type: "WalletResponse",
+      description: "Complete account record.",
+      required: true,
+    },
+    creator: {
+      type: "object",
+      description: "Creating organizationMember, user, and organizationRole.",
+      required: true,
+    },
+    installations: {
+      type: "readonly Installation[]",
+      description:
+        "Each has id, chainId, status, authorization, installTransactionHash, and uninstallTransactionHash. Authorization includes permissions, signature authority, and validity timestamps.",
+      required: true,
+    },
+  }}
+/>
+
+<div className="docs-response">
+
+```json
+{
+  "id": "0199dfe1-0000-7000-8000-000000000002",
+  "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "signingKeyId": "0199dfe1-0000-7000-8000-000000000006",
+  "namespace": "eip155",
+  "metadata": {
+    "version": 1,
+    "name": "Example session",
+    "logo": {
+      "type": "emoji",
+      "value": "🔑"
+    },
+    "description": "Send 0.001 test ETH on Base Sepolia"
+  },
+  "policies": [],
+  "policyHash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "status": "active",
+  "revokedAt": null,
+  "createdAt": "2026-10-11T09:05:00.000Z",
+  "signer": {
+    "custody": "namera-managed",
+    "provider": "1claw",
+    "algorithm": "secp256k1",
+    "publicKey": "0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+  },
+  "wallet": {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": {
+        "type": "emoji",
+        "value": "👛"
+      },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  },
+  "creator": {
+    "organizationMember": {
+      "id": "0199dfe1-0000-7000-8000-000000000007",
+      "userId": "0199dfe1-0000-7000-8000-000000000008",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+      "organizationRoleId": "0199dfe1-0000-7000-8000-000000000009",
+      "joinedAt": "2026-10-11T08:00:00.000Z"
+    },
+    "user": {
+      "id": "0199dfe1-0000-7000-8000-000000000008",
+      "email": "developer@example.com",
+      "emailVerified": true,
+      "metadata": {
+        "version": 1,
+        "name": "Example developer",
+        "image": {
+          "type": "emoji",
+          "value": "👤"
+        }
+      },
+      "lastLoginAt": "2026-10-11T08:55:00.000Z"
+    },
+    "organizationRole": {
+      "id": "0199dfe1-0000-7000-8000-000000000009",
+      "key": "developer",
+      "metadata": {
+        "version": 1,
+        "name": "Developer",
+        "logo": {
+          "type": "emoji",
+          "value": "💻"
+        },
+        "description": "Manage test accounts and session keys"
+      },
+      "type": "custom",
+      "permissions": [
+        "wallet:read",
+        "wallet:create",
+        "session-key:read",
+        "session-key:create",
+        "api-key:create"
+      ],
+      "systemRoleId": null
+    }
+  },
+  "installations": [
+    {
+      "id": "0199dfe1-0000-7000-8000-000000000010",
+      "chainId": "eip155:84532",
+      "status": "installed",
+      "authorization": {
+        "version": 1,
+        "entityId": 1,
+        "signerAddress": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "permissions": [
+          {
+            "type": "contract-access",
+            "address": "0x2222222222222222222222222222222222222222"
+          },
+          {
+            "type": "native-token-transfer",
+            "allowance": "1000000000000000"
+          }
+        ],
+        "allowSignatures": false,
+        "validAfter": 1791709200,
+        "validUntil": 1794387600
+      },
+      "installTransactionHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+      "uninstallTransactionHash": null
+    }
+  ]
+}
+```
+
+</div>
+
+An active key must also have an `installed` installation on the requested network before use.
+
+## Errors
+
+`SESSION_KEY_NOT_FOUND` means the key does not exist or is not available to your credential. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors)
+for authentication, transport, and contract errors.

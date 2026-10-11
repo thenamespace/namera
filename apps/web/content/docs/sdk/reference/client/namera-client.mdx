@@ -1,0 +1,146 @@
+---
+title: NameraClient
+description: Create and configure the Namera SDK client.
+---
+
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+`new NameraClient(config)` creates a client. Construction does not authenticate or send an API request.
+
+## Usage
+
+```sh
+npm install @namera-ai/sdk
+```
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+```
+
+## Parameters
+
+`config` is a `NameraClientConfig`. Supply exactly one authentication option.
+
+<TypeTable
+  type={{
+    apiKey: {
+      type: "string",
+      description: "API key. Mutually exclusive with accessToken and getAccessToken.",
+    },
+    accessToken: {
+      type: "string",
+      description: "OAuth bearer token, without the Bearer prefix.",
+    },
+    getAccessToken: {
+      type: "() => Promise<string>",
+      description:
+        "Token supplier invoked for requests. The application owns refresh and persistence.",
+    },
+    baseUrl: {
+      type: "string",
+      description: "API base URL.",
+      default: "https://api.namera.ai",
+    },
+    fetch: {
+      type: "NameraFetch",
+      description: "Custom Fetch-compatible implementation.",
+      default: "platform fetch",
+    },
+    maxGasCostWei: {
+      type: "bigint",
+      description:
+        "Caller-approved gas ceiling for self-funded managed and automatically resolved local executions.",
+    },
+    localSigning: {
+      type: "false",
+      description:
+        "Node.js only: disable automatic local key-store access. Explicit resolvers still take precedence.",
+    },
+    resolveSessionSigner: {
+      type: "ResolveSessionSigner",
+      description:
+        "Advanced: override signer resolution with your own trusted binding and signing callbacks.",
+    },
+  }}
+/>
+
+Keep API keys server-side. See [Authentication](/docs/sdk/authentication) for OAuth examples.
+
+## Returns
+
+A `NameraClient` instance, not a network response.
+
+<TypeTable
+  type={{
+    wallets: {
+      type: "WalletClient",
+      description: "list() and get(walletId).",
+      required: true,
+    },
+    sessionKeys: {
+      type: "SessionKeyClient",
+      description: "list(options?) and get(sessionKeyId).",
+      required: true,
+    },
+    executions: {
+      type: "ExecutionClient",
+      description:
+        "execute, simulate, getStatus, list, and get. Also exposes low-level prepare and complete.",
+      required: true,
+    },
+    sign: {
+      type: "(request: SignRequest) => Promise<NameraResult>",
+      description: "Sign a message or typed data.",
+      required: true,
+    },
+    verifySignature: {
+      type: "(request: VerifySignatureRequest) => Promise<NameraResult>",
+      description: "Verify a smart-account signature.",
+      required: true,
+    },
+    signatures: {
+      type: "SignatureClient",
+      description: "Advanced prepare and complete transport, plus sign.",
+      required: true,
+    },
+    auth: {
+      type: "AuthClient",
+      description: "Read the authenticated actor with currentActor().",
+      required: true,
+    },
+  }}
+/>
+
+## Result Shape
+
+API methods return a discriminated result:
+
+<TypeTable
+  type={{
+    success: {
+      type: "boolean",
+      description: "Narrow this before reading data or error.",
+      required: true,
+    },
+    data: {
+      type: "T | null",
+      description: "Method response when success is true; otherwise null.",
+      required: true,
+    },
+    error: {
+      type: "NameraSdkError<E> | null",
+      description: "Error when success is false; otherwise null.",
+      required: true,
+    },
+  }}
+/>
+
+Each method page shows its complete successful data. See [Handling Results and Errors](/docs/sdk/handling-results-and-errors) for failure handling.
+
+## Advanced Signing
+
+Node.js resolves locally imported session keys automatically. A custom resolver takes precedence and must return an independently trusted installation binding. Browser clients do not include native key storage.
+
+Low-level prepare and complete methods do not perform the high-level signing validation for you. Prefer `execute()` and `sign()` for normal integrations.
