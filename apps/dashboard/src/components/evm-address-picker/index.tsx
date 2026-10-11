@@ -178,12 +178,14 @@ function SearchResults({
               : "No matching addresses. Try another search or add a custom address."}
       </output>
       {loading ? (
-        <div aria-hidden="true" className="grid gap-1 overflow-hidden p-1.5">
+        <div aria-hidden="true" className="overflow-hidden p-1.5">
           {[0, 1, 2, 3].map((row) => (
-            <div key={row} className="flex h-9 items-center gap-3 px-3">
+            <div key={row} className="flex h-9 items-center gap-3 rounded-lg px-3 py-2">
               <Skeleton className="size-5 shrink-0 rounded-full motion-reduce:animate-none" />
-              <Skeleton className="h-3 w-14 rounded motion-reduce:animate-none" />
-              <Skeleton className="h-3 w-20 rounded motion-reduce:animate-none" />
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <Skeleton className="h-3.5 w-14 rounded motion-reduce:animate-none" />
+                <Skeleton className="h-3 w-20 rounded motion-reduce:animate-none" />
+              </span>
               <Skeleton className="ml-auto h-3 w-24 rounded motion-reduce:animate-none" />
             </div>
           ))}
@@ -194,7 +196,10 @@ function SearchResults({
           Retry
         </Button>
       ) : null}
-      <Command.List aria-label="Address suggestions" className="min-h-0 max-h-72 overflow-y-auto">
+      <Command.List
+        aria-label="Address suggestions"
+        className={loading ? "hidden" : "min-h-0 max-h-72 overflow-y-auto"}
+      >
         {matches.map((match) => {
           const selection: EvmAddressSelection = {
             source: "catalog",

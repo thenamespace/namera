@@ -158,11 +158,6 @@ export function EvmFunctionPicker({
                         shouldCloseOnSelect={false}
                         className="gap-3 px-3 py-2"
                       >
-                        <span className="size-4 shrink-0" aria-hidden="true">
-                          {selected.has(fn.signature) ? (
-                            <HugeiconsIcon icon={Tick02Icon} className="text-accent size-4" />
-                          ) : null}
-                        </span>
                         <span className="flex min-w-0 flex-1 items-center gap-1.5">
                           <span className="truncate text-sm">{fn.abi.name}</span>
                           <Tooltip delay={200}>
@@ -174,11 +169,15 @@ export function EvmFunctionPicker({
                               <HugeiconsIcon icon={InformationCircleIcon} className="size-3.5" />
                             </Tooltip.Trigger>
                             <Tooltip.Content className="max-w-sm break-words font-mono text-xs">
-                              {formatAbiItem(fn.abi, { includeName: true })}
+                              {fn.signature} | {fn.selector}
                             </Tooltip.Content>
                           </Tooltip>
                         </span>
-                        <span className="text-muted shrink-0 font-mono text-xs">{fn.selector}</span>
+                        <span className="size-4 shrink-0" aria-hidden="true">
+                          {selected.has(fn.signature) ? (
+                            <HugeiconsIcon icon={Tick02Icon} className="text-accent size-4" />
+                          ) : null}
+                        </span>
                       </Command.Item>
                     ))}
                   </Command.Group>

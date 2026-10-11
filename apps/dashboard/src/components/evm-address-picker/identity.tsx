@@ -1,6 +1,11 @@
 import { chains } from "@namera-ai/evm/chains";
-import { Avatar } from "@namera-ai/ui";
-import { ChainIcon } from "@namera-ai/ui/icons";
+import { Avatar, Tooltip } from "@namera-ai/ui";
+import {
+  ChainIcon,
+  ContractsIcon,
+  HugeiconsIcon,
+  InformationCircleIcon,
+} from "@namera-ai/ui/icons";
 
 import type { EvmAddressSelection } from "./types";
 
@@ -21,7 +26,11 @@ export function AddressIdentity({
             <Avatar.Image src={`https://cdn.namera.ai/${metadata.display.logo}`} alt="" />
           ) : null}
           <Avatar.Fallback>
-            {metadata ? metadata.display.name.slice(0, 2).toUpperCase() : "0x"}
+            {metadata ? (
+              metadata.display.name.slice(0, 2).toUpperCase()
+            ) : (
+              <HugeiconsIcon icon={ContractsIcon} className="size-4" aria-hidden />
+            )}
           </Avatar.Fallback>
         </Avatar>
         {network && metadata?.type !== "contract" ? (
@@ -42,6 +51,19 @@ export function AddressIdentity({
           <span className="text-foreground truncate text-sm font-medium">
             {metadata?.display.name ?? "Custom address"}
           </span>
+          {metadata?.type === "contract" && metadata.details.protocol ? (
+            <Tooltip delay={200}>
+              <Tooltip.Trigger
+                role="presentation"
+                tabIndex={-1}
+                className="text-muted inline-flex shrink-0"
+              >
+                <HugeiconsIcon icon={InformationCircleIcon} className="size-3.5" />
+                <span className="sr-only">Protocol: {metadata.details.protocol}</span>
+              </Tooltip.Trigger>
+              <Tooltip.Content>{metadata.details.protocol}</Tooltip.Content>
+            </Tooltip>
+          ) : null}
           {!compact && metadata?.type === "erc20" ? (
             <span className="text-muted text-xs">{metadata.details.symbol}</span>
           ) : null}
