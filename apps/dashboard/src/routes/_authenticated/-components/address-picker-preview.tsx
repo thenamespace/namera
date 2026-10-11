@@ -31,6 +31,7 @@ export function AddressPickerPreview() {
           value={value}
           onChange={setValue}
           label="Search tokens and contracts"
+          placeholder="Search tokens and contracts"
         />
       </div>
       {value ? (

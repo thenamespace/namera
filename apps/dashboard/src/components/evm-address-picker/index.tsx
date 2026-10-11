@@ -1,10 +1,11 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-object-as-prop
 import { useState } from "react";
 
-import { Button, Command, Popover } from "@namera-ai/ui";
-import { Add01Icon, ArrowDown01Icon, HugeiconsIcon, Search01Icon } from "@namera-ai/ui/icons";
+import { Button, ComboBox, Input, ListBox, Modal, Skeleton } from "@namera-ai/ui";
+import { Add01Icon, HugeiconsIcon, Search01Icon } from "@namera-ai/ui/icons";
 import { useDebounceValue } from "usehooks-ts";
 
+import { chainDataById } from "@/components/display/chain-display";
 import { useCatalogPickerSearch } from "@/hooks/catalog";
 
 import { CustomAddress } from "./custom-address";
@@ -14,13 +15,27 @@ import type { EvmAddressPickerProps, EvmAddressSelection } from "./types";
 export type { EvmAddressPickerProps, EvmAddressSelection } from "./types";
 
 const keepServerResults = () => true;
+const noChains = [] as const;
 
-export function EvmAddressPicker({
+function selectionText(value: EvmAddressSelection | null) {
+  if (!value) return "";
+  const name =
+    value.source === "catalog" ? value.match.catalog.data.display.name : "Custom address";
+  const network = chainDataById.get(value.chainId)?.chain.name ?? value.chainId;
+  return `${name} · ${network} · ${value.address.slice(0, 6)}…${value.address.slice(-4)}`;
+}
+
+export function EvmAddressPicker(props: EvmAddressPickerProps) {
+  return <AddressComboBox key={JSON.stringify([props.chainIds, props.types])} {...props} />;
+}
+
+function AddressComboBox({
   chainIds,
   types,
   value,
   onChange,
-  label = "Select address",
+  label = "EVM address",
+  placeholder = "Search name, symbol, or address…",
   id,
   isDisabled = false,
   isInvalid = false,
@@ -28,196 +43,178 @@ export function EvmAddressPicker({
   "aria-describedby": describedBy,
 }: EvmAddressPickerProps) {
   const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState(false);
+  const [customSeed, setCustomSeed] = useState("");
+  const [draft, setDraft] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
   const disabled = isDisabled || chainIds.length === 0 || types.length === 0;
   const eligible =
     value &&
     chainIds.includes(value.chainId) &&
     (value.source === "custom" || types.includes(value.match.catalog.data.type));
+  const selected = eligible ? value : null;
+  const query = draft?.trim() ?? "";
+  const [debounced] = useDebounceValue(query, 250);
+  const search = useCatalogPickerSearch({
+    chainIds: open && !disabled && !custom ? chainIds : noChains,
+    types,
+    query: debounced,
+    offset,
+  });
+  const loading = query !== debounced || search.isPending;
+  const matches = loading || search.isError ? [] : (search.data?.matches ?? []);
+  const selections: EvmAddressSelection[] = matches.map((match) => ({
+    source: "catalog",
+    namespace: "eip155",
+    chainId: match.entry.chainId,
+    address: match.entry.address,
+    match,
+  }));
   const select = (selection: EvmAddressSelection) => {
     onChange(selection);
-    setOpen(false);
+    setDraft(null);
+    setCustom(false);
     onBlur?.();
   };
-  return (
-    <Popover
-      isOpen={open && !disabled}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) onBlur?.();
-      }}
-    >
-      <Button
-        {...(id ? { id } : {})}
-        aria-label={label}
-        {...(describedBy ? { "aria-describedby": describedBy } : {})}
-        aria-invalid={isInvalid || (Boolean(value) && !eligible)}
-        isDisabled={disabled}
-        variant="secondary"
-        className="h-auto min-h-12 w-full justify-between rounded-lg px-3 py-2"
-      >
-        {eligible ? (
-          <AddressIdentity value={value} />
-        ) : (
-          <span className="text-muted flex items-center gap-2">
-            <HugeiconsIcon icon={Search01Icon} className="size-4" />
-            {value ? "Select an address for these filters" : label}
-          </span>
-        )}
-        <HugeiconsIcon icon={ArrowDown01Icon} className="text-muted size-4 shrink-0" />
-      </Button>
-      <Popover.Content
-        placement="bottom start"
-        className="w-[min(30rem,calc(100vw-2rem))] overflow-hidden p-0"
-      >
-        {open && !disabled ? (
-          <PickerContent
-            key={JSON.stringify([chainIds, types])}
-            chainIds={chainIds}
-            types={types}
-            onSelect={select}
-          />
-        ) : null}
-      </Popover.Content>
-    </Popover>
-  );
-}
 
-function PickerContent({
-  chainIds,
-  types,
-  onSelect,
-}: Pick<EvmAddressPickerProps, "chainIds" | "types"> & {
-  onSelect: (value: EvmAddressSelection) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [debounced] = useDebounceValue(query.trim(), 250);
-  const [custom, setCustom] = useState(false);
-  if (custom)
-    return (
-      <Popover.Dialog aria-label="Custom address" className="outline-none">
-        <CustomAddress
-          chainIds={chainIds}
-          initialAddress={query.trim()}
-          onSelect={onSelect}
-          onBack={() => setCustom(false)}
-        />
-      </Popover.Dialog>
-    );
-  return (
-    <Command>
-      <Command.Dialog
-        aria-label="Find an EVM address"
-        inputValue={query}
-        onInputChange={setQuery}
-        filter={keepServerResults}
-      >
-        <Command.Header>
-          <Command.InputGroup aria-label="Search tokens, contracts, or addresses">
-            <Command.InputGroup.Prefix>
-              <HugeiconsIcon icon={Search01Icon} className="size-4" />
-            </Command.InputGroup.Prefix>
-            <Command.InputGroup.Input
-              maxLength={200}
-              placeholder="Search name, symbol, or address…"
-            />
-          </Command.InputGroup>
-        </Command.Header>
-        <SearchResults
-          key={debounced}
-          query={debounced}
-          chainIds={chainIds}
-          types={types}
-          pending={query.trim() !== debounced}
-          onSelect={onSelect}
-        />
-        <Command.Footer className="border-separator border-t p-2">
-          <Button
-            variant="tertiary"
-            className="w-full justify-start rounded-md"
-            onPress={() => setCustom(true)}
-          >
-            <HugeiconsIcon icon={Add01Icon} className="size-4" />
-            Custom address
-          </Button>
-        </Command.Footer>
-      </Command.Dialog>
-    </Command>
-  );
-}
-
-function SearchResults({
-  query,
-  chainIds,
-  types,
-  pending,
-  onSelect,
-}: Pick<EvmAddressPickerProps, "chainIds" | "types"> & {
-  query: string;
-  pending: boolean;
-  onSelect: (value: EvmAddressSelection) => void;
-}) {
-  const [offset, setOffset] = useState(0);
-  const search = useCatalogPickerSearch({ chainIds, types, query, offset });
-  const loading = pending || search.isPending;
-  const matches = loading || search.isError ? [] : (search.data?.matches ?? []);
   return (
     <>
-      <output className="text-muted block px-3 pt-2 text-xs" aria-live="polite">
-        {loading
-          ? "Searching catalog…"
-          : search.isError
-            ? "Couldn’t load the catalog."
-            : matches.length
-              ? "Catalog addresses"
-              : "No matching addresses. Try another search or add a custom address."}
-      </output>
-      {search.isError ? (
-        <Button className="m-2" size="sm" variant="tertiary" onPress={search.refetch}>
-          Retry
-        </Button>
-      ) : null}
-      <Command.List aria-label="Catalog addresses" className="max-h-72 overflow-y-auto">
-        {matches.map((match) => {
-          const selection: EvmAddressSelection = {
-            source: "catalog",
-            namespace: "eip155",
-            chainId: match.entry.chainId,
-            address: match.entry.address,
-            match,
-          };
-          return (
-            <Command.Item
-              key={match.entry.id}
-              id={match.entry.id}
-              textValue={`${match.catalog.data.display.name} ${match.entry.chainId} ${match.entry.address}`}
-              className="px-3 py-3"
-              onAction={() => onSelect(selection)}
-            >
-              <AddressIdentity value={selection} />
-            </Command.Item>
+      <ComboBox
+        aria-label={label}
+        {...(describedBy ? { "aria-describedby": describedBy } : {})}
+        fullWidth
+        allowsEmptyCollection
+        allowsCustomValue
+        defaultFilter={keepServerResults}
+        isDisabled={disabled}
+        isInvalid={isInvalid || (Boolean(value) && !eligible)}
+        inputValue={draft ?? selectionText(selected)}
+        value={selected?.source === "catalog" ? selected.match.entry.id : null}
+        onInputChange={(text) => {
+          setDraft(text);
+          setOffset(0);
+          if (value) onChange(null);
+        }}
+        onOpenChange={setOpen}
+        onBlur={() => {
+          setDraft(null);
+          onBlur?.();
+        }}
+        onChange={(key) => {
+          if (key === "custom") {
+            setCustomSeed(query);
+            setCustom(true);
+            return;
+          }
+          const selection = selections.find(
+            (option) => option.source === "catalog" && option.match.entry.id === key,
           );
-        })}
-      </Command.List>
-      {offset > 0 || search.data?.hasMore ? (
-        <div className="flex justify-between px-2 pb-2">
-          <Button
-            size="sm"
-            variant="tertiary"
-            isDisabled={offset === 0 || loading}
-            onPress={() => setOffset(offset - 20)}
+          if (selection) select(selection);
+        }}
+      >
+        <ComboBox.InputGroup>
+          <HugeiconsIcon
+            aria-hidden
+            icon={Search01Icon}
+            className="text-muted pointer-events-none absolute left-3 z-10 size-4"
+          />
+          <Input
+            {...(id ? { id } : {})}
+            placeholder={placeholder}
+            maxLength={200}
+            className="pl-9"
+          />
+          <ComboBox.Trigger />
+        </ComboBox.InputGroup>
+        <ComboBox.Popover className="w-(--trigger-width) max-w-[calc(100vw-2rem)] rounded-xl p-1">
+          {loading ? (
+            <div aria-hidden className="grid gap-3 p-3">
+              {[0, 1, 2].map((row) => (
+                <div key={row} className="flex items-center gap-3">
+                  <Skeleton className="size-8 shrink-0 rounded-full motion-reduce:animate-none" />
+                  <div className="grid flex-1 gap-2">
+                    <Skeleton className="h-3 w-1/3 rounded motion-reduce:animate-none" />
+                    <Skeleton className="h-2.5 w-2/3 rounded motion-reduce:animate-none" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <output
+            aria-live="polite"
+            className={loading || matches.length ? "sr-only" : "text-muted block px-3 py-3 text-xs"}
           >
-            Previous
-          </Button>
-          <Button
-            size="sm"
-            variant="tertiary"
-            isDisabled={!search.data?.hasMore || loading || offset >= 10000}
-            onPress={() => setOffset(offset + 20)}
-          >
-            More results
-          </Button>
-        </div>
-      ) : null}
+            {loading
+              ? "Searching addresses"
+              : search.isError
+                ? "Couldn’t load addresses. Try again."
+                : matches.length
+                  ? `${matches.length} addresses found`
+                  : "No matching addresses. Try another search or add a custom address."}
+          </output>
+          {search.isError ? (
+            <Button size="sm" variant="tertiary" onPress={search.refetch}>
+              Retry
+            </Button>
+          ) : null}
+          <ListBox aria-label="Address suggestions" className="max-h-72 overflow-y-auto">
+            {selections.map((selection) =>
+              selection.source === "catalog" ? (
+                <ListBox.Item
+                  key={selection.match.entry.id}
+                  id={selection.match.entry.id}
+                  textValue={selectionText(selection)}
+                  className="px-3 py-2.5"
+                >
+                  <AddressIdentity value={selection} />
+                </ListBox.Item>
+              ) : null,
+            )}
+            <ListBox.Item
+              id="custom"
+              textValue="Custom address"
+              className="border-separator mt-1 border-t px-3 py-3"
+            >
+              <HugeiconsIcon icon={Add01Icon} className="size-4" />
+              Custom address
+            </ListBox.Item>
+          </ListBox>
+          {offset > 0 || search.data?.hasMore ? (
+            <div className="flex justify-between p-1">
+              <Button
+                size="sm"
+                variant="tertiary"
+                isDisabled={offset === 0 || loading}
+                onPress={() => setOffset(offset - 20)}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="tertiary"
+                isDisabled={!search.data?.hasMore || loading || offset >= 10000}
+                onPress={() => setOffset(offset + 20)}
+              >
+                More results
+              </Button>
+            </div>
+          ) : null}
+        </ComboBox.Popover>
+      </ComboBox>
+      <Modal isOpen={custom && !disabled} onOpenChange={setCustom}>
+        <Modal.Backdrop>
+          <Modal.Container>
+            <Modal.Dialog aria-label="Custom address" className="sm:max-w-md">
+              <CustomAddress
+                chainIds={chainIds}
+                initialAddress={customSeed}
+                onSelect={select}
+                onBack={() => setCustom(false)}
+              />
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </>
   );
 }

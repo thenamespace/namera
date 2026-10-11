@@ -16,6 +16,7 @@ export type EvmAddressPickerProps = {
   readonly value: EvmAddressSelection | null;
   readonly onChange: (value: EvmAddressSelection | null) => void;
   readonly label?: string;
+  readonly placeholder?: string;
   readonly id?: string;
   readonly isDisabled?: boolean;
   readonly isInvalid?: boolean;
