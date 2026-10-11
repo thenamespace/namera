@@ -132,6 +132,13 @@ The `analytics/server` subpath provides `ProductAnalytics.layer`. It requires
 Capture is best-effort with a bounded queue and scoped shutdown flush. HTTP
 outcomes include retries and must not be interpreted as unique committed changes.
 
+Committed milestones are queued transactionally by `application`/`database` and
+delivered by the server analytics worker using `ProductAnalytics.deliver`. Delivery
+uses stable event UUIDs and timestamps, acknowledges provider acceptance, and keeps
+retryable failures outside business requests. `AnalyticsCollection` carries the
+server-owned request/worker eligibility; its default is disabled. The adapter does
+not query the database or infer user identity from unverified inputs.
+
 Production frontend CI also requires environment variables `VITE_POSTHOG_KEY`,
 `POSTHOG_CLI_PROJECT_ID`, and the secret `POSTHOG_CLI_API_KEY` for private source
 maps. The Docker build mounts that secret only during compilation. It is not a

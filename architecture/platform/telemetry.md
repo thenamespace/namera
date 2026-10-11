@@ -246,6 +246,31 @@ polling are excluded. These are HTTP outcomes, not deduplicated domain milestone
 retries and reads count separately. PostHog has a bounded queue, two retries and
 a five-second shutdown flush; delivery failure must not fail wallet operations.
 
+Committed milestones use a separate transactional outbox. The Audit service projects
+signup, login, workspace/account/session-key creation, installation outcomes,
+integration authorization, execution lifecycle, and signatures into narrow payloads.
+Waitlist creation is queued in its own transaction. `workspace_activated` is the
+first confirmed execution or signature per workspace, not a visit or submission.
+`integration_first_request_succeeded` is deduplicated per integration actor; polling
+routes do not qualify. Its best-effort enqueue runs after a successful response and
+is not an execution milestone.
+
+The server analytics worker claims committed rows, sends an immediate capture with
+a stable UUID/timestamp, and acknowledges only after provider acceptance. Retries
+back off from one minute to one hour. Crashed workers release via a two-minute
+lease. Payloads clear after acceptance; dedupe/eligibility keys remain. Execution
+and installation workers only emit for opted-in prepare operations. Public waitlist
+requests forward browser opt-out through `X-Namera-Analytics: off` without sending
+auth cookies. No new environment variables are required.
+
+Public interaction coverage includes clipboard-success-only docs copy, package/file
+tabs, search filters, assistant links, demo outcomes, pricing choices, foreground
+reading time, scroll thresholds, and first waitlist focus. Clipboard/form contents
+never enter events. Dashboard setup entry, quick actions, shared table controls,
+route failures/retries, and domain mutation outcomes use code-owned action labels.
+Section impressions require one second at 50% visibility. Reading engagement means
+30 foreground seconds; it does not prove comprehension or completion.
+
 Web/dashboard production builds upload hidden source maps with
 `@posthog/rollup-plugin`, then remove maps before assembling runtime images.
 The reusable build workflow reads `VITE_POSTHOG_KEY` and `POSTHOG_CLI_PROJECT_ID`

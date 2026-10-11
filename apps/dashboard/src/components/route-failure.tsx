@@ -8,7 +8,10 @@ import { Button, Typography } from "@namera-ai/ui";
 
 import { RouteState } from "@/components/page/route-state";
 
-const reloadPage = () => window.location.reload();
+const reloadPage = () => {
+  captureAnalytics("route_retry_clicked");
+  window.location.reload();
+};
 const openOverview = () => window.location.assign("/");
 
 function RouteFailure({ notFound = false }: { readonly notFound?: boolean }) {
@@ -43,6 +46,7 @@ function RouteFailure({ notFound = false }: { readonly notFound?: boolean }) {
 // from provider failures. Reload also clears failed atom results before retrying.
 export function RouterError({ error }: { error?: unknown }) {
   useEffect(() => {
+    captureAnalytics("route_load_failed");
     if (error) captureAnalyticsException(error);
   }, [error]);
   return (

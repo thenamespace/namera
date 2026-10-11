@@ -16,11 +16,15 @@ export async function joinWaitlist(
   payload: typeof JoinWaitlistRequest.Type,
   apiUrl: string,
   fetcher = globalThis.fetch,
+  analyticsOptOut = false,
 ) {
   const body = Schema.encodeSync(JoinWaitlistRequest)(payload);
   const response = await fetcher(new URL("/waitlist", apiUrl), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(analyticsOptOut ? { "X-Namera-Analytics": "off" } : {}),
+    },
     credentials: "omit",
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(15_000),

@@ -8,10 +8,13 @@ import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
 import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
+import { AnalyticsCollection } from "@namera-ai/telemetry/analytics/collection";
+import { ProductAnalytics } from "@namera-ai/telemetry/analytics/server";
 import { GcpService } from "@namera-ai/wallet-provider-gcp";
 import { LocalService } from "@namera-ai/wallet-provider-local";
 import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-oneclaw";
 
+import { AnalyticsWorkerLayer } from "#/workers/analytics";
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
 import { SessionKeyWorkerLayer } from "#/workers/session-key";
@@ -53,6 +56,7 @@ export const OneClawLive = Layer.unwrap(
 );
 
 export const ServicesLive = Layer.mergeAll(
+  ProductAnalytics.layer,
   GoogleIdentityProvider.layer.pipe(Layer.provide(NodeHttpClient.layerUndici)),
   PersistenceLive,
   CryptoLive,
@@ -79,7 +83,12 @@ export const EmailWorkerLive = Layer.unwrap(
 export const ExecutionWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
     yield* BillingStartupUpgrade;
-    return ExecutionWorkerLayer;
+    const analytics = yield* ProductAnalytics;
+    return ExecutionWorkerLayer.pipe(
+      Layer.provide(
+        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
+      ),
+    );
   }),
 ).pipe(
   Layer.provide(BillingStartupUpgrade.layer),
@@ -101,10 +110,22 @@ export const BillingWorkerLive = Layer.unwrap(
 export const SessionKeyWorkerLive = Layer.unwrap(
   Effect.gen(function* () {
     yield* BillingStartupUpgrade;
-    return SessionKeyWorkerLayer;
+    const analytics = yield* ProductAnalytics;
+    return SessionKeyWorkerLayer.pipe(
+      Layer.provide(
+        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
+      ),
+    );
   }),
 ).pipe(
   Layer.provide(BillingStartupUpgrade.layer),
   Layer.provide(ApplicationLive),
   Layer.provide(ServicesLive),
 );
+
+export const AnalyticsWorkerLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* BillingStartupUpgrade;
+    return AnalyticsWorkerLayer;
+  }),
+).pipe(Layer.provide(BillingStartupUpgrade.layer), Layer.provide(ServicesLive));

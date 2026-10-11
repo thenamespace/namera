@@ -24,6 +24,7 @@ import {
   billingUsageEvent,
   billingUsageReservation,
   emailJob,
+  analyticsJob,
   execution,
   executionSubmission,
   invitation,
@@ -98,6 +99,7 @@ export class TestDatabase extends Context.Service<
       const database = yield* Database;
 
       const reset = Effect.fn("database.testDatabase.reset")(function* () {
+        yield* database.delete(analyticsJob);
         yield* database.delete(notificationRecipient);
         yield* database.delete(betaInviteEvent);
         yield* database.delete(platformEvent);

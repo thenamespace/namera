@@ -5,6 +5,7 @@ import { EmailJobs } from "@namera-ai/emails";
 import type { Email } from "@namera-ai/protocol";
 import type { ListWaitlistRequest } from "@namera-ai/protocol/dto";
 import { betaInviteTransitions, waitlistAcceptances, waitlistJoins } from "@namera-ai/telemetry";
+import { AnalyticsCollection } from "@namera-ai/telemetry/analytics/collection";
 
 import { makeIssueBetaInvite } from "./issue-beta-invite.js";
 import { requirePlatformPermission, type PlatformSession } from "./platform/access.js";
@@ -21,6 +22,13 @@ export const makeWaitlistApplication = Effect.gen(function* () {
       Effect.gen(function* () {
         const entry = yield* repository.join(email);
         if (!entry) return false;
+        if ((yield* AnalyticsCollection) === "enabled") {
+          yield* repositories.jobs.analytics.enqueue(`waitlist:${entry.id}`, {
+            event: "waitlist_joined",
+            distinctId: `waitlist:${entry.id}`,
+            properties: {},
+          });
+        }
 
         yield* emails.enqueue({
           type: "waitlist-confirmed",

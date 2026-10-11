@@ -1,10 +1,20 @@
-import { Config, Context, Effect, Layer, Redacted } from "effect";
+import { Config, Context, Effect, Layer, Redacted, Schema } from "effect";
 
 import { PostHog } from "posthog-node";
 
 import { safeAnalyticsProperties, type AnalyticsProperties } from "./contract.js";
 
+export class AnalyticsDeliveryError extends Schema.TaggedError<AnalyticsDeliveryError>()(
+  "AnalyticsDeliveryError",
+  {},
+) {}
+
 export type ServerAnalyticsEvent = {
+  readonly event?:
+    | "api_operation_completed"
+    | "simulation_completed"
+    | "operation_denied"
+    | "signing_failed";
   readonly distinctId: string;
   readonly properties: AnalyticsProperties;
 };
@@ -12,7 +22,15 @@ export type ServerAnalyticsEvent = {
 export class ProductAnalytics extends Context.Service<
   ProductAnalytics,
   {
+    readonly enabled: boolean;
     readonly capture: (event: ServerAnalyticsEvent) => Effect.Effect<void>;
+    readonly deliver: (event: {
+      readonly id: string;
+      readonly timestamp: Date;
+      readonly event: string;
+      readonly distinctId: string;
+      readonly properties: Readonly<Record<string, unknown>>;
+    }) => Effect.Effect<void, AnalyticsDeliveryError>;
   }
 >()("@namera-ai/telemetry/ProductAnalytics") {
   static readonly layer = Layer.effect(
@@ -23,7 +41,11 @@ export class ProductAnalytics extends Context.Service<
         Config.withDefault(Redacted.make("")),
       );
       if (environment !== "production" || !Redacted.value(token))
-        return ProductAnalytics.of({ capture: () => Effect.void });
+        return ProductAnalytics.of({
+          enabled: false,
+          capture: () => Effect.void,
+          deliver: () => Effect.fail(new AnalyticsDeliveryError()),
+        });
 
       const client = yield* Effect.acquireRelease(
         Effect.sync(() => {
@@ -49,11 +71,30 @@ export class ProductAnalytics extends Context.Service<
       );
 
       return ProductAnalytics.of({
+        enabled: true,
+        deliver: (event) =>
+          Effect.tryPromise({
+            try: () =>
+              client.captureImmediate({
+                uuid: event.id,
+                timestamp: event.timestamp,
+                distinctId: event.distinctId,
+                event: event.event,
+                properties: {
+                  ...safeAnalyticsProperties(event.properties),
+                  surface: "server",
+                  environment: "production",
+                  event_version: 1,
+                  $process_person_profile: event.properties.actor_kind === "user",
+                },
+              }),
+            catch: () => new AnalyticsDeliveryError(),
+          }),
         capture: (event) =>
           Effect.try(() =>
             client.capture({
               distinctId: event.distinctId,
-              event: "api_operation_completed",
+              event: event.event ?? "api_operation_completed",
               properties: {
                 ...safeAnalyticsProperties(event.properties),
                 surface: "server",

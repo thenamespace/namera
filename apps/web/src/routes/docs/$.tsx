@@ -19,10 +19,8 @@ import {
   DocsPage,
   DocsTitle,
   EditOnGitHub,
-  MarkdownCopyButton,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/spacious/page";
-import defaultMdxComponents from "fumadocs-ui/mdx";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 
 import { AnalyticsPreference } from "#/components/analytics-preference";
@@ -31,6 +29,7 @@ import { docsHead } from "#/lib/docs/seo";
 import { SITE_LINKS } from "#/lib/site-links";
 
 import collections from "../../../.source/browser";
+import { DocsMarkdownCopy, docsMdxComponents } from "./-components/analytics-components";
 import { DocsHeaderActions } from "./-components/header-actions";
 import { DocsSearchDialog } from "./-components/search-dialog";
 
@@ -66,11 +65,11 @@ const content = collections.docs.createClientLoader({
       <DocsTitle>{frontmatter.title}</DocsTitle>
       <DocsDescription className="mb-2">{frontmatter.description}</DocsDescription>
       <div className="mb-4 flex flex-wrap items-center gap-2 border-b pb-6">
-        <MarkdownCopyButton className="h-9 px-3 text-sm" markdownUrl={`${page.url}.md`} />
+        <DocsMarkdownCopy markdownUrl={`${page.url}.md`} />
         <ViewOptionsPopover className="h-9 px-3 text-sm" markdownUrl={`${page.url}.md`} />
       </div>
       <DocsBody className="text-fd-foreground/90">
-        <MDX components={defaultMdxComponents} />
+        <MDX components={docsMdxComponents} />
       </DocsBody>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-sm text-fd-muted-foreground">
         <EditOnGitHub href={page.editUrl}>

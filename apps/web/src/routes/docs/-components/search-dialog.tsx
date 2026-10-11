@@ -80,6 +80,10 @@ export function DocsSearchDialog(props: SharedProps) {
                   type="button"
                   aria-pressed={filter.value === tag}
                   onClick={() => {
+                    if (tag !== filter.value)
+                      captureAnalytics("docs_search_filter_changed", {
+                        section: filter.value ?? "all",
+                      });
                     setTag(filter.value);
                     setFilterOpen(false);
                   }}

@@ -52,7 +52,7 @@ import {
   SignatureOperationRepository,
   WalletRepository,
 } from "#/repositories/core/index";
-import { EmailJobRepository } from "#/repositories/jobs/index";
+import { AnalyticsJobRepository, EmailJobRepository } from "#/repositories/jobs/index";
 import {
   NotificationPreferenceRepository,
   NotificationRepository,
@@ -116,6 +116,7 @@ export interface RepositoryService {
     wallet: WalletRepository["Service"];
   };
   jobs: {
+    analytics: AnalyticsJobRepository["Service"];
     email: EmailJobRepository["Service"];
   };
   notification: {
@@ -152,6 +153,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const organizationEvent = yield* OrganizationEventRepository;
       const userEvent = yield* UserEventRepository;
       const emailJob = yield* EmailJobRepository;
+      const analyticsJob = yield* AnalyticsJobRepository;
       const notification = yield* NotificationRepository;
       const notificationPreference = yield* NotificationPreferenceRepository;
       const billingAccount = yield* BillingAccountRepository;
@@ -238,6 +240,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           wallet,
         },
         jobs: {
+          analytics: analyticsJob,
           email: emailJob,
         },
         notification: {
@@ -273,6 +276,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         OrganizationEventRepository.layer,
         UserEventRepository.layer,
         EmailJobRepository.layer,
+        AnalyticsJobRepository.layer,
         NotificationRepository.layer,
         NotificationPreferenceRepository.layer,
         BillingAccountRepository.layer,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Icon, InformationCircleIcon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
 
@@ -48,6 +49,7 @@ const RowLabel = ({ label, note }: { readonly label: string; readonly note?: str
         <button
           type="button"
           aria-label={`What ${label.toLowerCase()} means`}
+          onFocus={() => captureAnalytics("pricing_explanation_opened", { action: label })}
           className={cn(
             "grid size-5 place-items-center rounded-full text-ink-subtle opacity-0",
             "transition-opacity duration-150 ease-out-quad",
@@ -114,6 +116,8 @@ export const Comparison = () => {
             type="button"
             aria-pressed={item.id === plan}
             onClick={() => {
+              if (item.id !== plan)
+                captureAnalytics("pricing_comparison_plan_selected", { plan: item.id });
               setPlan(item.id);
             }}
             className={cn(

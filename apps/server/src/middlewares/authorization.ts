@@ -17,7 +17,7 @@ import {
   toSessionResponse,
   toUserResponse,
 } from "#/helpers/dto";
-import { observeProductOperation } from "#/helpers/product-analytics";
+import { makeProductOperationObserver } from "#/helpers/product-analytics";
 
 export const AuthorizationLive = Layer.effect(
   Authorization,
@@ -26,6 +26,7 @@ export const AuthorizationLive = Layer.effect(
     const repository = yield* Repository;
     const cookieConfig = yield* AuthCookieConfig;
     const authConfig = yield* AuthConfig;
+    const observeProductOperation = yield* makeProductOperationObserver;
 
     return Authorization.of({
       // Machine actors carry their active grants in CurrentActor so downstream

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
+import { analyticsDisabled, captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 
 import { joinWaitlist, WaitlistRequestError } from "#/lib/waitlist";
 
@@ -19,7 +19,12 @@ export function useJoinWaitlist(options: {
     setPending(true);
     captureAnalytics("waitlist_submitted");
     try {
-      await joinWaitlist(payload, import.meta.env.VITE_API_URL || "https://api.namera.ai");
+      await joinWaitlist(
+        payload,
+        import.meta.env.VITE_API_URL || "https://api.namera.ai",
+        globalThis.fetch,
+        analyticsDisabled(),
+      );
       captureAnalytics("waitlist_response_received");
       options.onSuccess(payload.email);
     } catch (error) {
