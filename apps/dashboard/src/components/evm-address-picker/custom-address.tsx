@@ -57,7 +57,7 @@ export function CustomAddress({
         name="address"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={`${id}-address`}>Title</FieldLabel>
+            <FieldLabel htmlFor={`${id}-address`}>Address</FieldLabel>
             <Input
               {...field}
               id={`${id}-address`}
