@@ -1,0 +1,148 @@
+---
+title: Handle Retries and Recovery
+description: Recover from interrupted requests without submitting duplicate transactions.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+When a request fails, first determine whether you have a `submissionId`.
+If you do, check that submission. A new `executions.execute()` call creates a
+new operation, even when its parameters are identical.
+
+## Understand Automatic Retries
+
+During `execute()`, the SDK retries transient preparation and completion
+failures up to three times each, with exponential backoff starting at 100 ms.
+Preparation retries reuse the same idempotency key. Completion retries reuse
+the same submission and, when supplied, the same signature.
+
+Eligible failures are transport errors, HTTP 408, HTTP 5xx, and the declared
+`InternalServerError`. Policy denials, authentication failures, rate limits, and
+other declared business errors are not automatically retried.
+
+These retries happen **inside one call**. There is no public idempotency-key
+option on `execute()` to deduplicate separate calls or process restarts.
+
+<Callout type="warn" title="Do not retry the whole transaction blindly">
+  A lost response does not prove that the transaction failed. Wrapping `execute()` in a retry loop
+  can send the same transfer twice.
+</Callout>
+
+## Save the Submission ID
+
+After a successful `execute()` result, save `result.data.submissionId` with your
+application's job or payment record before marking that work as submitted.
+Keep the intended account, network, recipient, and amount with the same record.
+
+Persist this in durable storage, not just a process variable or console log.
+See [Execute a Transaction](/docs/sdk/reference/executions/execute) for the
+request and full submission response.
+
+Prevent concurrent workers from executing the same application job. An
+application-level job ID helps coordinate your workers; it is not a Namera
+idempotency key and does not close the gap between submission and saving its ID.
+
+## Resume Status Checks
+
+Install `@namera-ai/sdk`, set `NAMERA_API_KEY`, and replace the example ID with
+the submission saved for your job. This Node.js example checks for up to one
+minute. It retries failed **reads**, never the transaction:
+
+```ts title="index.ts"
+import { setTimeout } from "node:timers/promises";
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const submissionId = "0199dfe1-0000-7000-8000-000000000003";
+const deadline = Date.now() + 60_000;
+let settled = false;
+
+while (Date.now() < deadline) {
+  const result = await namera.executions.getStatus(submissionId);
+  let delay = 3000;
+
+  if (!result.success) {
+    const { error } = result;
+
+    if (error.kind === "api" && error.cause._tag === "RateLimitExceeded") {
+      delay = Math.max(delay, error.cause.retryAfterSeconds * 1000);
+    } else if (
+      error.kind !== "network" &&
+      !(error.kind === "api" && error.cause._tag === "InternalServerError") &&
+      !(error.status === 408 || (error.status !== null && error.status >= 500))
+    ) {
+      throw new Error(error.message);
+    }
+  } else {
+    console.log(result.data);
+
+    if (result.data.status === "confirmed" || result.data.status === "failed") {
+      settled = true;
+      break;
+    }
+  }
+
+  if (Date.now() + delay >= deadline) break;
+  await setTimeout(delay);
+}
+
+if (!settled) {
+  console.log("Status is unresolved. Keep the submission ID and check again later.");
+}
+```
+
+A pending response has this shape:
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "submitted",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+The time limit stops new checks; it does not cancel an in-flight request or the
+transaction. If a rate-limit delay exceeds the remaining time, wait that delay
+before resuming in a later run.
+
+- **`reserved`, `prepared`, or `submitted`**: keep tracking the same ID.
+- **`confirmed`**: store the returned execution and mark the job complete.
+- **`failed`**: stop polling and investigate before intentionally starting a
+  replacement operation.
+
+See [Get Submission Status](/docs/sdk/reference/executions/get-submission-status)
+for all response variants. `getStatus()` itself does not retry automatically;
+the example above supplies a bounded policy for read failures.
+
+## Recover Without a Submission ID
+
+If `execute()` fails before returning an ID, or your process stops before saving
+it, mark the application job as **unresolved**, not ready to retry. The error
+result does not expose the internally prepared submission ID.
+
+Inspect [execution history](/docs/sdk/reference/executions/list-executions) and
+[execution details](/docs/sdk/reference/executions/get-execution) for a matching
+confirmed operation. Compare the account, network, calls, and timing. Identical
+transfers can be legitimate, so matching values alone do not uniquely identify
+your job.
+
+History contains confirmed executions only. An empty history result does not
+rule out a pending submission. If you cannot establish the outcome, keep the
+job unresolved and reconcile it before allowing another execution.
+
+## Fix Errors Before Resubmitting
+
+Correct invalid inputs, credentials, permissions, or funding before starting a
+replacement operation. For a paused network, wait for it to be enabled again.
+Do not treat a transport failure as evidence that these checks rejected the
+original transaction.
+
+For rate limits, respect `retryAfterSeconds`; see
+[Handling Results and Errors](/docs/sdk/handling-results-and-errors). The same
+caution applies to signing: a lost `sign()` response is not a reason to repeat
+it automatically, since another call can create another billable signing operation.

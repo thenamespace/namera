@@ -6,6 +6,7 @@
     "batch-transactions",
     "simulate-transactions",
     "track-transactions",
+    "handle-retries-and-recovery",
     "sponsor-gas"
   ]
 }

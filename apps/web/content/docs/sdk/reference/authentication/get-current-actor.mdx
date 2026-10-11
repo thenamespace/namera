@@ -1,0 +1,185 @@
+---
+title: Get Current Actor
+description: Inspect the identity, organization, and grants behind your credential.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`namera.auth.currentActor()` returns the actor authenticated by the client's
+credential. Use it to check which organization and session-key grants your
+integration is using.
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY`.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.auth.currentActor();
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+The successful data is a discriminated union with `type` and `data` fields.
+Check `type` before reading credential-specific fields.
+
+- **`type`** (`"api-key" | "cli" | "mcp" | "user"`): Authenticated actor kind.
+  API keys return `"api-key"`; OAuth authorizations return `"cli"` or `"mcp"`
+  according to the authorizing client. The shared API contract also includes
+  `"user"` for authenticated user sessions.
+- **`data.actorId`** (`string`): Durable actor identity, distinct from the API
+  key or OAuth authorization ID.
+
+### API Key and OAuth Actors
+
+These actor kinds share the following fields:
+
+- **`data.organizationId`** (`string`): Organization the credential belongs to.
+- **`data.organizationName`** (`string | undefined`): Organization display name,
+  when available. Use the ID rather than the name to identify the organization.
+- **`data.grants`** (`array`): Session-key grants available to the actor. Each entry
+  contains a `grant` record and its `sessionKey` record. An empty array means
+  there are no grants to use; authentication alone does not authorize operations.
+- **`data.grants[].grant`** (`object`): Grant ID, organization ID, actor ID,
+  session-key ID, granting actor ID, creation time, and nullable revocation time
+  and revoking actor ID.
+- **`data.grants[].sessionKey`** (`object`): Session-key ID, organization and
+  account IDs, signing-key ID, creating actor ID, metadata, namespace, policies,
+  policy hash, lifecycle status, creation time, and nullable revocation fields.
+  This is the session record, not the expanded installation and signer view
+  returned by [Get Session Key](/docs/sdk/reference/session-keys/get-session-key).
+
+For `"api-key"`, **`data.apiKey`** contains `id`, `metadata`, `keyStart`,
+`expiresAt`, `lastUsedAt`, and `createdAt`. `keyStart` is a display prefix, not
+the secret key. Expiry and last-use times can be `null`.
+
+For `"cli"` and `"mcp"`, **`data.authorization`** contains `id`, `clientId`,
+`scopes`, `metadata`, `expiresAt`, `lastUsedAt`, and `createdAt`. OAuth scopes
+and session-key grants are separate restrictions; a grant does not bypass scopes.
+
+For `"user"`, **`data`** contains `actorId`, `session`, `user`, `organization`,
+`member`, and `role` instead of delegated grants and credential metadata.
+
+### Example Response
+
+An API-key actor with one session-key grant:
+
+<div className="docs-response">
+
+```json
+{
+  "type": "api-key",
+  "data": {
+    "actorId": "0199dfe1-0000-7000-8000-000000000014",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "organizationName": "Example workspace",
+    "grants": [
+      {
+        "grant": {
+          "id": "0199dfe1-0000-7000-8000-000000000013",
+          "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+          "actorId": "0199dfe1-0000-7000-8000-000000000014",
+          "sessionKeyId": "0199dfe1-0000-7000-8000-000000000002",
+          "grantedByActorId": "0199dfe1-0000-7000-8000-000000000015",
+          "revokedAt": null,
+          "revokedByActorId": null,
+          "createdAt": "2026-10-11T09:00:00.000Z"
+        },
+        "sessionKey": {
+          "id": "0199dfe1-0000-7000-8000-000000000002",
+          "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+          "walletId": "0199dfe1-0000-7000-8000-000000000001",
+          "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+          "createdByActorId": "0199dfe1-0000-7000-8000-000000000015",
+          "metadata": {
+            "version": 1,
+            "name": "Example session",
+            "logo": { "type": "emoji", "value": "🔑" },
+            "description": "SDK test session"
+          },
+          "policyHash": "0x3333333333333333333333333333333333333333333333333333333333333333",
+          "status": "active",
+          "revokedAt": null,
+          "revokedByActorId": null,
+          "createdAt": "2026-10-11T09:00:00.000Z",
+          "namespace": "eip155",
+          "policies": [
+            {
+              "id": "0199dfe1-0000-7000-8000-000000000016",
+              "appliesTo": "both",
+              "type": "evm.chain-allowlist",
+              "version": 1,
+              "chainIds": ["eip155:84532"]
+            }
+          ]
+        }
+      }
+    ],
+    "apiKey": {
+      "id": "0199dfe1-0000-7000-8000-000000000017",
+      "metadata": {
+        "version": 1,
+        "name": "Example integration",
+        "logo": { "type": "emoji", "value": "🔑" },
+        "description": "SDK test credential"
+      },
+      "keyStart": "example-prefix",
+      "expiresAt": null,
+      "lastUsedAt": "2026-10-11T09:10:00.000Z",
+      "createdAt": "2026-10-11T09:00:00.000Z"
+    }
+  }
+}
+```
+
+</div>
+
+## Parameters
+
+None. Authentication comes from the [client configuration](/docs/sdk/reference/client/namera-client).
+The method cannot look up a different actor by ID.
+
+## Check the Actor Type
+
+Narrow the response before accessing grants. A grant describes delegated access;
+execution still requires an active session installed on the selected network
+and policies that allow the operation.
+
+```ts title="index.ts"
+import { namera } from "./client";
+
+const result = await namera.auth.currentActor();
+if (!result.success) throw new Error(result.error.message);
+
+const actor = result.data;
+if (actor.type === "api-key") {
+  console.log(actor.data.grants);
+}
+```
+
+## Errors
+
+Invalid, expired, or revoked credentials return `success: false`. This read does
+not create grants or refresh an OAuth token. If you use `getAccessToken`, your
+callback supplies the token for the request.
+
+The SDK does not automatically retry this method. See
+[Handling Results and Errors](/docs/sdk/handling-results-and-errors) for error
+inspection and [Authentication](/docs/sdk/authentication) for credential setup.
