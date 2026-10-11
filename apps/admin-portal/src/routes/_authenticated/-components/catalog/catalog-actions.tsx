@@ -3,7 +3,12 @@ import { useCallback, type Key } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { Button, Dropdown, Label, toast } from "@namera-ai/ui";
-import { Copy01Icon, HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
+import {
+  ArrowUpRight01Icon,
+  Copy01Icon,
+  HugeiconsIcon,
+  MoreHorizontalIcon,
+} from "@namera-ai/ui/icons";
 
 import type { CatalogRecord } from "./catalog-display";
 
@@ -41,6 +46,7 @@ export function CatalogActions({ record }: { record: CatalogRecord }) {
       <Dropdown.Popover>
         <Dropdown.Menu onAction={handleAction}>
           <Dropdown.Item id="view" textValue="View page">
+            <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-4" />
             <Label>View page</Label>
           </Dropdown.Item>
           <Dropdown.Item id="copy" textValue="Copy ID">

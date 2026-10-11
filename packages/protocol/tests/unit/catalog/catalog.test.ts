@@ -163,6 +163,7 @@ describe("address catalog schemas", () => {
     const artifact = {
       id,
       format: "evm-abi",
+      data: { version: 1, type: "evm-abi", name: "Example ABI" },
       document,
       contentHash: "a".repeat(64),
       sourceUrl: "https://example.test/abi.json",
@@ -170,6 +171,15 @@ describe("address catalog schemas", () => {
     };
     expect(Schema.encodeSync(ContractInterface)(decodeInterface(artifact))).toEqual(artifact);
     expect(() => decodeInterface({ ...artifact, format: "anchor-idl" })).toThrow();
+    for (const data of [
+      undefined,
+      { version: 2, type: "evm-abi", name: "ABI" },
+      { version: 1, type: "anchor-idl", name: "ABI" },
+      { version: 1, type: "evm-abi" },
+      { version: 1, type: "evm-abi", name: " " },
+    ]) {
+      expect(() => decodeInterface({ ...artifact, data })).toThrow();
+    }
     expect(() => decodeInterface({ ...artifact, contentHash: "bad" })).toThrow();
     expect(() =>
       decodeInterface({ ...artifact, sourceUrl: "https://user:secret@example.test" }),

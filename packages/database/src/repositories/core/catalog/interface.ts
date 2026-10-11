@@ -3,7 +3,7 @@ import { Context, Effect, Layer, Schema } from "effect";
 import type { ContractInterfaceId } from "@namera-ai/protocol";
 import { ContractInterfaceSummary, type ListAdminInterfacesRequest } from "@namera-ai/protocol/dto";
 import { ContractInterface, ContractInterfaceInsert } from "@namera-ai/protocol/model";
-import { and, desc, eq, inArray, ilike, or } from "drizzle-orm";
+import { and, desc, eq, inArray, ilike, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -32,6 +32,7 @@ const make = Effect.gen(function* () {
       const rows = yield* db
         .select({
           id: contractInterface.id,
+          data: contractInterface.data,
           format: contractInterface.format,
           contentHash: contractInterface.contentHash,
           sourceUrl: contractInterface.sourceUrl,
@@ -42,6 +43,7 @@ const make = Effect.gen(function* () {
           query
             ? or(
                 ilike(contractInterface.id, pattern),
+                ilike(sql`${contractInterface.data}->>'name'`, pattern),
                 ilike(contractInterface.contentHash, pattern),
                 ilike(contractInterface.sourceUrl, pattern),
               )
@@ -53,6 +55,13 @@ const make = Effect.gen(function* () {
       return rows.map((row) => Schema.decodeUnknownSync(ContractInterfaceSummary)(row));
     }, mapRepositoryError),
     getByIds,
+    updateData: Effect.fn("database.contractInterface.updateData")(function* (
+      id: ContractInterfaceId,
+      data: ContractInterface["data"],
+    ) {
+      const db = yield* transactionOrDatabase(database);
+      yield* db.update(contractInterface).set({ data }).where(eq(contractInterface.id, id));
+    }, mapRepositoryError),
     getById: Effect.fn("database.contractInterface.getById")(function* (id: ContractInterfaceId) {
       return (yield* getByIds([id]))[0];
     }),

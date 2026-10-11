@@ -37,7 +37,7 @@ export function SidebarHeader() {
   );
 
   return (
-    <Sidebar.Header className="px-1!">
+    <Sidebar.Header className="px-4!">
       <div className="flex items-center gap-3 py-2">
         <Dropdown>
           <Button

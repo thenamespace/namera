@@ -21,7 +21,7 @@ export const navigationGroups = [
   {
     label: "Resources",
     items: [
-      { label: "Address Catalog", href: "/catalog", icon: InboxIcon },
+      { label: "Catalog", href: "/catalog", icon: InboxIcon },
       { label: "Interfaces", href: "/interface", icon: SourceCodeIcon },
     ],
   },

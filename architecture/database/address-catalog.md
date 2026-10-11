@@ -95,6 +95,7 @@ Large reusable JSON interface documents are separate from searchable metadata.
 | -------------- | --------------------- | ------------------------------------------------ |
 | `id`           | text PK               | UUIDv7 application default; branded interface ID |
 | `format`       | text, required        | Only `evm-abi`                                   |
+| `data`         | jsonb, required       | Versioned, type-discriminated display metadata   |
 | `document`     | jsonb, required       | JSON ABI array                                   |
 | `content_hash` | text, required        | 64 lowercase hex characters; intended SHA-256    |
 | `source_url`   | text, required        | Original artifact source                         |
@@ -104,7 +105,13 @@ Unique `(format, content_hash)` supports document reuse. SQL checks format,
 document array shape and hash shape. SQL does not validate individual ABI items,
 compute the hash, prove provenance, or prohibit UPDATEs. The import workflow sorts
 JSON object keys recursively, preserves array order, and computes a SHA-256 hex
-digest. Existing interface records are immutable through imports. A hash belonging
+digest. `data` currently requires `{ version: 1, type: "evm-abi", name: string }`.
+Names must contain non-whitespace text and be at most 128 characters. SQL enforces
+the metadata shape and its type matching the artifact format. Existing rows are
+backfilled with the name `EVM ABI`; curated names replace it on re-upload.
+Metadata can be updated through imports, with changes audited atomically and
+reported in the interface `updated` count. The format, document and source URL
+remain immutable through imports. A hash belonging
 to another ID is reported as a conflict containing the reusable ID; it is never
 silently remapped. An upgrade assigns a new/reused interface ID only to explicitly
 reviewed entries and never overwrites a shared document.
@@ -173,7 +180,7 @@ Each supplied record is a complete replacement of its editable fields, not a
 patch. Catalog records contain `id`, `namespace`, `slug`, `search`, `data` and
 `status`. Entries contain `id`, `catalogId`, `namespace`, `chainId`, `address`,
 nullable `interfaceId`, `data` and `status`. Interfaces contain `id`, `format`,
-`document` and `sourceUrl`. IDs are caller-supplied UUIDv7 values. Timestamps,
+`data`, `document` and `sourceUrl`. IDs are caller-supplied UUIDv7 values. Timestamps,
 revisions, search-text projections and content hashes are server-owned and must
 not be supplied. The file version and each record's data version are independent.
 
@@ -203,7 +210,7 @@ increment their revision once; uploads are serialized last-write-wins, not
 optimistic edits from multiple administrators. Successful changes append one
 `catalog.imported` platform event with changed record IDs in the same transaction.
 No-op imports and dry runs do not append events. Responses report created,
-updated and unchanged counts per collection (interfaces have no updated count).
+updated and unchanged counts per collection.
 Existing HTTP telemetry and stable workflow spans cover this low-volume operation;
 there are no payload logs, notifications or new metric series.
 
@@ -230,9 +237,9 @@ directly, so bookmarks and refreshes do not depend on the listing cache. Reads d
 not fetch ABI documents or create audit events.
 
 `GET /internal/interfaces` uses the same all-role read permission. It returns
-only `id`, `format`, `contentHash`, `sourceUrl`, and `createdAt`; the repository
+only `id`, `data`, `format`, `contentHash`, `sourceUrl`, and `createdAt`; the repository
 projects these columns without fetching the ABI document. Optional `query`
-matches literal substrings of the ID, hash or source URL, case-insensitively.
+matches literal substrings of the metadata name, ID, hash or source URL, case-insensitively.
 Pagination defaults to 25, supports up to 100 rows, and sorts by creation time
 then ID descending. The response includes `nextOffset`.
 

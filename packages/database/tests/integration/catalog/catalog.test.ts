@@ -33,6 +33,7 @@ const fixture = Effect.fnUntraced(function* () {
     .insert(contractInterface)
     .values({
       format: "evm-abi",
+      data: { version: 1, type: "evm-abi", name: "Example ABI" },
       document: [],
       contentHash: "a".repeat(64),
       sourceUrl: "https://example.test/abi.json",
@@ -83,6 +84,7 @@ layer(TestDatabase.layer)("catalog schema persistence", (it) => {
         .insert(contractInterface)
         .values({
           format: "evm-abi",
+          data: { version: 1, type: "evm-abi", name: "Example ABI" },
           document,
           contentHash: "b".repeat(64),
           sourceUrl: artifact.sourceUrl,

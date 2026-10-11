@@ -1,5 +1,8 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
 import { useMemo, useState } from "react";
+
+import { Link } from "@tanstack/react-router";
 
 import {
   Button,
@@ -10,7 +13,7 @@ import {
   Typography,
   type DataGridColumn,
 } from "@namera-ai/ui";
-import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Add01Icon, ChainIcon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { PermissionGuard, manageCatalogPermission } from "@/components/permission";
 import { useCatalog } from "@/hooks/catalog";
@@ -40,7 +43,22 @@ const columns: DataGridColumn<CatalogRecord>[] = [
     isRowHeader: true,
     minWidth: 240,
     width: "1fr",
-    cell: (record) => <CatalogIdentity record={record} />,
+    cell: (record) => (
+      <Link to="/catalog/$catalogId" params={{ catalogId: record.id }} className="hover:underline">
+        <CatalogIdentity record={record} />
+      </Link>
+    ),
+  },
+  {
+    id: "namespace",
+    header: "Namespace",
+    width: 130,
+    cell: () => (
+      <span className="flex items-center gap-2 text-sm">
+        <ChainIcon namespace="eip155" chain="ethereum" className="size-4" aria-hidden="true" />
+        EVM
+      </span>
+    ),
   },
   {
     id: "type",
@@ -96,7 +114,7 @@ export function CatalogTable() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Typography.Heading level={2} weight="medium" className="text-2xl">
-            Address Catalog
+            Catalog
           </Typography.Heading>
           <p className="text-muted mt-1 text-sm">
             Tokens, contracts, and their network deployments.

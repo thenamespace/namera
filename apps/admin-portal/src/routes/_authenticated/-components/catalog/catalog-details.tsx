@@ -12,7 +12,7 @@ export function CatalogDetails({ record }: { record: CatalogRecord }) {
   return (
     <div className="mx-auto w-full max-w-5xl py-4 sm:px-2 sm:py-8">
       <Link to="/catalog" className="text-muted mb-6 inline-block text-sm hover:text-foreground">
-        ← Address Catalog
+        ← Catalog
       </Link>
       <header className="flex flex-col items-start">
         <Avatar size="lg">

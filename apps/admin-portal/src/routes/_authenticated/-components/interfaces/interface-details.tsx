@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { ContractInterface } from "@namera-ai/protocol/model";
-import { Button, Typography } from "@namera-ai/ui";
+import { Button, CodeBlock, Typography } from "@namera-ai/ui";
 import { ChainIcon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { copyCatalogValue } from "../catalog/catalog-actions";
@@ -23,7 +23,7 @@ export function InterfaceDetails({ artifact }: { artifact: ContractInterface }) 
       <header>
         <ChainIcon namespace="eip155" chain="ethereum" className="size-10" aria-hidden="true" />
         <Typography.Heading level={2} className="mt-3 text-3xl tracking-tight">
-          EVM ABI
+          {artifact.data.name}
         </Typography.Heading>
         <p className="text-muted mt-2 text-sm">
           {functions} functions · {events} events · {errors} errors
@@ -51,7 +51,6 @@ export function InterfaceDetails({ artifact }: { artifact: ContractInterface }) 
               {artifact.sourceUrl.href}
             </a>
           </CatalogProperty>
-          <CatalogProperty label="ABI entries">{artifact.document.length}</CatalogProperty>
         </dl>
       </section>
       <section aria-labelledby="interface-document" className="mt-10">
@@ -70,15 +69,18 @@ export function InterfaceDetails({ artifact }: { artifact: ContractInterface }) 
             Copy JSON
           </Button>
         </div>
-        {/* Keyboard focus lets users scroll the bounded ABI document. */}
-        <pre
-          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-          tabIndex={0}
+        <CodeBlock
           aria-label="ABI JSON"
-          className="bg-default max-h-[36rem] overflow-auto rounded-xl border border-separator p-4 text-xs leading-relaxed focus-visible:outline-accent"
+          className="min-w-0 max-h-[36rem] overflow-auto rounded-xl border border-separator"
         >
-          <code>{document}</code>
-        </pre>
+          <CodeBlock.Code
+            code={document}
+            language="json"
+            theme="github-dark-dimmed"
+            darkTheme="github-dark-dimmed"
+            className="text-xs"
+          />
+        </CodeBlock>
       </section>
     </div>
   );

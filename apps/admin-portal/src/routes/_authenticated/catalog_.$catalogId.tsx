@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authenticated/catalog_/$catalogId")({
     }
   },
   errorComponent: () => (
-    <AdminPage title="Address Catalog">
+    <AdminPage title="Catalog">
       <p role="alert">Couldn’t load this catalog record. It may no longer exist.</p>
       <Link to="/catalog" className="mt-3 inline-block text-sm underline">
         Back to catalog
@@ -52,7 +52,7 @@ function CatalogPage() {
   const { catalogId } = Route.useParams();
   const catalog = useCatalogDetail(catalogId);
   return (
-    <AdminPage title={catalog.data?.data.display.name ?? "Address Catalog"}>
+    <AdminPage title={catalog.data?.data.display.name ?? "Catalog"}>
       <PermissionGuard required={readCatalogPermission}>
         {catalog.error ? (
           <div role="alert">

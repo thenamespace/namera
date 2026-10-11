@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/catalog")({
     }
   },
   component: () => (
-    <AdminPage title="Address Catalog">
+    <AdminPage title="Catalog">
       <PermissionGuard required={readCatalogPermission} fallback={denied}>
         <CatalogTable />
       </PermissionGuard>

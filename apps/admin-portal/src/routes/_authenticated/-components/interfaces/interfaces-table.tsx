@@ -1,7 +1,8 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
 import { useCallback, useMemo, useState, type Key } from "react";
 
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import type { ContractInterfaceSummary } from "@namera-ai/protocol/dto";
 import {
@@ -13,7 +14,12 @@ import {
   Typography,
   type DataGridColumn,
 } from "@namera-ai/ui";
-import { Copy01Icon, HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
+import {
+  ArrowUpRight01Icon,
+  Copy01Icon,
+  HugeiconsIcon,
+  MoreHorizontalIcon,
+} from "@namera-ai/ui/icons";
 
 import { useInterfaces } from "@/hooks/interfaces";
 
@@ -42,6 +48,7 @@ function InterfaceActions({ artifact }: { artifact: ContractInterfaceSummary }) 
       <Dropdown.Popover>
         <Dropdown.Menu onAction={onAction}>
           <Dropdown.Item id="view" textValue="View page">
+            <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-4" />
             <Label>View page</Label>
           </Dropdown.Item>
           <Dropdown.Item id="copy" textValue="Copy ID">
@@ -55,12 +62,20 @@ function InterfaceActions({ artifact }: { artifact: ContractInterfaceSummary }) 
 }
 const columns: DataGridColumn<ContractInterfaceSummary>[] = [
   {
-    id: "id",
-    header: "Interface",
+    id: "name",
+    header: "Name",
     isRowHeader: true,
     minWidth: 290,
     width: "1fr",
-    cell: (artifact) => <code className="text-xs">{artifact.id}</code>,
+    cell: (artifact) => (
+      <Link
+        to="/interface/$interfaceId"
+        params={{ interfaceId: artifact.id }}
+        className="text-sm font-medium hover:underline"
+      >
+        {artifact.data.name}
+      </Link>
+    ),
   },
   {
     id: "format",
@@ -133,7 +148,7 @@ export function InterfacesTable() {
       >
         <SearchField.Group>
           <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Search ID, source, or hash…" maxLength={200} />
+          <SearchField.Input placeholder="Search name, ID, source, or hash…" maxLength={200} />
           <SearchField.ClearButton aria-label="Clear interface search" />
         </SearchField.Group>
       </SearchField>

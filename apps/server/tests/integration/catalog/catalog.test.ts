@@ -24,6 +24,7 @@ const payload = Schema.decodeUnknownSync(ImportCatalogRequest)({
     {
       id: interfaceId,
       format: "evm-abi",
+      data: { version: 1, type: "evm-abi", name: "Example ABI" },
       document: [],
       sourceUrl: "https://example.test/abi.json",
     },
@@ -97,6 +98,52 @@ const setup = Effect.gen(function* () {
 });
 
 layer(TestServerLayer)("catalog API", (it) => {
+  it.effect("updates interface metadata without replacing the ABI and audits only changes", () =>
+    Effect.gen(function* () {
+      const { owner, db } = yield* setup;
+      yield* owner.client.adminCatalog.import({ payload, query: {} });
+      const before = yield* owner.client.adminCatalog.getInterface({ params: { interfaceId } });
+      const renamed = {
+        ...payload,
+        interfaces: payload.interfaces.map((artifact) => ({
+          ...artifact,
+          data: { ...artifact.data, name: "ERC-20 standard" },
+        })),
+      };
+      const preview = yield* owner.client.adminCatalog.import({
+        payload: renamed,
+        query: { dryRun: true },
+      });
+      expect(preview.interfaces).toEqual({ created: 0, updated: 1, unchanged: 0 });
+      expect(yield* owner.client.adminCatalog.getInterface({ params: { interfaceId } })).toEqual(
+        before,
+      );
+      const result = yield* owner.client.adminCatalog.import({ payload: renamed, query: {} });
+      expect(result.interfaces).toEqual(preview.interfaces);
+      expect(yield* owner.client.adminCatalog.getInterface({ params: { interfaceId } })).toEqual({
+        ...before,
+        data: { ...before.data, name: "ERC-20 standard" },
+      });
+      expect(
+        (yield* owner.client.adminCatalog.listInterfaces({
+          query: { query: "standard" },
+        })).entries.map((artifact) => artifact.id),
+      ).toEqual([interfaceId]);
+      expect(
+        (yield* owner.client.adminCatalog.import({ payload: renamed, query: {} })).interfaces,
+      ).toEqual({ created: 0, updated: 0, unchanged: 1 });
+      const events = (yield* db.query.platformEvent.findMany()).filter(
+        (event) => event.data.type === "catalog.imported",
+      );
+      expect(events).toHaveLength(2);
+      expect(
+        events.every(
+          (event) =>
+            event.data.type === "catalog.imported" && event.data.interfaceIds.includes(interfaceId),
+        ),
+      ).toBe(true);
+    }),
+  );
   it.effect("lists interface metadata and restricts full documents to authorized readers", () =>
     Effect.gen(function* () {
       const { owner, client, repository } = yield* setup;
@@ -110,6 +157,7 @@ layer(TestServerLayer)("catalog API", (it) => {
           {
             id: secondId,
             format: "evm-abi",
+            data: { version: 1, type: "evm-abi", name: "Example ABI" },
             sourceUrl: "https://example.test/second.json",
             document: [
               {
@@ -134,6 +182,7 @@ layer(TestServerLayer)("catalog API", (it) => {
       expect(Object.keys(first.entries[0] ?? {}).toSorted()).toEqual([
         "contentHash",
         "createdAt",
+        "data",
         "format",
         "id",
         "sourceUrl",

@@ -6,7 +6,6 @@ import { CatalogImportError } from "@namera-ai/protocol";
 import {
   ImportCatalogRecord,
   ImportCatalogEntry,
-  ImportCatalogInterface,
   type ImportCatalogRequest,
 } from "@namera-ai/protocol/dto";
 import { EthereumAddress } from "@namera-ai/protocol/evm";
@@ -136,12 +135,14 @@ export const makeCatalogImport = Effect.gen(function* () {
             interfaces.map((record) => record.contentHash),
           );
           const newInterfaces = [];
+          const updatedInterfaces = [];
           for (const record of interfaces) {
             const previous = interfaceMap.get(record.id);
             if (
               previous &&
-              canonical(Schema.encodeSync(ImportCatalogInterface)(previous)) !==
-                canonical(Schema.encodeSync(ImportCatalogInterface)(record))
+              (previous.contentHash !== record.contentHash ||
+                previous.format !== record.format ||
+                previous.sourceUrl.href !== record.sourceUrl.href)
             )
               return yield* conflict(
                 "interfaces",
@@ -160,6 +161,8 @@ export const makeCatalogImport = Effect.gen(function* () {
                 `ABI already belongs to ${duplicate.id}; reference that ID`,
               );
             if (!previous) newInterfaces.push(record);
+            else if (canonical(previous.data) !== canonical(record.data))
+              updatedInterfaces.push(record);
           }
           const storedEntries = yield* catalogEntry.getByIds(entries.map((entry) => entry.id));
           const entryMap = new Map(storedEntries.map((entry) => [entry.id, entry]));
@@ -252,15 +255,22 @@ export const makeCatalogImport = Effect.gen(function* () {
           const entriesCreated = changedEntries.filter((record) => !entryMap.has(record.id)).length;
           if (!dryRun) {
             yield* contractInterface.insertMany(newInterfaces);
+            for (const record of updatedInterfaces)
+              yield* contractInterface.updateData(record.id, record.data);
             yield* catalog.upsertMany(changedCatalog);
             yield* catalogEntry.upsertMany(changedEntries);
-            if (changedCatalog.length || changedEntries.length || newInterfaces.length)
+            if (
+              changedCatalog.length ||
+              changedEntries.length ||
+              newInterfaces.length ||
+              updatedInterfaces.length
+            )
               yield* repository.auth.platform.appendEvent(actor.id, {
                 version: 1,
                 type: "catalog.imported",
                 catalogIds: changedCatalog.map((record) => record.id),
                 entryIds: changedEntries.map((record) => record.id),
-                interfaceIds: newInterfaces.map((record) => record.id),
+                interfaceIds: [...newInterfaces, ...updatedInterfaces].map((record) => record.id),
               });
           }
           return {
@@ -277,7 +287,8 @@ export const makeCatalogImport = Effect.gen(function* () {
             },
             interfaces: {
               created: newInterfaces.length,
-              unchanged: interfaces.length - newInterfaces.length,
+              updated: updatedInterfaces.length,
+              unchanged: interfaces.length - newInterfaces.length - updatedInterfaces.length,
             },
           };
         }),

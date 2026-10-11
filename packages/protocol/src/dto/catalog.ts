@@ -102,5 +102,5 @@ export const ImportCatalogResponse = Schema.Struct({
   dryRun: Schema.Boolean,
   catalog: ImportCounts,
   entries: ImportCounts,
-  interfaces: Schema.Struct({ created: Schema.Int, unchanged: Schema.Int }),
+  interfaces: ImportCounts,
 });

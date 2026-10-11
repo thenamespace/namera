@@ -52,7 +52,7 @@ function InterfacePage() {
   const { interfaceId } = Route.useParams();
   const artifact = useInterface(interfaceId);
   return (
-    <AdminPage title="Interface">
+    <AdminPage title={artifact.data?.data.name ?? "Interface"}>
       <PermissionGuard required={readCatalogPermission}>
         {artifact.error ? (
           <div role="alert">
