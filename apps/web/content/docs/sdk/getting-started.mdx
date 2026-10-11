@@ -1,0 +1,330 @@
+---
+title: Getting Started
+icon: Rocket01Icon
+description: Connect your workspace, send a test transaction, and check its status.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+Send a small test transaction on
+**Base Sepolia**. Add the TypeScript snippets to one `index.ts` file in order.
+
+## Install the SDK
+
+```sh
+npm install @namera-ai/sdk viem
+```
+
+## Set Up Your Account
+
+In the [Namera dashboard](https://dashboard.namera.ai):
+
+1. Create or choose an account. Choose a separate recipient wallet you control.
+2. Create a **session key** that allows a native transfer to that
+   recipient, with a spending limit of **0.001 ETH**.
+3. Approve its installation on **Base Sepolia** and wait for it to become active.
+4. Create an API key with access to only this session key for this walkthrough.
+
+Fund the account with **0.001 Base Sepolia test ETH** and save your API key:
+
+```dotenv title=".env"
+NAMERA_API_KEY=your_api_key
+```
+
+<Callout type="warn" title="Keep credentials private">
+  Keep `.env` out of Git and API keys out of browser code.
+</Callout>
+
+## Create a Client
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
+```
+
+## List Accounts
+
+```ts title="index.ts"
+const wallets = await namera.wallets.list();
+if (!wallets.success) throw new Error(wallets.error.message);
+
+console.log(wallets.data);
+```
+
+<div className="docs-response">
+
+```json
+[
+  {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "metadata": {
+      "version": 1,
+      "name": "Example account",
+      "logo": { "type": "emoji", "value": "👛" },
+      "description": "SDK test account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x1111111111111111111111111111111111111111",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "7702",
+      "delegationVersion": "v1.1.0"
+    },
+    "createdAt": "2026-10-11T09:00:00.000Z",
+    "updatedAt": "2026-10-11T09:00:00.000Z"
+  }
+]
+```
+
+</div>
+
+## List Session Keys
+
+```ts title="index.ts"
+const sessions = await namera.sessionKeys.list();
+if (!sessions.success) throw new Error(sessions.error.message);
+
+console.log(sessions.data);
+
+const session = sessions.data[0];
+if (!session) throw new Error("Grant this API key access to your session key.");
+```
+
+This uses the first key returned. For this walkthrough, your API key should only
+have access to the session key you just configured.
+
+<div className="docs-response">
+
+```json
+[
+  {
+    "id": "0199dfe1-0000-7000-8000-000000000002",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000006",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Example session",
+      "logo": { "type": "emoji", "value": "🔑" },
+      "description": "Send 0.001 test ETH on Base Sepolia"
+    },
+    "policies": [],
+    "policyHash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "active",
+    "revokedAt": null,
+    "createdAt": "2026-10-11T09:05:00.000Z",
+    "signer": {
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1",
+      "publicKey": "0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000000001",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+      "metadata": {
+        "version": 1,
+        "name": "Example account",
+        "logo": { "type": "emoji", "value": "👛" },
+        "description": "SDK test account"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x1111111111111111111111111111111111111111",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000000005",
+        "custody": "namera-managed",
+        "provider": "1claw",
+        "algorithm": "secp256k1"
+      },
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "ecdsa_secp256k1",
+        "entryPointVersion": "0.7",
+        "accountMode": "7702",
+        "delegationVersion": "v1.1.0"
+      },
+      "createdAt": "2026-10-11T09:00:00.000Z",
+      "updatedAt": "2026-10-11T09:00:00.000Z"
+    },
+    "creator": {
+      "organizationMember": {
+        "id": "0199dfe1-0000-7000-8000-000000000007",
+        "userId": "0199dfe1-0000-7000-8000-000000000008",
+        "organizationId": "0199dfe1-0000-7000-8000-000000000004",
+        "organizationRoleId": "0199dfe1-0000-7000-8000-000000000009",
+        "joinedAt": "2026-10-11T08:00:00.000Z"
+      },
+      "user": {
+        "id": "0199dfe1-0000-7000-8000-000000000008",
+        "email": "developer@example.com",
+        "emailVerified": true,
+        "metadata": {
+          "version": 1,
+          "name": "Example developer",
+          "image": { "type": "emoji", "value": "👤" }
+        },
+        "lastLoginAt": "2026-10-11T08:55:00.000Z"
+      },
+      "organizationRole": {
+        "id": "0199dfe1-0000-7000-8000-000000000009",
+        "key": "developer",
+        "metadata": {
+          "version": 1,
+          "name": "Developer",
+          "logo": { "type": "emoji", "value": "💻" },
+          "description": "Manage test accounts and session keys"
+        },
+        "type": "custom",
+        "permissions": [
+          "wallet:read",
+          "wallet:create",
+          "session-key:read",
+          "session-key:create",
+          "api-key:create"
+        ],
+        "systemRoleId": null
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000000010",
+        "chainId": "eip155:84532",
+        "status": "installed",
+        "authorization": {
+          "version": 1,
+          "entityId": 1,
+          "signerAddress": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+          "permissions": [
+            { "type": "contract-access", "address": "0x2222222222222222222222222222222222222222" },
+            { "type": "native-token-transfer", "allowance": "1000000000000000" }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1791709200,
+          "validUntil": 1794387600
+        },
+        "installTransactionHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "uninstallTransactionHash": null
+      }
+    ]
+  }
+]
+```
+
+</div>
+
+## Execute a Transaction
+
+This sends **0.001 test ETH** on Base Sepolia. Replace the example address below
+with the separate recipient wallet allowed by your session key.
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+
+const execution = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: session.walletId,
+  sessionKeyId: session.id,
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (!execution.success) throw new Error(execution.error.message);
+
+console.log(execution.data);
+```
+
+<Callout type="warn" title="This submits a real testnet transaction">
+  The selected key must permit the call and be installed on Base Sepolia. Gas sponsorship uses your
+  workspace's allowance; it does not fund the transfer.
+</Callout>
+
+`prepared` means the operation is queued for broadcast.
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "prepared",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+## Get Submission Status
+
+Use the submission ID from the execution result:
+
+```ts title="index.ts"
+const status = await namera.executions.getStatus(execution.data.submissionId);
+
+if (!status.success) throw new Error(status.error.message);
+
+console.log(status.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "namespace": "eip155",
+  "submissionId": "0199dfe1-0000-7000-8000-000000000003",
+  "status": "submitted",
+  "userOperationHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+}
+```
+
+</div>
+
+Check the same submission again after a short delay while its status is
+`reserved`, `prepared`, or `submitted`. Stop on `confirmed` or `failed`.
+
+- **Confirmed:** `status.data.execution` contains the execution record.
+- **Failed:** the submission did not complete successfully.
+
+<Callout title="Accepted is not confirmed">
+  `success: true` means the SDK request succeeded. Read `data.status` for the transaction outcome.
+  Poll the existing submission instead of calling `execute()` again to check progress.
+</Callout>
+
+## Run It
+
+Run from the directory containing `index.ts` and `.env`:
+
+```sh
+node --env-file=.env index.ts
+```
+
+The script submits **one new transaction each time you run it** and checks its
+status once. To check that same transaction later, keep its submission ID and
+call only `getStatus()`.
+
+For message signing, see the [quick examples](/docs/sdk#quick-examples).

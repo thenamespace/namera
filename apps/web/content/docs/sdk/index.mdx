@@ -1,12 +1,108 @@
 ---
 title: Overview
-description: Integrate Namera into your TypeScript application. Learn how to install the SDK, authenticate API requests, and build wallet workflows with typed methods and explicit permissions.
+icon: BookOpen01Icon
+description: Build with Namera in TypeScript.
 ---
 
-This section is a documentation preview. SDK guides and examples will be added here.
+import { Card, Cards } from "fumadocs-ui/components/card";
 
-## Installation
+The Namera SDK lets your application work with accounts, send transactions, and
+sign messages using scoped session keys.
 
-```sh
-npm install @namera-ai/sdk
+## Quick Examples
+
+Create a client with your API key:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({
+  apiKey: process.env.NAMERA_API_KEY!,
+});
 ```
+
+### List Accounts
+
+```ts title="index.ts"
+const result = await namera.wallets.list();
+
+if (result.success) {
+  console.log(result.data);
+}
+```
+
+### Sign a Message
+
+Use the `session` selected in [Getting Started](/docs/sdk/getting-started#list-session-keys).
+
+```ts title="index.ts"
+const result = await namera.sign({
+  namespace: "eip155",
+  walletId: session.walletId,
+  sessionKeyId: session.id,
+  chainId: "eip155:84532",
+  type: "message",
+  message: "Hello from Namera",
+});
+
+if (result.success) {
+  console.log(result.data.signature);
+}
+```
+
+The session needs onchain signature authority and an API signature policy that
+allows this message on Base Sepolia.
+
+### Execute a Transaction
+
+Use the `session` selected in [Getting Started](/docs/sdk/getting-started#list-session-keys).
+Replace the example recipient with the wallet allowed by that key.
+This sends 0.001 test ETH on Base Sepolia.
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+
+const result = await namera.executions.execute({
+  namespace: "eip155",
+  walletId: session.walletId,
+  sessionKeyId: session.id,
+  chainId: "eip155:84532",
+  calls: [
+    {
+      to: "0x2222222222222222222222222222222222222222",
+      value: parseEther("0.001"),
+      data: "0x",
+    },
+  ],
+  sponsor: true,
+});
+
+if (result.success) {
+  console.log(result.data.submissionId);
+}
+```
+
+Follow [Getting Started](/docs/sdk/getting-started#execute-a-transaction) for
+funding, permissions, and checking the submission status.
+
+## What You Can Build
+
+<Cards>
+  <Card
+    title="Accounts & Session Keys"
+    description="Read accounts and inspect the permissions granted to your integration."
+  />
+  <Card
+    title="Transactions"
+    description="Simulate contract calls, submit transactions, and track their status."
+  />
+  <Card
+    title="Signatures"
+    description="Sign messages and typed data, then verify smart-account signatures."
+  />
+</Cards>
+
+## Start Building
+
+[Install the SDK](/docs/sdk/installation), then follow
+[Getting Started](/docs/sdk/getting-started) to connect your workspace.

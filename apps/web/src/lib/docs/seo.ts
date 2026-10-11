@@ -1,5 +1,7 @@
 import { jsonLd, seo, SITE } from "#/lib/seo";
 
+import { getDocsSection } from "./sections";
+
 type DocsMetadata = {
   title: string;
   description?: string | undefined;
@@ -8,13 +10,14 @@ type DocsMetadata = {
 };
 
 const sections: Record<string, string> = {
+  dashboard: "Dashboard",
   sdk: "SDK",
   cli: "CLI",
   mcp: "MCP",
 };
 
 export function docsHead(page: DocsMetadata) {
-  const section = sections[page.url.split("/")[2] ?? ""];
+  const section = sections[getDocsSection(page.url)];
   const title = `${page.title} | Namera Docs`;
   const url = `${SITE.origin}${page.url}`;
   const image = `/og${page.url}/image.png`;
@@ -57,9 +60,9 @@ export function docsHead(page: DocsMetadata) {
             "@type": "ListItem",
             position: 2,
             name: "Documentation",
-            item: `${SITE.origin}/docs/sdk`,
+            item: `${SITE.origin}/docs`,
           },
-          ...(page.url !== "/docs/sdk"
+          ...(page.url !== "/docs"
             ? [
                 {
                   "@type": "ListItem",

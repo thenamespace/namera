@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   BotIcon,
   CommandLineIcon,
+  DashboardSquare01Icon,
   BrandGithubIcon,
   Icon,
   NameraIcon,
@@ -24,6 +25,7 @@ import {
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 
+import { getDocsSection } from "#/lib/docs/sections";
 import { docsHead } from "#/lib/docs/seo";
 import { SITE_LINKS } from "#/lib/site-links";
 
@@ -49,7 +51,7 @@ const getDocsPage = createServerFn({ method: "GET" })
       title: page.data.title,
       description: page.data.description,
       lastModified: lastModified?.toISOString(),
-      editUrl: `https://github.com/thenamespace/namera-core/edit/main/apps/web/content/docs/${page.path.split("/").map(encodeURIComponent).join("/")}`,
+      editUrl: `https://github.com/thenamespace/namera/edit/main/apps/web/content/docs/${page.path.split("/").map(encodeURIComponent).join("/")}`,
       tree: await docsSource.serializePageTree(docsSource.pageTree),
     };
   });
@@ -94,8 +96,8 @@ export const Route = createFileRoute("/docs/$")({
     // TanStack Router names its catch-all route parameter `_splat`.
     // eslint-disable-next-line no-underscore-dangle
     const path = params._splat?.split("/").filter(Boolean).join("/");
-    if (!path || path === "dashboard") {
-      throw redirect({ to: "/docs/$", params: { _splat: "sdk" }, statusCode: 308 });
+    if (path === "dashboard") {
+      throw redirect({ to: "/docs/$", params: { _splat: "" }, statusCode: 308 });
     }
   },
   loader: async ({ params }) => {
@@ -111,12 +113,24 @@ export const Route = createFileRoute("/docs/$")({
 
 function DocumentationPage() {
   const page = useFumadocsLoader(Route.useLoaderData());
+  const section = getDocsSection(page.url);
+  const isDashboard = section === "dashboard";
   return (
     <RootProvider search={{ SearchDialog: DocsSearchDialog }} theme={{ enabled: false }}>
-      <div className="namera-docs" data-docs-section={page.url.split("/")[2] || "sdk"}>
+      <div className="namera-docs" data-docs-section={section}>
         <DocsLayout
           slots={{ actions: DocsHeaderActions }}
-          tree={page.tree}
+          tree={
+            isDashboard
+              ? {
+                  ...page.tree,
+                  $id: "docs-dashboard",
+                  children: page.tree.children.filter(
+                    (node) => node.type !== "folder" || !node.root,
+                  ),
+                }
+              : page.tree
+          }
           nav={{
             title: (
               <span className="inline-flex items-center gap-2.5">
@@ -128,6 +142,18 @@ function DocumentationPage() {
           }}
           themeSwitch={{ enabled: false }}
           tabs={[
+            {
+              title: "Dashboard",
+              description: "Introduction to Namera",
+              url: "/docs",
+              urls: new Set(["/docs", ...(isDashboard ? [page.url] : [])]),
+              icon: (
+                <Icon
+                  icon={DashboardSquare01Icon}
+                  className="docs-section-icon docs-section-icon--dashboard"
+                />
+              ),
+            },
             {
               title: "SDK",
               description: "Wallet APIs for TypeScript",
@@ -155,7 +181,7 @@ function DocumentationPage() {
             SITE_LINKS.github
               ? [
                   {
-                    type: "icon",
+                    type: "icon" as const,
                     text: "GitHub",
                     label: "Namera on GitHub",
                     url: SITE_LINKS.github,

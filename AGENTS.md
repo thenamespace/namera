@@ -66,6 +66,46 @@ before changing a cross-package flow. Read
 [`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)
 before adding or changing traces, logs, metrics, or browser OTLP behavior.
 
+## Public docs writing style
+
+Apply these conventions to `apps/web/content/docs`. Use the SDK Overview,
+Installation, and Getting Started pages as the reference structure.
+
+- Write for humans first, with explicit names and context that also help AI
+  agents. Use short sentences, direct instructions, and only the information
+  needed for the current task. Avoid filler, implementation trivia, repeated
+  caveats, and explanations of obvious language features.
+- Keep Overview brief: explain what the integration does, then show practical
+  examples one after another under H3 headings. Do not put different tasks in tabs.
+- Keep Installation focused on requirements and install commands. A short page
+  is fine; do not pad it with import checks or redundant setup explanations.
+- Order Getting Started as installation, account/session setup in the dashboard,
+  client creation, listing accounts, listing session keys, executing a transaction,
+  and checking submission status. Use ordinary H2/H3 headings, not numbered
+  Fumadocs Steps wrappers. Short ordered lists within setup sections are fine.
+- Use Fumadocs components when they help: package-manager tabs and semantically
+  colored info/warning callouts. Keep essential prerequisites and safety notes
+  close to the action; do not turn every paragraph into a callout.
+- Use `index.ts` for simple examples. Include helper imports in the snippet
+  where they are used. Prefer readable helpers such as `parseEther("0.001")`
+  over raw wei literals, and include imported packages in installation commands.
+- Keep examples short without making them incorrect. Avoid repeated environment
+  guards and elaborate scaffolding; retain error handling needed to use results
+  safely. Log the complete result `.data` rather than the SDK envelope or mapped fields.
+- Keep secrets such as API keys in environment variables. Put clearly labeled
+  example recipients and nonsecret values in code. Select returned session keys
+  directly when appropriate, and state the setup assumptions instead of silently
+  choosing an arbitrary key with different permissions.
+- Show JSON responses inline in fixed-height, scrollable code blocks using the
+  `docs-response` wrapper. Do not hide them in accordions or add Show more controls.
+  Omit response-block titles. Verify examples against current SDK exports and API
+  schemas. Show complete data shapes with illustrative values, without omitting
+  fields or adding shortened-response notes; never invent response fields.
+- Keep amounts, networks, variable names, and permissions consistent across
+  prose and snippets. Distinguish submission from confirmation where relevant.
+- Write finished documentation, not preview filler. Do not describe unsupported
+  functionality as available; omit it or state the actual limitation concisely.
+
 ## Architecture knowledge base
 
 Stable technical architecture is recorded in [`architecture/`](architecture/README.md).

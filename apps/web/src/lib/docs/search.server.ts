@@ -1,5 +1,6 @@
 import { createFromSource } from "fumadocs-core/search/server";
 
+import { getDocsSection } from "./sections";
 import { docsSource } from "./source.server";
 
 export const docsSearch = createFromSource(docsSource, {
@@ -9,6 +10,6 @@ export const docsSearch = createFromSource(docsSource, {
     ...(page.data.description ? { description: page.data.description } : {}),
     url: page.url,
     structuredData: await page.data.structuredData(),
-    ...(page.slugs[0] ? { tag: page.slugs[0] } : {}),
+    tag: getDocsSection(page.url),
   }),
 });

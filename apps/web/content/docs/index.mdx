@@ -1,0 +1,51 @@
+---
+title: Introduction
+icon: BookOpen01Icon
+description: Welcome to Namera Documentation
+---
+
+import { ImageZoom } from "fumadocs-ui/components/image-zoom";
+
+<ImageZoom
+  src="https://cdn.namera.ai/seo/og.png"
+  alt="Namera logo and wordmark on a dark charcoal gradient"
+  width={1200}
+  height={630}
+  className="w-full"
+/>
+
+Namera is programmable smart wallet infrastructure for agents, applications, and
+developers who need fine-grained control over onchain execution.
+
+Instead of giving an agent unrestricted access to a wallet, you give it a session
+key with explicit permissions. You decide which networks and contracts it can
+use, what it can do, and how much it can spend. Account ownership stays separate
+from the access you give each integration.
+
+## How to Use These Docs
+
+Start with [Why Namera](/docs/why-namera) for the reasoning behind permissioned
+wallet access. From there, choose the section that fits how you want to work:
+
+- [SDK](/docs/sdk) for integrating wallet execution and signing into a TypeScript application.
+- [CLI](/docs/cli) for working with accounts and session keys from your terminal.
+- [MCP](/docs/mcp) for giving compatible agent clients access to Namera's wallet tools.
+
+These clients use the same permission model. Access is scoped to the session keys
+you authorize, rather than every account in your workspace.
+
+Use the section picker to switch between SDK, CLI, and MCP, or search for a page
+directly. On larger screens, the table of
+contents on the right lets you jump between headings within a page.
+
+## Docs for LLMs
+
+We support the `llms.txt` convention so language models and the applications that
+use them can read the documentation as Markdown.
+
+- [llms.txt](/llms.txt): an index of documentation and other public site content.
+- [llms-full.txt](/llms-full.txt): all published documentation in one Markdown file.
+
+You can also read any documentation page as Markdown by appending `.md` to its
+URL, such as [/docs.md](/docs.md). The **Copy Markdown** and **Open** controls at
+the top of each page provide the same content.

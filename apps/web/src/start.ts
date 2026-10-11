@@ -9,11 +9,11 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
 
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/$/, "");
-  if (["/docs", "/docs.md", "/docs/dashboard", "/docs/dashboard.md"].includes(path)) {
+  if (["/docs/dashboard", "/docs/dashboard.md"].includes(path)) {
     return new Response(null, {
       status: 308,
       headers: {
-        Location: `${path.endsWith(".md") ? "/docs/sdk.md" : "/docs/sdk"}${url.search}`,
+        Location: `${path.endsWith(".md") ? "/docs.md" : "/docs"}${url.search}`,
       },
     });
   }

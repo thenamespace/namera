@@ -2,14 +2,22 @@
 
 Namera's public website, built with TanStack Start and React. `/` is the
 marketing landing page, `/pricing` the plan comparison, and `/blog` the MDX
-publication. `/docs` and the retired `/docs/dashboard` permanently redirect to
-`/docs/sdk`. The Fumadocs preview has SDK, CLI, and MCP sections, with SDK first.
+publication. `/docs` is the introduction and `/docs/why-namera` explains the
+permission model. Both belong to the Dashboard group, without a `/dashboard`
+URL segment. Only `/docs/sdk`, `/docs/cli`, and `/docs/mcp` and their descendants
+select separate groups; all other docs pages belong to Dashboard. Each group
+shows only its own sidebar pages, with no globally pinned pages. Dashboard is
+first in the picker. The retired `/docs/dashboard` redirects to `/docs`.
 
-## Documentation preview
+## Documentation
 
 Author documentation in `content/docs/*.mdx` and control sidebar ordering with
 `content/docs/meta.json`. `source.config.ts` defines the collection; the server
 source loader resolves pages and serializes their navigation tree. The docs
+frontmatter `icon` field resolves through the explicit Hugeicons map in
+`src/lib/docs/source.server.ts`, using the shared UIKit `Icon` component.
+Add supported icon names there before using them in a page.
+The docs
 route preloads the matching MDX module and renders Fumadocs' Spacious layout, sidebar, page body,
 code blocks, and table of contents using Namera theme tokens.
 
@@ -20,7 +28,8 @@ versions are kept aligned.
 dark surfaces and neutral headings and links. SDK uses brand indigo, CLI uses mint,
 and MCP uses amber accents for section icons, active navigation, and focus.
 Route-scoped body tokens also reach portaled menus and search. Inter prose and
-Geist Mono code retain Fumadocs' native spacing and layout widths. Docs use
+JetBrains Mono code retain Fumadocs' native spacing and layout widths. Docs code
+blocks use 15px text. Docs use
 tighter corner radii, larger page-action buttons, and a brand-colored active
 table-of-contents highlight. The top-right GitHub action uses `SITE_LINKS.github`.
 The scoped overrides do not change
@@ -28,8 +37,19 @@ marketing or blog colors.
 
 The `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
 `meta.json`, producing section-specific sidebars. A sidebar picker switches
-between SDK, CLI, and MCP, with an icon and description for each section.
-Each section has a starter page while the documentation is being refined.
+between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
+The SDK Introduction group contains Overview, Installation, and Getting Started.
+The walkthrough uses current SDK exports to discover resources, execute a managed-session
+test transaction on Base Sepolia, and read its submission status. Example JSON is
+illustrative; snippets log complete result `.data`, and the response examples
+include complete API data shapes without the SDK envelope. Response examples
+use untitled Fumadocs code blocks with a fixed-height, scrollable viewport.
+CLI and MCP each have an overview page.
+
+### Docs writing conventions
+
+Follow [Public docs writing style](../../AGENTS.md#public-docs-writing-style)
+for tone, page structure, examples, callouts, and response formatting.
 
 Docs have generated 1200×630 PNG share cards at `/og/docs/<page>/image.png`
 for each published documentation page. `src/lib/docs/og-image.tsx` owns
@@ -44,19 +64,19 @@ Node deployment. Verify the generated images in the target deployment as well as
 
 Search appears below the section picker and opens with Cmd/Ctrl+K. The
 `/api/docs/search` endpoint uses Fumadocs' built-in search index over the docs
-collection's structured content. Theme switching is disabled for this preview.
-The search dialog filters results by All, SDK, CLI, or MCP. Page headers use
+collection's structured content. Theme switching is disabled to match the site theme.
+The search dialog filters results by All, Dashboard, SDK, CLI, or MCP. Page headers use
 Fumadocs' Copy Markdown and Open controls. Appending `.md` to a docs URL serves bundled
 processed Markdown, including the page title and description, without runtime
 filesystem access. External AI options need the docs to be publicly deployed
 before those services can read them.
-Each page links to its source in `thenamespace/namera-core` for editing. The
+Each page links to its source in `thenamespace/namera` for editing. The
 last-updated date is compiled from the file's latest Git author timestamp;
 uncommitted files and builds without Git history omit it. Use a full Git checkout
 for dated builds (`VERCEL_DEEP_CLONE=true` on Vercel). Pruned Docker builds do not
 include Git history. The footer's social row includes a mail link.
 Unknown docs paths return not found. Public docs are indexable and included in
-the sitemap, although the current content is still explicitly labeled as a preview.
+the sitemap.
 
 ## Blog
 

@@ -1,5 +1,6 @@
 @import "fumadocs-ui/css/generated/spacious.css";
 @import "fumadocs-ui/css/preset.css";
+@import "@fontsource-variable/jetbrains-mono";
 
 @theme inline {
   --color-fd-background: var(--background);
@@ -20,8 +21,17 @@
   --color-fd-ring: var(--docs-primary, var(--focus));
 }
 
+.docs-response [role="region"] {
+  height: 15rem;
+}
+
 /* Portaled menus and search inherit the active docs theme from the body. */
 body:has(.namera-docs) {
+  --color-fd-info: var(--docs-focus);
+  --color-fd-warning: var(--warning);
+  --color-fd-error: var(--danger);
+  --color-fd-success: var(--success);
+  --color-fd-idea: var(--warning);
   --radius: 0.55rem;
   --docs-sdk-accent: color-mix(in oklab, var(--accent) 65%, var(--foreground));
   --docs-cli-accent: var(--chart-3);
@@ -49,7 +59,15 @@ body:has(.namera-docs[data-docs-section="mcp"]) {
 }
 
 .namera-docs :is(pre, code) {
-  font-family: "Geist Mono Variable", ui-monospace, monospace;
+  font-family: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+.namera-docs pre {
+  font-size: 15px;
+}
+
+.namera-docs pre code {
+  font-size: inherit;
 }
 
 .namera-docs #nd-toc {
@@ -71,7 +89,8 @@ body:has(.namera-docs) :is(.docs-section-icon, span:has(> .docs-section-icon)) {
   height: 1.25rem;
 }
 
-.docs-section-icon--sdk {
+.docs-section-icon--sdk,
+.docs-section-icon--dashboard {
   color: var(--docs-sdk-accent);
 }
 

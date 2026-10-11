@@ -27,24 +27,29 @@ the application database.
 Article reads do not mutate application state. The landing-page waitlist form
 calls the public waitlist API; admission, deduplication and confirmation email
 are owned by the [waitlist workflow](../auth/waitlist.md). `/docs/$` renders the
-repository-owned Fumadocs content. `/docs` redirects permanently (308) to
-`/docs/sdk`, including client-side navigation; `/docs.md` redirects to
-the SDK Markdown export. Retired Dashboard URLs also redirect to SDK. There is
-no root introduction page. SDK, CLI, and MCP folders each contain a starter page.
+repository-owned Fumadocs content. `/docs` renders Introduction, and
+`/docs/why-namera` explains the permission model. These are Dashboard pages,
+not global pinned links. `getDocsSection` classifies the first segment after
+`/docs`: SDK, CLI, and MCP select their sections; everything else selects Dashboard.
+Dashboard filters section root folders from its sidebar tree. Other sections
+use their own root folders. The same classification drives search, SEO, and OG cards.
+Retired `/docs/dashboard` URLs redirect permanently (308) to `/docs`. SDK, CLI, and MCP
+folders contain their own documentation. SDK starts with Overview, Installation,
+and a managed-session Base Sepolia Getting Started walkthrough; CLI and MCP have overview pages.
 The source-derived sitemap, search, and LLM index list only those actual pages.
 The Spacious layout uses Fumadocs' native rounded inset panel and highlighted table of contents,
-an SDK-first section picker, a section-specific responsive sidebar,
+a Dashboard-first section picker, a section-specific responsive sidebar,
 and heading-derived table of contents. A server function resolves the page and
 serializes its tree; the route preloads only the selected MDX module. Unknown
 paths return not found. `/api/docs/search` serves Fumadocs search results from
-the repository-owned collection's structured content, tagged by SDK, CLI, or MCP
+the repository-owned collection's structured content, tagged by Dashboard, SDK, CLI, or MCP
 for the search dialog's section filter. Search sits below the section picker.
 Page header actions copy or open processed Markdown served by
 the page's `.md` URL; content is bundled at build time rather than read from
 the filesystem at runtime. Unknown Markdown pages return 404, and Markdown
 responses carry `X-Robots-Tag: noindex, follow` and a canonical link to HTML.
-Public docs are indexable and included in the programmatic sitemap, while preview
-content remains labeled as such. The legacy Markdown API remains compatible.
+Public docs are indexable and included in the programmatic sitemap.
+The legacy Markdown API remains compatible.
 Global Start request middleware in `src/start.ts` serves `/llms.txt`,
 `/llms-full.txt`, `.md` URLs and Fumadocs Accept negotiation. HTML and Markdown
 responses vary on Accept; text exports have bounded caching. Pricing Markdown
@@ -57,7 +62,7 @@ text exports; site-wide afdocs checks report this as partial Markdown coverage.
 Doc compilation reads the latest Git author timestamp when a checkout is available,
 bundling it for the page's last-updated footer. Missing history or uncommitted
 files produce no date, not a build-time substitute. Edit links map the source
-path to `thenamespace/namera-core` on `main`; newly added pages need to be
+path to `thenamespace/namera` on `main`; newly added pages need to be
 published there before those links resolve.
 
 `/og/docs/$` resolves a docs page ending in `/image.png` and renders a 1200×630

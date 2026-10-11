@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ImageResponse } from "takumi-js/response";
 
 import { DocsOgImage } from "#/lib/docs/og-image";
+import { getDocsSection } from "#/lib/docs/sections";
 import { docsSource } from "#/lib/docs/source.server";
 
 export const Route = createFileRoute("/(seo)/og/docs/$")({
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/(seo)/og/docs/$")({
 
         return new ImageResponse(
           <DocsOgImage
-            section={page.slugs[0] ?? "docs"}
+            section={getDocsSection(page.url)}
             title={page.data.title}
             description={page.data.description}
           />,
