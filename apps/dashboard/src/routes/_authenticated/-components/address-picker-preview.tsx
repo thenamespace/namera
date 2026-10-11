@@ -6,7 +6,7 @@ import { Button } from "@namera-ai/ui";
 import { EvmAddressPicker, type EvmAddressSelection } from "@/components/evm-address-picker";
 
 const previewChains = ["eip155:1", "eip155:8453", "eip155:10", "eip155:42161"] as const;
-const previewTypes = ["erc20", "contract"] as const;
+const previewTypes = ["erc20"] as const;
 const contractChains = ["eip155:1", "eip155:11155111"] as const;
 const contractTypes = ["contract"] as const;
 
@@ -19,11 +19,10 @@ export function AddressPickerPreview() {
     >
       <div className="mb-4">
         <h2 id="address-picker-preview" className="text-sm font-medium">
-          Address picker preview
+          Token picker preview
         </h2>
         <p className="text-muted mt-1 text-sm">
-          Find a token or contract on Ethereum, Base, Optimism, or Arbitrum. This preview doesn’t
-          save a policy.
+          Find a token on Ethereum, Base, Optimism, or Arbitrum. This preview doesn’t save a policy.
         </p>
       </div>
       <div className="max-w-lg">
@@ -32,7 +31,7 @@ export function AddressPickerPreview() {
           types={previewTypes}
           value={value}
           onChange={setValue}
-          label="Search tokens and contracts"
+          label="Search tokens"
         />
       </div>
       {value ? (
