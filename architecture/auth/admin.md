@@ -23,7 +23,8 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 | `waitlist:read`                     | Yes   | Yes      | Yes    |
 | `waitlist:accept`                   | Yes   | Yes      | No     |
 | `overview:read`                     | Yes   | Yes      | Yes    |
-| `catalog:manage`                    | Yes   | Yes      | No     |
+| `catalog:read`                      | Yes   | Yes      | Yes    |
+| `catalog:manage`                    | Yes   | No       | No     |
 
 Only implemented permissions are defined.
 
@@ -40,25 +41,26 @@ All routes below are excluded from published OpenAPI. `/internal/*` carries
 `AdminAuthorization`; invitation acceptance uses `PlatformSessionAuthorization`
 because the invitee is not a member yet.
 
-| Method | Path                                | Access                                                |
-| ------ | ----------------------------------- | ----------------------------------------------------- |
-| GET    | `/internal/me`                      | Active member; identity and effective permissions     |
-| POST   | `/internal/catalog/import`          | Owner/operator; atomic curated JSON import or dry run |
-| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity   |
-| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters     |
-| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one    |
-| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code                 |
-| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters           |
-| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite        |
-| GET    | `/internal/members`                 | Owner; team including historical removed members      |
-| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                        |
-| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                            |
-| DELETE | `/internal/members/:id`             | Owner; soft removal                                   |
-| POST   | `/internal/ownership/transfer`      | Owner; active target member                           |
-| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor            |
-| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend    |
-| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                      |
-| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body            |
+| Method | Path                                | Access                                              |
+| ------ | ----------------------------------- | --------------------------------------------------- |
+| GET    | `/internal/me`                      | Active member; identity and effective permissions   |
+| GET    | `/internal/catalog`                 | All roles; all catalog statuses and deployments     |
+| POST   | `/internal/catalog/import`          | Owner; atomic curated JSON import or dry run        |
+| GET    | `/internal/overview`                | All roles; lifetime counts and 7/30/90-day activity |
+| GET    | `/internal/invites`                 | All roles; cursor, status and bound-email filters   |
+| POST   | `/internal/invites`                 | Owner/operator; 1–50 codes, optional email for one  |
+| DELETE | `/internal/invites/:id`             | Owner/operator; revoke an active code               |
+| GET    | `/internal/waitlist`                | All roles; cursor, email and status filters         |
+| POST   | `/internal/waitlist/:id/accept`     | Owner/operator; issue and email a bound invite      |
+| GET    | `/internal/members`                 | Owner; team including historical removed members    |
+| PATCH  | `/internal/members/:id/role`        | Owner; operator or viewer only                      |
+| PATCH  | `/internal/members/:id/status`      | Owner; active or suspended                          |
+| DELETE | `/internal/members/:id`             | Owner; soft removal                                 |
+| POST   | `/internal/ownership/transfer`      | Owner; active target member                         |
+| GET    | `/internal/member-invitations`      | Owner; newest 100, optional last-ID cursor          |
+| POST   | `/internal/member-invitations`      | Owner; email and operator/viewer role; also resend  |
+| DELETE | `/internal/member-invitations/:id`  | Owner; revoke pending invitation                    |
+| POST   | `/auth/platform-invitations/accept` | Verified human session; token in JSON body          |
 
 Team writes, beta-invite writes and acceptance require an active verified session,
 with no additional recent-sign-in window. New browser sessions last seven days.
@@ -143,7 +145,7 @@ See [platform table catalog](../database/auth-platform.md) for persistence detai
 
 `apps/admin-portal` implements `/auth` with Google
 and email/code sign-in, `/auth/verify` with explicit link confirmation, and a
-protected page set at `/`, `/waitlist`, `/invites`, and `/team`.
+protected page set at `/`, `/waitlist`, `/invites`, `/catalog`, and `/team`.
 All share one membership-guarded layout and the dashboard-style UIKit sidebar;
 Team implements an owner-only member table, invite-by-email, role updates and
 confirmed soft removal. Member rows include user display metadata from the existing
@@ -157,7 +159,12 @@ mutation invalidation and permission guards follow the Team conventions. Waitlis
 implements email/status filters, 25-row pagination and confirmed acceptance with
 an email-bound invite and durable email job. Overview shows six lifetime totals,
 selected-period counts and daily growth/activity charts;
-the portal exposes only implemented navigation destinations.
+the portal exposes only implemented navigation destinations. Address Catalog uses
+an all-role internal listing, including unpublished records, and shows logo/name,
+type, status, networks and deployment details. Only the owner sees upload controls.
+The import dialog validates a bounded JSON file, previews counts through a dry run,
+then requires explicit confirmation before writing. Server authorization remains
+authoritative for both preview and import; browser data is kept in memory only.
 It uses the dashboard's Effect
 atom/loader pattern. `/internal/me` distinguishes signed-out, denied, and active
 members; transport failures show a retry state rather than pretending logout.

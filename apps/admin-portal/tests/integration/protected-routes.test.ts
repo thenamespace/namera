@@ -4,12 +4,51 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getRouter } from "../../src/router";
 
-const paths = ["/", "/waitlist", "/invites", "/team"];
+const paths = ["/", "/waitlist", "/invites", "/team", "/catalog"];
 const fetchMock = vi.fn<typeof fetch>();
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("admin page access", () => {
+  it.each(["owner", "operator", "viewer"])("prefetches the catalog for %s", async (role) => {
+    const requests: string[] = [];
+    fetchMock.mockImplementation((input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      requests.push(url);
+      return Promise.resolve(
+        Response.json(
+          url.includes("/internal/catalog")
+            ? { entries: [], nextOffset: null }
+            : {
+                member: {
+                  id: "member-1",
+                  userId: "01900000-0000-7000-8000-000000000001",
+                  role,
+                  status: "active",
+                  createdAt: "2026-10-01T00:00:00.000Z",
+                  updatedAt: "2026-10-01T00:00:00.000Z",
+                },
+                email: "team@example.com",
+                permissions: ["catalog:read"],
+              },
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const router = getRouter();
+    router.update({
+      context: router.options.context,
+      history: createMemoryHistory({ initialEntries: ["/catalog"] }),
+    });
+    try {
+      await router.load();
+      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
+      expect(requests.filter((url) => url.includes("/internal/catalog"))).toHaveLength(1);
+    } finally {
+      router.options.context.atomRegistry.dispose();
+    }
+  });
+
   it("prefetches the owner member table with display metadata", async () => {
     const member = {
       id: "member-1",

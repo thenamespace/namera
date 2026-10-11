@@ -13,6 +13,10 @@ export const navigationGroups = [
     ],
   },
   {
+    label: "Resources",
+    items: [{ label: "Address Catalog", href: "/catalog", icon: InboxIcon }],
+  },
+  {
     label: "Admin",
     items: [{ label: "Team", href: "/team", icon: UserGroupIcon }],
   },

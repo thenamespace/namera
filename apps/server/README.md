@@ -144,10 +144,11 @@ server-side. These routes accept only OTLP JSON or protobuf, reject bodies over
 
 Authenticated `/catalog` routes provide search, deployment lookup, batch address
 resolution and separate ABI retrieval. `/internal/catalog/import` accepts curated
-JSON from owner/operator sessions, with a `dryRun` query option. It uses the
+JSON from owner sessions, with a `dryRun` query option. `/internal/catalog` lists
+all statuses and deployments for every active platform role. It uses the
 existing request-body and admin-write limits. See the
 [catalog contract](../../architecture/database/address-catalog.md) for fields,
-visibility, validation and import semantics. No seed data or UI is installed.
+visibility, validation and import semantics. No seed data is installed.
 
 ## Waitlist API
 

@@ -45,16 +45,22 @@ export const CatalogRoutes = HttpApiBuilder.group(NameraApi, "catalog", (handler
 export const AdminCatalogRoutes = HttpApiBuilder.group(NameraApi, "adminCatalog", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application;
-    return handlers.handle("import", ({ payload, query }) =>
-      Effect.gen(function* () {
-        const admin = yield* CurrentAdmin;
-        yield* consumeRateLimit(
-          "admin.catalog.import",
-          admin.member.id,
-          rateLimitPolicy.admin.writesGlobal,
-        );
-        return yield* app.catalog.import(admin, payload, query.dryRun);
-      }),
-    );
+    return handlers
+      .handle("list", ({ query }) =>
+        Effect.gen(function* () {
+          return yield* app.catalog.listAdmin(yield* CurrentAdmin, query);
+        }),
+      )
+      .handle("import", ({ payload, query }) =>
+        Effect.gen(function* () {
+          const admin = yield* CurrentAdmin;
+          yield* consumeRateLimit(
+            "admin.catalog.import",
+            admin.member.id,
+            rateLimitPolicy.admin.writesGlobal,
+          );
+          return yield* app.catalog.import(admin, payload, query.dryRun);
+        }),
+      );
   }),
 );

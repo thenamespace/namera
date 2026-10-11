@@ -179,7 +179,7 @@ larger datasets into dependency-ordered batches. Each parent supplies 1–64 sea
 terms, each 1–128 characters. Absent records stay untouched; explicitly archive
 parents or disable entries to withdraw them. There is no delete endpoint.
 
-Owner/operator membership with `catalog:manage` is required, plus the normal
+Owner membership with `catalog:manage` is required, plus the normal
 verified session and exact trusted Origin. The handler uses the existing admin
 write limit (60/hour/member). Imports acquire the platform transaction lock,
 recheck membership, validate references against both stored and incoming records,
@@ -209,6 +209,16 @@ and `.contractInterface`. They own persistence/decoding; the application owns
 publication visibility, cross-record validation, diffing, hashing and transactions.
 Write methods are internal primitives: callers must use the import workflow to
 obtain its locking, immutability and audit guarantees.
+
+## Admin listing
+
+`GET /internal/catalog` requires active platform membership with `catalog:read`
+(owner, operator or viewer). It includes every lifecycle status and all deployments,
+including parents without entries; ABI documents remain separate. It accepts the
+discovery filters plus optional parent `status`, uses literal substring metadata
+search or exact address matching, and sorts by slug/ID. Pagination defaults to 25
+records with a next offset. Reads recheck membership and do not create audit events.
+Public discovery visibility remains unchanged.
 
 ## Remaining boundaries
 

@@ -19,6 +19,12 @@ export const SearchCatalogRequest = Schema.Struct({
 });
 export type SearchCatalogRequest = typeof SearchCatalogRequest.Type;
 
+export const ListAdminCatalogRequest = Schema.Struct({
+  ...SearchCatalogRequest.fields,
+  status: Schema.optionalKey(AddressCatalog.fields.status),
+});
+export type ListAdminCatalogRequest = typeof ListAdminCatalogRequest.Type;
+
 export const CatalogView = Schema.Struct({
   ...AddressCatalog.fields,
   entries: Schema.Array(AddressCatalogEntry),

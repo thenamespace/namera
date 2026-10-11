@@ -26,6 +26,9 @@ not a portal callback URI.
 - `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: Owner-only admin members table, invitations, role updates, and removal.
+- `/catalog`: All-role catalog listing with name/symbol/address search, status/type
+  filters, 25-row pagination and deployment details. Owner-only JSON uploads run a
+  server dry-run before explicit confirmation; validation errors remain in the dialog.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 
 Protected pages use a shared UIKit inset sidebar,
@@ -78,6 +81,13 @@ server. Cards show lifetime totals; period details and charts use zero-filled
 UTC days. Only confirmed executions and successful signatures count. The page
 does not poll. All active roles can read it; authorization is rechecked even
 when the server snapshot is cached.
+
+Catalog includes drafts, archived records and disabled deployments. Logos resolve
+from `https://cdn.namera.ai/` with initials when an image cannot load. JSON files
+are capped at 2 MiB and validated against the protocol import schema in the browser
+and server. Upload contents stay in memory; no automatic upload, local storage or
+background import is used. Mutations refresh the listing. Only the owner has
+`catalog:manage`; the server rechecks this inside the import transaction.
 
 Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
 and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in

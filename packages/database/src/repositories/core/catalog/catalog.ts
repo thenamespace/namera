@@ -1,7 +1,11 @@
 import { Context, Effect, Layer, Schema } from "effect";
 
 import type { AddressCatalogId } from "@namera-ai/protocol";
-import { ImportCatalogRecord, type SearchCatalogRequest } from "@namera-ai/protocol/dto";
+import {
+  ImportCatalogRecord,
+  type SearchCatalogRequest,
+  type ListAdminCatalogRequest,
+} from "@namera-ai/protocol/dto";
 import { AddressCatalog } from "@namera-ai/protocol/model";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
@@ -20,6 +24,35 @@ const make = Effect.gen(function* () {
     return (yield* db.select().from(catalog).where(inArray(catalog.id, ids))).map(decode);
   }, mapRepositoryError);
   return {
+    listAdmin: Effect.fn("database.catalog.listAdmin")(function* (input: ListAdminCatalogRequest) {
+      const db = yield* transactionOrDatabase(database);
+      const query = input.query?.trim().toLowerCase() ?? "";
+      const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+      const deployment = sql`exists (select 1 from ${entry} where ${entry.catalogId} = ${catalog.id}
+        ${input.chainId ? sql`and ${entry.chainId} = ${input.chainId}` : sql``}
+        and ${entry.address} = ${query})`;
+      return (yield* db
+        .select()
+        .from(catalog)
+        .where(
+          and(
+            eq(catalog.namespace, input.namespace),
+            input.status ? eq(catalog.status, input.status) : undefined,
+            input.types ? inArray(sql<string>`${catalog.data}->>'type'`, input.types) : undefined,
+            input.chainId
+              ? sql`exists (select 1 from ${entry} where ${entry.catalogId} = ${catalog.id} and ${entry.chainId} = ${input.chainId})`
+              : undefined,
+            query
+              ? sql`(${catalog.data}->'display'->>'name' ilike ${pattern}
+          or ${catalog.data}->'details'->>'symbol' ilike ${pattern}
+          or ${catalog.slug} ilike ${pattern} or ${catalog.searchText} ilike ${pattern} or ${deployment})`
+              : undefined,
+          ),
+        )
+        .orderBy(asc(catalog.slug), asc(catalog.id))
+        .limit((input.limit ?? 25) + 1)
+        .offset(input.offset ?? 0)).map(decode);
+    }, mapRepositoryError),
     getByIds,
     getById: Effect.fn("database.catalog.getById")(function* (id: AddressCatalogId) {
       return (yield* getByIds([id]))[0];

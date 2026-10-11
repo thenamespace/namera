@@ -427,23 +427,107 @@ layer(TestServerLayer)("catalog API", (it) => {
     }),
   );
 
-  it.effect("allows operators, rejects viewers and requires a trusted origin", () =>
+  it.effect("restricts imports and dry runs to the owner and requires a trusted origin", () =>
     Effect.gen(function* () {
-      yield* setup;
+      const { owner } = yield* setup;
       const viewer = yield* platformIdentity("catalog-viewer@example.com", "viewer");
       expect(
         yield* viewer.client.adminCatalog.import({ payload, query: {} }).pipe(Effect.flip),
       ).toMatchObject({ _tag: "PlatformAuthError" });
       const operator = yield* platformIdentity("catalog-operator@example.com", "operator");
+      for (const admin of [operator, viewer]) {
+        for (const dryRun of [true, false]) {
+          expect(
+            yield* admin.client.adminCatalog
+              .import({ payload, query: { dryRun } })
+              .pipe(Effect.flip),
+          ).toMatchObject({ _tag: "PlatformAuthError" });
+        }
+      }
       const untrustedOrigin = yield* handledApi(NameraApi, {
-        headers: { cookie: `auth-token=${operator.token}`, origin: "https://untrusted.example" },
+        headers: { cookie: `auth-token=${owner.token}`, origin: "https://untrusted.example" },
       });
       expect(
         yield* untrustedOrigin.adminCatalog.import({ payload, query: {} }).pipe(Effect.flip),
       ).toBeDefined();
-      expect(yield* operator.client.adminCatalog.import({ payload, query: {} })).toMatchObject({
+      expect(yield* owner.client.adminCatalog.import({ payload, query: {} })).toMatchObject({
         catalog: { created: 1 },
       });
+    }),
+  );
+
+  it.effect("lists every lifecycle for platform members without exposing drafts publicly", () =>
+    Effect.gen(function* () {
+      const { owner, client, repository } = yield* setup;
+      const encoded = Schema.encodeSync(ImportCatalogRequest)(payload);
+      const batch = Schema.decodeUnknownSync(ImportCatalogRequest)({
+        ...encoded,
+        catalog: [
+          { ...encoded.catalog[0], status: "draft" },
+          {
+            ...encoded.catalog[0],
+            id: "01950000-0000-7000-8000-000000000009",
+            slug: "z-archived",
+            status: "archived",
+          },
+        ],
+        entries: [{ ...encoded.entries[0], status: "disabled" }],
+      });
+      yield* owner.client.adminCatalog.import({ payload: batch, query: {} });
+      for (const role of ["operator", "viewer"] as const) {
+        const admin = yield* platformIdentity(`catalog-list-${role}@example.com`, role);
+        const first = yield* admin.client.adminCatalog.list({
+          query: { namespace: "eip155", limit: 1 },
+        });
+        expect(first.entries[0]?.status).toBe("draft");
+        expect(first.entries[0]?.entries[0]?.status).toBe("disabled");
+        expect(first.nextOffset).toBe(1);
+        const second = yield* admin.client.adminCatalog.list({
+          query: { namespace: "eip155", offset: 1, limit: 1 },
+        });
+        expect(second.entries[0]?.status).toBe("archived");
+        expect(second.entries[0]?.entries).toEqual([]);
+        expect(second.nextOffset).toBeNull();
+        expect(
+          (yield* admin.client.adminCatalog.list({
+            query: {
+              namespace: "eip155",
+              query: address.toUpperCase(),
+              status: "draft",
+              types: ["erc20"],
+              chainId: "eip155:8453",
+            },
+          })).entries,
+        ).toHaveLength(1);
+        expect(
+          (yield* admin.client.adminCatalog.list({
+            query: { namespace: "eip155", types: ["contract"] },
+          })).entries,
+        ).toHaveLength(0);
+        expect(JSON.stringify(first)).not.toContain('"document"');
+        if (!admin.member) throw new Error("Expected an active platform member");
+        yield* repository.auth.platform.changeMember(
+          admin.member.id,
+          { status: "removed" },
+          admin.session.createdAt,
+        );
+        expect(
+          yield* admin.client.adminCatalog
+            .list({ query: { namespace: "eip155" } })
+            .pipe(Effect.flip),
+        ).toBeDefined();
+      }
+      expect(
+        (yield* owner.client.adminCatalog.list({
+          query: { namespace: "eip155", status: "archived" },
+        })).entries,
+      ).toHaveLength(1);
+      expect(
+        (yield* client.catalog.search({ query: { namespace: "eip155" } })).entries,
+      ).toHaveLength(0);
+      expect(
+        yield* client.adminCatalog.list({ query: { namespace: "eip155" } }).pipe(Effect.flip),
+      ).toBeDefined();
     }),
   );
 });

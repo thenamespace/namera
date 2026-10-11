@@ -11,6 +11,7 @@ import {
 } from "@namera-ai/protocol";
 import {
   SearchCatalogRequest,
+  ListAdminCatalogRequest,
   SearchCatalogResponse,
   CatalogView,
   CatalogEntryView,
@@ -61,6 +62,11 @@ export class CatalogGroup extends HttpApiGroup.make("catalog")
 
 export class AdminCatalogGroup extends HttpApiGroup.make("adminCatalog")
   .add(
+    HttpApiEndpoint.get("list", "/internal/catalog", {
+      query: ListAdminCatalogRequest,
+      success: SearchCatalogResponse,
+      error: [PlatformAuthError, ...CommonErrors],
+    }),
     HttpApiEndpoint.post("import", "/internal/catalog/import", {
       payload: ImportCatalogRequest,
       query: ImportCatalogQuery,

@@ -7,7 +7,13 @@ import {
   type AddressCatalogEntryId,
   type ContractInterfaceId,
 } from "@namera-ai/protocol";
-import type { CatalogAddress, SearchCatalogRequest } from "@namera-ai/protocol/dto";
+import type {
+  CatalogAddress,
+  SearchCatalogRequest,
+  ListAdminCatalogRequest,
+} from "@namera-ai/protocol/dto";
+
+import { requirePlatformPermission, type PlatformSession } from "#/auth/platform/access";
 
 import { makeCatalogImport } from "./import.js";
 
@@ -28,6 +34,24 @@ export const makeCatalogApplication = Effect.gen(function* () {
     Effect.catchTag("DatabaseError", Effect.die),
   );
   return {
+    listAdmin: Effect.fn("application.catalog.listAdmin")(
+      function* (context: PlatformSession, input: ListAdminCatalogRequest) {
+        yield* requirePlatformPermission(repository, context, "catalog:read");
+        const limit = input.limit ?? 25;
+        const rows = yield* catalog.listAdmin(input);
+        const page = rows.slice(0, limit);
+        const deployments = yield* catalogEntry.listByCatalogIds(page.map((record) => record.id));
+        const entries = [];
+        for (const record of page) {
+          entries.push({
+            ...record,
+            entries: deployments.filter((entry) => entry.catalogId === record.id),
+          });
+        }
+        return { entries, nextOffset: rows.length > limit ? (input.offset ?? 0) + limit : null };
+      },
+      Effect.catchTag("DatabaseError", Effect.die),
+    ),
     import: importCatalog,
     get,
     search: Effect.fn("application.catalog.search")(
