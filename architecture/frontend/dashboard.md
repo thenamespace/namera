@@ -174,10 +174,6 @@ with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),
 `value` and `onChange`. Empty filter arrays disable selection. Catalog selections
 include the parent/entry metadata and an explicit network/address; custom values
 are discriminated separately and do not claim a token type, decimals or ABI.
-The inline UIKit combobox uses standard input height and separate configurable
-`label` and `placeholder` props. Typing opens rich suggestions without a search
-dialog; loading renders skeleton rows with a screen-reader status. The custom
-address option opens a validation dialog and preserves the typed address.
 The dropdown queries only while open, debounces search, preserves server ranking
 within each network, and pages 20 parents per network. Its atom uses the existing
 authenticated discovery endpoint with at most four concurrent chain requests;

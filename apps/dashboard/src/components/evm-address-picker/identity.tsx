@@ -4,13 +4,19 @@ import { ChainIcon } from "@namera-ai/ui/icons";
 
 import type { EvmAddressSelection } from "./types";
 
-export function AddressIdentity({ value }: { value: EvmAddressSelection }) {
+export function AddressIdentity({
+  value,
+  compact = false,
+}: {
+  value: EvmAddressSelection;
+  compact?: boolean;
+}) {
   const network = Object.values(chains).find((chain) => chain.chainId === value.chainId);
   const metadata = value.source === "catalog" ? value.match.catalog.data : null;
   return (
     <span className="flex min-w-0 flex-1 items-center gap-3 text-left">
       <span className="relative shrink-0">
-        <Avatar size="sm">
+        <Avatar size="sm" className={compact ? "size-5" : undefined}>
           {metadata ? (
             <Avatar.Image src={`https://cdn.namera.ai/${metadata.display.logo}`} alt="" />
           ) : null}
@@ -23,16 +29,20 @@ export function AddressIdentity({ value }: { value: EvmAddressSelection }) {
             aria-hidden
             namespace="eip155"
             chain={network.name}
-            className="bg-surface absolute -right-1 -bottom-1 size-4 rounded-full ring-2 ring-surface"
+            className={
+              compact
+                ? "bg-surface absolute -right-1 -bottom-1 size-3 rounded-full ring-1 ring-surface"
+                : "bg-surface absolute -right-1 -bottom-1 size-4 rounded-full ring-2 ring-surface"
+            }
           />
         ) : null}
       </span>
-      <span className="min-w-0 flex-1">
+      <span className={compact ? "flex min-w-0 flex-1 items-center gap-2" : "min-w-0 flex-1"}>
         <span className="flex items-center gap-2">
           <span className="text-foreground truncate text-sm font-medium">
             {metadata?.display.name ?? "Custom address"}
           </span>
-          {metadata?.type === "erc20" ? (
+          {!compact && metadata?.type === "erc20" ? (
             <span className="text-muted text-xs">{metadata.details.symbol}</span>
           ) : null}
         </span>
