@@ -24,7 +24,7 @@ const fixture = Effect.fnUntraced(function* () {
       data: {
         version: 1,
         type: "erc20",
-        display: { name: "Example", aliases: [], tags: [] },
+        display: { name: "Example", logo: "address-catalog/example.svg", aliases: [], tags: [] },
         details: { symbol: "EX" },
       },
     })

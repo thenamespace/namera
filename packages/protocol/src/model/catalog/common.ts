@@ -15,11 +15,9 @@ export const CatalogSourceUrl = Schema.URLFromString.check(
 
 export const CatalogDisplay = Schema.Struct({
   name: Schema.String,
-  logo: Schema.optionalKey(
-    Schema.String.check(
-      Schema.isMaxLength(255),
-      Schema.isPattern(/^address-catalog\/[a-z0-9-]+\.(svg|png|webp)$/),
-    ),
+  logo: Schema.String.check(
+    Schema.isMaxLength(255),
+    Schema.isPattern(/^address-catalog\/[a-z0-9-]+\.(svg|png|webp)$/),
   ),
   description: Schema.optionalKey(Schema.String),
   website: Schema.optionalKey(CatalogSourceUrl),

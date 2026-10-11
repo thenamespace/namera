@@ -16,7 +16,7 @@ const decodeInterface = Schema.decodeUnknownSync(ContractInterface, parseOptions
 const decodeAbi = Schema.decodeUnknownSync(EvmJsonAbi, parseOptions);
 const id = "01950000-0000-7000-8000-000000000001";
 const timestamps = { createdAt: new Date(0), updatedAt: new Date(0) };
-const display = { name: "Example", aliases: [], tags: [] };
+const display = { name: "Example", logo: "address-catalog/example.svg", aliases: [], tags: [] };
 const catalog = {
   id,
   namespace: "eip155",
@@ -58,6 +58,30 @@ const abiFunction = {
 };
 
 describe("address catalog schemas", () => {
+  it("requires a valid logo path for tokens and contracts", () => {
+    for (const type of ["erc20", "contract"]) {
+      const data = { ...catalog.data, type, details: type === "erc20" ? { symbol: "EX" } : {} };
+      for (const logo of [
+        undefined,
+        null,
+        "",
+        "https://cdn.namera.ai/example.svg",
+        "../example.svg",
+      ]) {
+        expect(() =>
+          decodeCatalog({ ...catalog, data: { ...data, display: { ...display, logo } } }),
+        ).toThrow();
+      }
+      for (const extension of ["svg", "png", "webp"]) {
+        const logo = `address-catalog/example.${extension}`;
+        expect(
+          decodeCatalog({ ...catalog, data: { ...data, display: { ...display, logo } } }).data
+            .display.logo,
+        ).toBe(logo);
+      }
+    }
+  });
+
   it("decodes both variants and round-trips deployment evidence without ABI duplication", () => {
     expect(decodeCatalog(catalog).data.type).toBe("erc20");
     expect(

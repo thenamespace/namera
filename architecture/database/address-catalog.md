@@ -25,8 +25,12 @@ One namespace-scoped resource, such as a token or a specific contract product.
 | `revision`                 | integer, required     | Positive; default 1                                |
 | `created_at`, `updated_at` | timestamptz, required | Shared timestamp defaults/update behavior          |
 
-Metadata shares `display` with name, optional logo/description/website, aliases
-and tags. ERC-20 `details` contains a symbol. Contract `details` has optional
+Metadata shares `display` with required name and logo, optional description/website,
+aliases and tags. Logos are CDN-relative paths matching
+`address-catalog/<lowercase-name>.(svg|png|webp)`, not full URLs. Both resource types
+require a logo at import and persistence decoding boundaries; the operator uploads
+the asset to the CDN separately. Existing records without logos must be corrected
+before being read with this schema. ERC-20 `details` contains a symbol. Contract `details` has optional
 protocol and contract-version labels. No ABI or interface reference belongs here.
 
 Unique constraints: `(namespace, slug)` and `(id, namespace)` (the entry FK target).

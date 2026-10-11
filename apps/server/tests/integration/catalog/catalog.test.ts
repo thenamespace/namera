@@ -38,7 +38,12 @@ const payload = Schema.decodeUnknownSync(ImportCatalogRequest)({
       data: {
         version: 1,
         type: "erc20",
-        display: { name: "Example Dollar", aliases: ["Dollar"], tags: ["stablecoin"] },
+        display: {
+          name: "Example Dollar",
+          logo: "address-catalog/example-dollar.svg",
+          aliases: ["Dollar"],
+          tags: ["stablecoin"],
+        },
         details: { symbol: "EXUSD" },
       },
     },
@@ -110,7 +115,12 @@ layer(TestServerLayer)("catalog API", (it) => {
             data: {
               version: 1,
               type: "contract",
-              display: { name: "Example Router", aliases: [], tags: [] },
+              display: {
+                name: "Example Router",
+                logo: "address-catalog/example-router.svg",
+                aliases: [],
+                tags: [],
+              },
               details: { protocol: "Example" },
             },
           },
