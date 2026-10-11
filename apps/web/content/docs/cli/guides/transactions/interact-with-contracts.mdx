@@ -1,0 +1,69 @@
+---
+title: Interact with Contracts
+description: Encode a contract call and execute it through a session key.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+Confirm the contract address and ABI from the contract's publisher. The key must
+allow the target and function. This example calls `setValue(uint256)` on a
+contract you control.
+
+## Encode Calldata
+
+```sh
+npm install viem
+```
+
+```js title="encode-call.mjs"
+import { encodeFunctionData, parseAbi } from "viem";
+
+console.log(
+  encodeFunctionData({
+    abi: parseAbi(["function setValue(uint256 value)"]),
+    functionName: "setValue",
+    args: [42n],
+  }),
+);
+```
+
+## Simulate the Call
+
+```sh
+calldata=$(node encode-call.mjs)
+namera execution simulate \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to <contract-address> \
+  --value 0 \
+  --data "$calldata"
+```
+
+<include>../../../../snippets/cli/output/simulate.md</include>
+
+## Execute the Call
+
+Use the same calldata and contract only after reviewing the preview:
+
+```sh
+namera execution execute \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to <contract-address> \
+  --value 0 \
+  --data "$calldata" \
+  --sponsor true
+```
+
+<include>../../../../snippets/cli/output/execute.md</include>
+
+Save the submission ID and [track it](/docs/cli/guides/transactions/track-transactions).
+Do not repeat the execution to check progress.
+
+<include>../../../../snippets/cli/output-note.md</include>

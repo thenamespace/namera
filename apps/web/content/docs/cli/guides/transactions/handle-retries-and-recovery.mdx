@@ -1,0 +1,64 @@
+---
+title: Handle Retries and Recovery
+description: Recover from interrupted commands without sending duplicate transactions.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+## Keep the Submission ID
+
+When submitting from a script, save the successful JSON result in durable job
+storage. Keep the original request with it. Human output also prints a status
+command while the submission is pending.
+
+A successful command can return a queued operation, not a confirmed transfer.
+
+## Retry Reads, Not Transfers
+
+```sh
+namera --output json execution status 0199dfe1-0000-7000-8000-000000000003
+```
+
+<include>../../../../snippets/cli/output/status-json.md</include>
+
+This is safe to repeat for the same submission. If authorization fails, restore
+the connection before checking again. If rate-limited, follow the error's recovery
+instruction before retrying.
+
+By contrast, a new `execution execute` command creates a new operation. Do not
+wrap it in a generic shell retry loop.
+
+<Callout type="warn" title="A lost response is not a failed transfer">
+  The transaction may already be queued or submitted. Check the existing submission before allowing
+  another execution.
+</Callout>
+
+## Understand Internal Retries
+
+Within a single execution, the SDK retries transient preparation and completion
+requests up to three times each. It reuses the operation's idempotency key or
+submission ID. It does not automatically retry policy denials or other declared
+business failures.
+
+There is no CLI flag to reuse an execution idempotency key across process
+restarts. A lost response is not proof that nothing was submitted.
+
+## Recover a Lost Result
+
+If you know the submission ID, continue checking it. If you do not, mark the job
+unresolved and inspect the dashboard and confirmed execution history before
+allowing another attempt:
+
+```sh
+namera execution list
+```
+
+An empty history does not rule out a pending operation. Compare the account,
+network, recipient, amount, and timing; matching values alone cannot uniquely
+identify repeated legitimate transfers.
+
+Fix a known rejection before intentionally submitting a replacement. Do not
+automatically repeat an uncertain signing command either, since another attempt
+can consume another signature allowance.
+
+<include>../../../../snippets/cli/output-note.md</include>

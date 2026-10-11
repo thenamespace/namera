@@ -1,0 +1,55 @@
+---
+title: namera sign
+description: Sign a UTF-8 message or EIP-712 typed data with an account.
+---
+
+Sign a UTF-8 message or EIP-712 typed data with an account.
+
+## Usage
+
+```sh
+namera sign \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --type message \
+  --message 'Hello from Namera'
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/sign.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/sign-json.md</include>
+
+The fixture signature illustrates the full output shape; use your returned signature
+for verification.
+
+## Options
+
+<include>../../../../snippets/cli/scope-options.md</include>
+
+<include>../../../../snippets/cli/session-option.md</include>
+
+<include>../../../../snippets/cli/signature-options.md</include>
+
+<include>../../../../snippets/cli/params-option.md</include>
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+The session's installed authority must allow signatures and any applicable API
+policies must allow the payload. Signing does not broadcast a transaction.
+Do not blindly repeat a signing command after losing its response; another
+attempt can consume another signature allowance.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

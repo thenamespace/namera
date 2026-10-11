@@ -1,0 +1,40 @@
+---
+title: namera wallet list
+description: List the accounts available to your credential.
+---
+
+List the accounts available to your credential.
+
+## Usage
+
+```sh
+namera wallet list
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/wallet-list.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+For complete account records and IDs:
+
+```sh
+namera --output json wallet list
+```
+
+<include>../../../../snippets/cli/output/wallet-list-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+The list is not paginated. An empty human result is `No delegated wallets found.`;
+JSON returns `[]`. This command reads accounts; it does not create them.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

@@ -1,0 +1,62 @@
+---
+title: Environment Variables
+description: Configure credentials, API selection, storage, and terminal output.
+---
+
+## NAMERA_API_KEY
+
+A secret API key for ordinary account, session-key, execution, signing, and auth
+status commands. When set, it takes precedence over saved CLI OAuth credentials
+and the selected profile. Obtain it from your workspace and supply it through a
+secret manager or CI secret store.
+
+It does not authorize MCP, affect local import authorization, or replace
+browser consent for `namera login`. Unset it to use a saved CLI connection.
+
+## NAMERA_API_URL
+
+The API URL used with `NAMERA_API_KEY`. If omitted, API-key commands use
+`https://api.namera.ai`.
+
+It also supplies the expected origin for `session-key import` when `--host`
+is absent. It does not override a saved OAuth profile, the login command's
+`--host`, or MCP's `--host`.
+
+```sh
+NAMERA_API_URL=http://localhost:8080 namera --output json wallet list
+```
+
+This example assumes `NAMERA_API_KEY` is already supplied.
+
+## XDG_CONFIG_HOME
+
+Base directory for configuration. When present, Namera uses its `namera`
+subdirectory on every platform. Otherwise it uses the OS-specific locations in
+[Profiles and Configuration](/docs/cli/profiles-and-configuration).
+
+Changing it does not migrate saved credentials or keys. Do not use it to work
+around keyring errors.
+
+## APPDATA
+
+On Windows, supplies the roaming application-data base directory when
+`XDG_CONFIG_HOME` is absent. Namera uses its `Namera` subdirectory.
+Otherwise the fallback is `AppData/Roaming/Namera` under the home directory.
+
+## NO_COLOR
+
+Disable colored CLI output by setting this variable:
+
+```sh
+NO_COLOR=1 namera wallet list
+```
+
+Output still uses readable summaries. Whether symbols use Unicode or ASCII also
+depends on terminal and locale support. `TERM=dumb`, redirected streams, and
+unsupported terminals use plain fallbacks; `FORCE_COLOR=0` disables colors too.
+
+## Secret Handling
+
+The CLI does not load a project `.env` file automatically. Export variables
+through your shell or use your runner's environment configuration. Never commit
+API keys, OAuth tokens, private keys, or export passphrases.

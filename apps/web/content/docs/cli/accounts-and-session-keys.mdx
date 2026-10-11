@@ -1,0 +1,55 @@
+---
+title: Accounts and Session Keys
+description: Find accounts, inspect permissions, and import a session key.
+---
+
+## Find an Account
+
+```sh
+namera wallet list
+namera wallet get
+```
+
+The second command opens an account picker. The CLI uses `wallet` in command
+names for the accounts shown in the dashboard.
+
+<include>../../snippets/cli/output/wallet-get.md</include>
+
+## Inspect a Session Key
+
+```sh
+namera session-key list --wallet 0199dfe1-0000-7000-8000-000000000001
+namera session-key get 0199dfe1-0000-7000-8000-000000000002
+```
+
+Replace both IDs with your resources. The detail view separates installed
+network permissions from API policies:
+
+<include>../../snippets/cli/output/session-key-get.md</include>
+
+An active key still needs an installed, unexpired authorization on the network
+you want to use. A transfer permission does not automatically permit message signing.
+
+## Import an Encrypted Key
+
+Use the import command provided by the dashboard:
+
+```sh
+namera session-key import <encrypted-export> --host https://api.namera.ai
+```
+
+Enter the export passphrase when prompted. Import is local and requires no API
+login. It saves an encrypted file protected by an independent OS-keyring secret.
+
+<include>../../snippets/cli/output/import.md</include>
+
+Import does not install permissions or grant CLI access. Approve a network in
+the dashboard, wait for the key to become active, then log in and select it.
+Only import keys on machines you trust.
+
+The CLI resolves imported keys automatically when running as the same OS user
+against the matching API origin. See
+[Import a Session Key](/docs/cli/reference/session-keys/session-key-import) for
+storage and recovery details.
+
+<include>../../snippets/cli/output-note.md</include>

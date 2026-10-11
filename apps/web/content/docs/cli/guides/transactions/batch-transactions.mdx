@@ -1,0 +1,61 @@
+---
+title: Batch Transactions
+description: Submit multiple calls in one execution request.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+This example sends **0.001 ETH to each of two recipients**. Fund the account with
+the total amount, and permit both targets and a total native spend of 0.002 ETH.
+
+## Build the Request
+
+Save this as `batch.json`, replacing the example IDs and recipients:
+
+```json title="batch.json"
+{
+  "namespace": "eip155",
+  "walletId": "0199dfe1-0000-7000-8000-000000000001",
+  "sessionKeyId": "0199dfe1-0000-7000-8000-000000000002",
+  "chainId": "eip155:84532",
+  "calls": [
+    {
+      "to": "0x2222222222222222222222222222222222222222",
+      "value": "1000000000000000",
+      "data": "0x"
+    },
+    {
+      "to": "0x3333333333333333333333333333333333333333",
+      "value": "1000000000000000",
+      "data": "0x"
+    }
+  ],
+  "sponsor": true
+}
+```
+
+The CLI's individual flags describe one call. Use `--params` for a `calls`
+array. Amounts are decimal strings in wei, not JSON numbers or bigint literals.
+
+## Submit the Batch
+
+```sh
+namera execution execute --params "$(cat batch.json)"
+```
+
+<include>../../../../snippets/cli/output/batch.md</include>
+
+One submission ID tracks the whole execution. `--params` skips interactive
+account/key selection, so the human output shows the network without fetching
+names for that selection.
+
+Do not combine `--params` with `--wallet`, `--to`, or other input flags.
+Keep `sponsor` inside the JSON request. For self-funded gas, set it to `false`
+and supply `--max-gas-cost-wei` alongside `--params`.
+
+Save the submission ID and [track it](/docs/cli/guides/transactions/track-transactions).
+Do not repeat the execution to check progress.
+
+<include>../../../../snippets/cli/output-note.md</include>

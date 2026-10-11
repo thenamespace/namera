@@ -64,7 +64,14 @@ test transaction on Base Sepolia, and read its submission status. Example JSON i
 illustrative; snippets log complete result `.data`, and the response examples
 include complete API data shapes without the SDK envelope. Response examples
 use untitled Fumadocs code blocks with a fixed-height, scrollable viewport.
-CLI and MCP each have an overview page.
+CLI mirrors the Introduction, Essentials, Guides, and Reference sections. Guides
+cover Transactions, Signing, and Automation; reference pages use exact command
+names and document Usage, Output, Arguments, and Options. Shared Markdown in
+`content/snippets/cli/` holds repeated flag descriptions and full output examples.
+Output comes from CLI formatters with schema-validated fixtures; verify ordinary
+commands against a loopback API fixture, never live transactions. Shell examples
+must match the actual CLI flags, wei units, and non-interactive requirements.
+MCP also retains its separate overview page.
 
 ### Docs writing conventions
 

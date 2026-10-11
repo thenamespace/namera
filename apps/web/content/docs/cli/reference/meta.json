@@ -1,0 +1,13 @@
+{
+  "title": "Reference",
+  "pages": [
+    "global-options",
+    "environment-variables",
+    "authentication",
+    "accounts",
+    "session-keys",
+    "executions",
+    "signatures",
+    "mcp"
+  ]
+}

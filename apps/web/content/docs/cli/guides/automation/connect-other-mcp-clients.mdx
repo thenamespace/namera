@@ -1,0 +1,65 @@
+---
+title: Connect Other MCP Clients
+description: Run Namera as a local stdio server in an MCP-compatible client.
+---
+
+## Configure the Command
+
+Install the [CLI](/docs/cli/installation) on the machine that will run the MCP
+process. Configure these fields in your client's stdio server settings:
+
+- **Name:** `namera`
+- **Command:** `namera`
+- **Arguments:** `["mcp", "serve", "--profile", "agent"]`
+
+Clients using an `mcpServers` JSON configuration commonly accept:
+
+```json
+{
+  "mcpServers": {
+    "namera": {
+      "command": "namera",
+      "args": ["mcp", "serve", "--profile", "agent"]
+    }
+  }
+}
+```
+
+The outer configuration format depends on your client. If it cannot find the
+executable, use the absolute installed path in `command`. Keep stdout reserved
+for MCP; do not add shell banners or wrappers that print there.
+
+## Authorize
+
+```sh
+namera mcp login --profile agent
+namera mcp status --profile agent
+```
+
+<include>../../../../snippets/cli/output/mcp-agent.md</include>
+
+Use the same OS user, profile, and API host in both the client configuration and
+login command. For a custom deployment, append `--host` and its origin to the
+configured argument list and every MCP management command.
+
+## Use the Tools
+
+Namera exposes account and session-key reads, transaction simulation and execution,
+status and history reads, signing, and signature verification. Start with a read
+to confirm the intended organization and grants.
+
+The first authenticated tool call can start browser consent automatically.
+Approve it, then retry the tool. Login credentials survive client restarts;
+imported signing keys must also be available on that machine.
+
+## Diagnose a Connection
+
+If status says `login-required`, sign in again. If the client cannot launch
+Namera, check its PATH and Node.js version. If tools are denied, review the
+connection's scopes and session-key permissions. Do not treat a lost execution
+response as permission to repeat the transfer.
+
+See [mcp serve](/docs/cli/reference/mcp/serve) for supported protocol versions,
+host requirements, and the gas ceiling.
+
+<include>../../../../snippets/cli/output-note.md</include>

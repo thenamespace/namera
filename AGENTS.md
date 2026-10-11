@@ -141,6 +141,20 @@ Installation, and Getting Started pages as the reference structure.
   internal links, not just the visual page. Do not send live transactions to
   verify documentation examples.
 
+### CLI documentation
+
+- Keep Introduction, Essentials, Guides, and Reference aligned with the SDK
+  navigation. Guides teach tasks; reference titles use exact command names.
+- Reference order is Usage, Output, Arguments, Options, then relevant behavior
+  and errors. Explain flag types, defaults, required conditions, and interactions.
+- Capture output from the actual CLI or its production formatters with
+  schema-validated fixtures. Label fixture values, preserve complete JSON, and
+  distinguish stdout, stderr, and exit status. Never run live transactions to
+  produce documentation examples.
+- Verify shell examples and flags against current commands. Explain wei units,
+  non-interactive requirements, profile/host precedence, and separate MCP login
+  where relevant. Do not imply SDK-only options exist in the CLI.
+
 ## Architecture knowledge base
 
 Stable technical architecture is recorded in [`architecture/`](architecture/README.md).

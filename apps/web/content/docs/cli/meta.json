@@ -1,5 +1,20 @@
 {
   "title": "CLI",
   "root": true,
-  "pages": ["index"]
+  "pages": [
+    "---Introduction---",
+    "index",
+    "installation",
+    "getting-started",
+    "---Essentials---",
+    "authentication",
+    "profiles-and-configuration",
+    "accounts-and-session-keys",
+    "interactive-and-scripted-usage",
+    "output-and-errors",
+    "---Guides---",
+    "...guides",
+    "---Reference---",
+    "...reference"
+  ]
 }

@@ -1,0 +1,38 @@
+---
+title: namera mcp logout
+description: Revoke and disconnect an MCP connection.
+---
+
+Revoke and disconnect an MCP connection.
+
+## Usage
+
+```sh
+namera mcp logout --profile default
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/mcp-logout.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/mcp-logout-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/mcp-options.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+Logout attempts server-side revocation and clears local authority. If revocation
+fails, the command reports an error; revoke the connection in the dashboard.
+Accounts and imported signing keys are not removed. Use ordinary `namera logout`
+to remove an ordinary CLI connection.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

@@ -1,0 +1,48 @@
+---
+title: namera session-key get
+description: Read a session key's installed permissions and API policies.
+---
+
+Read a session key's installed permissions and API policies.
+
+## Usage
+
+```sh
+namera session-key get 0199dfe1-0000-7000-8000-000000000002
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/session-key-get.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+```sh
+namera --output json session-key get 0199dfe1-0000-7000-8000-000000000002
+```
+
+<include>../../../../snippets/cli/output/session-key-get-json.md</include>
+
+## Arguments
+
+### session-key-id
+
+- **Type:** `string` (UUID)
+- **Required:** outside an interactive terminal
+
+Use an ID from `session-key list --output json`. Omit it in a terminal to pick a
+key by its name and account. Scripts, JSON output, and quiet mode require the ID.
+
+## Options
+
+<include>../../../../snippets/cli/profile-option.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+Network approval and key status are distinct. Inspect the installation on the
+network you intend to use, along with its expiry and allowed actions.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

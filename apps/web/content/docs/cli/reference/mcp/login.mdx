@@ -1,0 +1,38 @@
+---
+title: namera mcp login
+description: Authorize an MCP connection through browser consent.
+---
+
+Authorize an MCP connection through browser consent.
+
+## Usage
+
+```sh
+namera mcp login --profile default
+```
+
+## Output
+
+<include>../../../../snippets/cli/output/mcp-default.md</include>
+
+<include>../../../../snippets/cli/output-note.md</include>
+
+With `--output json`:
+
+<include>../../../../snippets/cli/output/mcp-default-json.md</include>
+
+## Options
+
+<include>../../../../snippets/cli/mcp-options.md</include>
+
+<include>../../../../snippets/cli/global-options.md</include>
+
+This is separate from `namera login`. Approve only the session keys and MCP
+permissions the agent needs. Credentials persist in the OS keyring. If the
+browser cannot open, follow the printed URL. Imported signing keys must be
+available to the OS user running the MCP process.
+
+## Errors
+
+Failures exit nonzero and are written to stderr. With `--output json`, inspect
+`error.code` and `error.nextStep`. See [Output and Errors](/docs/cli/output-and-errors).

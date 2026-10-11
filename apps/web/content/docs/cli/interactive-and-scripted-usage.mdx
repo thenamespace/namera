@@ -1,0 +1,57 @@
+---
+title: Interactive and Scripted Usage
+description: Choose prompts for exploration and explicit inputs for scripts.
+---
+
+## Use Prompts
+
+```sh
+namera wallet get
+namera session-key get
+namera execution simulate
+namera execution execute
+namera sign
+namera verify-signature
+```
+
+Use arrow keys and Enter to select, or Ctrl+C to cancel. Operation prompts collect
+the network family, account, session key where needed, network, and payload.
+Supplying a flag skips its corresponding prompt.
+
+## Supply Every Input
+
+With JSON output, quiet mode, or redirected input/output, operation commands do
+not prompt for missing inputs. Provide every required flag, including zero values
+and empty calldata:
+
+```sh
+namera --output json execution simulate \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x
+```
+
+Replace example IDs and addresses before running. For execution, also provide
+`--sponsor true`, or `--sponsor false` with `--max-gas-cost-wei`.
+
+`session-key import` is different: it always asks privately for the export
+passphrase. There is no passphrase flag for unattended imports.
+
+## Pass a JSON Request
+
+Use `--params` for [batch transactions](/docs/cli/guides/transactions/batch-transactions)
+or a request built by your application. Do not mix it with individual payload flags.
+
+Shell examples use POSIX quoting and line continuation. In PowerShell, use its
+quoting rules or put a command on one line. JSON amounts representing bigint
+values must be decimal strings.
+
+## Read Output
+
+Human output summarizes the result. JSON output preserves the complete data and
+IDs, with bigint quantities encoded as strings. See
+[Output and Errors](/docs/cli/output-and-errors) before building automation.

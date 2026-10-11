@@ -1,0 +1,47 @@
+---
+title: Verify Signatures
+description: Check a signature using the original account, network, and payload.
+---
+
+Install the CLI and [authenticate](/docs/cli/authentication). Use the full signature
+returned by `namera sign`, not the illustrative signature from a documentation
+response.
+
+## Verify a Message
+
+```sh
+namera verify-signature \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --network 'Base Sepolia' \
+  --type message \
+  --message 'Hello from Namera' \
+  --signature <hex-signature>
+```
+
+<include>../../../../snippets/cli/output/verify.md</include>
+
+Use the exact original message, including spaces and line breaks. Verification
+checks the account; it takes no session-key ID.
+
+## Verify Typed Data
+
+Save the original EIP-712 payload as `typed-data.json`, then:
+
+```sh
+namera --output json verify-signature \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --network 'Base Sepolia' \
+  --type typed-data \
+  --typed-data "$(cat typed-data.json)" \
+  --signature <hex-signature>
+```
+
+For scripts, inspect `valid` in the returned JSON. A successful request with
+`valid: false` is not a command error. Do not treat exit code zero as a valid
+signature.
+
+Verification does not submit a transaction or prove which session key signed.
+
+<include>../../../../snippets/cli/output-note.md</include>

@@ -1,0 +1,74 @@
+---
+title: Output and Errors
+description: Read human summaries, parse JSON, and handle command failures.
+---
+
+## Human Output
+
+```sh
+namera wallet list
+```
+
+<include>../../snippets/cli/output/wallet-list.md</include>
+
+Status and permissions use terminal colors when supported. `NO_COLOR` disables
+colors; pipes and unsupported terminals use plain-text symbols.
+
+## JSON Output
+
+```sh
+namera --output json wallet list
+```
+
+<include>../../snippets/cli/output/wallet-list-json.md</include>
+
+The CLI prints one compact JSON value to stdout, not the SDK's
+`{ success, data, error }` envelope. Successful list commands can return an
+array or a paginated object. Bigint quantities are decimal strings.
+
+## Quiet Mode
+
+```sh
+namera --quiet auth status
+```
+
+Successful output is suppressed, but the command still runs and failures remain
+visible on stderr. Quiet mode also disables operation-input prompts.
+
+## Failures
+
+A failed command exits nonzero. With `--output json`, stderr contains one
+structured error object:
+
+<div className="docs-response">
+
+```json
+{
+  "error": {
+    "code": "INVALID_EXPORT",
+    "message": "The encrypted session-key export is invalid or incomplete.",
+    "nextStep": "Copy the entire import command from the dashboard. Do not paste a private key.",
+    "retryable": false
+  }
+}
+```
+
+</div>
+
+Use `error.code` for branching and `nextStep` for recovery. Do not parse human
+error text. Keep stdout and stderr separate when consuming JSON.
+
+A command can succeed while reporting `allowed: false`, `valid: false`, or a
+submission with `status: "failed"`. Check the returned fields as well as the
+exit status. A successful status lookup does not mean a successful transaction.
+
+## Retry Safely
+
+Do not repeat an execution just because the response was lost. Check its saved
+submission ID, or reconcile the outcome first. Follow
+[Handle Retries and Recovery](/docs/cli/guides/transactions/handle-retries-and-recovery).
+
+MCP reserves stdout for protocol messages and writes diagnostics to stderr.
+Do not parse its stdout as ordinary CLI JSON.
+
+<include>../../snippets/cli/output-note.md</include>

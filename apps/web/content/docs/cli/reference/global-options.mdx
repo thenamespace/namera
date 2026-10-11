@@ -1,0 +1,92 @@
+---
+title: Global Options
+description: Control command output and access built-in help.
+---
+
+Global flags can appear before the command:
+
+```sh
+namera --output json wallet list
+```
+
+## --output
+
+- **Alias:** `-o`
+- **Type:** `pretty | json`
+- **Default:** `pretty`
+
+Choose readable summaries or full machine-readable data. JSON is one compact
+value on stdout, with bigint quantities represented as decimal strings.
+Failures are structured JSON on stderr. It is not an SDK result envelope.
+
+```sh
+namera -o json session-key list
+```
+
+## --quiet
+
+- **Alias:** `-q`
+- **Type:** boolean
+- **Default:** `false`
+
+Suppress successful output without skipping the operation. Failures are still
+printed. Quiet mode disables operation prompts; supply required inputs explicitly.
+
+```sh
+namera --quiet auth status
+```
+
+## --help
+
+- **Alias:** `-h`
+
+Show command syntax and available options without making an API request.
+
+```sh
+namera --help
+namera execution execute --help
+```
+
+## --version
+
+- **Alias:** `-v`
+
+Print the installed CLI version.
+
+```sh
+namera --version
+```
+
+## --completions
+
+- **Type:** `bash | zsh | fish | sh`
+
+Print a shell-completion script. Review it and install it using your shell's
+completion setup. This flag prints the script; it does not edit shell startup files.
+
+```sh
+namera --completions zsh
+```
+
+## --wizard
+
+Start the command framework's interactive wizard. For ordinary account and
+transaction selection, running the command without its input flags is usually
+sufficient. Wizards are not intended for redirected or unattended jobs.
+
+## --log-level
+
+- **Type:** `all | trace | debug | info | warn | warning | error | fatal | none`
+
+Set the framework's minimum log level. This is separate from `--output` and
+does not change result schemas or turn a failed command into a success.
+Do not publish diagnostic logs without checking them for sensitive information.
+
+## Command-Specific Flags
+
+`--profile`, `--host`, and payload flags belong to specific commands, not the
+global flag set. Ordinary profiles default to `personal`; MCP profiles default
+to `default`. Not every command supports `--host`.
+
+MCP serving is a protocol process: `--output json` does not change its stdout
+into ordinary command output.

@@ -1,0 +1,62 @@
+---
+title: Run in Scripts and CI
+description: Use explicit inputs, JSON output, and a secret-backed credential.
+---
+
+## Authenticate Without Browser Prompts
+
+Install Node.js 24.14+ and the CLI. Supply `NAMERA_API_KEY` through your CI
+secret store, not a committed configuration file or command-line argument.
+Pin the CLI version used by the job to a release you have tested.
+
+```sh
+npm install -g @namera-ai/cli@1.2.0
+namera --output json wallet list
+```
+
+<include>../../../../snippets/cli/output/wallet-list-json.md</include>
+
+API keys take precedence over saved CLI login profiles. For another deployment,
+also supply `NAMERA_API_URL`.
+
+## Separate Results from Errors
+
+This POSIX shell example requires `jq` and uses an existing submission ID:
+
+```sh
+submission_id='0199dfe1-0000-7000-8000-000000000003'
+if namera --output json execution status "$submission_id" > status.json 2> error.json; then
+  status=$(jq -r '.status' status.json)
+  case "$status" in
+    confirmed) printf '%s\n' 'Confirmed' ;;
+    failed) printf '%s\n' 'Submission failed' >&2; exit 1 ;;
+    *) printf '%s\n' 'Still pending; check this ID again later' ;;
+  esac
+else
+  jq -r '.error | "\(.code): \(.message)\n\(.nextStep)"' error.json >&2
+  exit 1
+fi
+```
+
+Do not merge stderr into stdout when parsing JSON. The CLI prints successful
+data directly, not under a `data` field.
+
+## Make Inputs Explicit
+
+JSON output, quiet mode, and redirected streams disable missing-input prompts.
+Supply all operation flags, or pass one complete `--params` request. See
+[Interactive and Scripted Usage](/docs/cli/interactive-and-scripted-usage).
+
+For imports, the export passphrase remains interactive. A local signing key must
+already be available to the runner's OS user and keyring. API-key authentication
+alone does not provide signing-key material. Do not put private keys or keyring
+unlock secrets into command arguments.
+
+## Preserve Submission State
+
+Store a successful execution's `submissionId` with the job in durable storage.
+Avoid duplicate workers and automatic whole-command execution retries. A job
+that lost its response needs [reconciliation](/docs/cli/guides/transactions/handle-retries-and-recovery),
+not an immediate replacement transfer.
+
+<include>../../../../snippets/cli/output-note.md</include>

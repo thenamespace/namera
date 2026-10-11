@@ -1,0 +1,59 @@
+---
+title: Simulate Transactions
+description: Check calls and permissions before submitting.
+---
+
+Install the CLI and [sign in](/docs/cli/authentication). Replace the example
+account ID, session-key ID, and recipient with your own. Use an active key
+installed on **Base Sepolia** with permission for the operation.
+
+## Run a Preview
+
+This checks a 0.001 ETH transfer without sending it:
+
+```sh
+namera execution simulate \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x
+```
+
+<include>../../../../snippets/cli/output/simulate.md</include>
+
+## Inspect the Full Result
+
+Add `--output json` to read gas estimates, call results, asset changes, and
+transfers:
+
+```sh
+namera --output json execution simulate \
+  --namespace evm \
+  --wallet 0199dfe1-0000-7000-8000-000000000001 \
+  --session-key 0199dfe1-0000-7000-8000-000000000002 \
+  --network 'Base Sepolia' \
+  --to 0x2222222222222222222222222222222222222222 \
+  --value 1000000000000000 \
+  --data 0x
+```
+
+<include>../../../../snippets/cli/output/simulate-json.md</include>
+
+Check both `allowed` and `callsSucceeded`. A denied policy or reverted call
+can be returned in a successful CLI response; process exit code alone is not a
+readiness check.
+
+For batch simulation, supply the simulation request through `--params` with a
+`calls` array. Do not include execution-only `sponsor` or gas-ceiling flags.
+
+## Act on the Result
+
+If permission is denied, adjust the request or update the session's permissions
+in the dashboard. If a call fails, check its target, calldata, value, and account
+balance. A successful preview does not reserve permissions or guarantee the same
+chain state when you execute.
+
+<include>../../../../snippets/cli/output-note.md</include>
