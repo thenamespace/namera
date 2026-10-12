@@ -1,7 +1,7 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-object-as-prop
 import { useState, type ReactNode } from "react";
 
-import { Button, Command, Popover, Skeleton } from "@namera-ai/ui";
+import { Button, Command, Popover, Skeleton, cn } from "@namera-ai/ui";
 import { Add01Icon, ArrowDown01Icon, HugeiconsIcon, Search01Icon } from "@namera-ai/ui/icons";
 import { useDebounceValue } from "usehooks-ts";
 
@@ -26,6 +26,7 @@ export function AddressPickerControl<T extends EvmCatalogType>({
   selection,
   onSelect,
   renderCustom,
+  popoverClassName,
   label = "Select address",
   id,
   isDisabled = false,
@@ -72,7 +73,12 @@ export function AddressPickerControl<T extends EvmCatalogType>({
       </Button>
       <Popover.Content
         placement="bottom start"
-        className="w-(--trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden rounded-b-lg p-0"
+        className={
+          cn(
+            "w-(--trigger-width) max-w-[calc(100vw-2rem)] overflow-hidden rounded-b-lg p-0",
+            popoverClassName,
+          ) ?? ""
+        }
       >
         {open && !disabled ? (
           <PickerContent

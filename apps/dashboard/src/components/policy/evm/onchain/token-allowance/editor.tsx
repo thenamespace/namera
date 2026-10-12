@@ -61,7 +61,7 @@ export function TokenAllowanceEditor({
       }}
     >
       <FieldGroup>
-        <Typography.Paragraph size="sm" color="muted">
+        <Typography.Paragraph size="xs" color="muted">
           {description ??
             "Allow transfers and approvals for one token within a lifetime allowance."}
         </Typography.Paragraph>
@@ -77,6 +77,7 @@ export function TokenAllowanceEditor({
                   chainIds={chainIds}
                   value={selection}
                   label="Select token"
+                  popoverClassName="[--overlay:var(--default)] shadow-xl ring-1 ring-separator [&_.command__item:hover]:bg-default-hover [&_.command__item[data-focused=true]]:bg-default-hover"
                   onBlur={field.onBlur}
                   isInvalid={fieldState.invalid || Boolean(form.formState.errors.chainId)}
                   aria-describedby={`${id}-token-error`}
@@ -135,11 +136,6 @@ export function TokenAllowanceEditor({
             )}
           />
         </div>
-        <Typography.Paragraph size="xs" color="muted">
-          {selection ? `${tokenSelectionFields(selection).decimals} token decimals. ` : ""}
-          This address and allowance apply separately on every selected session network, not only
-          the token’s network.
-        </Typography.Paragraph>
         <FieldError errors={[form.formState.errors.root]} />
         {!hideSubmit ? (
           <Button form={id} type="submit">

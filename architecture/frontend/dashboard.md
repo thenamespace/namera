@@ -194,7 +194,7 @@ without rounding. Existing policies store only address/base units, so editing
 requires reselecting the token to confirm network/decimals; selecting the same
 address preserves its stored base units. Network selection here does not change
 the onchain permission contract: that address/allowance still applies on every
-session network, as disclosed in the editor. Other policy editors are not yet
+session network. Other policy editors are not yet
 wired to the picker. Consumers must validate their current filter scope before
 submission if the allowed chains/types change after selection.
 

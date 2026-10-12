@@ -27,6 +27,7 @@ export type EvmAddressValue<T extends EvmCatalogType, C extends EvmCustomAddress
   | { readonly source: "custom"; readonly value: C };
 
 export type AddressPickerFieldProps = {
+  readonly popoverClassName?: string;
   readonly chainIds: readonly SupportedEvmChainId[];
   readonly label?: string;
   readonly id?: string;
