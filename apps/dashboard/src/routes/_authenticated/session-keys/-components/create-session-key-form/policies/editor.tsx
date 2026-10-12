@@ -155,8 +155,15 @@ export function SessionPolicyEditor(props: Props) {
 
 export function AddPolicyButton({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
   return (
-    <Button type="button" size="sm" variant="tertiary" isDisabled={disabled} onPress={onPress}>
-      <HugeiconsIcon icon={Add01Icon} />
+    <Button
+      type="button"
+      size="sm"
+      variant="tertiary"
+      className="box-content h-9 rounded-(--field-radius) border border-transparent py-0 leading-5"
+      isDisabled={disabled}
+      onPress={onPress}
+    >
+      <HugeiconsIcon icon={Add01Icon} className="size-4" />
       Add policy
     </Button>
   );

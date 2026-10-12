@@ -154,7 +154,7 @@ export function PolicySection({
     <section className="grid gap-3">
       <div className="mb-1 flex items-end gap-3">
         <div className="min-w-0 flex-1">{networkSelector}</div>
-        <div className="shrink-0 pb-0.5">
+        <div className="shrink-0">
           <AddPolicyButton
             disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
             onPress={() => {
@@ -249,7 +249,7 @@ export function PolicySection({
             <Modal.Container size="lg">
               <Modal.Dialog className="max-w-2xl" aria-label="Add a policy">
                 <Modal.CloseTrigger />
-                <Modal.Body className="max-h-[80vh] overflow-y-auto p-4">{policyEditor}</Modal.Body>
+                <Modal.Body className="max-h-[80vh] overflow-y-auto p-0">{policyEditor}</Modal.Body>
               </Modal.Dialog>
             </Modal.Container>
           </Modal.Backdrop>
