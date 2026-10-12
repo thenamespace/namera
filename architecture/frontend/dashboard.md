@@ -147,9 +147,12 @@ Submission and step changes are disabled while adding or editing a policy.
 Metadata persists when going back.
 Creation and the read-only Policies page share policy cards and summaries;
 token summaries resolve metadata only for networks carrying that permission.
-The detail page also renders Networks and Lifetime with the creation card layout,
-without edit or remove actions. Different installation validity windows remain
-separate lifetime cards with their network scope. Token summaries expose the full
+The detail Policies page uses a “Viewing policies for” selector and renders only
+that network's lifetime, permissions, signature authority and approval status,
+without policy edit or remove actions. Session-wide API rules remain explicitly
+labelled Shared API policies rather than being presented as installation-specific.
+Hidden approval rows stay mounted so switching networks does not interrupt receipt
+tracking or an in-flight approval. Token summaries expose the full
 contract address through a keyboard-accessible info tooltip.
 New forms select Ethereum mainnet, start immediately, and expire 30
 days after opening the form. Editing dates selects local midnight at the start
