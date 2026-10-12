@@ -77,8 +77,10 @@ export function AssetTokenDisplay({ asset }: { asset: AssetTableRow }) {
           />
         ) : null}
       </span>
-      <span className="truncate text-sm font-medium text-foreground">{symbol}</span>
-      <span className="truncate text-xs text-muted">{chainName}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate text-sm font-medium text-foreground">{symbol}</span>
+        <span className="truncate text-xs text-muted">{chainName}</span>
+      </span>
     </span>
   );
 }
