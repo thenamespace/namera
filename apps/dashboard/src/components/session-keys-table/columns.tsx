@@ -14,6 +14,7 @@ import {
   NamespaceDisplay,
   SessionKeyStatusDisplay,
 } from "@/components/display";
+import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { sessionKeyDisplayStatus } from "@/components/display/session-key-status-display";
 
 import { SessionKeyActions } from "./actions";
@@ -21,6 +22,7 @@ import { SessionKeyActions } from "./actions";
 export const sessionKeyColumnIds = [
   "account",
   "namespace",
+  "custody",
   "creator",
   "status",
   "createdAt",
@@ -102,6 +104,15 @@ export const sessionKeyColumns: ReadonlyArray<DataGridColumn<SessionKeyTableRow>
   },
   {
     allowsSorting: true,
+    cell: (row) =>
+      isSessionKeyGroup(row) ? null : <SessionKeyCustodyDisplay custody={row.signer.custody} />,
+    header: "Custody",
+    id: "custody",
+    minWidth: 150,
+    width: 170,
+  },
+  {
+    allowsSorting: true,
     cell: (row) => (isSessionKeyGroup(row) ? null : <NamespaceDisplay namespace={row.namespace} />),
     header: "Namespace",
     id: "namespace",
@@ -170,6 +181,7 @@ export const sessionKeySorters: Record<
       right.creator.user.metadata.name ?? right.creator.user.email,
     ),
   namespace: (left, right) => collator.compare(left.namespace, right.namespace),
+  custody: (left, right) => collator.compare(left.signer.custody, right.signer.custody),
   createdAt: (left, right) =>
     DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
 };

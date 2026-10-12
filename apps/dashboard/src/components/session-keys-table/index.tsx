@@ -125,7 +125,7 @@ function SessionKeysTableContent({
     direction: "descending",
   });
   const [visibleColumns, setVisibleColumns] = useState<DataGridSelection>(
-    new Set(sessionKeyColumnIds),
+    new Set(sessionKeyColumnIds.filter((column) => column !== "namespace")),
   );
   const normalizedQuery = query.trim().toLowerCase();
 
