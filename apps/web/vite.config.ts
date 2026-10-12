@@ -37,8 +37,10 @@ export default defineConfig({
     // Keep Shiki's JS WASM loader; native unwasm exports conflict with Vite 8.
     nitro({
       wasm: false,
-      // Nitro owns server resolution separately from Vite's client conditions.
-      exportConditions: ["namera-source"],
+      // Use Takumi's native Node backend and retain package-relative runtime assets.
+      exportConditions: ["namera-source", "!unwasm"],
+      rolldownConfig: { external: ["takumi-js/response"] },
+      traceDeps: ["takumi-js"],
     }),
     viteReact(),
     ...(process.env.POSTHOG_CLI_API_KEY
