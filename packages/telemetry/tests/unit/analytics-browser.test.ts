@@ -56,13 +56,37 @@ describe("browser analytics lifecycle", () => {
     const config = sdk.init.mock.calls[0]?.[1];
     const event = config.before_send({ event: "$pageview", properties: { token: "secret" } });
     expect(event.properties.workspace_id).toBe("workspace-two");
-    expect(event.properties.token).toBeUndefined();
+    expect(event.properties.token).toBe("public-test-token");
     analytics.analyticsIdentity();
     expect(sdk.reset).toHaveBeenCalledTimes(2);
     expect(
       config.before_send({ event: "$pageview", properties: {} }).properties.workspace_id,
     ).toBeUndefined();
   });
+
+  it.each(["$pageview", "dashboard_action_started"])(
+    "retains the configured ingestion token while filtering credentials from %s",
+    async (eventName) => {
+      const analytics = await import("../../src/analytics/browser.js");
+      analytics.initializeAnalytics({
+        key: "public-test-token",
+        production: true,
+        surface: "dashboard",
+      });
+      const config = sdk.init.mock.calls[0]?.[1];
+      const event = config.before_send({
+        event: eventName,
+        properties: {
+          token: "caller-token",
+          api_key: "private-api-key",
+          authorization: "Bearer private-credential",
+        },
+      });
+      expect(event.properties.token).toBe("public-test-token");
+      expect(event.properties.api_key).toBeUndefined();
+      expect(event.properties.authorization).toBeUndefined();
+    },
+  );
 
   it("honors privacy signals and never enables replay or autocapture", async () => {
     const analytics = await import("../../src/analytics/browser.js");

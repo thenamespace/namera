@@ -216,6 +216,9 @@ initialize the shared `@namera-ai/telemetry/analytics/browser` module with the
 public `VITE_POSTHOG_KEY`. Production collection is enabled on `namera.ai`,
 `www.namera.ai`, and `dashboard.namera.ai`; development and preview hosts are
 excluded. Events go through the managed `https://t.namera.ai` proxy.
+The browser event boundary restores the configured public project token after
+sanitizing properties; PostHog drops events before sending if that token is absent.
+Caller-supplied tokens and other credentials remain excluded.
 
 The dashboard identifies only verified user IDs, with an optional display name.
 Workspace IDs/names are event properties, not a paid Groups integration. An

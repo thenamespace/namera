@@ -87,6 +87,8 @@ export function initializeAnalytics(config: {
       }
       event.properties = {
         ...safe,
+        // The SDK requires its public project token for ingestion, not caller credentials.
+        token: config.key,
         surface,
         environment: "production",
         event_version: 1,
