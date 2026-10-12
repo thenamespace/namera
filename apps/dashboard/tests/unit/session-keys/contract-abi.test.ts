@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { abiFunctionOptions } from "../../../src/components/evm-function-picker/functions";
-import { parseContractAbi } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/contract-access/abi";
+import { parseContractAbi } from "../../../src/components/session-key-creation/policies/contract-access/abi";
 
 describe("contract access ABI", () => {
   it("rejects malformed JSON and ABIs without valid functions", () => {

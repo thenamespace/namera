@@ -13,9 +13,8 @@ import { DataLoading } from "@/components/data-loading";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
+import { CreateSessionKeyForm } from "@/components/session-key-creation";
 import { useWallets } from "@/hooks/wallet";
-
-import { CreateSessionKeyForm } from "./-components/create-session-key-form";
 
 const sessionKeyCreatePermission = ["session-key:create"] as const;
 

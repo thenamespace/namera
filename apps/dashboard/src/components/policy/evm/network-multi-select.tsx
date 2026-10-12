@@ -22,6 +22,7 @@ type EvmNetworkMultiSelectProps = {
   isInvalid?: boolean;
   isDisabled?: boolean;
   operationalOnly?: boolean;
+  chainIds?: readonly SupportedEvmChainId[];
   name: string;
   onBlur: () => void;
   onChange: (chainIds: ReadonlyArray<SupportedEvmChainId>) => void;
@@ -35,6 +36,7 @@ export function EvmNetworkMultiSelect({
   isInvalid = false,
   isDisabled = false,
   operationalOnly = false,
+  chainIds,
   name,
   onBlur,
   onChange,
@@ -45,7 +47,10 @@ export function EvmNetworkMultiSelect({
     const chain = evmChainById.get(chainId);
     return chain ? [chain] : [];
   });
-  const selectable = evmChainOptions.filter((chain) => !operationalOnly || chain.operationsEnabled);
+  const selectable = evmChainOptions.filter(
+    (chain) =>
+      (!chainIds || chainIds.includes(chain.id)) && (!operationalOnly || chain.operationsEnabled),
+  );
   const allNetworksSelected =
     selectable.length > 0 && selectable.every((chain) => value.includes(chain.id));
 
@@ -101,34 +106,41 @@ export function EvmNetworkMultiSelect({
           </Checkbox.Content>
         </Checkbox>
         <ListBox className="max-h-60 overflow-y-auto">
-          {networkGroups.map((group) => (
-            <ListBox.Section id={group.id} key={group.id}>
-              <Header className="text-muted px-2 py-2 text-xs font-medium">{group.label}</Header>
-              <Collection items={group.networks}>
-                {(chain) => (
-                  <ListBox.Item
-                    id={chain.id}
-                    isDisabled={operationalOnly && !chain.operationsEnabled}
-                    textValue={chain.name}
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <ChainIcon
-                        aria-hidden
-                        chain={chain.chain}
-                        className="size-4 shrink-0"
-                        namespace="eip155"
-                      />
-                      <span className="truncate">{chain.name}</span>
-                    </div>
-                    {!chain.operationsEnabled ? (
-                      <span className="text-muted text-xs">Paused</span>
-                    ) : null}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                )}
-              </Collection>
-            </ListBox.Section>
-          ))}
+          {networkGroups
+            .map((group) => ({
+              id: group.id,
+              label: group.label,
+              networks: group.networks.filter((chain) => !chainIds || chainIds.includes(chain.id)),
+            }))
+            .filter((group) => group.networks.length > 0)
+            .map((group) => (
+              <ListBox.Section id={group.id} key={group.id}>
+                <Header className="text-muted px-2 py-2 text-xs font-medium">{group.label}</Header>
+                <Collection items={group.networks}>
+                  {(chain) => (
+                    <ListBox.Item
+                      id={chain.id}
+                      isDisabled={operationalOnly && !chain.operationsEnabled}
+                      textValue={chain.name}
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <ChainIcon
+                          aria-hidden
+                          chain={chain.chain}
+                          className="size-4 shrink-0"
+                          namespace="eip155"
+                        />
+                        <span className="truncate">{chain.name}</span>
+                      </div>
+                      {!chain.operationsEnabled ? (
+                        <span className="text-muted text-xs">Paused</span>
+                      ) : null}
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  )}
+                </Collection>
+              </ListBox.Section>
+            ))}
         </ListBox>
       </Select.Popover>
     </Select>

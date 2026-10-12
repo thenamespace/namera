@@ -8,7 +8,13 @@ import { HeadingGroup } from "@/components/heading-group";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { useSessionKey } from "@/hooks/session-key";
 
-export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyResponse }) {
+export function ActivateSessionKey({
+  sessionKey,
+  onFinish,
+}: {
+  sessionKey: SessionKeyResponse;
+  onFinish?: (() => void) | undefined;
+}) {
   const query = useSessionKey(sessionKey.id);
   const navigate = useNavigate();
   const active = (query.data ?? sessionKey).status === "active";
@@ -16,13 +22,13 @@ export function ActivateSessionKey({ sessionKey }: { sessionKey: SessionKeyRespo
   const installed = session.installations.filter(
     (installation) => installation.status === "installed",
   ).length;
-  const finishSetup = useEventCallback(
-    () =>
-      void navigate({
-        to: "/session-keys/created/$sessionKeyId",
-        params: { sessionKeyId: sessionKey.id },
-      }),
-  );
+  const finishSetup = useEventCallback(() => {
+    if (onFinish) return onFinish();
+    void navigate({
+      to: "/session-keys/created/$sessionKeyId",
+      params: { sessionKeyId: sessionKey.id },
+    });
+  });
 
   return (
     <>

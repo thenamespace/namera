@@ -31,6 +31,9 @@ Workspace package imports continue to use their package names.
 - `src/components/session-keys-table/` — the shared organization or wallet-scoped
   session-key table, with query-specific wrappers around one table body and a
   separate declarative column module.
+- `src/components/session-key-creation/` — shared metadata, policy editing,
+  registration/recovery, local export and network approval used by custom creation
+  and Recipes. Private drafts stay in the creation hook, never in form state.
 - `src/components/common/table/` — shared table controls and pure collection
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
@@ -251,6 +254,22 @@ catalog, summaries, cards, and editors. Installation networks and lifetime remai
 outside the policy picker. Existing API policy summaries remain
 readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
+
+## Recipes
+
+`/recipes` lists code-owned definitions from the private `@namera-ai/recipes`
+package, with searchable names, descriptions and tags. `/recipes/$recipeId`
+requires session-key creation permission and prefetches accounts and permitted
+billing data. It renders Metadata, schema-driven recipe fields and Create together.
+The USDC recipe asks for networks, a per-network lifetime allowance and expiry in
+days. Circle-issued token addresses are recipe-owned; no catalog lookup is needed.
+
+The page embeds registration, local encryption/import, managed setup and network
+approval through the same components as custom creation. Continue/Skip renders
+the result and next steps in place instead of navigating to a custody or session
+page. Explicit links may leave the page; unsaved local keys retain the navigation
+guard. Reloading an unexported local key still loses it. Recipe input/version is
+not persisted; the generated session configuration is authoritative.
 
 ## Settings routes
 

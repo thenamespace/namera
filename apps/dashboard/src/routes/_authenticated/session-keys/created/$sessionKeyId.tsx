@@ -8,9 +8,8 @@ import { prefetchQuery } from "@/atoms/prefetch";
 import { sessionKeyAtom } from "@/atoms/session-key";
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
+import { SessionKeyCreated } from "@/components/session-key-creation/created";
 import { useSessionKey } from "@/hooks/session-key";
-
-import { SessionKeyCreated } from "./-components/session-key-created";
 
 export const Route = createFileRoute("/_authenticated/session-keys/created/$sessionKeyId")({
   loader: async ({ context, params, abortController }) => {

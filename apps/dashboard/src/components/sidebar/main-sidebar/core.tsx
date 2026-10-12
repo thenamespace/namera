@@ -1,4 +1,4 @@
-import { Activity02Icon, Key01Icon, ShieldUserIcon } from "@namera-ai/ui/icons";
+import { Activity02Icon, BookOpen01Icon, Key01Icon, ShieldUserIcon } from "@namera-ai/ui/icons";
 
 import type { SidebarGroupItemsProps } from "../sidebar-group";
 
@@ -37,6 +37,14 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       tooltip: {
         text: "activity",
       },
+    },
+    {
+      id: "recipes",
+      icon: BookOpen01Icon,
+      label: "Recipes",
+      textValue: "Recipes",
+      href: "/recipes",
+      tooltip: { text: "recipes" },
     },
   ],
 };

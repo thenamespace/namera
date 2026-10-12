@@ -409,6 +409,9 @@ importers:
       '@namera-ai/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@namera-ai/recipes':
+        specifier: workspace:*
+        version: link:../../packages/recipes
       '@namera-ai/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk

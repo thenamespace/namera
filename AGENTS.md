@@ -222,7 +222,8 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-providers/*      -> protocol
 passkeys         -> utils
-apps/dashboard   -> api, protocol, telemetry, ui
+apps/dashboard   -> api, protocol, recipes, telemetry, ui
+recipes          -> protocol
 apps/admin-portal -> api, protocol, ui
 email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit

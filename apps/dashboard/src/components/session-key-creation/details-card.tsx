@@ -1,4 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import type { ReactNode } from "react";
+
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
@@ -24,7 +26,6 @@ import { MetadataDisplay } from "@/components/display";
 import { supportsSessionKeys } from "@/lib/session-owner";
 
 import { CustodyField, type CustodyLimits } from "./custody-field";
-import { SessionNetworksField } from "./networks-field";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -35,6 +36,7 @@ type SessionKeyDetailsCardProps = {
   wallets: ListWalletsResponse;
   custodyLocked: boolean;
   limits: CustodyLimits;
+  children?: ReactNode;
 };
 
 export function SessionKeyDetailsCard({
@@ -42,6 +44,7 @@ export function SessionKeyDetailsCard({
   wallets,
   custodyLocked,
   limits,
+  children,
 }: SessionKeyDetailsCardProps) {
   const { control } = form;
   const activeWallets = wallets.filter(supportsSessionKeys);
@@ -218,7 +221,7 @@ export function SessionKeyDetailsCard({
             }}
           />
           <CustodyField control={control} locked={custodyLocked} limits={limits} />
-          <SessionNetworksField form={form} />
+          {children}
         </FieldGroup>
       </DashboardCardContent>
     </DashboardCardRoot>

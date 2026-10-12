@@ -221,6 +221,40 @@ browser builds. See [session lifecycle](../wallets/session-keys.md).
 
 ## Forms and shared components
 
+### Recipes
+
+`/recipes` is a sidebar destination with a searchable code-defined recipe list;
+search includes `display.tags`. `/recipes/$recipeId` is a self-contained creation
+page guarded by `session-key:create`, with permission-aware account and billing
+prefetch. Unknown recipe IDs use the normal not-found boundary.
+
+The private `packages/recipes` workspace owns metadata under `display`, tags,
+versioned definitions, Effect input schemas, typed form descriptors and deterministic
+builders. It depends only on protocol and Effect, not the catalog or React. Builders
+return current `onchain.installations` and session-level `policies`; they neither
+create signers nor submit requests. The first recipe grants a lifetime USDC allowance
+independently on selected networks using Circle's native deployments. Amounts are
+exact six-decimal base units, and duration is 1–3,650 whole days (default 30).
+Signatures remain disabled. There is no cross-chain shared budget or periodic reset.
+
+`components/session-key-creation` is shared by custom creation and recipes. Metadata
+and recipe fields appear together; generated permissions pass through the existing
+creation resolver before submission. Paused networks are unavailable. The shared
+creation hook owns public registration verification, ambiguous-error recovery,
+private draft lifetime, duplicate-submission guards and backup navigation blocking.
+Recipe creation embeds local encryption/import, managed network approval and the
+completion screen without navigating to another setup route. Setup stays mounted
+when returning from completion to enable more networks, preserving local backup
+acknowledgement and in-flight approvals. Approval uses
+the existing independently verified owner-operation path; this feature adds no API,
+database table, audit type or signing bypass. Existing creation emits its normal
+transactional audit event. Templates and their input values are not persisted.
+
+Package tests cover per-chain addresses, exact amounts, overflow, invalid networks
+and duration; dashboard resolver tests cover both custody variants using generated
+recipe permissions. Browser checks do not substitute for live custody or onchain
+approval verification.
+
 `components/evm-address-picker` provides a controlled, single-deployment picker
 with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),
 `value` and `onChange`. Empty filter arrays disable selection. Catalog selections

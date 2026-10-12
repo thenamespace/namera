@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-object-as-prop
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 
 import { Link } from "@tanstack/react-router";
 
@@ -25,9 +25,9 @@ import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custo
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
+import { CommandBlock } from "@/components/session-key-creation/command-block";
 import { useCurrentUser } from "@/hooks/auth";
-
-import { CommandBlock } from "../../-components/create-session-key-form/command-block";
+import { useSessionKey } from "@/hooks/session-key";
 
 const actions = [
   {
@@ -101,7 +101,19 @@ function Property({
   );
 }
 
-export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyResponse }) {
+export function SessionKeyCreated({
+  sessionKey: initialSessionKey,
+  embedded = false,
+  onEnableNetworks,
+}: {
+  sessionKey: SessionKeyResponse;
+  embedded?: boolean;
+  onEnableNetworks?: () => void;
+}) {
+  const query = useSessionKey(initialSessionKey.id);
+  const sessionKey = query.data ?? initialSessionKey;
+  const Page = embedded ? Fragment : DashboardPage;
+  const Content = embedded ? "div" : DashboardPage.Content;
   const [cliOpen, setCliOpen] = useState(false);
   const openCli = useEventCallback(() => setCliOpen(true));
   const user = useCurrentUser();
@@ -119,8 +131,10 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
   const canConnectCli = hasPermissions(permissions, ["cli-authorization:create"]);
 
   return (
-    <DashboardPage>
-      <DashboardPage.Content className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-16">
+    <Page>
+      <Content
+        className={embedded ? "w-full" : "mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-16"}
+      >
         <div className="mx-auto w-full py-4 sm:px-2 sm:py-8">
           <header className="flex flex-col items-start">
             <IconPreview
@@ -186,7 +200,15 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
             </Typography.Paragraph>
           ) : null}
           <div className="grid gap-2">
-            {needsApproval && canApprove ? (
+            {needsApproval && canApprove && onEnableNetworks ? (
+              <Button className={actionClassName} onPress={onEnableNetworks}>
+                <ActionContent
+                  icon={Globe02Icon}
+                  title="Enable networks"
+                  description="Approve network access with your account owner."
+                />
+              </Button>
+            ) : needsApproval && canApprove ? (
               <Link
                 className={actionClassName}
                 to="/session-key/$sessionKeyId/overview"
@@ -231,7 +253,7 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
         >
           View session key
         </Link>
-      </DashboardPage.Content>
+      </Content>
       <Modal isOpen={cliOpen} onOpenChange={setCliOpen}>
         <Modal.Backdrop>
           <Modal.Container size="lg">
@@ -271,6 +293,6 @@ export function SessionKeyCreated({ sessionKey }: { sessionKey: SessionKeyRespon
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
-    </DashboardPage>
+    </Page>
   );
 }
