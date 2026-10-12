@@ -236,8 +236,10 @@ and names are allowed. Exception frames retain asset paths and line/column data.
 Survey delivery samples 10% of browser app instances, waits 60 seconds on an
 eligible visible page, and enforces a cross-subdomain 30-day cooldown. Auth,
 settings, creation, account-detail, execution, and approval routes are excluded.
-The footer and dashboard profile settings expose browser analytics preferences;
-Do Not Track and Global Privacy Control also prevent collection.
+The website and dashboard collect automatically without an in-app analytics
+toggle. Production initialization expires the retired preference cookie, ignores
+its local-storage value, and clears the SDK's saved opt-in/out status. Do Not
+Track and Global Privacy Control still prevent collection and this migration.
 
 Provider dashboards, billing caps, survey definitions, deployment verification,
 and privacy/terms reconciliation are tracked in the ignored research plan.

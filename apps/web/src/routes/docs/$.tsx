@@ -23,7 +23,6 @@ import {
 } from "fumadocs-ui/layouts/spacious/page";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 
-import { AnalyticsPreference } from "#/components/analytics-preference";
 import { getDocsSection } from "#/lib/docs/sections";
 import { docsHead } from "#/lib/docs/seo";
 import { SITE_LINKS } from "#/lib/site-links";
@@ -76,7 +75,6 @@ const content = collections.docs.createClientLoader({
           <Icon icon={PencilEdit02Icon} aria-hidden className="size-3.5" />
           Edit this page on GitHub
         </EditOnGitHub>
-        <AnalyticsPreference />
         {page.lastModified ? (
           <p>
             Last updated{" "}

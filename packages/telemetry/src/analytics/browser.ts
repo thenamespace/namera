@@ -15,7 +15,6 @@ let profileName: string | undefined;
 let surveyTimer: ReturnType<typeof setTimeout> | undefined;
 let surveyConsidered = false;
 const surveySample = Math.random();
-const preferenceKey = "namera.analytics.disabled";
 
 const nativeEvents = new Set([
   "$pageview",
@@ -32,8 +31,6 @@ const nativeEvents = new Set([
 export function analyticsDisabled() {
   try {
     return (
-      document.cookie.split("; ").includes("namera_analytics_disabled=true") ||
-      localStorage.getItem(preferenceKey) === "true" ||
       navigator.doNotTrack === "1" ||
       (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
     );
@@ -52,6 +49,9 @@ export function initializeAnalytics(config: {
   if (!["namera.ai", "www.namera.ai", "dashboard.namera.ai"].includes(location.hostname)) return;
   surface = config.surface;
   if (analyticsDisabled()) return;
+  // Retire the old in-app preference without overriding browser privacy signals.
+  document.cookie =
+    "namera_analytics_disabled=; Max-Age=0; Path=/; Domain=namera.ai; Secure; SameSite=Lax";
   posthog.init(config.key, {
     api_host: "https://t.namera.ai",
     ui_host: "https://eu.posthog.com",
@@ -101,10 +101,8 @@ export function initializeAnalytics(config: {
       return event;
     },
   });
+  posthog.clear_opt_in_out_capturing();
   initialized = true;
-  window.addEventListener("storage", (event) => {
-    if (event.key === preferenceKey && analyticsDisabled()) posthog.opt_out_capturing();
-  });
 }
 
 export function captureAnalytics(event: AnalyticsEvent, properties: AnalyticsProperties = {}) {
@@ -165,21 +163,6 @@ export function analyticsIdentity(
   } else if (nextUser && nextName !== profileName) {
     posthog.setPersonProperties(analyticsProfile({ name: nextName }));
     profileName = nextName;
-  }
-}
-
-export function setAnalyticsDisabled(disabled: boolean) {
-  try {
-    localStorage.setItem(preferenceKey, String(disabled));
-  } catch {
-    return;
-  }
-  document.cookie = `namera_analytics_disabled=${disabled}; Max-Age=31536000; Path=/; Domain=namera.ai; Secure; SameSite=Lax`;
-  if (initialized) {
-    if (disabled) {
-      posthog.opt_out_capturing();
-      posthog.reset();
-    } else posthog.opt_in_capturing();
   }
 }
 
