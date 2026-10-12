@@ -11,17 +11,47 @@ import { OneClawOidcService } from "../../src/index.js";
 const privateKey = generateKeyPairSync("rsa", { modulusLength: 2048 })
   .privateKey.export({ type: "pkcs8", format: "pem" })
   .toString();
-const Live = OneClawOidcService.layer.pipe(
-  Layer.provide(
-    ConfigProvider.layer(
-      ConfigProvider.fromUnknown({
-        ONECLAW_OIDC_ISSUER: "https://namera.invalid",
-        ONECLAW_OIDC_AUDIENCE: "test-app",
-        ONECLAW_OIDC_KEY_ID: "test-key",
-        ONECLAW_OIDC_PRIVATE_KEY: privateKey,
-      }),
+const oidcLayer = (encodedKey: string) =>
+  OneClawOidcService.layer.pipe(
+    Layer.provide(
+      ConfigProvider.layer(
+        ConfigProvider.fromUnknown({
+          ONECLAW_OIDC_ISSUER: "https://namera.invalid",
+          ONECLAW_OIDC_AUDIENCE: "test-app",
+          ONECLAW_OIDC_KEY_ID: "test-key",
+          ONECLAW_OIDC_PRIVATE_KEY_BASE64: encodedKey,
+        }),
+      ),
     ),
-  ),
+  );
+const Live = oidcLayer(Buffer.from(privateKey).toString("base64"));
+
+for (const encodedKey of [
+  "invalid-secret!",
+  privateKey,
+  Buffer.from("not a PEM key").toString("base64"),
+]) {
+  it.effect(
+    `rejects invalid OIDC key configuration without exposing key material (${encodedKey.length} characters)`,
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.gen(function* () {
+          yield* OneClawOidcService;
+        }).pipe(Effect.provide(oidcLayer(encodedKey)), Effect.flip);
+        expect(error).toMatchObject({ code: "CONFIGURATION_INVALID", operation: "oidc.configure" });
+        if (encodedKey) expect(JSON.stringify(error)).not.toContain(encodedKey);
+        expect(JSON.stringify(error)).not.toContain("PRIVATE KEY");
+      }),
+  );
+}
+
+it.effect("requires a nonempty base64 key setting", () =>
+  Effect.gen(function* () {
+    const error = yield* Effect.gen(function* () {
+      yield* OneClawOidcService;
+    }).pipe(Effect.provide(oidcLayer("")), Effect.flip);
+    expect(error).toHaveProperty("_tag", "ConfigError");
+  }),
 );
 
 it.effect("issues short-lived organization identity tokens and exports only public JWKS", () =>
