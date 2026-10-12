@@ -28,34 +28,53 @@ import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
 import { WalletResponse } from "../wallet/index.js";
 import { EvmSessionSignerRequest, EvmSessionSignerResponse } from "./signer.js";
 
+export const CreateEvmSessionInstallation = Schema.Struct({
+  chainId: SupportedEvmChainId,
+  validAfter: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  validUntil: Schema.Int.check(
+    Schema.isGreaterThanOrEqualTo(1),
+    // Also persisted as a timestamp and used for delivery deadlines.
+    Schema.isLessThanOrEqualTo(8_640_000_000_000),
+  ),
+  permissions: EvmSessionPermissions,
+  allowSignatures: EvmSessionAuthorization.fields.allowSignatures,
+})
+  .check(
+    Schema.makeFilter((value) =>
+      value.validUntil > value.validAfter
+        ? undefined
+        : { path: ["validUntil"], issue: "Session expiry must follow its start time" },
+    ),
+  )
+  .annotate({
+    identifier: "CreateEvmSessionInstallation",
+    description: "Permissions, lifetime, and signature authority for one network.",
+  });
+
+export type CreateEvmSessionInstallation = typeof CreateEvmSessionInstallation.Type;
+
 export const CreateEvmSessionKeyRequest = Schema.Struct({
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,
   signer: EvmSessionSignerRequest,
   onchain: Schema.Struct({
-    chains: Schema.Array(SupportedEvmChainId)
+    installations: Schema.Array(CreateEvmSessionInstallation)
       .check(Schema.isMinLength(1))
       .check(
-        Schema.makeFilter((chains) =>
-          new Set(chains).size === chains.length ? undefined : "Duplicate chain",
+        Schema.makeFilter((installations) =>
+          new Set(installations.map(({ chainId }) => chainId)).size === installations.length
+            ? undefined
+            : "Duplicate chain",
         ),
       ),
-    validAfter: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-    validUntil: Schema.Int.check(
-      Schema.isGreaterThanOrEqualTo(1),
-      // Expiry is also stored as a timestamp and used for notifications.
-      Schema.isLessThanOrEqualTo(8_640_000_000_000),
-    ),
-    permissions: EvmSessionPermissions,
-    allowSignatures: EvmSessionAuthorization.fields.allowSignatures,
-  }).check(
-    Schema.makeFilter((value) =>
-      value.validUntil > value.validAfter
-        ? undefined
-        : { path: ["validUntil"], issue: "Session expiry must follow its start time" },
-    ),
-  ),
+    // Explicitly reject ambiguous mixtures of the retired shared shape and installations.
+    chains: Schema.optionalKey(Schema.Never),
+    validAfter: Schema.optionalKey(Schema.Never),
+    validUntil: Schema.optionalKey(Schema.Never),
+    permissions: Schema.optionalKey(Schema.Never),
+    allowSignatures: Schema.optionalKey(Schema.Never),
+  }),
   policies: Schema.Array(CreateEvmSessionKeyPolicy),
 }).annotate({
   identifier: "CreateEvmSessionKeyRequest",

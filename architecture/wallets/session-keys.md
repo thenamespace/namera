@@ -7,7 +7,13 @@ Chain installations store the compiled onchain
 authorization separately from additional API policies. Registration is pending,
 not authority to execute. Machine actors additionally require an active grant.
 
-Onchain signature authority requires explicit `onchain.allowSignatures: true`
+Creation uses `onchain.installations`, a nonempty array with one entry per chain.
+Each entry supplies `chainId`, `validAfter`, `validUntil`, `permissions`, and optional
+`allowSignatures`. Shared onchain fields are rejected, including mixed old/new
+payloads. API `policies` remain session-level. Stored installation versions and
+existing keys are unchanged. Consumer migration is in progress.
+
+Onchain signature authority requires explicit `allowSignatures: true` on that installation
 during registration. It defaults to false even with an API `evm.signature`
 policy. The value is stored in each installation authorization and bound into
 the owner-approved configuration. Alchemy's execution time/spend hooks do not

@@ -16,15 +16,63 @@ const request = {
   metadata: { version: 1, name: "Session" },
   signer: managed,
   onchain: {
-    chains: ["eip155:11155111"],
-    validAfter: 0,
-    validUntil: 2_000_000_000,
-    permissions: [{ type: "root" }],
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: 0,
+        validUntil: 2_000_000_000,
+        permissions: [{ type: "root" }],
+      },
+    ] as const,
   },
   policies: [],
 };
 
 describe("managed session contracts", () => {
+  it("preserves independent network permissions, lifetimes and signature flags", () => {
+    const first = request.onchain.installations[0];
+    const input = {
+      ...request,
+      onchain: {
+        installations: [
+          first,
+          {
+            chainId: "eip155:1",
+            validAfter: 100,
+            validUntil: 3_000_000_000,
+            allowSignatures: true,
+            permissions: [
+              { type: "erc20-token-transfer", address: `0x${"12".repeat(20)}`, allowance: "100" },
+            ],
+          },
+        ],
+      },
+    };
+    expect(
+      Schema.encodeSync(CreateSessionKeyRequest)(
+        Schema.decodeUnknownSync(CreateSessionKeyRequest)(input),
+      ),
+    ).toEqual(input);
+  });
+
+  it("rejects missing, duplicate, expired-order and ambiguous shared installations", () => {
+    const first = request.onchain.installations[0];
+    for (const onchain of [
+      { chains: [first.chainId], ...first },
+      { installations: [] },
+      { installations: [first, first] },
+      { installations: [{ ...first, validAfter: first.validUntil }] },
+      ...Array.from(
+        ["chains", "permissions", "validAfter", "validUntil", "allowSignatures"],
+        (key) => ({ ...request.onchain, [key]: key === "allowSignatures" ? false : 0 }),
+      ),
+    ]) {
+      expect(() =>
+        Schema.decodeUnknownSync(CreateSessionKeyRequest)({ ...request, onchain }),
+      ).toThrow();
+    }
+  });
+
   it("round trips managed requests without caller-owned key material and preserves local requests", () => {
     for (const signer of [managed, { custody: "local", algorithm: "secp256k1", publicKey }]) {
       const input = { ...request, signer };
