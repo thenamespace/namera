@@ -600,6 +600,9 @@ the server workflow. It does not provision infra resources.
 and recovery, permission/amount conversion, and document security checks. General
 form validation, display formatting, and rendered component assertions are omitted.
 These suites do not replace browser journeys or server authorization tests.
+Vitest disables local `.env` loading. Pure form validation must not import UI
+catalog barrels or initialize the API client; the session-creation resolver suite
+guards that boundary by rejecting imports of application environment configuration.
 Vitest resolves the same `@/` TypeScript paths as Vite so these tests can import
 the actual shared form schemas. Optional descriptions are normalized by
 `src/lib/form-description.ts`; do not pass an empty string directly to a

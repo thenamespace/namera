@@ -9,6 +9,10 @@ import { afterEach, expect, it, vi } from "vitest";
 import { selectInstallationNetworks } from "../../../src/components/session-key-creation/policies/installation-selection";
 import { CreateSessionKeyFormSchema } from "../../../src/components/session-key-creation/schema";
 
+vi.mock("@/env", () => {
+  throw new Error("Session form validation must not initialize application configuration.");
+});
+
 const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema));
 const options = { fields: {}, shouldUseNativeValidation: false };
 afterEach(() => vi.restoreAllMocks());

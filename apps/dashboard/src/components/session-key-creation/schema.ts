@@ -2,10 +2,9 @@ import { Schema } from "effect";
 
 import { CreateEvmSessionKeyRequest } from "@namera-ai/protocol/dto";
 
+import { hasTransactionAccess } from "@/components/policy/evm/onchain/catalog";
 import { isChainOperationEnabled } from "@/lib/chain-availability";
 import { OptionalFormDescription } from "@/lib/form-description";
-
-import { hasTransactionAccess } from "./policies/catalog";
 
 export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields(
   ({ signer: _signer, ...fields }) => ({

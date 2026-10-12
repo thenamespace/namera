@@ -1,6 +1,6 @@
 import { ShieldUserIcon } from "@namera-ai/ui/icons";
 
-import { evmPolicyDefinitions } from "@/components/policy/evm";
+import { evmPolicyDefinitions } from "@/components/policy/evm/data";
 import type {
   OnchainPermissionInput,
   OnchainPermissionType,
@@ -63,12 +63,6 @@ export function policyChoiceFor(type: OnchainPermissionType | "signature") {
   const choice = sessionPolicyCatalog.find((entry) => entry.id === id);
   if (!choice) throw new Error(`No session policy editor for ${type}`);
   return choice;
-}
-
-export function hasTransactionAccess(permissions: ReadonlyArray<{ type: OnchainPermissionType }>) {
-  return permissions.some(
-    (permission) => permission.type !== "gas-limit" && permission.type !== "native-token-transfer",
-  );
 }
 
 export function policyUnavailableReason(

@@ -5,6 +5,12 @@ import { EvmSessionPermission } from "@namera-ai/protocol/evm";
 export type OnchainPermissionInput = typeof EvmSessionPermission.Encoded;
 export type OnchainPermissionType = OnchainPermissionInput["type"];
 
+export function hasTransactionAccess(permissions: ReadonlyArray<{ type: OnchainPermissionType }>) {
+  return permissions.some(
+    (permission) => permission.type !== "gas-limit" && permission.type !== "native-token-transfer",
+  );
+}
+
 export const onchainPermissionCatalog = {
   "contract-access": {
     name: "Contract access",
