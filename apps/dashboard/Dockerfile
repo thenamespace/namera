@@ -15,6 +15,9 @@ RUN turbo prune @namera-ai/dashboard --docker
 
 FROM base AS builder
 WORKDIR /app
+# PostHog CLI uses the system trust store for HTTPS release and source-map uploads.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=pruner /app/out/json/ .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
