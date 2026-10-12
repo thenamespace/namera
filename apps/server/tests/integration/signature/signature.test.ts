@@ -64,7 +64,12 @@ const setup = Effect.fn("test.signature.setup")(function* (
     payload: {
       ...request,
       signer: { ...request.signer, publicKey: signer.publicKey },
-      onchain: { ...request.onchain, allowSignatures },
+      onchain: {
+        installations: Array.from(request.onchain.installations, (installation) => ({
+          ...installation,
+          allowSignatures,
+        })),
+      },
       policies,
     },
   });

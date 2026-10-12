@@ -70,7 +70,11 @@ export const makeCreateSessionKey = Effect.gen(function* () {
         namespace: input.request.namespace,
       });
       const now = yield* DateTime.now;
-      if (input.request.onchain.validUntil <= DateTime.toEpochSeconds(now)) {
+      if (
+        input.request.onchain.installations.some(
+          ({ validUntil }) => validUntil <= DateTime.toEpochSeconds(now),
+        )
+      ) {
         return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
       }
       const cardinalityViolation = findEvmPolicyCardinalityViolation(input.request.policies);
@@ -130,8 +134,8 @@ export const makeCreateSessionKey = Effect.gen(function* () {
       const entityId = Number.parseInt(generateUniqueId().slice(-7), 16) + 1;
       const compileInstallations = (signerAddress: EthereumAddress, signingKeyId: SigningKeyId) =>
         Effect.forEach(
-          input.request.onchain.chains,
-          (chainId) =>
+          input.request.onchain.installations,
+          ({ chainId, validAfter, validUntil, permissions, allowSignatures }) =>
             Effect.gen(function* () {
               const data = yield* evm.sessions.compile({
                 chainId,
@@ -140,10 +144,10 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                   version: 1,
                   entityId,
                   signerAddress,
-                  validAfter: input.request.onchain.validAfter,
-                  validUntil: input.request.onchain.validUntil,
-                  permissions: input.request.onchain.permissions,
-                  allowSignatures: input.request.onchain.allowSignatures ?? false,
+                  validAfter,
+                  validUntil,
+                  permissions,
+                  allowSignatures: allowSignatures ?? false,
                 },
               });
               const hash = yield* crypto.hash({
@@ -244,7 +248,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
       ) satisfies EvmSessionKeyPolicies;
       const policyHash = yield* hashSessionKeyPolicies(crypto, policies);
       const policyTypes = policies.map((policy) => policy.type);
-      const effectiveExpiry = policies
+      // Delivery may remain useful until the last installation expires. Authorization
+      // and admission below still check each network independently.
+      const deliveryExpiry = policies
         .filter((policy) => policy.type === "evm.time-window")
         .map((policy) => policy.expiresAt)
         .reduce(
@@ -252,7 +258,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
             DateTime.toEpochMillis(expiresAt) < DateTime.toEpochMillis(earliest)
               ? expiresAt
               : earliest,
-          DateTime.fromEpochSeconds(input.request.onchain.validUntil),
+          DateTime.fromEpochSeconds(
+            Math.max(...input.request.onchain.installations.map(({ validUntil }) => validUntil)),
+          ),
         );
 
       const sessionKey = yield* transaction
@@ -271,8 +279,15 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               current.signingKey.status !== "active"
             )
               return yield* new SessionKeyCreationError({ code: "WALLET_OWNER_UNAVAILABLE" });
+            const lockedNow = yield* DateTime.now;
             if (
-              DateTime.toEpochMillis(effectiveExpiry) <= DateTime.toEpochMillis(yield* DateTime.now)
+              input.request.onchain.installations.some(
+                ({ validUntil }) => validUntil <= DateTime.toEpochSeconds(lockedNow),
+              ) ||
+              timeWindows.some(
+                ({ expiresAt }) =>
+                  DateTime.toEpochMillis(expiresAt) <= DateTime.toEpochMillis(lockedNow),
+              )
             )
               return yield* new SessionKeyCreationError({ code: "TIME_WINDOW_EXPIRED" });
             if (preparedSigner.data.type === "1claw") {
@@ -349,9 +364,8 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               notificationPolicy["session_key.created"].emailTimeToLive,
             );
             const emailExpiry =
-              DateTime.toEpochMillis(effectiveExpiry) <
-              DateTime.toEpochMillis(configuredEmailExpiry)
-                ? effectiveExpiry
+              DateTime.toEpochMillis(deliveryExpiry) < DateTime.toEpochMillis(configuredEmailExpiry)
+                ? deliveryExpiry
                 : configuredEmailExpiry;
             yield* createNotification({
               organizationId: input.organizationId,
@@ -369,7 +383,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               },
               idempotencyKey: `notification:session_key.created:${created.id}`,
               correlationId: event.correlationId,
-              expiresAt: effectiveExpiry,
+              expiresAt: deliveryExpiry,
               recipients: members
                 .filter(({ organizationRole }) =>
                   organizationRole.permissions.includes("session-key:read"),
@@ -395,7 +409,17 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                       ),
                       walletName: wallet.wallet.metadata.name,
                       organizationName: organization.metadata.name,
-                      expiresAt: DateTime.formatIso(effectiveExpiry),
+                      expiresAt: DateTime.formatIso(deliveryExpiry),
+                      ...(new Set(
+                        input.request.onchain.installations.map(
+                          ({ validAfter, validUntil }) => `${validAfter}:${validUntil}`,
+                        ),
+                      ).size > 1
+                        ? {
+                            lifetimeSummary:
+                              "Lifetimes vary by network. Review the session key for each network's dates.",
+                          }
+                        : {}),
                     },
                   },
                 })),

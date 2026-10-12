@@ -17,6 +17,61 @@ import {
 layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
   "local session registration",
   (it) => {
+    it.effect(
+      "persists independent authorities and rejects a single expired network atomically",
+      () =>
+        Effect.gen(function* () {
+          yield* resetTestState();
+          const client = yield* makeTestApiClient;
+          yield* signIn(client, testEmail("per-chain-session@namera.test"));
+          const wallet = yield* createTestPasskeyWallet(client);
+          const request = yield* localSessionRequest(wallet.id);
+          const installations = [
+            {
+              chainId: "eip155:1" as const,
+              validAfter: 0,
+              validUntil: 3600,
+              permissions: [{ type: "root" as const }],
+              allowSignatures: true,
+            },
+            {
+              chainId: "eip155:8453" as const,
+              validAfter: 10,
+              validUntil: 7200,
+              permissions: [
+                {
+                  type: "erc20-token-transfer" as const,
+                  address: EthereumAddress.make("0x2222222222222222222222222222222222222222"),
+                  allowance: 200n,
+                },
+              ],
+            },
+          ];
+          const created = yield* client.sessionKey.create({
+            payload: { ...request, onchain: { installations } },
+          });
+          const loaded = yield* client.sessionKey.get({ params: { sessionKeyId: created.id } });
+          for (const expected of installations) {
+            expect(
+              loaded.installations.find(({ chainId }) => chainId === expected.chainId)
+                ?.authorization,
+            ).toMatchObject({
+              validAfter: expected.validAfter,
+              validUntil: expected.validUntil,
+              permissions: expected.permissions,
+              allowSignatures: expected.allowSignatures ?? false,
+            });
+          }
+          yield* TestClock.adjust(Duration.seconds(3601));
+          const next = yield* localSessionRequest(wallet.id);
+          expect(
+            yield* client.sessionKey
+              .create({ payload: { ...next, onchain: { installations } } })
+              .pipe(Effect.flip),
+          ).toMatchObject({ code: "TIME_WINDOW_EXPIRED" });
+          expect(yield* client.sessionKey.listForOrganization()).toHaveLength(1);
+        }),
+    );
     it.effect("rejects managed creation before persistence while its runtime is unavailable", () =>
       Effect.gen(function* () {
         yield* resetTestState();
@@ -107,7 +162,7 @@ layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
           expect(created.installations).toHaveLength(2);
           expect(created.installations.every(({ status }) => status === "pending")).toBe(true);
           expect(created.installations.map(({ chainId }) => chainId).toSorted()).toEqual(
-            request.onchain.chains.toSorted(),
+            request.onchain.installations.map(({ chainId }) => chainId).toSorted(),
           );
           const repository = yield* Repository;
           expect(
@@ -163,7 +218,13 @@ layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
               .create({
                 payload: {
                   ...request,
-                  onchain: { ...request.onchain, validAfter: 0, validUntil: 1 },
+                  onchain: {
+                    installations: Array.from(request.onchain.installations, (installation) => ({
+                      ...installation,
+                      validAfter: 0,
+                      validUntil: 1,
+                    })),
+                  },
                 },
               })
               .pipe(Effect.flip),

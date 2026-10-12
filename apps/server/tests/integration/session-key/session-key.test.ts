@@ -72,7 +72,12 @@ layer(fixture.layer)("session-key routes", (it) => {
           ...request,
           signer: (yield* localSessionRequest(wallet.id)).signer,
           policies: request.policies.toReversed(),
-          onchain: { ...request.onchain, allowSignatures: true },
+          onchain: {
+            installations: Array.from(request.onchain.installations, (installation) => ({
+              ...installation,
+              allowSignatures: true,
+            })),
+          },
         },
       });
 
