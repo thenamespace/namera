@@ -146,7 +146,7 @@ export function RecipeCreationForm({
                     render={({ field, fieldState }) => {
                       const fieldId = `${id}-${definition.name}`;
                       return (
-                        <DashboardCardRow className="items-start sm:items-start">
+                        <DashboardCardRow>
                           <Field className="contents" data-invalid={fieldState.invalid}>
                             <FieldLabel id={`${fieldId}-label`} htmlFor={fieldId} isRequired>
                               {definition.label}
@@ -200,7 +200,7 @@ export function RecipeCreationForm({
                                   </InputGroup.Suffix>
                                 </InputGroup>
                               )}
-                              <div id={`${fieldId}-feedback`} className="grid gap-1">
+                              <div id={`${fieldId}-feedback`} className="grid gap-1 empty:hidden">
                                 {"description" in definition &&
                                 typeof definition.description === "string" ? (
                                   <Typography.Paragraph size="xs" color="muted">
