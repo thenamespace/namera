@@ -4,33 +4,32 @@ import { useId } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import type { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
+import type { EthereumAddress } from "@namera-ai/protocol/evm";
 import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 import { getAddress } from "viem";
 
 import { EvmChainSelect } from "@/components/evm-chain-select";
 
-import { customAddressSchema } from "./schema";
-import type { EvmAddressSelection } from "./types";
+import { customPickerSchema } from "./schema";
+import type { CustomAddressRenderProps, EvmCustomAddress } from "./types";
 
-export function CustomAddress({
-  chainIds,
-  initialAddress,
-  onSelect,
-  onBack,
-}: {
-  chainIds: readonly SupportedEvmChainId[];
-  initialAddress: string;
-  onSelect: (value: EvmAddressSelection) => void;
-  onBack: () => void;
-}) {
+type CustomToken = EvmCustomAddress & { readonly decimals: number };
+type Props =
+  | (CustomAddressRenderProps<EvmCustomAddress> & { mode: "contract" })
+  | (CustomAddressRenderProps<CustomToken> & { mode: "erc20" });
+
+export function CustomAddress(props: Props) {
+  const { chainIds, initialAddress, initialValue, onCancel } = props;
   const id = useId();
-  const schema = customAddressSchema(chainIds);
+  const schema = customPickerSchema(chainIds, props.mode === "erc20");
   const form = useForm<typeof schema.Encoded, unknown, typeof schema.Type>({
     defaultValues: {
-      address: initialAddress.startsWith("0x") ? initialAddress : "",
-      ...(chainIds[0] ? { chainId: chainIds[0] } : {}),
+      address: initialValue?.address ?? (initialAddress.startsWith("0x") ? initialAddress : ""),
+      ...(chainIds[0] ? { chainId: initialValue?.chainId ?? chainIds[0] } : {}),
+      ...(props.mode === "erc20" && props.initialValue
+        ? { decimals: props.initialValue.decimals }
+        : {}),
     },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
   });
@@ -41,14 +40,16 @@ export function CustomAddress({
       className="grid gap-4 p-4"
       onSubmit={(event) => {
         event.stopPropagation();
-        void form.handleSubmit((value) =>
-          onSelect({
-            source: "custom",
-            namespace: "eip155",
+        void form.handleSubmit((value) => {
+          const address = {
             chainId: value.chainId,
             address: getAddress(value.address) as EthereumAddress,
-          }),
-        )(event);
+          };
+          if (props.mode === "erc20") {
+            if (value.decimals !== undefined)
+              props.onConfirm({ ...address, decimals: value.decimals });
+          } else props.onConfirm(address);
+        })(event);
       }}
     >
       <p className="text-sm font-medium">Custom address</p>
@@ -94,8 +95,36 @@ export function CustomAddress({
           </Field>
         )}
       />
+      {props.mode === "erc20" ? (
+        <Controller
+          control={form.control}
+          name="decimals"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={`${id}-decimals`}>Decimals</FieldLabel>
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                onChange={(event) =>
+                  field.onChange(event.target.value === "" ? undefined : event.target.valueAsNumber)
+                }
+                id={`${id}-decimals`}
+                type="number"
+                min={0}
+                max={255}
+                step={1}
+                variant="secondary"
+                placeholder="e.g. 6"
+                aria-invalid={fieldState.invalid}
+                aria-describedby={fieldState.error ? `${id}-decimals-error` : undefined}
+              />
+              <FieldError id={`${id}-decimals-error`}>{fieldState.error?.message}</FieldError>
+            </Field>
+          )}
+        />
+      ) : null}
       <div className="flex justify-between gap-2">
-        <Button size="sm" variant="tertiary" onPress={onBack}>
+        <Button size="sm" variant="tertiary" onPress={onCancel}>
           Back to search
         </Button>
         <Button size="sm" type="submit" form={id}>

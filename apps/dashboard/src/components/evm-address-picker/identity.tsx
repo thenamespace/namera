@@ -1,4 +1,5 @@
 import { chains } from "@namera-ai/evm/chains";
+import type { CatalogEntryView } from "@namera-ai/protocol/dto";
 import { Avatar, Tooltip } from "@namera-ai/ui";
 import {
   ChainIcon,
@@ -7,17 +8,24 @@ import {
   InformationCircleIcon,
 } from "@namera-ai/ui/icons";
 
-import type { EvmAddressSelection } from "./types";
+import type { EvmCustomAddress } from "./types";
 
 export function AddressIdentity({
   value,
   compact = false,
 }: {
-  value: EvmAddressSelection;
+  value:
+    | {
+        source: "catalog";
+        catalog: typeof CatalogEntryView.Type.catalog;
+        deployment: typeof CatalogEntryView.Type.entry;
+      }
+    | { source: "custom"; value: EvmCustomAddress };
   compact?: boolean;
 }) {
-  const network = Object.values(chains).find((chain) => chain.chainId === value.chainId);
-  const metadata = value.source === "catalog" ? value.match.catalog.data : null;
+  const address = value.source === "catalog" ? value.deployment : value.value;
+  const network = Object.values(chains).find((chain) => chain.chainId === address.chainId);
+  const metadata = value.source === "catalog" ? value.catalog.data : null;
   return (
     <span className="flex min-w-0 flex-1 items-center gap-3 text-left">
       <span className="relative shrink-0">
@@ -73,11 +81,11 @@ export function AddressIdentity({
             metadata?.type === "contract" ? "sr-only" : "text-muted block truncate text-xs"
           }
         >
-          {network?.chain.name ?? value.chainId}
+          {network?.chain.name ?? address.chainId}
         </span>
       </span>
-      <span className="text-muted ml-auto shrink-0 font-mono text-xs" title={value.address}>
-        {value.address.slice(0, 6)}…{value.address.slice(-4)}
+      <span className="text-muted ml-auto shrink-0 font-mono text-xs" title={address.address}>
+        {address.address.slice(0, 6)}…{address.address.slice(-4)}
       </span>
     </span>
   );

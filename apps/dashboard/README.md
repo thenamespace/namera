@@ -45,6 +45,21 @@ Workspace package imports continue to use their package names.
 - `src/components/evm-chain-select.tsx` — controlled single-chain selector scoped
   by allowed CAIP-2 chain IDs, with Mainnets/Testnets groups and chain icons.
   Supports field variants and React Hook Form trigger refs and blur handling.
+- `src/components/evm-address-picker/` — catalog-only `EvmAddressPicker`; `types`
+  infers a correlated `{ source: "catalog", type, catalog, deployment }` union.
+  Chain/address and ERC-20 decimals live on the deployment, not duplicated at the root.
+- `src/components/evm-address-picker-with-custom.tsx` — extends catalog selection
+  with `{ source: "custom", value: TCustom }`. Custom values extend
+  `EvmCustomAddress` (`chainId`, `address`). Supply `renderCustomValue` and
+  `renderCustom({ initialValue, initialAddress, chainIds, onConfirm, onCancel })`.
+  `initialValue` is null for catalog selections. The form owns draft validation;
+  only confirmation changes the controlled value. The wrapper rejects chains
+  outside the current allowed scope. All pickers accept null to clear selection.
+- `src/components/evm-erc20-picker.tsx` and `evm-contract-picker.tsx` — specialized
+  wrappers with built-in custom forms. `EvmErc20Selection` preserves full ERC-20
+  catalog/deployment metadata or custom chain/address/decimals. `EvmContractSelection`
+  preserves full contract metadata or custom chain/address. Custom decimals must
+  be explicitly supplied (0–255); no ABI or onchain verification is inferred.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.

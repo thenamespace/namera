@@ -16,3 +16,17 @@ export const customAddressSchema = (chainIds: readonly SupportedEvmChainId[]) =>
       }),
     ),
   });
+
+export const customPickerSchema = (
+  chainIds: readonly SupportedEvmChainId[],
+  requireDecimals: boolean,
+) =>
+  Schema.Struct({
+    ...customAddressSchema(chainIds).fields,
+    decimals: Schema.optionalKey(Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 255 }))),
+  }).check(
+    Schema.makeFilter((value) => !requireDecimals || value.decimals !== undefined, {
+      message: "Enter token decimals (0–255)",
+      path: ["decimals"],
+    }),
+  );

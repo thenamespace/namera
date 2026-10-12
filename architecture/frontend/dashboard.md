@@ -172,14 +172,22 @@ browser builds. See [session lifecycle](../wallets/session-keys.md).
 `components/evm-address-picker` provides a controlled, single-deployment picker
 with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),
 `value` and `onChange`. Empty filter arrays disable selection. Catalog selections
-include the parent/entry metadata and an explicit network/address; custom values
-are discriminated separately and do not claim a token type, decimals or ABI.
+are correlated unions of `{ source: "catalog", type, catalog, deployment }`,
+inferred from `types`; the full catalog and deployment records are retained.
+The base `EvmAddressPicker` is catalog-only. `EvmAddressPickerWithCustom` adds
+`{ source: "custom", value: TCustom }`, where custom values include chain/address
+and may carry caller-specific fields. Its render callbacks own custom display
+and a draft form; confirmation commits, cancellation does not change selection.
+`EvmErc20Picker` fixes the catalog type to ERC-20 and requires explicit custom
+decimals (integer 0–255). `EvmContractPicker` fixes the type to contract and uses
+only chain/address for custom values. Custom entries are not verified onchain.
 The dropdown queries only while open, debounces search, preserves server ranking
 within each network, and pages 20 parents per network. Its atom uses the existing
 authenticated discovery endpoint with at most four concurrent chain requests;
 it does not fetch ABI documents. Errors expose retry rather than stale options.
 Custom input checks EVM address syntax/checksum and requires an allowed network.
-The home-page preview is temporary and saves nothing; policy editors are not yet
+Tests cover custom address/network/decimals validation and catalog/deployment
+pairing. The four home-page previews are temporary and save nothing; policy editors are not yet
 wired to the picker. Consumers must validate their current filter scope before
 submission if the allowed chains/types change after selection.
 
