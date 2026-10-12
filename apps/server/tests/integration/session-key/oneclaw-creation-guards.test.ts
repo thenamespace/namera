@@ -20,13 +20,15 @@ for (const scenario of ["compile-failure", "connection-disabled", "expired"] as 
         scenario === "compile-failure"
           ? {
               ...sessions,
-              compile: () =>
-                Effect.fail(
-                  new EvmExecutionError({
-                    code: "NETWORK_PAUSED",
-                    cause: new Error("Test paused network"),
-                  }),
-                ),
+              compile: (input) =>
+                input.chainId === "eip155:84532"
+                  ? Effect.fail(
+                      new EvmExecutionError({
+                        code: "NETWORK_PAUSED",
+                        cause: new Error("Test paused network"),
+                      }),
+                    )
+                  : sessions.compile(input),
             }
           : sessions,
     },
@@ -75,12 +77,18 @@ for (const scenario of ["compile-failure", "connection-disabled", "expired"] as 
         const client = yield* makeTestApiClient;
         const actor = yield* signIn(client, testEmail(`${crypto.randomUUID()}@example.com`));
         const wallet = yield* createTestPasskeyWallet(client);
-        const request = yield* localSessionRequest(wallet.id);
+        const request = yield* localSessionRequest(wallet.id, ["eip155:11155111", "eip155:84532"]);
         expect(
           yield* client.sessionKey
             .create({
               payload: {
                 ...request,
+                onchain: {
+                  installations: Array.from(request.onchain.installations, (entry, index) => ({
+                    ...entry,
+                    validUntil: entry.validUntil + index * 36_000,
+                  })),
+                },
                 signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
               },
             })
