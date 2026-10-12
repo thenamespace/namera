@@ -13,7 +13,7 @@ export const usdcAllowanceRecipe = {
   display: {
     name: "USDC lifetime allowance",
     description: "Set a total USDC spending allowance on each selected network.",
-    logo: { type: "emoji", value: "💵" },
+    logo: { type: "image", value: "https://cdn.namera.ai/address-catalog/eip155/erc20/usdc.png" },
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,
