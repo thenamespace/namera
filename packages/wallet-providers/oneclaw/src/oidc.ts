@@ -1,4 +1,4 @@
-import { Context, DateTime, Effect, Layer, Redacted } from "effect";
+import { Context, DateTime, Effect, Layer, Redacted, Schema } from "effect";
 
 import type { OrganizationId } from "@namera-ai/protocol";
 import { exportJWK, importPKCS8, SignJWT } from "jose";
@@ -8,9 +8,12 @@ import { oneClawError } from "#/errors";
 
 const makeOidc = Effect.gen(function* () {
   const config = yield* OneClawOidcConfig;
+  const pemBytes = yield* Schema.decodeUnknownEffect(Schema.Uint8ArrayFromBase64)(
+    Redacted.value(config.privateKeyBase64),
+  ).pipe(Effect.mapError(() => oneClawError("oidc.configure", "CONFIGURATION_INVALID")));
   const key = yield* Effect.tryPromise({
     try: () =>
-      importPKCS8(Redacted.value(config.privateKey).replaceAll("\\n", "\n"), "RS256", {
+      importPKCS8(new TextDecoder().decode(pemBytes), "RS256", {
         extractable: true,
       }),
     catch: () => oneClawError("oidc.configure", "CONFIGURATION_INVALID"),

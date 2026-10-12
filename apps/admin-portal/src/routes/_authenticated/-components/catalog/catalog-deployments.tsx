@@ -1,0 +1,122 @@
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
+import { Link } from "@tanstack/react-router";
+
+import type { EvmChainName, SupportedEvmChainId } from "@namera-ai/protocol/evm";
+import { ChainIcon, HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
+
+import { chainNames, type CatalogRecord } from "./catalog-display";
+import { CatalogCopyValue, CatalogProperty } from "./catalog-property";
+
+const chains: Record<SupportedEvmChainId, { icon: EvmChainName; explorer: string }> = {
+  "eip155:1": { icon: "ethereum", explorer: "https://etherscan.io" },
+  "eip155:10": { icon: "optimism", explorer: "https://optimistic.etherscan.io" },
+  "eip155:8453": { icon: "base", explorer: "https://basescan.org" },
+  "eip155:42161": { icon: "arbitrum", explorer: "https://arbiscan.io" },
+  "eip155:11155111": { icon: "ethereum", explorer: "https://sepolia.etherscan.io" },
+  "eip155:11155420": {
+    icon: "optimism",
+    explorer: "https://sepolia-optimism.etherscan.io",
+  },
+  "eip155:84532": { icon: "base", explorer: "https://sepolia.basescan.org" },
+  "eip155:421614": { icon: "arbitrum", explorer: "https://sepolia.arbiscan.io" },
+};
+
+export function CatalogDeployments({ entries }: { entries: CatalogRecord["entries"] }) {
+  return (
+    <section className="mt-10" aria-labelledby="catalog-deployments">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 id="catalog-deployments" className="text-sm font-medium">
+          Deployments
+        </h3>
+        <span className="text-muted text-xs">{entries.length}</span>
+      </div>
+      {entries.length === 0 ? (
+        <p className="text-muted text-sm">No deployments added yet.</p>
+      ) : null}
+      <div className="grid gap-4">
+        {entries.map((entry) => {
+          const chain = chains[entry.chainId];
+          const verification = entry.data.verification;
+          return (
+            <article key={entry.id} className="rounded-xl border border-separator p-4 sm:p-5">
+              <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <ChainIcon
+                    namespace="eip155"
+                    chain={chain.icon}
+                    className="size-7 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <h4 className="text-sm font-medium">{chainNames[entry.chainId]}</h4>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs capitalize ${entry.status === "active" ? "text-success" : "text-muted"}`}
+                >
+                  {entry.status}
+                </span>
+              </header>
+              <dl className="grid gap-1 [&>div]:min-h-7">
+                <CatalogProperty label="Address">
+                  <CatalogCopyValue
+                    value={entry.address}
+                    label={`${chainNames[entry.chainId]} address`}
+                    explorerUrl={`${chain.explorer}/address/${entry.address}`}
+                  />
+                </CatalogProperty>
+                {entry.data.type === "erc20" ? (
+                  <CatalogProperty label="Decimals">{entry.data.decimals}</CatalogProperty>
+                ) : null}
+                <CatalogProperty label="Interface">
+                  {entry.interfaceId ? (
+                    <Link
+                      to="/interface/$interfaceId"
+                      params={{ interfaceId: entry.interfaceId }}
+                      className="text-accent underline"
+                    >
+                      View ABI
+                    </Link>
+                  ) : (
+                    <span className="text-muted">No ABI linked</span>
+                  )}
+                </CatalogProperty>
+                {verification ? (
+                  <>
+                    <CatalogProperty label="Source">
+                      <a
+                        className="text-accent inline-flex items-center gap-1.5 break-all underline"
+                        href={verification.sourceUrl.href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {verification.sourceUrl.hostname}
+                        <HugeiconsIcon
+                          icon={LinkSquare02Icon}
+                          className="size-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                      </a>
+                    </CatalogProperty>
+                    {verification.implementationAddress ? (
+                      <CatalogProperty label="Implementation">
+                        <CatalogCopyValue
+                          value={verification.implementationAddress}
+                          label="Implementation address"
+                        />
+                      </CatalogProperty>
+                    ) : null}
+                  </>
+                ) : (
+                  <CatalogProperty label="Verification">
+                    <span className="text-muted">No verification evidence supplied</span>
+                  </CatalogProperty>
+                )}
+              </dl>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

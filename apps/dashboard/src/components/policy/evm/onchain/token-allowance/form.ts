@@ -1,7 +1,9 @@
 import { Schema } from "effect";
 
-import { EthereumAddress } from "@namera-ai/protocol/evm";
+import { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { formatUnits, parseUnits } from "viem";
+
+import type { EvmErc20Selection } from "@/components/evm-erc20-picker";
 
 import type { OnchainPermissionInput } from "../catalog";
 
@@ -51,5 +53,34 @@ export function toTokenAllowancePermission(
     type: "erc20-token-transfer",
     address: value.address,
     allowance: parseUnits(value.amount, value.decimals).toString(),
+  };
+}
+
+export const tokenSpendingForm = (chainIds: readonly SupportedEvmChainId[]) =>
+  Schema.Struct({
+    token: TokenAllowanceForm,
+    chainId: Schema.String.pipe(Schema.decodeTo(SupportedEvmChainId)).check(
+      Schema.makeFilter((chainId) => chainIds.includes(chainId), {
+        message: "Select a token on one of the session networks",
+      }),
+    ),
+  });
+
+export function tokenSelectionFields(
+  selection: EvmErc20Selection,
+  initial?: OnchainPermissionInput,
+) {
+  const deployment = selection.source === "catalog" ? selection.deployment : selection.value;
+  const decimals =
+    selection.source === "catalog" ? selection.deployment.data.decimals : selection.value.decimals;
+  return {
+    address: deployment.address,
+    chainId: deployment.chainId,
+    decimals: String(decimals),
+    amount:
+      initial?.type === "erc20-token-transfer" &&
+      initial.address.toLowerCase() === deployment.address.toLowerCase()
+        ? formatUnits(BigInt(initial.allowance), decimals)
+        : "",
   };
 }

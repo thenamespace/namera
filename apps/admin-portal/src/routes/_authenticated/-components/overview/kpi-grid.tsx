@@ -14,24 +14,25 @@ const number = new Intl.NumberFormat();
 
 export function OverviewKpis({ overview }: { overview: GetAdminOverviewResponse }) {
   const { totals, current, periodCounts, period } = overview;
+  const periodLabel = period === "all" ? "all time" : `in ${period}`;
   const cards = [
     {
       title: "Users",
       icon: UserGroupIcon,
       total: totals.users,
-      detail: `${number.format(periodCounts.users)} new in ${period}`,
+      detail: `${number.format(periodCounts.users)} new ${periodLabel}`,
     },
     {
       title: "Waitlist",
       icon: InboxIcon,
       total: totals.waitlist,
-      detail: `${number.format(current.pendingWaitlist)} pending · ${number.format(periodCounts.waitlist)} new in ${period}`,
+      detail: `${number.format(current.pendingWaitlist)} pending · ${number.format(periodCounts.waitlist)} new ${periodLabel}`,
     },
     {
       title: "Smart accounts",
       icon: Wallet01Icon,
       total: totals.accounts,
-      detail: `${number.format(periodCounts.accounts)} created in ${period}`,
+      detail: `${number.format(periodCounts.accounts)} created ${periodLabel}`,
     },
     {
       title: "Session keys",
@@ -43,13 +44,13 @@ export function OverviewKpis({ overview }: { overview: GetAdminOverviewResponse 
       title: "Confirmed executions",
       icon: Activity02Icon,
       total: totals.executions,
-      detail: `${number.format(periodCounts.executions)} confirmed in ${period}`,
+      detail: `${number.format(periodCounts.executions)} confirmed ${periodLabel}`,
     },
     {
       title: "Successful signatures",
       icon: SignatureIcon,
       total: totals.signatures,
-      detail: `${number.format(periodCounts.signatures)} signed in ${period}`,
+      detail: `${number.format(periodCounts.signatures)} signed ${periodLabel}`,
     },
   ];
   return (

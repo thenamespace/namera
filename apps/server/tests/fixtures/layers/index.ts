@@ -39,6 +39,7 @@ import {
 import { PlatformRoutes } from "#/routes/auth/platform";
 import { WaitlistRoutes } from "#/routes/auth/waitlist";
 import { BillingRoutes } from "#/routes/billing/index";
+import { CatalogRoutes, AdminCatalogRoutes } from "#/routes/catalog";
 import { HealthRoutes } from "#/routes/core/health";
 import { DashboardRoutes } from "#/routes/dashboard/index";
 import { PortfolioRoutes } from "#/routes/data/index";
@@ -108,6 +109,8 @@ export const makeTestServerLayer = (
   );
 
   const TestHandlersLayer = Layer.mergeAll(
+    CatalogRoutes,
+    AdminCatalogRoutes,
     PlatformRoutes,
     BetaInviteRoutes,
     AdminWaitlistRoutes,

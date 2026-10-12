@@ -5,13 +5,20 @@ import type { WaitlistEntry, WaitlistStatus } from "@namera-ai/protocol/model";
 import {
   Button,
   DataGrid,
+  Dropdown,
+  Label,
   ListBox,
   SearchField,
   Select,
   Typography,
   type DataGridColumn,
 } from "@namera-ai/ui";
-import { CheckmarkCircle02Icon, Clock01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import {
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+  HugeiconsIcon,
+  MoreHorizontalIcon,
+} from "@namera-ai/ui/icons";
 
 import { PermissionGuard, acceptWaitlistPermission } from "@/components/permission";
 import { EmailDisplay } from "@/components/team-display";
@@ -52,21 +59,30 @@ const columnsFor = (accept: (entry: WaitlistEntry) => void): DataGridColumn<Wait
   {
     id: "actions",
     header: "",
-    width: 112,
+    width: 48,
     pinned: "end",
     align: "end",
     cell: (entry) =>
       entry.status === "pending" ? (
         <PermissionGuard required={acceptWaitlistPermission}>
-          <Button
-            size="sm"
-            variant="tertiary"
-            aria-label={`Accept ${entry.email}`}
-            onPress={() => accept(entry)}
-          >
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} />
-            Accept
-          </Button>
+          <Dropdown>
+            <Button
+              size="sm"
+              variant="tertiary"
+              isIconOnly
+              aria-label={`Actions for ${entry.email}`}
+            >
+              <HugeiconsIcon icon={MoreHorizontalIcon} />
+            </Button>
+            <Dropdown.Popover>
+              <Dropdown.Menu onAction={() => accept(entry)}>
+                <Dropdown.Item id="accept" textValue="Accept from waitlist">
+                  <HugeiconsIcon className="size-4" icon={CheckmarkCircle02Icon} />
+                  <Label>Accept from waitlist</Label>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown>
         </PermissionGuard>
       ) : null,
   },

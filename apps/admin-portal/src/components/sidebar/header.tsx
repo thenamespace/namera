@@ -17,7 +17,7 @@ import { authErrorMessage } from "@/lib/auth-feedback";
 
 export function SidebarHeader() {
   const navigate = useNavigate();
-  const canManageTeam = usePermissions().includes("team:manage");
+  const canReadTeam = usePermissions().includes("team:read");
   const { mutate: logout, isPending } = useLogout({
     onSuccess: () => {
       // A document navigation also discards all protected in-memory query state.
@@ -37,12 +37,12 @@ export function SidebarHeader() {
   );
 
   return (
-    <Sidebar.Header className="px-1!">
-      <div className="flex items-center gap-3 px-1 py-2">
+    <Sidebar.Header className="px-4!">
+      <div className="flex items-center gap-3 py-2">
         <Dropdown>
           <Button
             aria-label="Admin menu"
-            className="rounded-lg px-2"
+            className="rounded-lg px-3"
             variant="ghost"
             isDisabled={isPending}
           >
@@ -54,10 +54,10 @@ export function SidebarHeader() {
           </Button>
           <Dropdown.Popover>
             <Dropdown.Menu onAction={handleAction}>
-              {canManageTeam ? (
-                <Dropdown.Item id="members" textValue="Invite and manage members">
+              {canReadTeam ? (
+                <Dropdown.Item id="members" textValue="Team members">
                   <HugeiconsIcon className="size-4 text-muted" icon={UserGroupIcon} />
-                  <Label>Invite &amp; manage members</Label>
+                  <Label>Team members</Label>
                 </Dropdown.Item>
               ) : null}
               <Dropdown.Item id="logout" textValue="Logout" variant="danger">

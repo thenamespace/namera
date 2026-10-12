@@ -13,5 +13,5 @@ export const OneClawOidcConfig = Config.all({
   issuer: Config.String("ONECLAW_OIDC_ISSUER"),
   audience: Config.String("ONECLAW_OIDC_AUDIENCE"),
   keyId: Config.String("ONECLAW_OIDC_KEY_ID"),
-  privateKey: Config.Redacted("ONECLAW_OIDC_PRIVATE_KEY"),
+  privateKeyBase64: Config.Redacted("ONECLAW_OIDC_PRIVATE_KEY_BASE64"),
 });

@@ -28,7 +28,10 @@ export interface AdminOverviewSnapshot {
 export class AdminOverviewRepository extends Context.Service<
   AdminOverviewRepository,
   {
-    readonly snapshot: (now: DateTime.Utc) => Effect.Effect<AdminOverviewSnapshot, DatabaseError>;
+    readonly snapshot: (
+      now: DateTime.Utc,
+      allTime?: boolean,
+    ) => Effect.Effect<AdminOverviewSnapshot, DatabaseError>;
   }
 >()("@namera-ai/database/AdminOverviewRepository") {
   static readonly layer = Layer.effect(
@@ -36,7 +39,7 @@ export class AdminOverviewRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return AdminOverviewRepository.of({
-        snapshot: Effect.fn("database.adminOverview.snapshot")(function* (now) {
+        snapshot: Effect.fn("database.adminOverview.snapshot")(function* (now, allTime = false) {
           const db = yield* transactionOrDatabase(database);
           const end = DateTime.toDateUtc(now);
           const firstDay = DateTime.subtract(DateTime.startOf(now, "day"), { days: 89 });
@@ -95,7 +98,9 @@ export class AdminOverviewRepository extends Context.Service<
             return yield* db
               .select({ date, count: count() })
               .from(table)
-              .where(and(gte(timestamp, since), lte(timestamp, end), condition))
+              .where(
+                and(allTime ? undefined : gte(timestamp, since), lte(timestamp, end), condition),
+              )
               .groupBy(date);
           });
           const daily = yield* Effect.all(
@@ -114,8 +119,17 @@ export class AdminOverviewRepository extends Context.Service<
             { concurrency: 2 },
           );
           const points = new Map<string, AdminOverviewPoint>();
-          for (let offset = 0; offset < 90; offset += 1) {
-            const date = DateTime.formatIsoDateUtc(DateTime.add(firstDay, { days: offset }));
+          const today = DateTime.formatIsoDateUtc(now);
+          const earliest = Object.values(daily)
+            .flat()
+            .reduce((first, row) => (row.date < first ? row.date : first), today);
+          const start = allTime ? DateTime.makeUnsafe(`${earliest}T00:00:00.000Z`) : firstDay;
+          for (
+            let day = start;
+            DateTime.toEpochMillis(day) <= DateTime.toEpochMillis(now);
+            day = DateTime.add(day, { days: 1 })
+          ) {
+            const date = DateTime.formatIsoDateUtc(day);
             points.set(date, {
               date,
               users: 0,

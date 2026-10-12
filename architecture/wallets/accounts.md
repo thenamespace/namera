@@ -63,6 +63,12 @@ the browser. Creation failures do not automatically retry remote provisioning.
 SDK and OIDC services; there is no enable flag. Missing required configuration
 fails startup. GCP and local-file provider runtime layers remain disabled.
 
+The 1Claw OIDC signing key is supplied as `ONECLAW_OIDC_PRIVATE_KEY_BASE64`,
+base64 of the complete RSA PKCS#8 PEM. The provider layer decodes it at startup
+before RSA import and sanitizes decode/import failures. This replaces the raw
+`ONECLAW_OIDC_PRIVATE_KEY` setting; deployments must migrate the existing key,
+not generate a replacement. Encoded key material remains secret.
+
 ### 1Claw organization setup and recovery
 
 Application reserves one `provider_connections` row per org/app, using subject

@@ -6,6 +6,8 @@ import {
   TokenAllowanceForm,
   tokenAllowanceDefaults,
   toTokenAllowancePermission,
+  tokenSpendingForm,
+  tokenSelectionFields,
 } from "../../../src/components/policy/evm/onchain/token-allowance/form";
 
 const decode = Schema.decodeUnknownSync(TokenAllowanceForm);
@@ -35,5 +37,32 @@ describe("token allowance form", () => {
     expect(make((2n ** 256n - 1n).toString(), "0")).toMatchObject({
       allowance: (2n ** 256n - 1n).toString(),
     });
+  });
+  it("restricts the selected token to the session networks", () => {
+    const parse = Schema.decodeUnknownSync(tokenSpendingForm(["eip155:1"]));
+    const token = { address, amount: "1", decimals: "6" };
+    expect(parse({ token, chainId: "eip155:1" }).chainId).toBe("eip155:1");
+    for (const chainId of ["", "eip155:8453"]) {
+      expect(() => parse({ token, chainId })).toThrow();
+    }
+    expect(() =>
+      Schema.decodeUnknownSync(tokenSpendingForm([]))({ token, chainId: "eip155:1" }),
+    ).toThrow();
+  });
+  it("uses selected decimals and preserves existing base units when reselecting a token", () => {
+    const permission = make("1.234567890123456789", "18");
+    const fields = tokenSelectionFields(
+      {
+        source: "custom",
+        value: {
+          address: Schema.decodeUnknownSync(TokenAllowanceForm.fields.address)(address),
+          chainId: "eip155:1",
+          decimals: 18,
+        },
+      },
+      permission,
+    );
+    expect(fields.amount).toBe("1.234567890123456789");
+    expect(toTokenAllowancePermission(decode(fields))).toEqual(permission);
   });
 });

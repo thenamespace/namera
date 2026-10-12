@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "catalog:build": "tsx --conditions=namera-source catalog/index.ts",
     "build": "turbo run build",
     "check": "oxfmt --check . && turbo run lint typecheck typecheck:test build",
     "changeset": "changeset",

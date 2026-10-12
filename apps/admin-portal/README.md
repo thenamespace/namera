@@ -22,17 +22,25 @@ not a portal callback URI.
 - `/auth`: Google sign-in or email link/eight-digit code.
 - `/auth/verify`: explicit confirmation of an emailed link; opening a link does
   not automatically consume it.
-- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day selection.
+- `/`: Six lifetime totals and daily growth/activity charts with 7/30/90-day and All time selection.
 - `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
-- `/team`: Owner-only admin members table, invitations, role updates, and removal.
+- `/team`: All-role admin members table; only the owner can invite, update roles, or remove members.
+- `/catalog`: All-role catalog listing with name/symbol/address search, status/type
+  filters, 25-row pagination and deployment details. Owner-only JSON uploads run a
+  server dry-run before explicit confirmation; validation errors remain in the dialog.
+- `/catalog/:catalogId`: Catalog properties and all deployments, with chain icons,
+  copyable IDs/addresses, explorer links and supplied verification evidence.
+- `/interface`: All-role interface metadata table with clickable names and name/ID/source/hash search,
+  pagination and row actions. No ABI documents are fetched by the list.
+- `/interface/:interfaceId`: Named interface properties and scrollable, Shiki-highlighted, copyable ABI JSON.
 - `/invitations/accept`: Explicit acceptance of an emailed team invitation.
 
 Protected pages use a shared UIKit inset sidebar,
 active navigation, tooltips, and a responsive off-canvas menu. The page header
 toggles the sidebar; UIKit also provides the `Cmd/Ctrl+B` shortcut. Navigation,
 Inter typography, icons, and compact spacing follow the dashboard. The sidebar
-header menu offers owner-only member management and logout; successful logout
+header menu offers Team navigation and logout; successful logout
 discards the in-memory query cache through a document navigation.
 Team uses the dashboard's DataGrid,
 profile icons, copyable emails, role/status displays, date tooltips, and form dialogs.
@@ -78,6 +86,13 @@ server. Cards show lifetime totals; period details and charts use zero-filled
 UTC days. Only confirmed executions and successful signatures count. The page
 does not poll. All active roles can read it; authorization is rechecked even
 when the server snapshot is cached.
+
+Catalog includes drafts, archived records and disabled deployments. Logos resolve
+from `https://cdn.namera.ai/` with initials when an image cannot load. JSON files
+are capped at 2 MiB and validated against the protocol import schema in the browser
+and server. Upload contents stay in memory; no automatic upload, local storage or
+background import is used. Mutations refresh the listing. Only the owner has
+`catalog:manage`; the server rechecks this inside the import transaction.
 
 Pending-invitation management, ownership transfer UI, suspension/reactivation UI,
 and other operational page contents remain future work. Backend authorization and owner bootstrap are documented in

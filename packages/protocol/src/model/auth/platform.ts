@@ -9,8 +9,11 @@ export type PlatformRole = typeof PlatformRole.Type;
 export const PlatformAssignableRole = Schema.Literals(["operator", "viewer"]);
 export const PlatformMemberStatus = Schema.Literals(["active", "suspended", "removed"]);
 export const PlatformPermission = Schema.Literals([
+  "catalog:read",
+  "catalog:manage",
   "overview:read",
   "team:manage",
+  "team:read",
   "ownership:transfer",
   "invites:read",
   "invites:manage",
@@ -21,16 +24,27 @@ export type PlatformPermission = typeof PlatformPermission.Type;
 
 export const platformPermissions: Readonly<Record<PlatformRole, readonly PlatformPermission[]>> = {
   owner: [
+    "catalog:read",
+    "catalog:manage",
     "overview:read",
     "team:manage",
+    "team:read",
     "ownership:transfer",
     "invites:read",
     "invites:manage",
     "waitlist:read",
     "waitlist:accept",
   ],
-  operator: ["overview:read", "invites:read", "invites:manage", "waitlist:read", "waitlist:accept"],
-  viewer: ["overview:read", "invites:read", "waitlist:read"],
+  operator: [
+    "team:read",
+    "catalog:read",
+    "overview:read",
+    "invites:read",
+    "invites:manage",
+    "waitlist:read",
+    "waitlist:accept",
+  ],
+  viewer: ["team:read", "catalog:read", "overview:read", "invites:read", "waitlist:read"],
 };
 
 export const PlatformMember = Schema.Struct({
@@ -63,6 +77,13 @@ export const PlatformInvitation = Schema.Struct({
 export type PlatformInvitation = typeof PlatformInvitation.Type;
 
 export const PlatformEventData = Schema.Union([
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("catalog.imported"),
+    catalogIds: Schema.Array(Schema.String),
+    entryIds: Schema.Array(Schema.String),
+    interfaceIds: Schema.Array(Schema.String),
+  }),
   Schema.Struct({
     version: Schema.Literal(1),
     type: Schema.Literal("waitlist.accepted"),

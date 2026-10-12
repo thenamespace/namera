@@ -28,6 +28,7 @@ import {
 import { makePlatformApplication } from "#/auth/platform/index";
 import { makeWaitlistApplication } from "#/auth/waitlist";
 import { makeBillingApplication, type BillingApplication } from "#/billing/index";
+import { makeCatalogApplication } from "#/catalog/index";
 import {
   makeDashboardOverviewApplication,
   type DashboardOverviewApplication,
@@ -41,6 +42,7 @@ import { makeSignatureApplication, type SignatureApplication } from "#/signature
 import { makeWalletApplication, type WalletApplication } from "#/wallet/index";
 
 export interface ApplicationService {
+  readonly catalog: Effect.Success<typeof makeCatalogApplication>;
   readonly adminOverview: Effect.Success<typeof makeAdminOverviewApplication>;
   readonly betaInvite: Effect.Success<typeof makeBetaInviteApplication>;
   readonly platform: Effect.Success<typeof makePlatformApplication>;
@@ -76,6 +78,7 @@ export class Application extends Context.Service<Application, ApplicationService
     Application,
     Effect.gen(function* () {
       const session = yield* makeSessionApplication;
+      const catalog = yield* makeCatalogApplication;
       const adminOverview = yield* makeAdminOverviewApplication;
       const platform = yield* makePlatformApplication;
       const betaInvite = yield* makeBetaInviteApplication;
@@ -100,6 +103,7 @@ export class Application extends Context.Service<Application, ApplicationService
       const signature = yield* makeSignatureApplication;
 
       return Application.of({
+        catalog,
         adminOverview,
         betaInvite,
         platform,

@@ -13,21 +13,22 @@ const daysByPeriod = { "7d": 7, "30d": 30, "90d": 90 } as const;
 
 export const makeAdminOverviewApplication = Effect.gen(function* () {
   const repository = yield* Repository;
-  // All periods share one bounded snapshot per process. Authentication is never cached.
+  // Recent periods share a snapshot; all-time history is loaded only on request.
   const snapshot = yield* Cache.makeWith(
-    Effect.fn("application.adminOverview.refresh")(function* (_key: "overview") {
+    Effect.fn("application.adminOverview.refresh")(function* (key: "recent" | "all") {
       const generatedAt = yield* DateTime.now;
-      const counts = yield* repository.core.adminOverview.snapshot(generatedAt);
+      const counts = yield* repository.core.adminOverview.snapshot(generatedAt, key === "all");
       return { ...counts, generatedAt };
     }),
-    { capacity: 1, timeToLive: (exit) => (Exit.isSuccess(exit) ? "60 seconds" : "0 seconds") },
+    { capacity: 2, timeToLive: (exit) => (Exit.isSuccess(exit) ? "60 seconds" : "0 seconds") },
   );
 
   const get = Effect.fn("application.adminOverview.get")(
     function* (context: PlatformSession, period: AdminOverviewPeriod = "30d") {
       yield* requirePlatformPermission(repository, context, "overview:read");
-      const overview = yield* Cache.get(snapshot, "overview");
-      const activity = overview.activity.slice(-daysByPeriod[period]);
+      const overview = yield* Cache.get(snapshot, period === "all" ? "all" : "recent");
+      const activity =
+        period === "all" ? overview.activity : overview.activity.slice(-daysByPeriod[period]);
       const periodCounts: AdminOverviewCounts = activity.reduce(
         (sum, point) => ({
           users: sum.users + point.users,

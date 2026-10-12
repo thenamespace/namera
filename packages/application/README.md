@@ -18,6 +18,8 @@ sessions, enforce owner invariants under a transaction lock, and enqueue team
 invitation emails atomically. See [admin authorization](../../architecture/auth/admin.md).
 
 - `src/application.ts` — the single aggregate `Application` service and live layer.
+- `src/catalog/` — curated metadata discovery and atomic operator JSON imports;
+  see [address catalog](../../architecture/database/address-catalog.md).
 - `src/audit/` — internal typed audit-event writer used by application workflows.
 - `src/auth/core/` — focused user and session operations.
 - `src/auth/core/api-key.ts` — API-key creation, grant-aware reads, and atomic

@@ -7,6 +7,9 @@ on:
       REPOSITORY_DISPATCH_PAT:
         required: true
         description: "Triggers a PR creation in the infra repository"
+      POSTHOG_CLI_API_KEY:
+        required: false
+        description: "PostHog source-map upload token; required for production web/dashboard builds"
     inputs:
       app_name:
         description: App/image name, also the infra app directory name
@@ -124,10 +127,20 @@ jobs:
           IMAGE="$REGISTRY/$REPOSITORY/$IMAGE_NAME:$IMAGE_TAG"
           if [[ "$DOCKERFILE" == apps/web/Dockerfile || "$DOCKERFILE" == apps/dashboard/Dockerfile ]]; then
             if [[ "$DEPLOY_ENVIRONMENT" == prod ]]; then
-              if [[ -z "$POSTHOG_PUBLIC_KEY" || -z "$POSTHOG_CLI_API_KEY" || -z "$POSTHOG_CLI_PROJECT_ID" ]]; then
-                echo "::error::Configure PostHog production variables and source-map secret before building."
-                exit 1
+              missing_posthog_config=false
+              if [[ -z "$POSTHOG_PUBLIC_KEY" ]]; then
+                echo "::error::Missing Actions variable VITE_POSTHOG_KEY in the prod environment or repository."
+                missing_posthog_config=true
               fi
+              if [[ -z "$POSTHOG_CLI_API_KEY" ]]; then
+                echo "::error::Missing Actions secret POSTHOG_CLI_API_KEY. Configure it in prod or the repository and pass it to this reusable workflow."
+                missing_posthog_config=true
+              fi
+              if [[ -z "$POSTHOG_CLI_PROJECT_ID" ]]; then
+                echo "::error::Missing Actions variable POSTHOG_CLI_PROJECT_ID in the prod environment or repository."
+                missing_posthog_config=true
+              fi
+              if [[ "$missing_posthog_config" == true ]]; then exit 1; fi
               DOTENV+=$'\n'"VITE_POSTHOG_KEY=$POSTHOG_PUBLIC_KEY"
             else
               DOTENV+=$'\n'"VITE_POSTHOG_KEY="

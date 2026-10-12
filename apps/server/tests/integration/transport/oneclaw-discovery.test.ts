@@ -24,7 +24,9 @@ const config = makeTestConfigLayer({
   ONECLAW_OIDC_ISSUER: "http://api.test/providers/1claw",
   ONECLAW_OIDC_AUDIENCE: "test-audience",
   ONECLAW_OIDC_KEY_ID: "test-key",
-  ONECLAW_OIDC_PRIVATE_KEY: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+  ONECLAW_OIDC_PRIVATE_KEY_BASE64: Buffer.from(
+    privateKey.export({ type: "pkcs8", format: "pem" }),
+  ).toString("base64"),
 });
 
 layer(HttpServer.layerServices)("1Claw OIDC discovery", (it) => {

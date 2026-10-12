@@ -8,6 +8,12 @@ const dateLabel = new Intl.DateTimeFormat(undefined, {
   month: "short",
   timeZone: "UTC",
 });
+const dateWithYear = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
 const chartMargin = { bottom: 0, left: 0, right: 12, top: 8 } as const;
 const axisTick = { fill: "var(--muted)", fontSize: 11 } as const;
 const cursor = { stroke: "var(--border)", strokeWidth: 1 } as const;
@@ -31,13 +37,16 @@ export function OverviewChart({
   kind: keyof typeof seriesByKind;
 }) {
   const series = seriesByKind[kind];
+  const crossesYears = points[0]?.date.slice(0, 4) !== points.at(-1)?.date.slice(0, 4);
   const data = useMemo(
     () =>
       points.map((point) => ({
         ...point,
-        label: dateLabel.format(new Date(`${point.date}T00:00:00Z`)),
+        label: (crossesYears ? dateWithYear : dateLabel).format(
+          new Date(`${point.date}T00:00:00Z`),
+        ),
       })),
-    [points],
+    [points, crossesYears],
   );
   const empty = points.every((point) => series.every(({ key }) => point[key] === 0));
   const title = kind === "growth" ? "User growth" : "Wallet activity";

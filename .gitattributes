@@ -1,0 +1,2 @@
+# Keep Drizzle snapshots tracked while collapsing generated schema diffs on GitHub.
+packages/database/migrations/**/snapshot.json linguist-generated=true

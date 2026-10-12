@@ -107,7 +107,8 @@
     @apply rounded-lg;
   }
 
-  .modal__dialog {
+  .modal__dialog,
+  .alert-dialog__dialog {
     @apply rounded-xl;
   }
 

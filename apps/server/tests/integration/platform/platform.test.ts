@@ -65,6 +65,29 @@ layer(testLayer)("platform membership lifecycle", (it) => {
       const members = yield* owner.client.platform.members();
       expect(members).toHaveLength(1);
       expect(members[0]).toMatchObject({ email: owner.user.email, metadata: owner.user.metadata });
+      for (const role of ["operator", "viewer"] as const) {
+        const reader = yield* platformIdentity(`${role}@example.com`, role);
+        expect(
+          (yield* reader.client.platform.members()).some((member) => member.id === owner.member.id),
+        ).toBe(true);
+        expect(
+          (yield* reader.client.platform.invite({
+            payload: { email: testEmail("denied@example.com"), role: "viewer" },
+            responseMode: "response-only",
+          })).status,
+        ).toBe(403);
+        expect(
+          (yield* reader.client.platform.changeRole({
+            params: { id: reader.member.id },
+            payload: { role: "operator" },
+            responseMode: "response-only",
+          })).status,
+        ).toBe(403);
+        yield* owner.client.platform.removeMember({ params: { id: reader.member.id } });
+        expect(
+          (yield* reader.client.platform.members({ responseMode: "response-only" })).status,
+        ).toBe(403);
+      }
     }),
   );
   it.effect("serializes first-owner bootstrap and refuses an unverified identity", () =>
@@ -277,7 +300,7 @@ layer(testLayer)("platform membership lifecycle", (it) => {
       const members = yield* operator.client.platform.members();
       expect(members.filter((m) => m.role === "owner")).toHaveLength(1);
       expect((yield* owner.client.platform.members({ responseMode: "response-only" })).status).toBe(
-        403,
+        200,
       );
       const bootstrap = yield* bootstrapPlatformOwner(testEmail("platform-owner@example.com")).pipe(
         Effect.result,

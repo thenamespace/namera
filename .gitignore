@@ -200,6 +200,9 @@ broadcast/**/31337
 # Research
 research
 
+# Local catalog authoring data and generated uploads
+/catalog/
+
 # Personal notes (maintained project documentation belongs in architecture/)
 /*.local.md
 

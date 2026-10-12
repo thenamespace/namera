@@ -37,6 +37,9 @@ import {
 } from "#/repositories/billing/index";
 import {
   AdminOverviewRepository,
+  AddressCatalogRepository,
+  AddressCatalogEntryRepository,
+  ContractInterfaceRepository,
   CredentialsRepository,
   ProviderConnectionsRepository,
   DashboardOverviewRepository,
@@ -99,6 +102,9 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    catalog: AddressCatalogRepository["Service"];
+    catalogEntry: AddressCatalogEntryRepository["Service"];
+    contractInterface: ContractInterfaceRepository["Service"];
     credentials: CredentialsRepository["Service"];
     providerConnections: ProviderConnectionsRepository["Service"];
     adminOverview: AdminOverviewRepository["Service"];
@@ -132,6 +138,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const catalog = yield* AddressCatalogRepository;
+      const catalogEntry = yield* AddressCatalogEntryRepository;
+      const contractInterface = yield* ContractInterfaceRepository;
       const platform = yield* PlatformRepository;
       const account = yield* AccountRepository;
       const betaInvite = yield* BetaInviteRepository;
@@ -223,6 +232,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          catalog,
+          catalogEntry,
+          contractInterface,
           credentials,
           providerConnections,
           adminOverview,
@@ -253,6 +265,9 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        AddressCatalogRepository.layer,
+        AddressCatalogEntryRepository.layer,
+        ContractInterfaceRepository.layer,
         PlatformRepository.layer,
         AccountRepository.layer,
         BetaInviteRepository.layer,

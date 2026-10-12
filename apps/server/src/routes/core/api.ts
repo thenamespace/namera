@@ -26,6 +26,7 @@ import {
 import { PlatformRoutes } from "#/routes/auth/platform";
 import { WaitlistRoutes } from "#/routes/auth/waitlist";
 import { BillingRoutes } from "#/routes/billing/index";
+import { CatalogRoutes, AdminCatalogRoutes } from "#/routes/catalog";
 import { HealthRoutes } from "#/routes/core/health";
 import { DashboardRoutes } from "#/routes/dashboard/index";
 import { PortfolioRoutes } from "#/routes/data/index";
@@ -34,6 +35,8 @@ import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
+  CatalogRoutes,
+  AdminCatalogRoutes,
   PlatformRoutes,
   BetaInviteRoutes,
   AdminWaitlistRoutes,

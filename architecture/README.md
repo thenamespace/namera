@@ -56,6 +56,7 @@ application contracts are the extension point for future chain families.
 - [Server runtime](platform/runtime.md)
 - [Database runtime](platform/database.md)
 - [Canonical database catalog](database/README.md)
+- [Address catalog, discovery and imports](database/address-catalog.md)
 - [Audit events](platform/audit.md)
 - [Telemetry](platform/telemetry.md)
 - [Deployment and operational constraints](platform/production.md)

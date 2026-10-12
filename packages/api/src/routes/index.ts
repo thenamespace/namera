@@ -16,3 +16,4 @@ export * from "./beta-invite.js";
 export * from "./admin-waitlist.js";
 export * from "./admin-overview.js";
 export * from "./platform-session.js";
+export * from "./catalog.js";

@@ -41,6 +41,11 @@ const staticHttpRoutes = new Set([
   "/auth/user/update-user",
   "/api-keys",
   "/billing",
+  "/catalog",
+  "/catalog/resolve",
+  "/internal/catalog/import",
+  "/internal/catalog",
+  "/internal/interfaces",
   "/dashboard/overview",
   "/ens/availability",
   "/executions",
@@ -96,6 +101,11 @@ const staticHttpRoutes = new Set([
 ]);
 
 const dynamicHttpRoutes = [
+  "/catalog/entries/:entryId",
+  "/catalog/interfaces/:interfaceId",
+  "/catalog/:catalogId",
+  "/internal/interfaces/:interfaceId",
+  "/internal/catalog/:catalogId",
   "/internal/invites/:id",
   "/internal/waitlist/:id/accept",
   "/internal/members/:id/role",

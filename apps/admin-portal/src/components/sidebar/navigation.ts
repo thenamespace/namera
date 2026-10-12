@@ -1,4 +1,10 @@
-import { DashboardSquare01Icon, InboxIcon, Key01Icon, UserGroupIcon } from "@namera-ai/ui/icons";
+import {
+  DashboardSquare01Icon,
+  InboxIcon,
+  Key01Icon,
+  SourceCodeIcon,
+  UserGroupIcon,
+} from "@namera-ai/ui/icons";
 
 export const navigationGroups = [
   {
@@ -10,6 +16,13 @@ export const navigationGroups = [
     items: [
       { label: "Waitlist", href: "/waitlist", icon: InboxIcon },
       { label: "Invites", href: "/invites", icon: Key01Icon },
+    ],
+  },
+  {
+    label: "Resources",
+    items: [
+      { label: "Catalog", href: "/catalog", icon: InboxIcon },
+      { label: "Interfaces", href: "/interface", icon: SourceCodeIcon },
     ],
   },
   {

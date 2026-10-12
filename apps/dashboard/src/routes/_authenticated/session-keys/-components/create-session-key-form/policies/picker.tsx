@@ -49,7 +49,7 @@ export function PolicyPicker({
                     key={entry.id}
                     type="button"
                     variant="ghost"
-                    className="border-separator h-auto min-h-18 w-full items-start justify-start gap-3 rounded-lg border p-3 text-left whitespace-normal"
+                    className="border-separator h-auto min-h-0 w-full items-start justify-start gap-3 rounded-lg border px-3 py-2 text-left whitespace-normal"
                     isDisabled={disabled}
                     aria-label={`${disabled ? `${reason}:` : "Configure"} ${entry.name}`}
                     onPress={() => onSelect(entry)}
@@ -59,7 +59,10 @@ export function PolicyPicker({
                     </span>
                     <span className="grid min-w-0 flex-1 gap-1">
                       <span className="text-sm font-medium">{entry.name}</span>
-                      <span className="text-muted text-xs leading-4 font-normal">
+                      <span
+                        className="text-muted truncate text-xs leading-4 font-normal"
+                        title={reason ?? entry.description}
+                      >
                         {reason ?? entry.description}
                       </span>
                     </span>

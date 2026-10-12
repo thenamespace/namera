@@ -5,6 +5,7 @@ import * as schema from "#/schema/index";
 import { auditRelations } from "./audit.js";
 import { authRelations } from "./auth.js";
 import { billingRelations } from "./billing.js";
+import { catalogRelations } from "./catalog.js";
 import { coreRelations } from "./core.js";
 import { jobRelations } from "./jobs.js";
 import { notificationRelations } from "./notification.js";
@@ -21,6 +22,7 @@ export const relations = {
   ...auditRelations,
   ...billingRelations,
   ...coreRelations,
+  ...catalogRelations,
   ...jobRelations,
   ...notificationRelations,
 };

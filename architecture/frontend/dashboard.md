@@ -169,6 +169,52 @@ browser builds. See [session lifecycle](../wallets/session-keys.md).
 
 ## Forms and shared components
 
+`components/evm-address-picker` provides a controlled, single-deployment picker
+with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),
+`value` and `onChange`. Empty filter arrays disable selection. Catalog selections
+are correlated unions of `{ source: "catalog", type, catalog, deployment }`,
+inferred from `types`; the full catalog and deployment records are retained.
+The base `EvmAddressPicker` is catalog-only. `EvmAddressPickerWithCustom` adds
+`{ source: "custom", value: TCustom }`, where custom values include chain/address
+and may carry caller-specific fields. Its render callbacks own custom display
+and a draft form; confirmation commits, cancellation does not change selection.
+`EvmErc20Picker` fixes the catalog type to ERC-20 and requires explicit custom
+decimals (integer 0–255). `EvmContractPicker` fixes the type to contract and uses
+only chain/address for custom values. Custom entries are not verified onchain.
+The dropdown queries only while open, debounces search, preserves server ranking
+within each network, and pages 20 parents per network. Its atom uses the existing
+authenticated discovery endpoint with at most four concurrent chain requests;
+it does not fetch ABI documents. Errors expose retry rather than stale options.
+Custom input checks EVM address syntax/checksum and requires an allowed network.
+Tests cover custom address/network/decimals validation and catalog/deployment
+pairing. Session-key token spending uses `EvmErc20Picker`, restricted to the
+session's selected networks. Picker metadata supplies address and decimals;
+the form validates network membership again on save and converts the allowance
+without rounding. Existing policies store only address/base units, so editing
+requires reselecting the token to confirm network/decimals; selecting the same
+address preserves its stored base units. Network selection here does not change
+the onchain permission contract: that address/allowance still applies on every
+session network. Other policy editors are not yet
+wired to the picker. Consumers must validate their current filter scope before
+submission if the allowed chains/types change after selection.
+
+`components/display/token-display` resolves namespace/chain/address through the
+existing authenticated catalog resolve API, sharing cached lookups by normalized
+address. It displays token identity and optional exact base-unit amounts using
+deployment decimals. Missing metadata retains the address and raw base units;
+loading uses skeletons and failed lookups offer retry. Creation's token-spending
+cards resolve each selected session network independently, without assuming a
+token or its decimals is identical across networks. This does not change policy data.
+
+`components/evm-function-picker` accepts a supplied ABI and controlled single or
+multiple canonical-signature values. It makes no network requests. Function-only
+options show signatures, mutability and four-byte selectors; overloads retain
+separate signature identities. Search matches all three fields. Multi-select
+bulk selection adds visible results without dropping hidden selections, while
+deselect-all clears the entire selection. Stale values are marked invalid and
+must be checked by consumers before saving against a changed ABI. Policy editor
+wiring and contract-interface fetching are not part of this component.
+
 Forms use Effect Schema via `Schema.toStandardSchemaV1`, the Standard Schema
 React Hook Form resolver, native forms, `Controller` and UIKit fields. Controls
 adapt selection/value handlers explicitly. Read-only forms do not autosave or

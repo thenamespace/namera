@@ -4,17 +4,70 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getRouter } from "../../src/router";
 
-const paths = ["/", "/waitlist", "/invites", "/team"];
+const paths = [
+  "/",
+  "/waitlist",
+  "/invites",
+  "/team",
+  "/catalog",
+  "/catalog/01950000-0000-7000-8000-000000000001",
+  "/interface",
+  "/interface/01950000-0000-7000-8000-000000000003",
+];
 const fetchMock = vi.fn<typeof fetch>();
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("admin page access", () => {
-  it("prefetches the owner member table with display metadata", async () => {
+  it.each(
+    ["owner", "operator", "viewer"].flatMap((role) =>
+      ["catalog", "interface"].map((resource) => ({ role, resource })),
+    ),
+  )("prefetches $resource for $role", async ({ role, resource }) => {
+    const endpoint = resource === "interface" ? "/internal/interfaces" : "/internal/catalog";
+    const requests: string[] = [];
+    fetchMock.mockImplementation((input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      requests.push(url);
+      return Promise.resolve(
+        Response.json(
+          url.includes(endpoint)
+            ? { entries: [], nextOffset: null }
+            : {
+                member: {
+                  id: "member-1",
+                  userId: "01900000-0000-7000-8000-000000000001",
+                  role,
+                  status: "active",
+                  createdAt: "2026-10-01T00:00:00.000Z",
+                  updatedAt: "2026-10-01T00:00:00.000Z",
+                },
+                email: "team@example.com",
+                permissions: ["catalog:read"],
+              },
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const router = getRouter();
+    router.update({
+      context: router.options.context,
+      history: createMemoryHistory({ initialEntries: [`/${resource}`] }),
+    });
+    try {
+      await router.load();
+      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
+      expect(requests.filter((url) => url.includes(endpoint))).toHaveLength(1);
+    } finally {
+      router.options.context.atomRegistry.dispose();
+    }
+  });
+
+  it.each(["owner", "operator", "viewer"])("prefetches the member table for %s", async (role) => {
     const member = {
       id: "member-1",
       userId: "01900000-0000-7000-8000-000000000001",
-      role: "owner",
+      role,
       status: "active",
       createdAt: "2026-10-01T00:00:00.000Z",
       updatedAt: "2026-10-01T00:00:00.000Z",
@@ -36,7 +89,7 @@ describe("admin page access", () => {
             : {
                 member,
                 email: "owner@example.com",
-                permissions: ["team:manage", "ownership:transfer"],
+                permissions: ["team:read"],
               },
         ),
       );

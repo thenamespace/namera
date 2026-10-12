@@ -35,6 +35,31 @@ Workspace package imports continue to use their package names.
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
   email addresses, dates, roles, and future table cells.
+- `src/components/evm-function-picker/` — controlled ABI function selection with
+  `selectionMode="single"` (`string | null`) or `"multiple"` (`readonly string[]`).
+  Values are canonical signatures, not names or four-byte selectors, so overloads
+  remain distinct. Search matches signatures, selectors and mutability. Select all
+  applies to visible results and preserves hidden selections; deselect all clears
+  everything. Non-function ABI entries are excluded. Unknown values are marked
+  invalid; consumers must validate selections against their current ABI before saving.
+- `src/components/evm-chain-select.tsx` — controlled single-chain selector scoped
+  by allowed CAIP-2 chain IDs, with Mainnets/Testnets groups and chain icons.
+  Supports field variants and React Hook Form trigger refs and blur handling.
+- `src/components/evm-address-picker/` — catalog-only `EvmAddressPicker`; `types`
+  infers a correlated `{ source: "catalog", type, catalog, deployment }` union.
+  Chain/address and ERC-20 decimals live on the deployment, not duplicated at the root.
+- `src/components/evm-address-picker-with-custom.tsx` — extends catalog selection
+  with `{ source: "custom", value: TCustom }`. Custom values extend
+  `EvmCustomAddress` (`chainId`, `address`). Supply `renderCustomValue` and
+  `renderCustom({ initialValue, initialAddress, chainIds, onConfirm, onCancel })`.
+  `initialValue` is null for catalog selections. The form owns draft validation;
+  only confirmation changes the controlled value. The wrapper rejects chains
+  outside the current allowed scope. All pickers accept null to clear selection.
+- `src/components/evm-erc20-picker.tsx` and `evm-contract-picker.tsx` — specialized
+  wrappers with built-in custom forms. `EvmErc20Selection` preserves full ERC-20
+  catalog/deployment metadata or custom chain/address/decimals. `EvmContractSelection`
+  preserves full contract metadata or custom chain/address. Custom decimals must
+  be explicitly supplied (0–255); no ABI or onchain verification is inferred.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.

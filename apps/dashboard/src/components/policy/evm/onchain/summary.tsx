@@ -1,11 +1,34 @@
-import { EthereumAddress } from "@namera-ai/protocol/evm";
+import { EthereumAddress, type SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { formatUnits } from "viem";
 
 import { EvmAddressDisplay } from "@/components/display/evm-address-display";
+import { TokenDisplay } from "@/components/display/token-display";
 
 import type { OnchainPermissionInput } from "./catalog";
 
-export function OnchainPermissionSummary({ permission }: { permission: OnchainPermissionInput }) {
+export function OnchainPermissionSummary({
+  permission,
+  chainIds,
+}: {
+  permission: OnchainPermissionInput;
+  chainIds?: readonly SupportedEvmChainId[];
+}) {
+  if (permission.type === "erc20-token-transfer" && chainIds?.length) {
+    return (
+      <span className="grid gap-1">
+        {chainIds.map((chainId) => (
+          <TokenDisplay
+            key={chainId}
+            namespace="eip155"
+            chainId={chainId}
+            address={EthereumAddress.make(permission.address)}
+            amount={permission.allowance}
+          />
+        ))}
+        <span>Lifetime allowance per network</span>
+      </span>
+    );
+  }
   return (
     <span className="grid gap-1">
       {"address" in permission ? (

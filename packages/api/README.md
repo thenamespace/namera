@@ -30,7 +30,7 @@ const document = OpenApi.fromApi(NameraApi);
 await writeFile("openapi.json", JSON.stringify(document, null, 2));
 ```
 
-The contract covers wallets, session keys, executions, signatures, authorization,
+The contract covers wallets, session keys, executions, signatures, curated address metadata, authorization,
 organizations, billing, and the public waitlist. Authentication is defined per
 endpoint; installing this package grants no access.
 
