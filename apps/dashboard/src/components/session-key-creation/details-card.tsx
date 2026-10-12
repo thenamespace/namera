@@ -1,4 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
+import type { ReactNode } from "react";
+
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import {
@@ -24,7 +26,6 @@ import { MetadataDisplay } from "@/components/display";
 import { supportsSessionKeys } from "@/lib/session-owner";
 
 import { CustodyField, type CustodyLimits } from "./custody-field";
-import { SessionNetworksField } from "./networks-field";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
@@ -35,6 +36,7 @@ type SessionKeyDetailsCardProps = {
   wallets: ListWalletsResponse;
   custodyLocked: boolean;
   limits: CustodyLimits;
+  children?: ReactNode;
 };
 
 export function SessionKeyDetailsCard({
@@ -42,6 +44,7 @@ export function SessionKeyDetailsCard({
   wallets,
   custodyLocked,
   limits,
+  children,
 }: SessionKeyDetailsCardProps) {
   const { control } = form;
   const activeWallets = wallets.filter(supportsSessionKeys);
@@ -80,7 +83,7 @@ export function SessionKeyDetailsCard({
                     <FieldLabel htmlFor="session-key-name" isRequired>
                       Name
                     </FieldLabel>
-                    <div className="min-h-5" id="session-key-name-error">
+                    <div className="max-sm:empty:hidden sm:min-h-5" id="session-key-name-error">
                       {fieldState.invalid ? (
                         <FieldError>
                           {field.value?.trim()
@@ -114,7 +117,10 @@ export function SessionKeyDetailsCard({
                 <Field className="contents" data-invalid={fieldState.invalid}>
                   <div className="grid min-w-0 gap-1">
                     <FieldLabel htmlFor="session-key-description">Description</FieldLabel>
-                    <div className="min-h-5" id="session-key-description-error">
+                    <div
+                      className="max-sm:empty:hidden sm:min-h-5"
+                      id="session-key-description-error"
+                    >
                       {fieldState.invalid ? (
                         <FieldError>Keep the description to 1,024 characters or fewer.</FieldError>
                       ) : null}
@@ -151,7 +157,7 @@ export function SessionKeyDetailsCard({
                       <FieldLabel id="session-key-wallet-label" isRequired>
                         Account
                       </FieldLabel>
-                      <div className="min-h-5" id="session-key-wallet-error">
+                      <div className="max-sm:empty:hidden sm:min-h-5" id="session-key-wallet-error">
                         {fieldState.invalid ? (
                           <FieldError>Choose an account for this session key.</FieldError>
                         ) : null}
@@ -218,7 +224,7 @@ export function SessionKeyDetailsCard({
             }}
           />
           <CustodyField control={control} locked={custodyLocked} limits={limits} />
-          <SessionNetworksField form={form} />
+          {children}
         </FieldGroup>
       </DashboardCardContent>
     </DashboardCardRoot>

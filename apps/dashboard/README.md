@@ -31,6 +31,9 @@ Workspace package imports continue to use their package names.
 - `src/components/session-keys-table/` — the shared organization or wallet-scoped
   session-key table, with query-specific wrappers around one table body and a
   separate declarative column module.
+- `src/components/session-key-creation/` — shared metadata, policy editing,
+  registration/recovery, local export and network approval used by custom creation
+  and Recipes. Private drafts stay in the creation hook, never in form state.
 - `src/components/common/table/` — shared table controls and pure collection
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
@@ -252,6 +255,25 @@ outside the policy picker. Existing API policy summaries remain
 readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
 
+## Recipes
+
+`/recipes` lists code-owned definitions from the private `@namera-ai/recipes`
+package, with searchable names, descriptions and tags. `/recipes/$recipeId`
+requires session-key creation permission and prefetches accounts and permitted
+billing data. Metadata and Continue lead to Configuration with Back to details
+and Create. Both steps retain their form values on the same recipe route.
+Session metadata defaults come from `recipe.metadata`, never `recipe.display`.
+The USDC recipe asks for networks, a per-network lifetime allowance and an expiry
+date in a metadata-style configuration card. Expiry is local midnight at the start
+of the chosen date. Circle-issued token addresses are recipe-owned; no catalog lookup is needed.
+
+The page embeds registration, local encryption/import, managed setup and network
+approval through the same components as custom creation. Continue/Skip renders
+the result and next steps in place instead of navigating to a custody or session
+page. Explicit links may leave the page; unsaved local keys retain the navigation
+guard. Reloading an unexported local key still loses it. Recipe input/version is
+not persisted; the generated session configuration is authoritative.
+
 ## Settings routes
 
 - `/settings/profile` contains the React Hook Form profile presentation. Data
@@ -389,6 +411,14 @@ page's required values as route data rather than starting its initial fetch in
 the rendered component.
 
 ## UI conventions
+
+The app and settings sidebars share `ResponsiveSidebar`, using UIKit's mobile
+sheet at widths up to 768px. `NavigationTrigger` provides the labeled Menu
+button in page headers and Inbox. The sheet supports Escape, focus return and
+explicit dismissal; choosing a destination closes it. Desktop navigation is unchanged.
+Dashboard mobile styles remove the outer inset, respect safe areas, enlarge touch
+controls and keep detail tabs scrollable. Shared card rows stack below `sm`;
+tables retain UIKit's local horizontal scrolling rather than hiding columns.
 
 Use components, hooks, icons, utilities, and styles through `@namera-ai/ui`.
 Examples in the [Namespace UIKit documentation](https://namespace-uikit.vercel.app/llms.txt)

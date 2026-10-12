@@ -38,7 +38,7 @@ function ActivityWidget({
 
   return (
     <Widget>
-      <Widget.Header className="pt-4 pb-8">
+      <Widget.Header className="max-sm:flex-col max-sm:items-start max-sm:gap-4 pt-4 pb-8">
         <div className="flex flex-col">
           <Widget.Title>Operations activity</Widget.Title>
           <Widget.Description>Confirmed executions and signatures over time</Widget.Description>

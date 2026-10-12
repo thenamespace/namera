@@ -314,7 +314,7 @@ export function InvitationsTable({ canCancel, initialInvitations }: InvitationsT
 
   return (
     <div className="grid gap-5">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
         <SearchField
           aria-label="Filter invitations"
           className="w-full sm:max-w-80"

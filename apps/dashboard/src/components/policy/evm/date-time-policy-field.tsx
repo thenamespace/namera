@@ -9,6 +9,7 @@ import { encodeDateValue, parseDateValue } from "@/lib/helpers/date";
 type DateTimeFieldProps = {
   error: { readonly message?: ReactNode } | undefined;
   isRequired?: boolean;
+  isDisabled?: boolean;
   hideLabel?: boolean;
   hideError?: boolean;
   "aria-describedby"?: string;
@@ -23,6 +24,7 @@ type DateTimeFieldProps = {
 export function DateTimePolicyField({
   error,
   isRequired = false,
+  isDisabled = false,
   hideLabel = false,
   hideError = false,
   "aria-describedby": ariaDescribedBy,
@@ -43,6 +45,7 @@ export function DateTimePolicyField({
         granularity={granularity}
         isInvalid={Boolean(error)}
         isRequired={isRequired}
+        isDisabled={isDisabled}
         minValue={minimumDate}
         name={name}
         value={parseDateValue(value)}

@@ -50,6 +50,8 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   and OAuth-bearer access to the public API.
 - [`packages/template`](packages/template/README.md) — starter for new workspace
   packages.
+- [`packages/recipes`](packages/recipes/README.md) — private, browser-safe policy
+  recipe definitions, input schemas and deterministic session builders.
 
 Read the relevant package README before changing that package.
 Publishable package READMEs (`api`, `protocol`, `sdk`, and `cli`) are for npm users,
@@ -220,7 +222,8 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-providers/*      -> protocol
 passkeys         -> utils
-apps/dashboard   -> api, protocol, telemetry, ui
+apps/dashboard   -> api, protocol, recipes, telemetry, ui
+recipes          -> protocol
 apps/admin-portal -> api, protocol, ui
 email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit

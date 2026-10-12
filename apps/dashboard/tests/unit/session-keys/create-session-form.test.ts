@@ -2,10 +2,12 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import * as chainRegistry from "@namera-ai/evm/chains";
+import { CreateEvmSessionKeyRequest } from "@namera-ai/protocol/dto";
+import { usdcAllowanceRecipe } from "@namera-ai/recipes";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { selectInstallationNetworks } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/policies/installation-selection";
-import { CreateSessionKeyFormSchema } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/schema";
+import { selectInstallationNetworks } from "../../../src/components/session-key-creation/policies/installation-selection";
+import { CreateSessionKeyFormSchema } from "../../../src/components/session-key-creation/schema";
 
 const resolve = standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema));
 const options = { fields: {}, shouldUseNativeValidation: false };
@@ -30,6 +32,39 @@ const request = {
   },
   policies: [],
 } as const;
+
+it.each(["local", "namera-managed"] as const)(
+  "validates recipe output through the shared %s creation boundary without changing amounts",
+  async (custody) => {
+    const generated = usdcAllowanceRecipe.build(
+      {
+        networks: ["eip155:1", "eip155:8453"],
+        allowance: "100.000001",
+        expiresAt: new Date((1_800_000_000 + 100 * 86_400) * 1000).toISOString(),
+      },
+      { now: 1_800_000_000 },
+    );
+    const encoded = {
+      onchain: Schema.encodeSync(CreateEvmSessionKeyRequest.fields.onchain)(generated.onchain),
+      policies: Schema.encodeSync(CreateEvmSessionKeyRequest.fields.policies)(generated.policies),
+    };
+    const result = await resolve({ ...request, custody, ...encoded }, undefined, options);
+    expect(result.errors).toEqual({});
+    expect(result.values).toMatchObject({ ...generated, custody });
+    expect(encoded.onchain.installations.map(({ permissions }) => permissions[0])).toEqual([
+      {
+        type: "erc20-token-transfer",
+        address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        allowance: "100000001",
+      },
+      {
+        type: "erc20-token-transfer",
+        address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        allowance: "100000001",
+      },
+    ]);
+  },
+);
 
 it("rejects paused networks through the actual session creation form resolver", async () => {
   const chain = chainRegistry.chains["base-mainnet"];

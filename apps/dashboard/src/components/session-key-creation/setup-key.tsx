@@ -26,11 +26,13 @@ export function SetupSessionKey({
   draft,
   bindings,
   onSaved,
+  onFinish,
 }: {
   sessionKey: CreateSessionKeyResponse;
   draft: LocalSessionKeyDraft;
   bindings: ReadonlyArray<LocalEvmSessionBinding>;
   onSaved: () => void;
+  onFinish?: (() => void) | undefined;
 }) {
   const [encrypted, setEncrypted] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -86,7 +88,7 @@ export function SetupSessionKey({
           }}
         />
       ) : (
-        <ActivateSessionKey sessionKey={sessionKey} />
+        <ActivateSessionKey sessionKey={sessionKey} onFinish={onFinish} />
       )}
     </div>
   );

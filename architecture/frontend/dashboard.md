@@ -32,6 +32,13 @@ Nested failures reuse an existing panel rather than adding another main region;
 authentication failures outside the shell do not require a sidebar. Rendering
 tests cover loading, errors, authentication and nested-panel reuse.
 
+App and settings navigation render the same menu content in a desktop sidebar
+and UIKit mobile sheet. At widths up to 768px, the shared navigation trigger
+exposes a labeled hamburger; Inbox and route fallbacks use it too. The sheet
+owns focus trapping, Escape and focus restoration. Navigation links explicitly
+close it, including selection of the current destination. Mobile page padding,
+safe areas and touch targets are dashboard-owned; desktop spacing is retained.
+
 Denied `Unauthorized`/`Forbidden` query results expose no cached data, including
 while retrying. Denied queries/mutations refresh current-user authority. Ordinary
 network failures retain already-loaded data. The current-user atom revalidates
@@ -220,6 +227,47 @@ approvals. Existing signed operations keep polling. Server guards protect stale
 browser builds. See [session lifecycle](../wallets/session-keys.md).
 
 ## Forms and shared components
+
+### Recipes
+
+`/recipes` is a sidebar destination with a searchable code-defined recipe list;
+search includes `display.tags`. `/recipes/$recipeId` is a self-contained creation
+page guarded by `session-key:create`, with permission-aware account and billing
+prefetch. Unknown recipe IDs use the normal not-found boundary.
+
+The private `packages/recipes` workspace owns metadata under `display`, tags,
+versioned definitions, Effect input schemas, typed form descriptors and deterministic
+builders. It depends only on protocol and Effect, not the catalog or React. Builders
+return current `onchain.installations` and session-level `policies`; they neither
+create signers nor submit requests. The first recipe grants a lifetime USDC allowance
+independently on selected networks using Circle's native deployments. Amounts are
+exact six-decimal base units. A calendar picker selects expiry at local midnight
+at the start of the chosen date, serialized as a UTC ISO timestamp; the builder
+rejects invalid or elapsed expiry dates. Recipe fields use the same card rows as
+metadata. The list is full width with a compact search field and optional
+`display.banner` covers. Recipe display identity and editable session-key defaults
+are separate: only `recipe.metadata` pre-fills the session metadata fields.
+Signatures remain disabled. There is no cross-chain shared budget or periodic reset.
+
+`components/session-key-creation` is shared by custom creation and recipes. Metadata
+and recipe fields appear in Details → Configuration steps on the same route.
+Continue validates metadata, account and custody; Back preserves both forms.
+Generated permissions pass through the existing
+creation resolver before submission. Paused networks are unavailable. The shared
+creation hook owns public registration verification, ambiguous-error recovery,
+private draft lifetime, duplicate-submission guards and backup navigation blocking.
+Recipe creation embeds local encryption/import, managed network approval and the
+completion screen without navigating to another setup route. Setup stays mounted
+when returning from completion to enable more networks, preserving local backup
+acknowledgement and in-flight approvals. Approval uses
+the existing independently verified owner-operation path; this feature adds no API,
+database table, audit type or signing bypass. Existing creation emits its normal
+transactional audit event. Templates and their input values are not persisted.
+
+Package tests cover per-chain addresses, exact amounts, overflow, invalid networks
+and expiry; dashboard resolver tests cover both custody variants using generated
+recipe permissions. Browser checks do not substitute for live custody or onchain
+approval verification.
 
 `components/evm-address-picker` provides a controlled, single-deployment picker
 with required `chainIds` (supported CAIP-2 IDs), `types` (`erc20` / `contract`),

@@ -27,6 +27,8 @@ belong in package configuration rather than a second architecture inventory.
 flowchart TD
   Dashboard[apps/dashboard] --> API[packages/api]
   Dashboard --> Protocol[packages/protocol]
+  Dashboard --> Recipes[packages/recipes]
+  Recipes --> Protocol
   Dashboard --> UI[packages/ui]
   Dashboard --> Telemetry[packages/telemetry]
 
@@ -88,6 +90,7 @@ do not import application workflows.
 | `packages/passkeys`           | WebAuthn ceremony generation and verification.                                                                          |
 | `packages/ens`                | Namespace offchain ENS provider boundary.                                                                               |
 | `packages/template`           | Workspace starter without product runtime behavior.                                                                     |
+| `packages/recipes`            | Private code-defined policy recipes, display metadata, input schemas and deterministic per-network session builders.    |
 | `packages/evm`                | Chain registry, clients, smart accounts, simulations, execution, signing, verification, and policy handlers.            |
 | `packages/telemetry`          | OTLP exporters, service identity, HTTP normalization, and shared bounded metrics.                                       |
 | `packages/sdk`                | Fetch-based Promise client over the generated API contract.                                                             |

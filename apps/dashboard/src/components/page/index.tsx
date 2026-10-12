@@ -2,6 +2,8 @@ import type { ComponentProps, PropsWithChildren } from "react";
 
 import { cn, Sidebar } from "@namera-ai/ui";
 
+import { NavigationTrigger } from "@/components/sidebar/navigation-trigger";
+
 import { PagePanelContext } from "./context";
 
 const DashboardPageRoot = ({ children }: PropsWithChildren) => {
@@ -14,7 +16,13 @@ const DashboardPageRoot = ({ children }: PropsWithChildren) => {
 
 const DashboardPageHeader = ({ children, className, ...props }: ComponentProps<"div">) => {
   return (
-    <div className={cn("flex items-center justify-between px-4 py-3", className)} {...props}>
+    <div
+      className={cn(
+        "dashboard-page-header flex items-center justify-between gap-3 px-4 py-3",
+        className,
+      )}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -22,8 +30,8 @@ const DashboardPageHeader = ({ children, className, ...props }: ComponentProps<"
 
 const DashboardPageTitle = ({ children, className, ...props }: ComponentProps<"div">) => {
   return (
-    <div className={cn("flex flex-row items-center gap-2 text-sm", className)} {...props}>
-      <Sidebar.Trigger />
+    <div className={cn("flex min-w-0 flex-row items-center gap-2 text-sm", className)} {...props}>
+      <NavigationTrigger />
       {children}
     </div>
   );
@@ -31,7 +39,7 @@ const DashboardPageTitle = ({ children, className, ...props }: ComponentProps<"d
 
 const DashboardPageSide = ({ children, className, ...props }: ComponentProps<"div">) => {
   return (
-    <div className={cn(className)} {...props}>
+    <div className={cn("shrink-0", className)} {...props}>
       {children}
     </div>
   );
@@ -39,7 +47,7 @@ const DashboardPageSide = ({ children, className, ...props }: ComponentProps<"di
 
 const DashboardPageContent = ({ children, className, ...props }: ComponentProps<"div">) => {
   return (
-    <div className={cn("p-3", className)} {...props}>
+    <div className={cn("dashboard-page-content min-w-0 p-3", className)} {...props}>
       {children}
     </div>
   );

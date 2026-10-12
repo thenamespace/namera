@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sessionCustodyLimits } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/custody-limits";
+import { sessionCustodyLimits } from "../../../src/components/session-key-creation/custody-limits";
 
 describe("session custody capacity", () => {
   it("disables only exhausted session custody, independently of account capacity", () => {

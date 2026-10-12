@@ -315,7 +315,7 @@ export function ApiKeysTable({
 
   return (
     <div className="grid gap-5">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
         <SearchField
           aria-label="Filter API keys"
           className="w-full sm:max-w-80"

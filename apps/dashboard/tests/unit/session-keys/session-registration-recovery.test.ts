@@ -5,8 +5,8 @@ import { CreateSessionKeyRequest, SessionKeyInstallationResponse } from "@namera
 import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 import { expect, it } from "vitest";
 
+import { validateManagedRegistration } from "../../../src/components/session-key-creation/managed-registration";
 import { recoverSessionRegistration } from "../../../src/components/session-key-installations/registration-recovery";
-import { validateManagedRegistration } from "../../../src/routes/_authenticated/session-keys/-components/create-session-key-form/managed-registration";
 
 const signer = privateKeyToAccount(generatePrivateKey());
 const wallet = {
