@@ -238,7 +238,7 @@ export function RecipeCreationForm({
           Continue
         </Button>
       ) : (
-        <div className="flex items-center justify-between gap-3 border-t border-separator pt-5">
+        <div className="flex items-center justify-between gap-3">
           <Button
             type="button"
             variant="tertiary"
