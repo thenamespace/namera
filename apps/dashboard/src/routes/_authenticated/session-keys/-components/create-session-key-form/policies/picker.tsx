@@ -59,7 +59,10 @@ export function PolicyPicker({
                     </span>
                     <span className="grid min-w-0 flex-1 gap-1">
                       <span className="text-sm font-medium">{entry.name}</span>
-                      <span className="text-muted text-xs leading-4 font-normal">
+                      <span
+                        className="text-muted truncate text-xs leading-4 font-normal"
+                        title={reason ?? entry.description}
+                      >
                         {reason ?? entry.description}
                       </span>
                     </span>

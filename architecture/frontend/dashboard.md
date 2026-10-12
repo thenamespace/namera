@@ -198,6 +198,14 @@ session network. Other policy editors are not yet
 wired to the picker. Consumers must validate their current filter scope before
 submission if the allowed chains/types change after selection.
 
+`components/display/token-display` resolves namespace/chain/address through the
+existing authenticated catalog resolve API, sharing cached lookups by normalized
+address. It displays token identity and optional exact base-unit amounts using
+deployment decimals. Missing metadata retains the address and raw base units;
+loading uses skeletons and failed lookups offer retry. Creation's token-spending
+cards resolve each selected session network independently, without assuming a
+token or its decimals is identical across networks. This does not change policy data.
+
 `components/evm-function-picker` accepts a supplied ABI and controlled single or
 multiple canonical-signature values. It makes no network requests. Function-only
 options show signatures, mutability and four-byte selectors; overloads retain

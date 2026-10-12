@@ -86,7 +86,7 @@ export function PolicySection({
             onEdit={() => setDialog({ edit: { kind: "permission", policy: permission, index } })}
             onRemove={() => permissionFields.remove(index)}
           >
-            <OnchainPermissionSummary permission={permission} />
+            <OnchainPermissionSummary permission={permission} chainIds={onchain.chains} />
           </SessionPolicyCard>
         );
       })}

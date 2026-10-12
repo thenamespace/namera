@@ -3,6 +3,7 @@ import { Schema } from "effect";
 import { CatalogEntryView } from "@namera-ai/protocol/dto";
 import { describe, expect, expectTypeOf, it } from "vitest";
 
+import { tokenDisplayDetails } from "../../src/components/display/token-details";
 import { catalogSelection } from "../../src/components/evm-address-picker/selection";
 import type { EvmAddressSelection } from "../../src/components/evm-address-picker/types";
 
@@ -39,6 +40,23 @@ const match = Schema.decodeUnknownSync(CatalogEntryView)({
 });
 
 describe("catalog picker selections", () => {
+  it("formats token allowances exactly with deployment decimals", () => {
+    expect(tokenDisplayDetails(match, "100000000")?.label).toBe("100 EXAMPLE");
+    expect(tokenDisplayDetails(match, "9007199254740993123456")?.label).toBe(
+      "9007199254740993.123456 EXAMPLE",
+    );
+    expect(tokenDisplayDetails(match, "0")?.label).toBe("0 EXAMPLE");
+    expect(tokenDisplayDetails(match)?.label).toBe("Example");
+  });
+  it("does not infer token decimals for unknown or contract deployments", () => {
+    expect(tokenDisplayDetails(null, "100000000")).toBeNull();
+    expect(
+      tokenDisplayDetails(
+        { ...match, entry: { ...match.entry, data: { version: 1, type: "contract" } } },
+        "100000000",
+      ),
+    ).toBeNull();
+  });
   it("retains the full records and narrows decimals for ERC-20", () => {
     const selection = catalogSelection(match, ["erc20"]);
     expectTypeOf(selection).toEqualTypeOf<EvmAddressSelection<"erc20"> | null>();
