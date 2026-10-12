@@ -77,7 +77,7 @@ export function TokenAllowanceEditor({
                   chainIds={chainIds}
                   value={selection}
                   label="Select token"
-                  popoverClassName="[--overlay:var(--default)] shadow-xl ring-1 ring-separator [&_.command__item:hover]:bg-default-hover [&_.command__item[data-focused=true]]:bg-default-hover"
+                  popoverClassName="border border-separator"
                   onBlur={field.onBlur}
                   isInvalid={fieldState.invalid || Boolean(form.formState.errors.chainId)}
                   aria-describedby={`${id}-token-error`}
