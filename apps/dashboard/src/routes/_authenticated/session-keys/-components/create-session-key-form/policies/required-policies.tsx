@@ -27,10 +27,12 @@ export function RequiredPolicies({
   onEdit: (kind: "lifetime") => void;
   onClose: () => void;
 }) {
-  const onchain = useWatch({
+  const installations = useWatch({
     control: form.control,
-    name: `onchain.installations.${installationIndex}`,
+    name: "onchain.installations",
   });
+  const onchain = installations[installationIndex];
+  if (!onchain) throw new Error("Missing lifetime editor scope");
   const errors = form.formState.errors.onchain?.installations?.[installationIndex];
   const editor = editing ? (
     <RequiredPolicyEditor form={form} installationIndex={installationIndex} onClose={onClose} />

@@ -6,9 +6,9 @@ import { FieldError, Modal, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
+import { ChainDisplay } from "@/components/display/chain-display";
 import { HeadingGroup } from "@/components/heading-group";
 import { EvmPolicySummary, type SignaturePolicyInput } from "@/components/policy/evm";
-import { NetworksSummary } from "@/components/policy/evm/networks-summary";
 import { OnchainPolicyCard } from "@/components/policy/evm/onchain/display-card";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 import { SessionPolicyCard } from "@/components/policy/evm/session-policy-card";
@@ -155,7 +155,7 @@ export function PolicySection({
       <div className="mb-1 flex items-start justify-between gap-4">
         <HeadingGroup>
           <HeadingGroup.Title size="sm">
-            <NetworksSummary chainIds={[onchain.chainId]} />
+            <ChainDisplay chainId={onchain.chainId} />
           </HeadingGroup.Title>
           <HeadingGroup.Description>
             Access and lifetime on this network only.

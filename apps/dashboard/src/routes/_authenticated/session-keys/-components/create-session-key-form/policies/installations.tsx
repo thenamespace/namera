@@ -5,6 +5,7 @@ import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Field, FieldLabel, FieldError, Typography } from "@namera-ai/ui";
 import { Controller, useWatch } from "react-hook-form";
 
+import { HeadingGroup } from "@/components/heading-group";
 import { EvmNetworkMultiSelect } from "@/components/policy/evm/network-multi-select";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 
@@ -23,11 +24,17 @@ export function InstallationPolicies({ form, onSaveTokenSelection, ...props }: P
   const [removalError, setRemovalError] = useState<string>();
   return (
     <section className="grid gap-6">
+      <HeadingGroup>
+        <HeadingGroup.Title size="sm">Policies</HeadingGroup.Title>
+        <HeadingGroup.Description>
+          Choose networks, then configure access and limits for each one.
+        </HeadingGroup.Description>
+      </HeadingGroup>
       <Controller
         control={form.control}
         name="onchain.installations"
         render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid || Boolean(removalError)}>
+          <Field data-invalid={Boolean(fieldState.error?.message || removalError)}>
             <FieldLabel id="session-networks-label">Networks</FieldLabel>
             <EvmNetworkMultiSelect
               aria-labelledby="session-networks-label"
@@ -52,7 +59,7 @@ export function InstallationPolicies({ form, onSaveTokenSelection, ...props }: P
                 setRemovalError(undefined);
                 field.onChange(
                   selectInstallationNetworks(
-                    field.value,
+                    form.getValues("onchain.installations"),
                     chainIds,
                     Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
                   ),
