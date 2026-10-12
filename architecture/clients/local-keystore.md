@@ -22,7 +22,12 @@ that the installation is actually approved or deployed. The dashboard must
 construct the export from the owner-approved installation; the import flow must
 check the active API origin and installation lifecycle before use.
 
-`createLocalSessionBindings` verifies a decoded registration against the caller's
+`createLocalSessionBindings` indexes the requested `onchain.installations` by chain
+and verifies each response against that chain's permissions, dates and signature
+flag. Response ordering may differ; duplicate, missing, substituted or swapped
+authority fails closed. Binding/export formats remain version 1.
+
+It verifies a decoded registration against the caller's
 original request and separately selected wallet. The network set must match
 exactly. Wallet and signer addresses, ordered permissions (including exact base
 units), validity and signature consent must be unchanged. Root determines the

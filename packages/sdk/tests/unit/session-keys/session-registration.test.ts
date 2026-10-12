@@ -17,11 +17,15 @@ const fixture = () => {
     metadata: { version: 1, name: "Trading session" },
     signer: { custody: "local", algorithm: "secp256k1", publicKey: signer.publicKey },
     onchain: {
-      chains: [binding.chainId],
-      validAfter: 0,
-      validUntil: 2_000_000_000,
-      permissions: [{ type: "native-token-transfer", allowance: "10000000000000001" }],
-      allowSignatures: false,
+      installations: [
+        {
+          chainId: binding.chainId,
+          validAfter: 0,
+          validUntil: 2_000_000_000,
+          permissions: [{ type: "native-token-transfer", allowance: "10000000000000001" }],
+          allowSignatures: false,
+        },
+      ],
     },
     policies: [],
   });
@@ -36,7 +40,7 @@ const fixture = () => {
       version: 1,
       entityId: 7,
       signerAddress: signer.address,
-      ...Schema.encodeSync(CreateSessionKeyRequest)(request).onchain,
+      ...Schema.encodeSync(CreateSessionKeyRequest)(request).onchain.installations[0],
     }),
   };
   return {
@@ -53,6 +57,60 @@ const fixture = () => {
 };
 
 describe("session registration bindings", () => {
+  it("matches heterogeneous installations by chain and rejects swapped authority", () => {
+    const input = fixture();
+    const first = input.registration.installations[0];
+    const second = {
+      ...first,
+      chainId: "eip155:8453" as const,
+      authorization: {
+        ...first.authorization,
+        permissions: [{ type: "root" as const }],
+        validAfter: 10,
+        validUntil: 2_100_000_000,
+        allowSignatures: true,
+      },
+    };
+    const request = {
+      ...input.request,
+      onchain: {
+        installations: [
+          { chainId: first.chainId, ...first.authorization },
+          { chainId: second.chainId, ...second.authorization },
+        ],
+      },
+    };
+    const registration = { ...input.registration, installations: [second, first] };
+    expect(createLocalSessionBindings({ ...input, request, registration })).toMatchObject([
+      {
+        chainId: second.chainId,
+        isGlobal: true,
+        hasExecutionHooks: false,
+        allowSignatures: true,
+        validUntil: DateTime.fromEpochSeconds(second.authorization.validUntil),
+      },
+      {
+        chainId: first.chainId,
+        isGlobal: false,
+        hasExecutionHooks: true,
+        allowSignatures: false,
+        validUntil: DateTime.fromEpochSeconds(first.authorization.validUntil),
+      },
+    ]);
+    expect(() =>
+      createLocalSessionBindings({
+        ...input,
+        request,
+        registration: {
+          ...registration,
+          installations: [
+            { ...first, authorization: second.authorization },
+            { ...second, authorization: first.authorization },
+          ],
+        },
+      }),
+    ).toThrow(expect.objectContaining({ code: "PERMISSION_MISMATCH" }));
+  });
   it("does not create local export bindings for managed custody", () => {
     const input = fixture();
     expect(() =>
@@ -86,7 +144,15 @@ describe("session registration bindings", () => {
     ] as const) {
       const [binding] = createLocalSessionBindings({
         ...input,
-        request: { ...input.request, onchain: { ...input.request.onchain, permissions } },
+        request: {
+          ...input.request,
+          onchain: {
+            installations: Array.from(input.request.onchain.installations, (entry) => ({
+              ...entry,
+              permissions,
+            })),
+          },
+        },
         registration: {
           ...input.registration,
           installations: [
@@ -157,7 +223,12 @@ describe("session registration bindings", () => {
         ...input,
         request: {
           ...input.request,
-          onchain: { ...input.request.onchain, chains: ["eip155:8453"] },
+          onchain: {
+            installations: Array.from(input.request.onchain.installations, (entry) => ({
+              ...entry,
+              chainId: "eip155:8453" as const,
+            })),
+          },
         },
       }),
     ).toThrow();

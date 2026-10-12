@@ -49,24 +49,30 @@ export const createLocalSessionBindings = ({
   )
     throw new LocalSessionRegistrationError({ code: "IDENTITY_MISMATCH" });
 
-  const chains = new Set(request.onchain.chains);
-  if (registration.installations.length !== chains.size)
+  const requested = new Map(
+    request.onchain.installations.map((installation) => [installation.chainId, installation]),
+  );
+  if (
+    requested.size !== request.onchain.installations.length ||
+    registration.installations.length !== requested.size
+  )
     throw new LocalSessionRegistrationError({ code: "NETWORK_MISMATCH" });
 
   const signerAddress = publicKeyToAddress(request.signer.publicKey);
   const encodePermissions = Schema.encodeSync(EvmSessionPermissions);
-  const expectedPermissions = JSON.stringify(encodePermissions(request.onchain.permissions));
   const bindings = registration.installations.map((installation) => {
-    if (!chains.delete(installation.chainId))
+    const expected = requested.get(installation.chainId);
+    if (!expected || !requested.delete(installation.chainId))
       throw new LocalSessionRegistrationError({ code: "NETWORK_MISMATCH" });
+    const expectedPermissions = JSON.stringify(encodePermissions(expected.permissions));
 
     const authorization = installation.authorization;
     if (!isAddressEqual(authorization.signerAddress, signerAddress))
       throw new LocalSessionRegistrationError({ code: "IDENTITY_MISMATCH" });
     if (
-      authorization.validAfter !== request.onchain.validAfter ||
-      authorization.validUntil !== request.onchain.validUntil ||
-      (authorization.allowSignatures === true) !== (request.onchain.allowSignatures === true) ||
+      authorization.validAfter !== expected.validAfter ||
+      authorization.validUntil !== expected.validUntil ||
+      (authorization.allowSignatures === true) !== (expected.allowSignatures === true) ||
       JSON.stringify(encodePermissions(authorization.permissions)) !== expectedPermissions
     )
       throw new LocalSessionRegistrationError({ code: "PERMISSION_MISMATCH" });
@@ -80,16 +86,16 @@ export const createLocalSessionBindings = ({
       chainId: installation.chainId,
       signerAddress,
       entityId: authorization.entityId,
-      isGlobal: request.onchain.permissions.some((permission) => permission.type === "root"),
+      isGlobal: expected.permissions.some((permission) => permission.type === "root"),
       // Alchemy v2 attaches execution hooks only for native/ERC-20 spend permissions.
       // Gas, time and target/selector restrictions are validation hooks.
-      hasExecutionHooks: request.onchain.permissions.some(
+      hasExecutionHooks: expected.permissions.some(
         (permission) =>
           permission.type === "native-token-transfer" || permission.type === "erc20-token-transfer",
       ),
-      allowSignatures: request.onchain.allowSignatures === true,
-      validAfter: DateTime.formatIso(DateTime.makeUnsafe(request.onchain.validAfter * 1000)),
-      validUntil: DateTime.formatIso(DateTime.makeUnsafe(request.onchain.validUntil * 1000)),
+      allowSignatures: expected.allowSignatures === true,
+      validAfter: DateTime.formatIso(DateTime.makeUnsafe(expected.validAfter * 1000)),
+      validUntil: DateTime.formatIso(DateTime.makeUnsafe(expected.validUntil * 1000)),
     });
   });
   return bindings;
