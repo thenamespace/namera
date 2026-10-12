@@ -1,5 +1,26 @@
 # @namera-ai/sdk
 
+## 1.4.0
+
+### Minor Changes
+
+- 2182be1: Replace the pre-launch session creation payload's shared onchain configuration
+  with `onchain.installations`. Each entry supplies `chainId`, `validAfter`,
+  `validUntil`, `permissions`, and optional `allowSignatures`. Session-level API
+  `policies` remain separate. The old request shape is no longer accepted.
+
+  Registration verification now matches each response installation to the reviewed
+  configuration for its chain, including its permissions, dates and signature flag.
+  Existing stored sessions, encrypted exports and local signing bindings remain
+  compatible. SDK list/get and CLI commands are unchanged; the four packages release
+  together in the existing fixed version group.
+
+### Patch Changes
+
+- Updated dependencies [2182be1]
+  - @namera-ai/protocol@1.4.0
+  - @namera-ai/api@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes
