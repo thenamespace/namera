@@ -1,0 +1,92 @@
+import { Schema } from "effect";
+
+import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
+import { describe, expect, it } from "vitest";
+
+import { usdcAllowanceRecipe } from "../../src/index.js";
+
+const now = 1_800_000_000;
+
+describe("USDC lifetime allowance", () => {
+  it("builds independent exact allowances using each network's native USDC", () => {
+    const output = usdcAllowanceRecipe.build(
+      {
+        networks: ["eip155:1", "eip155:8453"],
+        allowance: "9007199254740993.123456",
+        durationDays: "100",
+      },
+      { now },
+    );
+
+    expect(output.onchain.installations).toEqual(
+      [
+        { chainId: "eip155:1", address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
+        { chainId: "eip155:8453", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" },
+      ].map(({ chainId, address }) => ({
+        chainId,
+        validAfter: now,
+        validUntil: now + 100 * 86_400,
+        allowSignatures: false,
+        permissions: [
+          { type: "erc20-token-transfer", address, allowance: 9007199254740993123456n },
+        ],
+      })),
+    );
+    expect(output.policies).toEqual([]);
+    for (const installation of output.onchain.installations)
+      expect(Schema.is(CreateEvmSessionInstallation)(installation)).toBe(true);
+  });
+
+  it.each(["", "0", "-1", "1.0000001", "1e6", "NaN", "1.", "9".repeat(80)])(
+    "rejects unsafe allowance %s without rounding",
+    (allowance) => {
+      expect(() =>
+        usdcAllowanceRecipe.build(
+          {
+            networks: ["eip155:1"],
+            allowance,
+            durationDays: "30",
+          },
+          { now },
+        ),
+      ).toThrow();
+    },
+  );
+
+  it("rejects empty, duplicate and unsupported networks", () => {
+    const decode = Schema.decodeUnknownSync(usdcAllowanceRecipe.inputSchema);
+    for (const networks of [[], ["eip155:1", "eip155:1"], ["eip155:999"]])
+      expect(() => decode({ networks, allowance: "100", durationDays: "30" })).toThrow();
+  });
+
+  it.each(["0", "-1", "1.5", "3651", ""])("rejects invalid duration %s", (durationDays) => {
+    expect(() =>
+      usdcAllowanceRecipe.build(
+        {
+          networks: ["eip155:1"],
+          allowance: "100",
+          durationDays,
+        },
+        { now },
+      ),
+    ).toThrow();
+  });
+
+  it("keeps the smallest unit and supported testnets isolated", () => {
+    const output = usdcAllowanceRecipe.build(
+      {
+        networks: ["eip155:11155111"],
+        allowance: "0.000001",
+        durationDays: "1",
+      },
+      { now },
+    );
+    expect(output.onchain.installations[0]?.permissions).toEqual([
+      {
+        type: "erc20-token-transfer",
+        address: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+        allowance: 1n,
+      },
+    ]);
+  });
+});
