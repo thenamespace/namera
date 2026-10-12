@@ -45,7 +45,7 @@ export function TokenDisplay({
             namespace={address.namespace}
             chain={network.name}
             aria-hidden
-            className="bg-surface absolute -right-0.5 -bottom-1 size-2.5 rounded-full ring-1 ring-surface"
+            className="bg-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-1 ring-surface"
           />
         ) : null}
       </span>
@@ -53,10 +53,10 @@ export function TokenDisplay({
         <span className="text-foreground block truncate font-medium">
           {token?.label ?? shortAddress}
         </span>
-        <span className="text-muted block text-xs">
-          {!token && amount !== undefined ? `${amount} base units · ` : ""}
-          {network?.chain.name ?? address.chainId}
-        </span>
+        {!token && amount !== undefined ? (
+          <span className="text-muted block text-xs">{amount} base units</span>
+        ) : null}
+        <span className="sr-only">{network?.chain.name ?? address.chainId}</span>
       </span>
       {query.isError ? (
         <Button size="sm" variant="ghost" onPress={query.refetch} aria-label="Retry token metadata">
