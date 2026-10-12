@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/build-and-push.yaml
     secrets:
       REPOSITORY_DISPATCH_PAT: ${{ secrets.REPOSITORY_DISPATCH_PAT }}
+      POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
     permissions:
       contents: "read"
       id-token: "write"

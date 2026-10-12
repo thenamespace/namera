@@ -278,7 +278,12 @@ Web/dashboard production builds upload hidden source maps with
 `@posthog/rollup-plugin`, then remove maps before assembling runtime images.
 The reusable build workflow reads `VITE_POSTHOG_KEY` and `POSTHOG_CLI_PROJECT_ID`
 from GitHub environment variables and `POSTHOG_CLI_API_KEY` from its environment
-secrets. The personal token enters Docker only through a BuildKit secret mount,
+secrets. Web/dashboard callers explicitly forward the repository token through
+the reusable workflow's declared secret input; a configured environment secret
+takes precedence. Repository variables are fallbacks for environment variables.
+Production validates all three settings and reports missing names without values.
+The secret input is optional for staging and non-PostHog image builds.
+The personal token enters Docker only through a BuildKit secret mount,
 never DOTENV or a build argument. Releases use the dispatch commit SHA. Staging
 clears the public token and does not upload maps. Runtime images reject public
 `.map` files. Test the upload in CI; ordinary local builds never upload symbols.
