@@ -28,6 +28,13 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
     [sessionKey.installations],
   );
   const lifetimes = groupInstallationLifetimes(sessionKey.installations);
+  const signatureChainIds = useMemo(
+    () =>
+      sessionKey.installations
+        .filter(({ authorization }) => authorization.allowSignatures)
+        .map(({ chainId }) => chainId),
+    [sessionKey.installations],
+  );
   return (
     <section className="mx-auto w-full max-w-5xl py-4 sm:px-2 sm:py-8">
       <div className="max-w-2xl">
@@ -54,11 +61,16 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
           </SessionPolicyCard>
         ))}
         {[...permissions].map(([key, { permission, chainIds }]) => (
-          <OnchainPolicyCard key={key} permission={permission} chainIds={chainIds} />
+          <OnchainPolicyCard key={key} permission={permission} chainIds={chainIds} showNetworks />
         ))}
         {sessionKey.policies.map((policy) => (
           <EvmPolicyDisplayCard key={policy.id} policy={policy} />
         ))}
+        {signatureChainIds.length > 0 ? (
+          <SessionPolicyCard name="Onchain signature authority" logo={networksLogo}>
+            <NetworksSummary chainIds={signatureChainIds} />
+          </SessionPolicyCard>
+        ) : null}
       </div>
       <div className="max-w-2xl">
         <SessionKeyInstallations key={sessionKey.id} sessionKey={sessionKey} />

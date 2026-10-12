@@ -5,6 +5,7 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { CreateEvmSignaturePolicy } from "@namera-ai/protocol";
+import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   Button,
   CheckboxButtonGroup,
@@ -18,6 +19,7 @@ import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
 import { evmPolicyFormIds } from "../data";
+import { evmChainOptions } from "../data";
 import type { EvmPolicyInput, SignaturePolicyInput } from "../types";
 import { SignaturePolicyForm, toSignatureFormInput, type SignatureFormInput } from "./form";
 import { SignatureRuleFields } from "./rule-fields";
@@ -49,21 +51,34 @@ const emptySignaturePolicy: SignaturePolicyInput = {
   version: 1,
   allowedTypes: [],
 };
+const allChainIds = evmChainOptions.map(({ id }) => id);
 
 type SignaturePolicyEditorProps = {
   formId?: string;
   initialValue?: SignaturePolicyInput;
   onSave: (policy: EvmPolicyInput) => void;
+  chainIds?: readonly SupportedEvmChainId[];
 };
 
 export function SignaturePolicyEditor({
   formId = evmPolicyFormIds["evm.signature"],
   initialValue = emptySignaturePolicy,
   onSave,
+  chainIds = allChainIds,
 }: SignaturePolicyEditorProps) {
   const form = useForm<SignatureFormInput, unknown, SignaturePolicyValues>({
     defaultValues: toSignatureFormInput(initialValue),
-    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(SignaturePolicyForm)),
+    resolver: standardSchemaResolver(
+      Schema.toStandardSchemaV1(
+        SignaturePolicyForm.check(
+          Schema.makeFilter((policy) =>
+            policy.typedDataRules?.some((rule) => !chainIds.includes(rule.chainId))
+              ? { path: ["rules"], issue: "Choose a network with signature authority enabled." }
+              : undefined,
+          ),
+        ),
+      ),
+    ),
   });
   const rules = useFieldArray({ control: form.control, name: "rules" });
   const allowedTypes = useWatch({ control: form.control, name: "allowedTypes" });
@@ -122,6 +137,7 @@ export function SignaturePolicyEditor({
           <>
             {rules.fields.map((rule, index) => (
               <SignatureRuleFields
+                chainIds={chainIds}
                 key={rule.id}
                 control={form.control}
                 index={index}
@@ -138,7 +154,7 @@ export function SignaturePolicyEditor({
               variant="tertiary"
               onPress={() =>
                 rules.append({
-                  chainId: "eip155:1",
+                  chainId: chainIds[0] ?? "eip155:1",
                   verifyingContract: "",
                   name: "",
                   version: "",

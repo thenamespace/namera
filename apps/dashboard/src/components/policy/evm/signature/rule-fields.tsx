@@ -1,7 +1,7 @@
 /* oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-array-as-prop, react-perf/jsx-no-new-object-as-prop */
 import { useState } from "react";
 
-import { EthereumAddress } from "@namera-ai/protocol/evm";
+import { EthereumAddress, type SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Button, Checkbox, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
 import { Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useController, useWatch, type Control } from "react-hook-form";
@@ -11,10 +11,8 @@ import { EvmAddressPickerWithoutNetwork } from "@/components/evm-address-picker-
 import type { EvmAddressValue, EvmCustomAddress } from "@/components/evm-address-picker/types";
 import { EvmChainSelect } from "@/components/evm-chain-select";
 
-import { evmChainOptions } from "../data";
 import type { SignatureFormInput, SignaturePolicyForm } from "./form";
 
-const chainIds = evmChainOptions.map((chain) => chain.id);
 const contractTypes = ["contract", "erc20"] as const;
 type VerifyingContractSelection = EvmAddressValue<(typeof contractTypes)[number], EvmCustomAddress>;
 
@@ -24,11 +22,13 @@ const textFields = [
 
 export function SignatureRuleFields({
   control,
+  chainIds,
   index,
   onRemove,
 }: {
   control: Control<SignatureFormInput, unknown, typeof SignaturePolicyForm.Type>;
   index: number;
+  chainIds: readonly SupportedEvmChainId[];
   onRemove: () => void;
 }) {
   const chainId = useWatch({ control, name: `rules.${index}.chainId` });

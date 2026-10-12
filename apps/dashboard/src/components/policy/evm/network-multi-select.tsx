@@ -20,6 +20,7 @@ type EvmNetworkMultiSelectProps = {
   "aria-labelledby": string;
   "aria-describedby"?: string;
   isInvalid?: boolean;
+  isDisabled?: boolean;
   operationalOnly?: boolean;
   name: string;
   onBlur: () => void;
@@ -32,6 +33,7 @@ export function EvmNetworkMultiSelect({
   "aria-labelledby": ariaLabelledBy,
   "aria-describedby": ariaDescribedBy,
   isInvalid = false,
+  isDisabled = false,
   operationalOnly = false,
   name,
   onBlur,
@@ -53,6 +55,7 @@ export function EvmNetworkMultiSelect({
       {...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {})}
       fullWidth
       isInvalid={isInvalid}
+      isDisabled={isDisabled}
       name={name}
       selectionMode="multiple"
       value={Array.from(value)}

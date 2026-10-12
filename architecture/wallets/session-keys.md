@@ -11,7 +11,9 @@ Creation uses `onchain.installations`, a nonempty array with one entry per chain
 Each entry supplies `chainId`, `validAfter`, `validUntil`, `permissions`, and optional
 `allowSignatures`. Shared onchain fields are rejected, including mixed old/new
 payloads. API `policies` remain session-level. Stored installation versions and
-existing keys are unchanged. Dashboard and client migration is in progress.
+existing keys are unchanged. The dashboard edits explicit network sections; the
+SDK checks every returned installation against the matching request entry. Detail
+cards group only equal permissions and show their network scope.
 
 Creation compiles each requested entry independently before persistence. Managed
 creation preflights every entry before allocating a provider key. The final locked

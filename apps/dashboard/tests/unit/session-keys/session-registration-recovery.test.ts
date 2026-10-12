@@ -19,11 +19,15 @@ const request = Schema.decodeUnknownSync(CreateSessionKeyRequest)({
   metadata: { version: 1, name: "Recovery" },
   signer: { custody: "local", algorithm: "secp256k1", publicKey: signer.publicKey },
   onchain: {
-    chains: ["eip155:1"],
-    validAfter: 0,
-    validUntil: 2_000_000_000,
-    permissions: [{ type: "root" }],
-    allowSignatures: false,
+    installations: [
+      {
+        chainId: "eip155:1",
+        validAfter: 0,
+        validUntil: 2_000_000_000,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
   },
   policies: [],
 });
@@ -77,7 +81,15 @@ it("rejects ambiguous, revoked or changed registrations before export", () => {
   ).toThrow();
   expect(() =>
     recoverSessionRegistration(
-      { ...request, onchain: { ...request.onchain, allowSignatures: true } },
+      {
+        ...request,
+        onchain: {
+          installations: Array.from(request.onchain.installations, (entry) => ({
+            ...entry,
+            allowSignatures: true,
+          })),
+        },
+      },
       wallet,
       [registration],
     ),
@@ -112,7 +124,15 @@ it("validates managed public identity and permissions without producing an expor
   ).toThrow();
   expect(() =>
     validateManagedRegistration(
-      { ...managed, onchain: { ...managed.onchain, allowSignatures: true } },
+      {
+        ...managed,
+        onchain: {
+          installations: Array.from(managed.onchain.installations, (entry) => ({
+            ...entry,
+            allowSignatures: true,
+          })),
+        },
+      },
       wallet,
       created,
     ),

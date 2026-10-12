@@ -28,6 +28,7 @@ export type PolicyEdit =
 
 type Props = {
   chainIds: readonly SupportedEvmChainId[];
+  signatureChainIds: readonly SupportedEvmChainId[];
   onClose: () => void;
   draft?: PolicyChoice | undefined;
   onAddDraft: (choice: PolicyChoice) => void;
@@ -94,6 +95,7 @@ export function SessionPolicyEditor(props: Props) {
         ) : choice.id === "signature" ? (
           <>
             <SignaturePolicyEditor
+              chainIds={props.signatureChainIds}
               formId={formId}
               {...(edit?.kind === "signature" ? { initialValue: edit.policy } : {})}
               onSave={(policy) => {

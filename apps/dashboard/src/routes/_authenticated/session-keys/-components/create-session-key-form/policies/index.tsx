@@ -2,12 +2,13 @@
 import { useState } from "react";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import { FieldError, Modal } from "@namera-ai/ui";
+import { FieldError, Modal, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { useWatch, type UseFormReturn } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { EvmPolicySummary, type SignaturePolicyInput } from "@/components/policy/evm";
+import { NetworksSummary } from "@/components/policy/evm/networks-summary";
 import { OnchainPolicyCard } from "@/components/policy/evm/onchain/display-card";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 import { SessionPolicyCard } from "@/components/policy/evm/session-policy-card";
@@ -18,13 +19,13 @@ import type { ContractAccessDraft } from "./contract-access/editor";
 import { AddPolicyButton, SessionPolicyEditor, type PolicyEdit } from "./editor";
 import { toNativeBudgetPermission } from "./native-budget/form";
 import { RequiredPolicies } from "./required-policies";
-import { signatureConfiguration } from "./signature-configuration";
 
 const signatureChoice = policyChoiceFor("signature");
 const signatureLogo = <HugeiconsIcon icon={signatureChoice.icon} />;
 
 export function PolicySection({
   form,
+  installationIndex,
   wallets,
   editing,
   onEditingChange,
@@ -32,21 +33,21 @@ export function PolicySection({
   onSaveTokenSelection,
 }: {
   form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
+  installationIndex: number;
   wallets: ListWalletsResponse;
   editing: boolean;
   onEditingChange: (editing: boolean) => void;
   tokenSelections: ReadonlyMap<string, TokenSpendingSelection>;
   onSaveTokenSelection: (selection: TokenSpendingSelection) => void;
 }) {
-  const apiFields = useFieldArray({ control: form.control, name: "policies" });
-  const permissionFields = useFieldArray({ control: form.control, name: "onchain.permissions" });
   const policies = useWatch({ control: form.control, name: "policies" }) ?? [];
-  const onchain = useWatch({ control: form.control, name: "onchain" });
+  const installations = useWatch({ control: form.control, name: "onchain.installations" });
+  const onchain = installations[installationIndex];
   const walletId = useWatch({ control: form.control, name: "walletId" });
   const [pane, setPane] = useState<{
     edit?: PolicyEdit;
     draft?: PolicyChoice;
-    required?: "networks" | "lifetime";
+    required?: "lifetime";
   } | null>(null);
   const [contractDrafts, setContractDrafts] = useState<ReadonlyMap<string, ContractAccessDraft>>(
     () => new Map(),
@@ -60,12 +61,31 @@ export function PolicySection({
     onEditingChange(true);
   };
   const permissions = onchain?.permissions ?? [];
-  const signature = policies.find((policy) => policy.type === "evm.signature");
-  const errors = form.formState.errors.onchain;
+  const savePermissions = (next: typeof permissions) =>
+    form.setValue(`onchain.installations.${installationIndex}.permissions`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  if (!onchain) throw new Error("Missing installation editor scope");
+  const sharedSignature = policies.find((policy) => policy.type === "evm.signature");
+  const signature = onchain.allowSignatures ? sharedSignature : undefined;
+  const [signatureError, setSignatureError] = useState<string>();
+  const errors = form.formState.errors.onchain?.installations?.[installationIndex];
   const saveSignature = (policy?: SignaturePolicyInput) => {
-    const configuration = signatureConfiguration(policy);
-    apiFields.replace(configuration.policies);
-    form.setValue("onchain.allowSignatures", configuration.allowSignatures, {
+    if (
+      !policy &&
+      sharedSignature?.typedDataRules?.some((rule) => rule.chainId === onchain.chainId)
+    ) {
+      setSignatureError("Remove this network’s typed-data rules before disabling signatures.");
+      return;
+    }
+    setSignatureError(undefined);
+    if (policy) form.setValue("policies", [policy], { shouldDirty: true });
+    else if (
+      !installations.some((entry, index) => index !== installationIndex && entry.allowSignatures)
+    )
+      form.setValue("policies", [], { shouldDirty: true });
+    form.setValue(`onchain.installations.${installationIndex}.allowSignatures`, Boolean(policy), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -75,19 +95,24 @@ export function PolicySection({
       <SessionPolicyEditor
         initialContractDraft={
           pane.edit?.kind === "permission"
-            ? contractDrafts.get(JSON.stringify(pane.edit.policy))
+            ? contractDrafts.get(`${onchain.chainId}:${JSON.stringify(pane.edit.policy)}`)
             : undefined
         }
         onSaveContractDraft={(permission, draft) =>
-          setContractDrafts((previous) => new Map(previous).set(JSON.stringify(permission), draft))
+          setContractDrafts((previous) =>
+            new Map(previous).set(`${onchain.chainId}:${JSON.stringify(permission)}`, draft),
+          )
         }
         initialTokenSelection={
           pane.edit?.kind === "permission" && pane.edit.policy.type === "erc20-token-transfer"
-            ? tokenSelections.get(pane.edit.policy.address.toLowerCase())
+            ? tokenSelections.get(`${onchain.chainId}:${pane.edit.policy.address.toLowerCase()}`)
             : undefined
         }
         onSaveTokenSelection={onSaveTokenSelection}
-        chainIds={onchain.chains}
+        chainIds={[onchain.chainId]}
+        signatureChainIds={installations
+          .filter((entry) => entry.allowSignatures || entry.chainId === onchain.chainId)
+          .map(({ chainId }) => chainId)}
         edit={pane.edit}
         draft={pane.draft}
         onClose={close}
@@ -98,7 +123,7 @@ export function PolicySection({
         permissions={permissions}
         hasSignatures={signature !== undefined}
         onAddSignature={() => {
-          const policy: SignaturePolicyInput = {
+          const policy: SignaturePolicyInput = sharedSignature ?? {
             type: "evm.signature",
             version: 1,
             allowedTypes: ["message"],
@@ -110,13 +135,17 @@ export function PolicySection({
         onAddBudget={(type) => {
           const policy = toNativeBudgetPermission(type, "0");
           const index = permissions.length;
-          permissionFields.append(policy, { shouldFocus: false });
+          savePermissions([...permissions, policy]);
           editPolicy({ kind: "permission", policy, index });
         }}
         onSavePermission={(permission, index) =>
           index === undefined
-            ? permissionFields.append(permission)
-            : permissionFields.update(index, permission)
+            ? savePermissions([...permissions, permission])
+            : savePermissions(
+                permissions.map((existing, position) =>
+                  position === index ? permission : existing,
+                ),
+              )
         }
       />
     ) : null;
@@ -125,9 +154,11 @@ export function PolicySection({
     <section className="grid gap-3">
       <div className="mb-1 flex items-start justify-between gap-4">
         <HeadingGroup>
-          <HeadingGroup.Title size="sm">Policies</HeadingGroup.Title>
+          <HeadingGroup.Title size="sm">
+            <NetworksSummary chainIds={[onchain.chainId]} />
+          </HeadingGroup.Title>
           <HeadingGroup.Description>
-            Choose what this key can do, then add any limits.
+            Access and lifetime on this network only.
           </HeadingGroup.Description>
           {form.formState.isSubmitted &&
           (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
@@ -154,6 +185,7 @@ export function PolicySection({
       <div className="grid gap-3" aria-label="Configured policies">
         <RequiredPolicies
           form={form}
+          installationIndex={installationIndex}
           editing={pane?.required}
           disabled={editing}
           onClose={close}
@@ -162,14 +194,12 @@ export function PolicySection({
             onEditingChange(true);
           }}
         />
-        {permissionFields.fields.map((field, index) => {
-          const permission = permissions[index];
-          if (!permission) return null;
+        {permissions.map((permission, index) => {
           return (
             <OnchainPolicyCard
-              key={field.id}
+              key={"address" in permission ? permission.address.toLowerCase() : permission.type}
               permission={permission}
-              chainIds={onchain.chains}
+              chainIds={[onchain.chainId]}
               onEdit={
                 permission.type === "root"
                   ? undefined
@@ -180,7 +210,9 @@ export function PolicySection({
               editor={
                 pane?.edit?.kind === "permission" && pane.edit.index === index ? policyEditor : null
               }
-              onRemove={() => permissionFields.remove(index)}
+              onRemove={() =>
+                savePermissions(permissions.filter((_, position) => position !== index))
+              }
             />
           );
         })}
@@ -195,8 +227,13 @@ export function PolicySection({
             onRemove={() => saveSignature()}
           >
             <EvmPolicySummary policy={signature} />
+            <Typography.Paragraph size="xs" className="text-muted mt-2">
+              Signing rules are shared across enabled networks. Onchain authority is enabled on this
+              network.
+            </Typography.Paragraph>
           </SessionPolicyCard>
         ) : null}
+        {signatureError ? <FieldError>{signatureError}</FieldError> : null}
         {pane?.draft ? (
           <SessionPolicyCard
             name={pane.draft.name}

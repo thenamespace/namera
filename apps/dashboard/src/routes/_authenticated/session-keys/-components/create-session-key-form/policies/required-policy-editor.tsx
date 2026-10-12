@@ -12,11 +12,11 @@ import { EnforcementPills } from "./enforcement-pills";
 
 export function RequiredPolicyEditor({
   form,
-  kind,
+  installationIndex,
   onClose,
 }: {
   form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
-  kind: "networks" | "lifetime";
+  installationIndex: number;
   onClose: () => void;
 }) {
   const draft = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
@@ -24,10 +24,10 @@ export function RequiredPolicyEditor({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   const save = async () => {
-    const fields =
-      kind === "networks"
-        ? (["onchain.chains"] as const)
-        : (["onchain.validAfter", "onchain.validUntil"] as const);
+    const fields = [
+      `onchain.installations.${installationIndex}.validAfter`,
+      `onchain.installations.${installationIndex}.validUntil`,
+    ] as const;
     if (!(await draft.trigger([...fields]))) return;
     for (const field of fields) {
       form.setValue(field, draft.getValues(field), { shouldDirty: true, shouldValidate: true });
@@ -45,7 +45,7 @@ export function RequiredPolicyEditor({
       className="grid gap-6"
     >
       <div className="grid gap-4">
-        <OnchainSettings form={draft} kind={kind} />
+        <OnchainSettings form={draft} installationIndex={installationIndex} />
       </div>
       <div className="flex flex-wrap justify-end gap-2 border-t border-separator pt-4">
         <EnforcementPills />

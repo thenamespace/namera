@@ -235,9 +235,17 @@ and are lifetime ceilings per network. Root remains exclusive and requires conse
 Signatures configures Namera signing rules and owner-reviewed onchain authority
 together, counts once in authorization selectors, and discloses direct-signing
 limitations. The existing lower-level API policy contract is unchanged.
+Creation owns an explicit `onchain.installations` array. Each network section
+edits its own lifetime, permissions and signature flag. New networks start without
+access. Catalog pickers use the section's network; custom addresses inherit that
+scope. Token metadata is keyed by chain/address, never address alone. Signature
+rules remain shared API policies, and their network selectors are limited to
+networks with signature authority. Remove affected typed-data rules before
+removing a network or disabling its signature authority.
+
 Shared EVM policy components under `src/components/policy/evm/` own the policy
 catalog, summaries, cards, and editors. Installation networks and lifetime remain
-in the setup card, not the policy picker. Existing API policy summaries remain
+outside the policy picker. Existing API policy summaries remain
 readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
 

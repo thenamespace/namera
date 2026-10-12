@@ -37,7 +37,7 @@ import type { CustodyLimits } from "./custody-field";
 import { sessionCustodyLimits } from "./custody-limits";
 import { SessionKeyDetailsCard } from "./details-card";
 import { validateManagedRegistration } from "./managed-registration";
-import { PolicySection } from "./policies";
+import { InstallationPolicies } from "./policies/installations";
 import { CreateSessionKeyFormSchema } from "./schema";
 import { SetupSessionKey } from "./setup-key";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
@@ -54,11 +54,15 @@ const defaultValues = {
   },
   policies: [],
   onchain: {
-    chains: ["eip155:1"],
-    validAfter: 0,
-    validUntil: 0,
-    permissions: [],
-    allowSignatures: false,
+    installations: [
+      {
+        chainId: "eip155:1",
+        validAfter: 0,
+        validUntil: 0,
+        permissions: [],
+        allowSignatures: false,
+      },
+    ],
   },
 } satisfies DefaultValues<CreateSessionKeyFormInput>;
 
@@ -98,8 +102,15 @@ function SessionKeyForm({
       wallets.find((wallet) => wallet.id === initialAccountId && supportsSessionKeys(wallet))?.id ??
       "",
     onchain: {
-      ...defaultValues.onchain,
-      validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+      installations: [
+        {
+          chainId: "eip155:1" as const,
+          validAfter: 0,
+          permissions: [],
+          allowSignatures: false,
+          validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+        },
+      ],
     },
   }));
   const navigate = useNavigate();
@@ -361,15 +372,15 @@ function SessionKeyForm({
             </form>
           ) : (
             <>
-              <PolicySection
+              <InstallationPolicies
                 tokenSelections={tokenSelections}
-                onSaveTokenSelection={(selection) => {
+                onSaveTokenSelection={(chainId, selection) => {
                   const address =
                     selection.source === "catalog"
                       ? selection.deployment.address
                       : selection.value.address;
                   setTokenSelections((previous) =>
-                    new Map(previous).set(address.toLowerCase(), selection),
+                    new Map(previous).set(`${chainId}:${address.toLowerCase()}`, selection),
                   );
                 }}
                 form={form}

@@ -18,16 +18,19 @@ export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields(
   }),
 ).check(
   Schema.makeFilter((request) =>
-    request.onchain.chains.every(isChainOperationEnabled)
+    request.onchain.installations.every(({ chainId }) => isChainOperationEnabled(chainId))
       ? undefined
-      : { path: ["onchain", "chains"], issue: "Choose networks that are not paused." },
+      : { path: ["onchain", "installations"], issue: "Choose networks that are not paused." },
   ),
   Schema.makeFilter((request) =>
-    hasTransactionAccess(request.onchain.permissions) || request.onchain.allowSignatures
+    request.onchain.installations.every(
+      (installation) =>
+        hasTransactionAccess(installation.permissions) || installation.allowSignatures,
+    )
       ? undefined
       : {
-          path: ["onchain", "permissions"],
-          issue: "Add an access policy. Spending and gas limits do not grant transaction access.",
+          path: ["onchain", "installations"],
+          issue: "Add access on every network. Spending and gas limits alone do not grant access.",
         },
   ),
   Schema.makeFilter((request) => {
@@ -37,10 +40,23 @@ export const CreateSessionKeyFormSchema = CreateEvmSessionKeyRequest.mapFields(
         path: ["policies"],
         issue: "Use the policy picker to configure this key’s access and limits.",
       };
-    return Boolean(request.onchain.allowSignatures) === (signatures.length === 1)
+    const enabled = request.onchain.installations
+      .filter(({ allowSignatures }) => allowSignatures)
+      .map(({ chainId }) => chainId);
+    if (
+      signatures.some((policy) =>
+        policy.typedDataRules?.some((rule) => !enabled.includes(rule.chainId)),
+      )
+    )
+      return {
+        path: ["policies"],
+        issue:
+          "Enable signatures on every typed-data rule's network, or remove the affected rules.",
+      };
+    return enabled.length > 0 === (signatures.length === 1)
       ? undefined
       : {
-          path: ["onchain", "allowSignatures"],
+          path: ["policies"],
           issue: "Configure Signatures to include both signing rules and owner-approved authority.",
         };
   }),

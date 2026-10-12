@@ -5,6 +5,7 @@ import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { HugeiconsIcon, ShieldUserIcon } from "@namera-ai/ui/icons";
 
 import { evmPolicyDefinitions } from "../data";
+import { NetworksSummary } from "../networks-summary";
 import { SessionPolicyCard } from "../session-policy-card";
 import { onchainPermissionCatalog, type OnchainPermissionInput } from "./catalog";
 import { OnchainPermissionSummary } from "./summary";
@@ -15,9 +16,15 @@ type Props = Pick<
 > & {
   permission: OnchainPermissionInput;
   chainIds: readonly SupportedEvmChainId[];
+  showNetworks?: boolean;
 };
 
-export function OnchainPolicyCard({ permission, chainIds, ...actions }: Props) {
+export function OnchainPolicyCard({
+  permission,
+  chainIds,
+  showNetworks = false,
+  ...actions
+}: Props) {
   const icon =
     permission.type === "erc20-token-transfer"
       ? evmPolicyDefinitions["evm.erc20-token-transfer"].icon
@@ -35,6 +42,11 @@ export function OnchainPolicyCard({ permission, chainIds, ...actions }: Props) {
       {...actions}
     >
       <OnchainPermissionSummary permission={permission} chainIds={chainIds} />
+      {showNetworks ? (
+        <div className="mt-1">
+          <NetworksSummary chainIds={chainIds} />
+        </div>
+      ) : null}
     </SessionPolicyCard>
   );
 }
