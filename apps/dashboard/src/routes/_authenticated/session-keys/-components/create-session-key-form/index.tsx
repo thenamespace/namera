@@ -229,6 +229,7 @@ function SessionKeyForm({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   const selectedCustody = useWatch({ control: form.control, name: "custody" });
+  const installations = useWatch({ control: form.control, name: "onchain.installations" });
   const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -351,7 +352,7 @@ function SessionKeyForm({
                 void form
                   .trigger(["metadata", "walletId", "custody"], { shouldFocus: true })
                   .then((valid) => {
-                    if (valid && !limitReached) setStep("policies");
+                    if (valid && !limitReached && installations.length > 0) setStep("policies");
                     return valid;
                   });
               }}
@@ -360,13 +361,17 @@ function SessionKeyForm({
               <section className="grid gap-4">
                 <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
                 <SessionKeyDetailsCard
-                  control={form.control}
+                  form={form}
                   wallets={wallets}
                   limits={limits}
                   custodyLocked={needsBackup || createSessionKey.isPending || managedCreationFailed}
                 />
               </section>
-              <Button fullWidth type="submit" isDisabled={limitReached || managedCreationFailed}>
+              <Button
+                fullWidth
+                type="submit"
+                isDisabled={limitReached || managedCreationFailed || installations.length === 0}
+              >
                 Continue
               </Button>
             </form>

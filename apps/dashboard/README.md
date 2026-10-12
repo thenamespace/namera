@@ -237,7 +237,10 @@ together, counts once in authorization selectors, and discloses direct-signing
 limitations. The existing lower-level API policy contract is unchanged.
 Creation owns an explicit `onchain.installations` array. Each network section
 edits its own lifetime, permissions and signature flag. New networks start without
-access. Catalog pickers use the section's network; custom addresses inherit that
+access. Metadata selects networks below Custody. The Policies step shows one network
+at a time through the shared chain selector; switching preserves each network's
+configuration and is disabled during inline editing.
+Catalog pickers use the section's network; custom addresses inherit that
 scope. Token metadata is keyed by chain/address, never address alone. Signature
 rules remain shared API policies, and their network selectors are limited to
 networks with signature authority. Remove affected typed-data rules before

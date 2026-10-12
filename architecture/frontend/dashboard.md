@@ -133,6 +133,10 @@ Canonical form state is `onchain.installations`. The network picker retains exis
 entries and adds new entries with no permissions or signature authority. Each network
 has its own Lifetime card and inline policy editors. Adding a network never copies
 contract addresses, allowances, dates, or signature flags from another network.
+Network selection appears below Custody in Metadata; at least one is required to
+continue. Policies has a single-network selector scoped to those selections and
+shows only that network's cards. Inactive sections stay mounted to preserve editor
+metadata, and switching networks is disabled while a policy editor is open.
 Add policy opens a searchable, single-column list without categories in a modal;
 selecting a policy opens its configuration, and saving adds the card to the page.
 Existing cards expand an inline editor beneath their summary. Save collapses the
