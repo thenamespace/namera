@@ -4,7 +4,7 @@ import { useId, type FormEvent } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { EvmSessionPermission } from "@namera-ai/protocol/evm";
+import { EvmSessionPermission, type SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   Button,
   Checkbox,
@@ -27,6 +27,7 @@ import {
 import { TokenAllowanceEditor } from "./token-allowance/editor";
 
 export type OnchainPermissionEditorProps = {
+  chainIds: readonly SupportedEvmChainId[];
   type: OnchainPermissionType;
   initialValue?: OnchainPermissionInput;
   formId?: string;

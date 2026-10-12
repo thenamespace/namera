@@ -1,6 +1,7 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import { useId, useState } from "react";
 
+import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Button, Modal, Typography } from "@namera-ai/ui";
 import { Add01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
@@ -24,6 +25,7 @@ export type PolicyEdit =
   | { kind: "permission"; policy: OnchainPermissionInput; index: number };
 
 type Props = {
+  chainIds: readonly SupportedEvmChainId[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   edit?: PolicyEdit | undefined;
@@ -100,6 +102,7 @@ export function SessionPolicyDialog(props: Props) {
                 />
               ) : (
                 <OnchainPermissionEditor
+                  chainIds={props.chainIds}
                   key={choice.id}
                   type={choice.id}
                   formId={formId}

@@ -187,7 +187,15 @@ authenticated discovery endpoint with at most four concurrent chain requests;
 it does not fetch ABI documents. Errors expose retry rather than stale options.
 Custom input checks EVM address syntax/checksum and requires an allowed network.
 Tests cover custom address/network/decimals validation and catalog/deployment
-pairing. Policy editors are not yet wired to the picker. Consumers must validate their current filter scope before
+pairing. Session-key token spending uses `EvmErc20Picker`, restricted to the
+session's selected networks. Picker metadata supplies address and decimals;
+the form validates network membership again on save and converts the allowance
+without rounding. Existing policies store only address/base units, so editing
+requires reselecting the token to confirm network/decimals; selecting the same
+address preserves its stored base units. Network selection here does not change
+the onchain permission contract: that address/allowance still applies on every
+session network, as disclosed in the editor. Other policy editors are not yet
+wired to the picker. Consumers must validate their current filter scope before
 submission if the allowed chains/types change after selection.
 
 `components/evm-function-picker` accepts a supplied ABI and controlled single or

@@ -103,6 +103,7 @@ export function PolicySection({
       ) : null}
       {dialog ? (
         <SessionPolicyDialog
+          chainIds={onchain.chains}
           open
           edit={dialog.edit}
           onOpenChange={(open) => {
