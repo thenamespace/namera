@@ -40,7 +40,7 @@ it.each(["local", "namera-managed"] as const)(
       {
         networks: ["eip155:1", "eip155:8453"],
         allowance: "100.000001",
-        durationDays: "100",
+        expiresAt: new Date((1_800_000_000 + 100 * 86_400) * 1000).toISOString(),
       },
       { now: 1_800_000_000 },
     );

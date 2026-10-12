@@ -261,8 +261,9 @@ bounded multi-select with network icons and derived select-all state.
 package, with searchable names, descriptions and tags. `/recipes/$recipeId`
 requires session-key creation permission and prefetches accounts and permitted
 billing data. It renders Metadata, schema-driven recipe fields and Create together.
-The USDC recipe asks for networks, a per-network lifetime allowance and expiry in
-days. Circle-issued token addresses are recipe-owned; no catalog lookup is needed.
+The USDC recipe asks for networks, a per-network lifetime allowance and an expiry
+date in a metadata-style configuration card. Expiry is local midnight at the start
+of the chosen date. Circle-issued token addresses are recipe-owned; no catalog lookup is needed.
 
 The page embeds registration, local encryption/import, managed setup and network
 approval through the same components as custom creation. Continue/Skip renders

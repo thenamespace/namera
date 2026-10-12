@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 
 import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
 
@@ -9,15 +9,17 @@ import { UsdcAllowanceInput, usdcBaseUnits } from "./input.js";
 
 export const usdcAllowanceRecipe = {
   id: "usdc-lifetime-allowance",
-  version: 1,
+  version: 2,
   display: {
-    name: "USDC lifetime allowance",
-    description: "Set a total USDC spending allowance on each selected network.",
+    name: "Spend USDC with a fixed budget",
+    description:
+      "Give an agent or app permission to spend USDC up to a limit you choose. Select the networks and an expiry date. Each network gets its own full budget, which does not reset or carry over to another network.",
     logo: { type: "image", value: "https://cdn.namera.ai/address-catalog/eip155/erc20/usdc.png" },
+    banner: "https://api.dicebear.com/10.x/glass/svg?seed=namera-usdc-budget&size=600",
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,
-  defaults: { networks: [], allowance: "", durationDays: "30" },
+  defaults: { networks: [], allowance: "", expiresAt: "" },
   fields: [
     { name: "networks", kind: "networks", label: "Networks", chainIds: usdcNetworks },
     {
@@ -29,11 +31,19 @@ export const usdcAllowanceRecipe = {
       symbol: "USDC",
       decimals: 6,
     },
-    { name: "durationDays", kind: "duration", label: "Expires after", min: 1, max: 3650 },
+    {
+      name: "expiresAt",
+      kind: "expiry",
+      label: "Expires on",
+      description: "Expires at the start of this date in your local time zone.",
+    },
   ],
   build(input, { now }) {
     const values = Schema.decodeUnknownSync(UsdcAllowanceInput)(input);
-    const validUntil = now + Number(values.durationDays) * 86_400;
+    const validUntil = Math.floor(
+      DateTime.toEpochMillis(DateTime.makeUnsafe(values.expiresAt)) / 1000,
+    );
+    if (validUntil <= now) throw new Error("Choose an expiry date in the future.");
     return {
       onchain: {
         installations: values.networks.map((chainId) =>

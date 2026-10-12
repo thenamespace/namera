@@ -42,32 +42,40 @@ export function RecipeList() {
         fullWidth
         variant="secondary"
       />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {visible.map((recipe) => (
           <Link
             key={recipe.id}
             to="/recipes/$recipeId"
             params={recipe.params}
-            className="group grid gap-4 rounded-xl border border-separator p-5 transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
+            className="group overflow-hidden rounded-xl border border-separator transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
           >
-            <div className="flex items-center justify-between gap-3">
-              <IconPreview value={recipe.display.logo} size="lg" />
-              <HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-muted" aria-hidden />
-            </div>
-            <div className="grid gap-1">
-              <Typography.Heading level={2} className="text-base">
-                {recipe.display.name}
-              </Typography.Heading>
-              <Typography.Paragraph size="sm" color="muted">
-                {recipe.display.description}
-              </Typography.Paragraph>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {recipe.display.tags.map((tag) => (
-                <Chip key={tag} size="sm" variant="soft">
-                  {tag}
-                </Chip>
-              ))}
+            <img
+              src={recipe.display.banner}
+              alt=""
+              className="h-36 w-full bg-surface object-cover"
+              loading="lazy"
+            />
+            <div className="grid gap-4 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <IconPreview value={recipe.display.logo} size="lg" />
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-muted" aria-hidden />
+              </div>
+              <div className="grid gap-2">
+                <Typography.Heading level={2} className="text-base">
+                  {recipe.display.name}
+                </Typography.Heading>
+                <Typography.Paragraph size="sm" color="muted">
+                  {recipe.display.description}
+                </Typography.Paragraph>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {recipe.display.tags.map((tag) => (
+                  <Chip key={tag} size="sm" variant="soft">
+                    {tag}
+                  </Chip>
+                ))}
+              </div>
             </div>
           </Link>
         ))}

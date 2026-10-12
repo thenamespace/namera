@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { DateTime, Option, Schema } from "effect";
 
 import { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 
@@ -29,11 +29,16 @@ export const UsdcAllowanceInput = Schema.Struct({
         : "Enter an amount greater than zero and within the token limit.";
     }),
   ),
-  durationDays: Schema.String.check(
-    Schema.makeFilter((value) =>
-      /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 3650
+  expiresAt: Schema.String.check(
+    Schema.makeFilter((value) => {
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value))
+        return "Choose an expiry date.";
+      const date = DateTime.make(value);
+      return Option.isSome(date) &&
+        DateTime.formatIso(date.value) ===
+          (value.includes(".") ? value : value.replace("Z", ".000Z"))
         ? undefined
-        : "Enter a whole number of days from 1 to 3,650.",
-    ),
+        : "Choose a valid expiry date.";
+    }),
   ),
 });

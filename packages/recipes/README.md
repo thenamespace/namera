@@ -13,8 +13,9 @@ and the normal creation schema encodes the final request.
 
 ## USDC lifetime allowance
 
-Inputs are networks, a decimal-string allowance, and duration in whole days
-(1–3,650; default 30). Each network receives the full allowance independently.
+Inputs are networks, a decimal-string allowance, and `expiresAt`, a UTC ISO timestamp
+in the future. The dashboard date picker selects local midnight at the start of
+the chosen date. Each network receives the full allowance independently.
 There is no periodic reset or shared cross-chain budget. Only Circle-issued native
 USDC is selected; bridged USDC.e is excluded. Mainnet and testnet deployments are
 code-owned and sourced in `deployments.ts`. No catalog lookup is required.
@@ -30,6 +31,7 @@ Add a focused folder under `src/recipes`, define its schema and typed field list
 test the generated authority and unsafe inputs, then register it in `src/index.ts`.
 Increment a recipe version when changing inputs or generated authority. Add field
 kinds only when needed by a recipe; the dashboard owns their accessible rendering.
+`display.banner` optionally supplies a replaceable card cover image.
 
 ```sh
 pnpm --filter @namera-ai/recipes test

@@ -234,7 +234,10 @@ builders. It depends only on protocol and Effect, not the catalog or React. Buil
 return current `onchain.installations` and session-level `policies`; they neither
 create signers nor submit requests. The first recipe grants a lifetime USDC allowance
 independently on selected networks using Circle's native deployments. Amounts are
-exact six-decimal base units, and duration is 1–3,650 whole days (default 30).
+exact six-decimal base units. A calendar picker selects expiry at local midnight
+at the start of the chosen date, serialized as a UTC ISO timestamp; the builder
+rejects invalid or elapsed expiry dates. Recipe fields use the same card rows as
+metadata. The list uses the members-page width and optional `display.banner` covers.
 Signatures remain disabled. There is no cross-chain shared budget or periodic reset.
 
 `components/session-key-creation` is shared by custom creation and recipes. Metadata
@@ -251,7 +254,7 @@ database table, audit type or signing bypass. Existing creation emits its normal
 transactional audit event. Templates and their input values are not persisted.
 
 Package tests cover per-chain addresses, exact amounts, overflow, invalid networks
-and duration; dashboard resolver tests cover both custody variants using generated
+and expiry; dashboard resolver tests cover both custody variants using generated
 recipe permissions. Browser checks do not substitute for live custody or onchain
 approval verification.
 

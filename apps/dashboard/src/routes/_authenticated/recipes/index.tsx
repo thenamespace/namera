@@ -14,7 +14,7 @@ function RecipesPage() {
       <DashboardPage.Header>
         <DashboardPage.Title>Recipes</DashboardPage.Title>
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <DashboardPage.Content className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-12 md:py-16">
         <RecipeList />
       </DashboardPage.Content>
     </DashboardPage>

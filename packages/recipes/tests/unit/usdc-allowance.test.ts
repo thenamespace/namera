@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { usdcAllowanceRecipe } from "../../src/index.js";
 
 const now = 1_800_000_000;
+const expiresAt = new Date((now + 100 * 86_400) * 1000).toISOString();
 
 describe("USDC lifetime allowance", () => {
   it("builds independent exact allowances using each network's native USDC", () => {
@@ -13,7 +14,7 @@ describe("USDC lifetime allowance", () => {
       {
         networks: ["eip155:1", "eip155:8453"],
         allowance: "9007199254740993.123456",
-        durationDays: "100",
+        expiresAt,
       },
       { now },
     );
@@ -45,7 +46,7 @@ describe("USDC lifetime allowance", () => {
           {
             networks: ["eip155:1"],
             allowance,
-            durationDays: "30",
+            expiresAt,
           },
           { now },
         ),
@@ -56,16 +57,23 @@ describe("USDC lifetime allowance", () => {
   it("rejects empty, duplicate and unsupported networks", () => {
     const decode = Schema.decodeUnknownSync(usdcAllowanceRecipe.inputSchema);
     for (const networks of [[], ["eip155:1", "eip155:1"], ["eip155:999"]])
-      expect(() => decode({ networks, allowance: "100", durationDays: "30" })).toThrow();
+      expect(() => decode({ networks, allowance: "100", expiresAt })).toThrow();
   });
 
-  it.each(["0", "-1", "1.5", "3651", ""])("rejects invalid duration %s", (durationDays) => {
+  it.each([
+    "",
+    "invalid",
+    "2028-02-30T00:00:00Z",
+    "2028-01-01",
+    new Date(now * 1000).toISOString(),
+    new Date((now - 1) * 1000).toISOString(),
+  ])("rejects invalid or elapsed expiry %s", (invalidExpiry) => {
     expect(() =>
       usdcAllowanceRecipe.build(
         {
           networks: ["eip155:1"],
           allowance: "100",
-          durationDays,
+          expiresAt: invalidExpiry,
         },
         { now },
       ),
@@ -77,7 +85,7 @@ describe("USDC lifetime allowance", () => {
       {
         networks: ["eip155:11155111"],
         allowance: "0.000001",
-        durationDays: "1",
+        expiresAt,
       },
       { now },
     );
@@ -88,5 +96,14 @@ describe("USDC lifetime allowance", () => {
         allowance: 1n,
       },
     ]);
+  });
+
+  it("preserves the chosen expiry instant without adding a relative duration", () => {
+    const chosenExpiry = "2027-03-01T18:30:00Z";
+    const output = usdcAllowanceRecipe.build(
+      { networks: ["eip155:1"], allowance: "100", expiresAt: chosenExpiry },
+      { now },
+    );
+    expect(output.onchain.installations[0]?.validUntil).toBe(Date.parse(chosenExpiry) / 1000);
   });
 });

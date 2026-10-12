@@ -13,7 +13,7 @@ export type RecipeField<Name extends string = string> = {
 } & (
   | { readonly kind: "networks"; readonly chainIds: readonly SupportedEvmChainId[] }
   | { readonly kind: "amount"; readonly symbol: string; readonly decimals: number }
-  | { readonly kind: "duration"; readonly min: number; readonly max: number }
+  | { readonly kind: "expiry" }
 );
 
 export type Recipe<S extends Schema.Top> = {
@@ -23,6 +23,7 @@ export type Recipe<S extends Schema.Top> = {
     readonly name: string;
     readonly description: string;
     readonly logo: MetadataIcon;
+    readonly banner?: string;
     readonly tags: readonly string[];
   };
   readonly inputSchema: S;
