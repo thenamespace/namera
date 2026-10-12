@@ -325,7 +325,7 @@ export function AccountsTable({ initialAccounts }: AccountsTableProps) {
 
   return (
     <div className="grid gap-5">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
         <SearchField
           aria-label="Filter accounts by name, address, or ID"
           className="w-full sm:max-w-80"

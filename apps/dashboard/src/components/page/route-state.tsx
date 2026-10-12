@@ -13,7 +13,7 @@ export function RouteState({ children }: PropsWithChildren) {
   if (insidePanel) return <div className="grid min-h-[50vh] place-items-center">{children}</div>;
   return (
     <DashboardPage>
-      <DashboardPage.Header className="md:hidden">
+      <DashboardPage.Header className="min-[769px]:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
       <div className="grid min-h-[70vh] flex-1 place-items-center">{children}</div>

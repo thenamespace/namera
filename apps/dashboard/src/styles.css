@@ -8,6 +8,84 @@
 }
 
 @layer components {
+  .dashboard-mobile-menu {
+    --sidebar-width: min(20rem, calc(100vw - 2rem));
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Match UIKit's mobile sidebar breakpoint, including the 768px boundary. */
+  @media (max-width: 768px) {
+    .sidebar__provider:has(.sidebar--inset) .sidebar__main {
+      margin: 0;
+      min-height: 100dvh;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .dashboard-page-header {
+      flex-wrap: wrap;
+      padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+      padding-top: max(0.5rem, env(safe-area-inset-top));
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--separator);
+    }
+
+    .dashboard-page-content {
+      padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+      padding-block: 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+    }
+
+    :is(
+      .button,
+      .select__trigger,
+      .input,
+      .search-field__group,
+      .date-input-group,
+      .segment__item
+    ) {
+      min-height: 2.75rem;
+    }
+
+    .button--icon-only {
+      min-width: 2.75rem;
+    }
+
+    .dashboard-mobile-menu .sidebar__menu-item-content {
+      min-height: 2.75rem;
+    }
+
+    :is(input, textarea, select) {
+      font-size: 1rem;
+    }
+
+    .dashboard-mobile-menu a:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+      border-radius: var(--radius);
+    }
+
+    .sidebar__main nav[aria-label] {
+      min-width: 0;
+      overflow-x: auto;
+    }
+
+    .sidebar__main nav[aria-label] a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      white-space: nowrap;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar__mobile-sheet,
+    [data-sheet-overlay]:has(.sidebar__mobile-sheet)::before {
+      animation: none;
+      transition: none;
+    }
+  }
+
   /* Recharts makes SVG layers focusable; only show outlines for keyboard focus. */
   .recharts-wrapper :focus:not(:focus-visible) {
     outline: none;

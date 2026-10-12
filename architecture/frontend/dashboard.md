@@ -32,6 +32,13 @@ Nested failures reuse an existing panel rather than adding another main region;
 authentication failures outside the shell do not require a sidebar. Rendering
 tests cover loading, errors, authentication and nested-panel reuse.
 
+App and settings navigation render the same menu content in a desktop sidebar
+and UIKit mobile sheet. At widths up to 768px, the shared navigation trigger
+exposes a labeled hamburger; Inbox and route fallbacks use it too. The sheet
+owns focus trapping, Escape and focus restoration. Navigation links explicitly
+close it, including selection of the current destination. Mobile page padding,
+safe areas and touch targets are dashboard-owned; desktop spacing is retained.
+
 Denied `Unauthorized`/`Forbidden` query results expose no cached data, including
 while retrying. Denied queries/mutations refresh current-user authority. Ordinary
 network failures retain already-loaded data. The current-user atom revalidates

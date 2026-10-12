@@ -83,7 +83,7 @@ export function SessionKeyDetailsCard({
                     <FieldLabel htmlFor="session-key-name" isRequired>
                       Name
                     </FieldLabel>
-                    <div className="min-h-5" id="session-key-name-error">
+                    <div className="max-sm:empty:hidden sm:min-h-5" id="session-key-name-error">
                       {fieldState.invalid ? (
                         <FieldError>
                           {field.value?.trim()
@@ -117,7 +117,10 @@ export function SessionKeyDetailsCard({
                 <Field className="contents" data-invalid={fieldState.invalid}>
                   <div className="grid min-w-0 gap-1">
                     <FieldLabel htmlFor="session-key-description">Description</FieldLabel>
-                    <div className="min-h-5" id="session-key-description-error">
+                    <div
+                      className="max-sm:empty:hidden sm:min-h-5"
+                      id="session-key-description-error"
+                    >
                       {fieldState.invalid ? (
                         <FieldError>Keep the description to 1,024 characters or fewer.</FieldError>
                       ) : null}
@@ -154,7 +157,7 @@ export function SessionKeyDetailsCard({
                       <FieldLabel id="session-key-wallet-label" isRequired>
                         Account
                       </FieldLabel>
-                      <div className="min-h-5" id="session-key-wallet-error">
+                      <div className="max-sm:empty:hidden sm:min-h-5" id="session-key-wallet-error">
                         {fieldState.invalid ? (
                           <FieldError>Choose an account for this session key.</FieldError>
                         ) : null}

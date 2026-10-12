@@ -412,6 +412,14 @@ the rendered component.
 
 ## UI conventions
 
+The app and settings sidebars share `ResponsiveSidebar`, using UIKit's mobile
+sheet at widths up to 768px. `NavigationTrigger` provides the labeled Menu
+button in page headers and Inbox. The sheet supports Escape, focus return and
+explicit dismissal; choosing a destination closes it. Desktop navigation is unchanged.
+Dashboard mobile styles remove the outer inset, respect safe areas, enlarge touch
+controls and keep detail tabs scrollable. Shared card rows stack below `sm`;
+tables retain UIKit's local horizontal scrolling rather than hiding columns.
+
 Use components, hooks, icons, utilities, and styles through `@namera-ai/ui`.
 Examples in the [Namespace UIKit documentation](https://namespace-uikit.vercel.app/llms.txt)
 that import `@thenamespace/uikit` map directly to `@namera-ai/ui` in this app.

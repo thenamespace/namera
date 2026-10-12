@@ -42,7 +42,7 @@ export function RecipeList() {
         className="w-80 max-w-full"
         variant="secondary"
       />
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {visible.map((recipe) => (
           <Link
             key={recipe.id}

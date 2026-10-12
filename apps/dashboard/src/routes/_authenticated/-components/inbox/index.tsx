@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { NotificationId } from "@namera-ai/protocol";
 import type { ListNotificationsResponse, NotificationResponse } from "@namera-ai/protocol/dto";
-import { Button, SearchField, Sidebar, Spinner, Tooltip, Typography } from "@namera-ai/ui";
+import { Button, SearchField, Spinner, Tooltip, Typography } from "@namera-ai/ui";
 import {
   ArchiveIcon,
   CheckmarkCircle02Icon,
@@ -17,6 +17,7 @@ import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
+import { NavigationTrigger } from "@/components/sidebar/navigation-trigger";
 import {
   useArchiveNotification,
   useMarkAllNotificationsRead,
@@ -252,7 +253,7 @@ export function Inbox() {
           }
         >
           <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-            <Sidebar.Trigger />
+            <NavigationTrigger />
             <HeadingGroup.Title className="text-sm" level={1} weight="normal">
               Inbox
             </HeadingGroup.Title>

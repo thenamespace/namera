@@ -1,9 +1,9 @@
 // oxlint-disable react-perf/jsx-no-new-object-as-prop typescript/no-explicit-any
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 
 import { Link, useMatchRoute } from "@tanstack/react-router";
 
-import { cn, Kbd, Sidebar } from "@namera-ai/ui";
+import { cn, Kbd, Sidebar, useSidebar } from "@namera-ai/ui";
 import { HugeiconsIcon, type IconSvgElement } from "@namera-ai/ui/icons";
 
 export type SidebarGroupItemsProps = {
@@ -25,6 +25,8 @@ export type SidebarGroupItemsProps = {
 
 export const SidebarGroup = ({ label, ariaLabel, items }: SidebarGroupItemsProps) => {
   const matchRoute = useMatchRoute();
+  const { setMobileOpen } = useSidebar();
+  const closeMenu = useCallback(() => setMobileOpen(false), [setMobileOpen]);
 
   return (
     <Sidebar.Group>
@@ -52,7 +54,7 @@ export const SidebarGroup = ({ label, ariaLabel, items }: SidebarGroupItemsProps
                 if (item.href) {
                   return (
                     <div {...props}>
-                      <Link to={item.href as any} className="w-full">
+                      <Link to={item.href as any} className="w-full" onClick={closeMenu}>
                         {children}
                       </Link>
                     </div>
