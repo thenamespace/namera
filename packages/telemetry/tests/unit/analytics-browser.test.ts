@@ -7,8 +7,7 @@ const sdk = vi.hoisted(() => ({
   reset: vi.fn(),
   setPersonProperties: vi.fn(),
   set_config: vi.fn(),
-  opt_out_capturing: vi.fn(),
-  opt_in_capturing: vi.fn(),
+  clear_opt_in_out_capturing: vi.fn(),
   getActiveMatchingSurveys: vi.fn(),
   displaySurvey: vi.fn(),
 }));
@@ -56,13 +55,37 @@ describe("browser analytics lifecycle", () => {
     const config = sdk.init.mock.calls[0]?.[1];
     const event = config.before_send({ event: "$pageview", properties: { token: "secret" } });
     expect(event.properties.workspace_id).toBe("workspace-two");
-    expect(event.properties.token).toBeUndefined();
+    expect(event.properties.token).toBe("public-test-token");
     analytics.analyticsIdentity();
     expect(sdk.reset).toHaveBeenCalledTimes(2);
     expect(
       config.before_send({ event: "$pageview", properties: {} }).properties.workspace_id,
     ).toBeUndefined();
   });
+
+  it.each(["$pageview", "dashboard_action_started"])(
+    "retains the configured ingestion token while filtering credentials from %s",
+    async (eventName) => {
+      const analytics = await import("../../src/analytics/browser.js");
+      analytics.initializeAnalytics({
+        key: "public-test-token",
+        production: true,
+        surface: "dashboard",
+      });
+      const config = sdk.init.mock.calls[0]?.[1];
+      const event = config.before_send({
+        event: eventName,
+        properties: {
+          token: "caller-token",
+          api_key: "private-api-key",
+          authorization: "Bearer private-credential",
+        },
+      });
+      expect(event.properties.token).toBe("public-test-token");
+      expect(event.properties.api_key).toBeUndefined();
+      expect(event.properties.authorization).toBeUndefined();
+    },
+  );
 
   it("honors privacy signals and never enables replay or autocapture", async () => {
     const analytics = await import("../../src/analytics/browser.js");
@@ -87,9 +110,31 @@ describe("browser analytics lifecycle", () => {
     analytics.analyticsPage("/settings/profile");
     analytics.analyticsPage("/settings/profile");
     expect(sdk.capture).toHaveBeenCalledOnce();
-    analytics.setAnalyticsDisabled(true);
+    vi.stubGlobal("navigator", { doNotTrack: "1" });
     analytics.captureAnalytics("dashboard_action_started");
     expect(sdk.capture).toHaveBeenCalledOnce();
-    expect(sdk.opt_out_capturing).toHaveBeenCalledOnce();
+    expect(
+      sdk.init.mock.calls[0]?.[1].before_send({ event: "$pageview", properties: {} }),
+    ).toBeNull();
   });
+
+  it.each(["namera.ai", "dashboard.namera.ai"])(
+    "starts automatically on %s despite the retired in-app preference",
+    async (hostname) => {
+      const analytics = await import("../../src/analytics/browser.js");
+      vi.stubGlobal("location", { hostname, origin: `https://${hostname}` });
+      vi.stubGlobal("document", { cookie: "namera_analytics_disabled=true" });
+      vi.stubGlobal("localStorage", { getItem: vi.fn(() => "true") });
+      analytics.initializeAnalytics({
+        key: "public-test-token",
+        production: true,
+        surface: hostname === "namera.ai" ? "web" : "dashboard",
+      });
+      expect(sdk.init).toHaveBeenCalledOnce();
+      expect(sdk.clear_opt_in_out_capturing).toHaveBeenCalledOnce();
+      expect(document.cookie).toContain("Max-Age=0");
+      analytics.captureAnalytics("dashboard_action_started");
+      expect(sdk.capture).toHaveBeenCalledOnce();
+    },
+  );
 });

@@ -121,8 +121,8 @@ the project UI is in the EU region.
 Session recording and generic autocapture are disabled. Typed events explicitly
 allow IDs and names, but exclude request bodies, credentials, form values, raw
 query strings, and exception messages. Error frames retain asset locations for
-source-map resolution. Browser opt-out, Do Not Track, and Global Privacy Control
-disable capture. Workspace context uses ordinary event properties; the paid
+source-map resolution. Collection starts automatically without an in-app toggle;
+Do Not Track and Global Privacy Control still disable capture. Workspace context uses ordinary event properties; the paid
 Group Analytics add-on is not activated by the code.
 
 Run `pnpm --filter @namera-ai/telemetry test` for capture-boundary regressions.

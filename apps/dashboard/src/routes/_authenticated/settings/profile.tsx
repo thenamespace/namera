@@ -6,7 +6,6 @@ import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { useCurrentUser } from "@/hooks/auth";
 
-import { AnalyticsPreference } from "./-components/analytics-preference";
 import { ProfileForm } from "./-components/profile-form";
 
 export const Route = createFileRoute("/_authenticated/settings/profile")({
@@ -39,7 +38,6 @@ function ProfilePage() {
           </HeadingGroup.Title>
         </HeadingGroup>
         <ProfileForm user={user} />
-        <AnalyticsPreference />
       </DashboardPage.Content>
     </DashboardPage>
   );

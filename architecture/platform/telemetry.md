@@ -216,6 +216,9 @@ initialize the shared `@namera-ai/telemetry/analytics/browser` module with the
 public `VITE_POSTHOG_KEY`. Production collection is enabled on `namera.ai`,
 `www.namera.ai`, and `dashboard.namera.ai`; development and preview hosts are
 excluded. Events go through the managed `https://t.namera.ai` proxy.
+The browser event boundary restores the configured public project token after
+sanitizing properties; PostHog drops events before sending if that token is absent.
+Caller-supplied tokens and other credentials remain excluded.
 
 The dashboard identifies only verified user IDs, with an optional display name.
 Workspace IDs/names are event properties, not a paid Groups integration. An
@@ -233,8 +236,10 @@ and names are allowed. Exception frames retain asset paths and line/column data.
 Survey delivery samples 10% of browser app instances, waits 60 seconds on an
 eligible visible page, and enforces a cross-subdomain 30-day cooldown. Auth,
 settings, creation, account-detail, execution, and approval routes are excluded.
-The footer and dashboard profile settings expose browser analytics preferences;
-Do Not Track and Global Privacy Control also prevent collection.
+The website and dashboard collect automatically without an in-app analytics
+toggle. Production initialization expires the retired preference cookie, ignores
+its local-storage value, and clears the SDK's saved opt-in/out status. Do Not
+Track and Global Privacy Control still prevent collection and this migration.
 
 Provider dashboards, billing caps, survey definitions, deployment verification,
 and privacy/terms reconciliation are tracked in the ignored research plan.

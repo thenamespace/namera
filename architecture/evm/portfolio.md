@@ -57,6 +57,12 @@ Unpriced assets remain visible but do not
 contribute to USD allocation. Asset slices are identified by chain and contract,
 with small holdings grouped into Other; chain slices use the same asset values.
 
+Asset rows use the token picker's compact logo and network badge treatment.
+Alchemy logos take priority. Only ERC-20 rows with no provider logo resolve their
+exact namespace, chain, and address through the cached catalog API for a logo.
+Missing matches and lookup failures retain an initials fallback; native ETH keeps
+its native icon. Catalog enrichment does not change balances, decimals, or prices.
+
 ## Persistence
 
 Portfolio snapshots live in bounded process memory. Balances and token metadata

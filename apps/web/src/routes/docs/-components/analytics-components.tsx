@@ -4,6 +4,7 @@ import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
 import { Button } from "@namera-ai/ui/button";
 import { Copy01Icon, Icon } from "@namera-ai/ui/icons";
 import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock";
+import { buttonVariants } from "fumadocs-ui/components/ui/button";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
 function CopyAction({ className }: { className?: string | undefined }) {
@@ -58,12 +59,13 @@ export function DocsMarkdownCopy({ markdownUrl }: { markdownUrl: string }) {
   const [status, setStatus] = useState("Copy Markdown");
   const [pending, setPending] = useState(false);
   return (
-    <Button
+    <button
       type="button"
-      variant="secondary"
-      size="sm"
-      className="h-9 px-3 text-sm"
-      isDisabled={pending}
+      className={buttonVariants({
+        variant: "secondary",
+        className: "h-9 gap-2 px-3 text-sm [&_svg]:text-fd-muted-foreground",
+      })}
+      disabled={pending}
       onClick={async () => {
         setPending(true);
         try {
@@ -84,6 +86,6 @@ export function DocsMarkdownCopy({ markdownUrl }: { markdownUrl: string }) {
     >
       <Icon icon={Copy01Icon} aria-hidden className="size-3.5" />
       <span aria-live="polite">{status}</span>
-    </Button>
+    </button>
   );
 }
