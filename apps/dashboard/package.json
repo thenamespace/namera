@@ -39,6 +39,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "shiki": "4.5.0",
     "tailwindcss": "catalog:",
     "ua-parser-js": "catalog:",
     "usehooks-ts": "3.1.1",

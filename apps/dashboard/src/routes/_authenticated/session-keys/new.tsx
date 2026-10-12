@@ -50,7 +50,7 @@ function CreateSessionKeyPage() {
       <DashboardPage.Header className="md:hidden">
         <DashboardPage.Title />
       </DashboardPage.Header>
-      <DashboardPage.Content className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-16">
+      <DashboardPage.Content className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:py-16">
         {canCreate ? (
           <>
             {wallets.data ? (

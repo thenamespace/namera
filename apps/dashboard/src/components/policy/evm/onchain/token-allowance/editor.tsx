@@ -15,19 +15,21 @@ import {
 } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
-import { EvmErc20Picker, type EvmErc20Selection } from "@/components/evm-erc20-picker";
-
 import type { OnchainPermissionEditorProps } from "../editor";
 import {
   tokenSpendingForm,
   tokenSelectionFields,
   tokenAllowanceDefaults,
   toTokenAllowancePermission,
+  type TokenSpendingSelection,
 } from "./form";
+import { TokenSpendingPicker } from "./picker";
 
 export function TokenAllowanceEditor({
   chainIds,
   initialValue,
+  initialTokenSelection,
+  onSaveTokenSelection,
   formId,
   hideSubmit,
   description,
@@ -36,10 +38,19 @@ export function TokenAllowanceEditor({
 }: OnchainPermissionEditorProps) {
   const generatedId = useId();
   const id = formId ?? generatedId;
-  const [selection, setSelection] = useState<EvmErc20Selection | null>(null);
+  const [selection, setSelection] = useState<TokenSpendingSelection | null>(
+    initialTokenSelection ?? null,
+  );
+  const selectedDefaults = initialTokenSelection
+    ? tokenSelectionFields(initialTokenSelection, initialValue)
+    : null;
   const schema = tokenSpendingForm(chainIds);
   const form = useForm<typeof schema.Encoded, unknown, typeof schema.Type>({
-    defaultValues: { token: tokenAllowanceDefaults(initialValue), chainId: "" },
+    defaultValues: {
+      token: selectedDefaults ?? tokenAllowanceDefaults(initialValue),
+      chainId:
+        selectedDefaults?.chainId ?? (initialTokenSelection?.source === "custom" ? null : ""),
+    },
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
   });
   const submit = form.handleSubmit((value) => {
@@ -49,6 +60,7 @@ export function TokenAllowanceEditor({
       form.setError("root", { message: conflict });
       return;
     }
+    if (selection) onSaveTokenSelection?.(selection);
     onSave(permission);
   });
   return (
@@ -72,7 +84,7 @@ export function TokenAllowanceEditor({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid || Boolean(form.formState.errors.chainId)}>
                 <FieldLabel htmlFor={`${id}-token`}>Token</FieldLabel>
-                <EvmErc20Picker
+                <TokenSpendingPicker
                   id={`${id}-token`}
                   chainIds={chainIds}
                   value={selection}
@@ -105,12 +117,6 @@ export function TokenAllowanceEditor({
               </Field>
             )}
           />
-          {initialValue && !selection ? (
-            <Typography.Paragraph size="xs" color="muted">
-              Reselect the token to confirm its network and decimals. The saved allowance is
-              preserved when selecting the same address.
-            </Typography.Paragraph>
-          ) : null}
           <Controller
             control={form.control}
             name="token.amount"

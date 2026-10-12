@@ -12,7 +12,7 @@ import {
   Select,
   TextArea,
 } from "@namera-ai/ui";
-import type { Control } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 
 import {
@@ -24,24 +24,26 @@ import { MetadataDisplay } from "@/components/display";
 import { supportsSessionKeys } from "@/lib/session-owner";
 
 import { CustodyField, type CustodyLimits } from "./custody-field";
+import { SessionNetworksField } from "./networks-field";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
 
 type SessionKeyDetailsCardProps = {
-  control: Control<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
+  form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   wallets: ListWalletsResponse;
   custodyLocked: boolean;
   limits: CustodyLimits;
 };
 
 export function SessionKeyDetailsCard({
-  control,
+  form,
   wallets,
   custodyLocked,
   limits,
 }: SessionKeyDetailsCardProps) {
+  const { control } = form;
   const activeWallets = wallets.filter(supportsSessionKeys);
 
   return (
@@ -216,6 +218,7 @@ export function SessionKeyDetailsCard({
             }}
           />
           <CustodyField control={control} locked={custodyLocked} limits={limits} />
+          <SessionNetworksField form={form} />
         </FieldGroup>
       </DashboardCardContent>
     </DashboardCardRoot>

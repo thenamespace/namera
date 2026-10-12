@@ -1,34 +1,54 @@
-// oxlint-disable react-perf/jsx-no-new-function-as-prop
-import {
-  Button,
-  Checkbox,
-  Field,
-  FieldError,
-  FieldLabel,
-  Input,
-  ListBox,
-  Select,
-} from "@namera-ai/ui";
-import { Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
-import { Controller, type Control } from "react-hook-form";
+/* oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-array-as-prop, react-perf/jsx-no-new-object-as-prop */
+import { useState } from "react";
 
-import { evmChainOptions } from "../data";
+import { EthereumAddress, type SupportedEvmChainId } from "@namera-ai/protocol/evm";
+import { Button, Checkbox, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
+import { Delete02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Controller, useController, useWatch, type Control } from "react-hook-form";
+import { isAddress } from "viem";
+
+import { EvmAddressPickerWithoutNetwork } from "@/components/evm-address-picker-without-network";
+import type { EvmAddressValue, EvmCustomAddress } from "@/components/evm-address-picker/types";
+import { EvmChainSelect } from "@/components/evm-chain-select";
+
 import type { SignatureFormInput, SignaturePolicyForm } from "./form";
 
+const contractTypes = ["contract", "erc20"] as const;
+type VerifyingContractSelection = EvmAddressValue<(typeof contractTypes)[number], EvmCustomAddress>;
+
 const textFields = [
-  { key: "verifyingContract", label: "Verifying contract", placeholder: "0x…" },
   { key: "primaryTypes", label: "Message types", placeholder: "Permit, Authorization" },
 ] as const;
 
 export function SignatureRuleFields({
   control,
+  chainIds,
   index,
   onRemove,
 }: {
   control: Control<SignatureFormInput, unknown, typeof SignaturePolicyForm.Type>;
   index: number;
+  chainIds: readonly SupportedEvmChainId[];
   onRemove: () => void;
 }) {
+  const chainId = useWatch({ control, name: `rules.${index}.chainId` });
+  const { field: contract, fieldState: contractState } = useController({
+    control,
+    name: `rules.${index}.verifyingContract`,
+  });
+  const [selection, setSelection] = useState<VerifyingContractSelection | null>(null);
+  const selectedAddress = selection?.source === "catalog" ? selection.deployment : selection?.value;
+  const selectedChainId = chainIds.find((id) => id === chainId);
+  const contractValue: VerifyingContractSelection | null =
+    selectedAddress?.chainId === chainId && selectedAddress.address === contract.value
+      ? selection
+      : selectedChainId && isAddress(contract.value)
+        ? {
+            source: "custom",
+            value: { chainId: selectedChainId, address: EthereumAddress.make(contract.value) },
+          }
+        : null;
+
   return (
     <div className="border-separator bg-surface/40 grid gap-3 rounded-lg border p-3">
       <div className="flex items-center justify-between gap-3">
@@ -51,33 +71,51 @@ export function SignatureRuleFields({
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel id={`typed-data-network-${index}`}>Network</FieldLabel>
             {fieldState.error ? <FieldError>Choose a network for this rule.</FieldError> : null}
-            <Select
+            <EvmChainSelect
               aria-labelledby={`typed-data-network-${index}`}
-              fullWidth
+              chainIds={chainIds}
               isInvalid={fieldState.invalid}
               name={field.name}
-              selectedKey={field.value}
+              value={chainIds.find((id) => id === field.value) ?? null}
               variant="secondary"
-              onSelectionChange={field.onChange}
-            >
-              <Select.Trigger ref={field.ref} onBlur={field.onBlur}>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox items={evmChainOptions}>
-                  {(chain) => (
-                    <ListBox.Item id={chain.id} textValue={chain.name}>
-                      {chain.name}
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  )}
-                </ListBox>
-              </Select.Popover>
-            </Select>
+              onChange={(next) => {
+                field.onChange(next);
+                if (next !== field.value) {
+                  setSelection(null);
+                  contract.onChange("");
+                }
+              }}
+              onBlur={field.onBlur}
+              triggerRef={field.ref}
+            />
           </Field>
         )}
       />
+      <Field data-invalid={contractState.invalid}>
+        <FieldLabel htmlFor={`typed-data-contract-${index}`}>Verifying contract</FieldLabel>
+        {selectedChainId ? (
+          <EvmAddressPickerWithoutNetwork
+            id={`typed-data-contract-${index}`}
+            label="Select contract"
+            chainId={selectedChainId}
+            types={contractTypes}
+            value={contractValue}
+            isInvalid={contractState.invalid}
+            popoverClassName="border border-separator"
+            aria-describedby={`typed-data-contract-error-${index}`}
+            onBlur={contract.onBlur}
+            onChange={(next) => {
+              setSelection(next);
+              contract.onChange(
+                next?.source === "catalog" ? next.deployment.address : (next?.value.address ?? ""),
+              );
+            }}
+          />
+        ) : null}
+        <FieldError id={`typed-data-contract-error-${index}`}>
+          {contractState.error ? "Select a contract or enter a custom address." : undefined}
+        </FieldError>
+      </Field>
       {textFields.map(({ key, label, placeholder }) => (
         <Controller
           key={key}
@@ -87,11 +125,7 @@ export function SignatureRuleFields({
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={`typed-data-${index}-${key}`}>{label}</FieldLabel>
               {fieldState.error ? (
-                <FieldError>
-                  {key === "verifyingContract"
-                    ? "Enter a valid contract address starting with 0x."
-                    : "Enter unique message type names, separated by commas."}
-                </FieldError>
+                <FieldError>Enter unique message type names, separated by commas.</FieldError>
               ) : null}
               <Input
                 {...field}

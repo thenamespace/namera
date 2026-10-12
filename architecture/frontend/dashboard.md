@@ -128,16 +128,68 @@ spending limit, Gas budget, Signatures and Unrestricted account access. Contract
 access covers one contract/all functions, one contract/selected functions, or
 selected functions on any contract. Native/gas amounts serialize exact base
 units; token allowances use explicit token base units. Budgets are lifetime per
-network. Networks and Lifetime appear as required, non-removable policy cards
-with dialog editors, still mapped to the existing onchain configuration fields.
-Dialog edits apply on Save; cancelling leaves the form unchanged.
+network. The two-step Metadata → Policies flow keeps the same narrow page width.
+Canonical form state is `onchain.installations`. The network picker retains existing
+entries and adds new entries with no permissions or signature authority. Each network
+has its own Lifetime card and inline policy editors. Adding a network never copies
+contract addresses, allowances, dates, or signature flags from another network.
+Network selection appears below Custody in Metadata; at least one is required to
+continue. Policies has a single-network selector scoped to those selections and
+shows only that network's cards. Inactive sections stay mounted to preserve editor
+metadata, and switching networks is disabled while a policy editor is open.
+Add policy opens a searchable, single-column list without categories in a modal;
+selecting a policy opens its configuration, and saving adds the card to the page.
+Existing cards expand an inline editor beneath their summary. Save collapses the
+editor with the updated summary; Cancel discards the draft.
+Lifetime and permission edits affect only the section's network.
+Edits apply only on Save; cancelling or dismissing leaves the form unchanged.
+Submission and step changes are disabled while adding or editing a policy.
+Metadata persists when going back.
+Creation and the read-only Policies page share policy cards and summaries;
+token summaries resolve metadata only for networks carrying that permission.
+The detail Policies page uses a “Viewing policies for” selector and renders only
+that network's lifetime, permissions, signature authority and approval status,
+without policy edit or remove actions. Session-wide API rules remain explicitly
+labelled Shared API policies rather than being presented as installation-specific.
+Hidden approval rows stay mounted so switching networks does not interrupt receipt
+tracking or an in-flight approval. Token summaries expose the full
+contract address through a keyboard-accessible info tooltip.
 New forms select Ethereum mainnet, start immediately, and expire 30
 days after opening the form. Editing dates selects local midnight at the start
 of the chosen date. At least one network and an expiry remain required.
 
-Root requires acknowledgement and is exclusive with other transaction
-permissions. Limits alone do not grant access. Signatures adds the API rule and
-explicit owner-reviewed `onchain.allowSignatures` together. Optional EIP-712
+Unrestricted account access is added directly from the picker without a separate
+confirmation or editor. Its card retains the red full-authority warning and a
+remove action. It is exclusive with other transaction permissions.
+Limits alone do not grant access. Selecting Signatures adds it immediately with
+only Messages enabled and opens its inline editor for signature types and typed-data
+rules. Cancel keeps the newly added Messages policy and discards editor changes.
+Gas budget and Native spending limit also add directly and open their inline
+editors, initially with a zero limit. Cancel preserves that zero-limit policy.
+Contract access and Token spending open as inline draft cards instead of modal
+forms. Save validates and appends the permission; Cancel discards the draft.
+Contract access offers all functions on one contract, selected functions on one
+contract, and selected functions on any contract. Address search includes tokens
+and contracts on the editor's network. Custom targets inherit that scope and have no network field;
+selected-function custom targets collect a JSON ABI. Catalog deployments load
+their linked interface through the cached catalog query, with loading/error/retry
+states. Missing interfaces and any-contract mode accept a pasted ABI. The shared
+function picker uses canonical signatures, then saves deduplicated four-byte
+selectors; target/ABI changes clear selections and save checks ABI membership.
+Contract editor metadata is retained while the Policies step remains mounted.
+Token spending uses a network-scoped picker. Custom tokens require only address
+and decimals; their network comes from the containing editor. Allowances apply
+only on that network. Saved token metadata is keyed by chain and address.
+The creation draft retains saved token selections and decimals outside policy
+editors, including when returning to Metadata. Reopening an editor reconstructs
+the display amount from stored base units using those decimals. This UI metadata
+is not submitted with permissions or persisted across page reloads.
+Signatures adds the API rule and
+explicit owner-reviewed installation `allowSignatures` together. Signing rules remain
+one session-level API policy, shared by networks with signature authority enabled.
+Each network opts in independently. Rule pickers offer only enabled signature
+networks; disabling/removing a network with rules requires removing those rules first.
+Optional EIP-712
 rules restrict network, verifying contract, exact domain name/version and primary
 types. Omitted rules permit any typed data within the selected signature policy.
 API content/expiry restrictions cannot constrain direct local signing; onchain

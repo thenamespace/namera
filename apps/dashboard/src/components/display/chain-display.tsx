@@ -9,24 +9,26 @@ const chainDataById = new Map<SupportedEvmChainId, ChainData>(
 
 type ChainDisplayProps = {
   chainId: SupportedEvmChainId;
+  size?: "sm" | "md";
 };
 
-export function ChainDisplay({ chainId }: ChainDisplayProps) {
+export function ChainDisplay({ chainId, size = "md" }: ChainDisplayProps) {
   const chain = chainDataById.get(chainId);
+  const textClassName = size === "sm" ? "truncate text-[11px]! leading-4!" : "truncate text-sm!";
 
   if (chain === undefined) {
-    return <Typography className="truncate text-sm!">{chainId}</Typography>;
+    return <Typography className={textClassName}>{chainId}</Typography>;
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className={`flex min-w-0 items-center ${size === "sm" ? "gap-1" : "gap-2"}`}>
       <ChainIcon
         aria-hidden
         chain={chain.name}
-        className="size-4 shrink-0"
+        className={size === "sm" ? "size-3 shrink-0" : "size-4 shrink-0"}
         namespace={chain.namespace}
       />
-      <Typography className="truncate text-sm!" weight="normal">
+      <Typography className={textClassName} weight="normal">
         {chain.chain.name}
       </Typography>
     </div>

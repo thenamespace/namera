@@ -1,63 +1,56 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-new-array-as-prop
-import { useState } from "react";
 
 import { FieldError } from "@namera-ai/ui";
-import { Calendar03Icon, Globe02Icon } from "@namera-ai/ui/icons";
+import { Calendar03Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
-import { evmChainById } from "@/components/policy/evm/data";
+import { LifetimeSummary } from "@/components/policy/evm/lifetime-summary";
+import { SessionPolicyCard } from "@/components/policy/evm/session-policy-card";
 
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
-import { SessionPolicyCard } from "./card";
-import { RequiredPolicyDialog } from "./required-policy-dialog";
+import { RequiredPolicyEditor } from "./required-policy-editor";
 
-const formatDate = (seconds: number) =>
-  new Date(seconds * 1000).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+const lifetimeLogo = <HugeiconsIcon icon={Calendar03Icon} />;
 
 export function RequiredPolicies({
   form,
+  installationIndex,
+  editing,
+  disabled,
+  onEdit,
+  onClose,
 }: {
   form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
+  installationIndex: number;
+  editing: "lifetime" | undefined;
+  disabled: boolean;
+  onEdit: (kind: "lifetime") => void;
+  onClose: () => void;
 }) {
-  const [editing, setEditing] = useState<"networks" | "lifetime" | null>(null);
-  const onchain = useWatch({ control: form.control, name: "onchain" });
-  const networks = (onchain.chains ?? []).map((id) => evmChainById.get(id)?.name ?? id);
+  const installations = useWatch({
+    control: form.control,
+    name: "onchain.installations",
+  });
+  const onchain = installations[installationIndex];
+  if (!onchain) throw new Error("Missing lifetime editor scope");
+  const errors = form.formState.errors.onchain?.installations?.[installationIndex];
+  const editor = editing ? (
+    <RequiredPolicyEditor form={form} installationIndex={installationIndex} onClose={onClose} />
+  ) : null;
 
   return (
     <>
       <SessionPolicyCard
-        name="Networks"
-        icon={Globe02Icon}
-        enforcement="Onchain"
-        onEdit={() => setEditing(editing === "networks" ? null : "networks")}
-      >
-        {networks.length ? networks.join(", ") : "Choose at least one network."}
-      </SessionPolicyCard>
-      <FieldError errors={[form.formState.errors.onchain?.chains]} />
-      <SessionPolicyCard
         name="Lifetime"
-        icon={Calendar03Icon}
-        enforcement="Onchain"
-        onEdit={() => setEditing(editing === "lifetime" ? null : "lifetime")}
+        logo={lifetimeLogo}
+        onEdit={() => onEdit("lifetime")}
+        selected={editing === "lifetime"}
+        disabled={disabled}
+        editor={editing === "lifetime" ? editor : null}
       >
-        {onchain.validAfter ? `Starts ${formatDate(onchain.validAfter)}` : "Starts immediately"}
-        {" · "}
-        {onchain.validUntil
-          ? `Expires ${formatDate(onchain.validUntil)}`
-          : "Choose an expiry date."}
+        <LifetimeSummary validAfter={onchain.validAfter} validUntil={onchain.validUntil} />
       </SessionPolicyCard>
-      <FieldError
-        errors={[
-          form.formState.errors.onchain?.validAfter,
-          form.formState.errors.onchain?.validUntil,
-        ]}
-      />
-      {editing ? (
-        <RequiredPolicyDialog form={form} kind={editing} onClose={() => setEditing(null)} />
-      ) : null}
+      <FieldError errors={[errors?.validAfter, errors?.validUntil]} />
     </>
   );
 }

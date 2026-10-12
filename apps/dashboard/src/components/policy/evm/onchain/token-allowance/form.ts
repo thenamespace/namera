@@ -3,9 +3,16 @@ import { Schema } from "effect";
 import { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { formatUnits, parseUnits } from "viem";
 
-import type { EvmErc20Selection } from "@/components/evm-erc20-picker";
+import type { EvmAddressSelection } from "@/components/evm-address-picker/types";
 
 import type { OnchainPermissionInput } from "../catalog";
+
+export type TokenSpendingSelection =
+  | EvmAddressSelection<"erc20">
+  | {
+      readonly source: "custom";
+      readonly value: { readonly address: EthereumAddress; readonly decimals: number };
+    };
 
 export const TokenAllowanceForm = Schema.Struct({
   address: Schema.String.pipe(Schema.decodeTo(EthereumAddress)),
@@ -59,15 +66,17 @@ export function toTokenAllowancePermission(
 export const tokenSpendingForm = (chainIds: readonly SupportedEvmChainId[]) =>
   Schema.Struct({
     token: TokenAllowanceForm,
-    chainId: Schema.String.pipe(Schema.decodeTo(SupportedEvmChainId)).check(
-      Schema.makeFilter((chainId) => chainIds.includes(chainId), {
-        message: "Select a token on one of the session networks",
-      }),
+    chainId: Schema.NullOr(
+      Schema.String.pipe(Schema.decodeTo(SupportedEvmChainId)).check(
+        Schema.makeFilter((chainId) => chainIds.includes(chainId), {
+          message: "Select a token on one of the session networks",
+        }),
+      ),
     ),
   });
 
 export function tokenSelectionFields(
-  selection: EvmErc20Selection,
+  selection: TokenSpendingSelection,
   initial?: OnchainPermissionInput,
 ) {
   const deployment = selection.source === "catalog" ? selection.deployment : selection.value;
@@ -75,7 +84,7 @@ export function tokenSelectionFields(
     selection.source === "catalog" ? selection.deployment.data.decimals : selection.value.decimals;
   return {
     address: deployment.address,
-    chainId: deployment.chainId,
+    chainId: selection.source === "catalog" ? selection.deployment.chainId : null,
     decimals: String(decimals),
     amount:
       initial?.type === "erc20-token-transfer" &&

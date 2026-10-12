@@ -51,10 +51,12 @@ export const localSessionRequest = Effect.fn("test.localSessionRequest")(functio
       publicKey: Hex.make(`0x${signer.getPublicKey("hex", "uncompressed")}`),
     },
     onchain: {
-      chains,
-      validAfter: now,
-      validUntil: now + 3600,
-      permissions: [{ type: "root" as const }],
+      installations: chains.map((chainId) => ({
+        chainId,
+        validAfter: now,
+        validUntil: now + 3600,
+        permissions: [{ type: "root" as const }],
+      })),
     },
     policies: [],
   };

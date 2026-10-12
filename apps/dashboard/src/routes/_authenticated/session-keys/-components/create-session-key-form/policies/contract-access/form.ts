@@ -19,6 +19,7 @@ export function toContractAccessForm(permission?: OnchainPermissionInput | undef
         : ("contract-access" as const),
     address: permission && "address" in permission ? permission.address : "",
     functions: permission && "functions" in permission ? permission.functions.join("\n") : "",
+    abi: "",
   };
 }
 
@@ -26,6 +27,7 @@ export const ContractAccessForm = Schema.Struct({
   type: Schema.Literals(contractAccessModes.map((mode) => mode.id)),
   address: Schema.String,
   functions: Schema.String,
+  abi: Schema.String,
 }).pipe(
   Schema.decodeTo(EvmSessionPermission, {
     decode: SchemaGetter.transform((value) => {

@@ -70,7 +70,12 @@ export const setupSessionCustody = Effect.fn("test.setupSessionCustody")(functio
   const session = yield* client.sessionKey.create({
     payload: {
       ...local,
-      onchain: { ...local.onchain, allowSignatures: options.allowSignatures ?? false },
+      onchain: {
+        installations: Array.from(local.onchain.installations, (installation) => ({
+          ...installation,
+          allowSignatures: options.allowSignatures ?? false,
+        })),
+      },
       policies: options.policies ?? local.policies,
       signer:
         custody === "local"

@@ -188,42 +188,44 @@ function PortfolioOverview({
             </Typography.Heading>
           </div>
 
-          <div className="self-end">
-            <div className="mb-3 flex items-center justify-between gap-4">
-              <Typography className="text-sm!" weight="medium">
-                Chain allocation
-              </Typography>
-              <Typography className="text-xs!" color="muted">
-                Priced balances
-              </Typography>
-            </div>
-            <ChainAllocation
-              allocations={summary.chainAllocations}
-              total={summary.pricedTotalUsd}
-            />
-            <div className="mt-4 grid gap-x-5 gap-y-2 sm:grid-cols-2">
-              {summary.chainAllocations.map((item) => {
-                const chainId = summary.rows.find((row) => row.chainId === item.id)?.chainId;
-                return (
-                  <div className="flex min-w-0 items-center gap-2" key={item.id}>
-                    <AllocationDot color={item.color} />
-                    <div className="min-w-0 flex-1">
-                      {chainId === undefined ? (
-                        <span className="text-xs">{item.name}</span>
-                      ) : (
-                        <ChainDisplay chainId={chainId} />
-                      )}
+          {summary.pricedTotalUsd > 0 && (
+            <div className="self-end">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <Typography className="text-sm!" weight="medium">
+                  Chain allocation
+                </Typography>
+                <Typography className="text-xs!" color="muted">
+                  Priced balances
+                </Typography>
+              </div>
+              <ChainAllocation
+                allocations={summary.chainAllocations}
+                total={summary.pricedTotalUsd}
+              />
+              <div className="mt-4 grid gap-x-5 gap-y-2 sm:grid-cols-2">
+                {summary.chainAllocations.map((item) => {
+                  const chainId = summary.rows.find((row) => row.chainId === item.id)?.chainId;
+                  return (
+                    <div className="flex min-w-0 items-center gap-2" key={item.id}>
+                      <AllocationDot color={item.color} />
+                      <div className="min-w-0 flex-1">
+                        {chainId === undefined ? (
+                          <span className="text-xs">{item.name}</span>
+                        ) : (
+                          <ChainDisplay chainId={chainId} />
+                        )}
+                      </div>
+                      <span className="text-xs tabular-nums text-muted">
+                        {summary.pricedTotalUsd === 0
+                          ? "0%"
+                          : percent.format(item.value / summary.pricedTotalUsd)}
+                      </span>
                     </div>
-                    <span className="text-xs tabular-nums text-muted">
-                      {summary.pricedTotalUsd === 0
-                        ? "0%"
-                        : percent.format(item.value / summary.pricedTotalUsd)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </Card.Content>
       </Card>
 

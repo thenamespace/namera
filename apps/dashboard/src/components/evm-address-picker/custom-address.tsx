@@ -4,7 +4,7 @@ import { useId } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import type { EthereumAddress } from "@namera-ai/protocol/evm";
+import type { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Button, Field, FieldError, FieldLabel, Input } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 import { getAddress } from "viem";
@@ -19,14 +19,16 @@ type Props =
   | (CustomAddressRenderProps<EvmCustomAddress> & { mode: "contract" })
   | (CustomAddressRenderProps<CustomToken> & { mode: "erc20" });
 
-export function CustomAddress(props: Props) {
+export function CustomAddress(props: Props & { readonly fixedChainId?: SupportedEvmChainId }) {
   const { chainIds, initialAddress, initialValue, onCancel } = props;
   const id = useId();
   const schema = customPickerSchema(chainIds, props.mode === "erc20");
   const form = useForm<typeof schema.Encoded, unknown, typeof schema.Type>({
     defaultValues: {
       address: initialValue?.address ?? (initialAddress.startsWith("0x") ? initialAddress : ""),
-      ...(chainIds[0] ? { chainId: initialValue?.chainId ?? chainIds[0] } : {}),
+      ...(chainIds[0]
+        ? { chainId: props.fixedChainId ?? initialValue?.chainId ?? chainIds[0] }
+        : {}),
       ...(props.mode === "erc20" && props.initialValue
         ? { decimals: props.initialValue.decimals }
         : {}),
@@ -37,7 +39,7 @@ export function CustomAddress(props: Props) {
     <form
       id={id}
       noValidate
-      className="grid gap-4 p-4"
+      className="grid gap-3 p-3"
       onSubmit={(event) => {
         event.stopPropagation();
         void form.handleSubmit((value) => {
@@ -74,27 +76,29 @@ export function CustomAddress(props: Props) {
           </Field>
         )}
       />
-      <Controller
-        control={form.control}
-        name="chainId"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel id={`${id}-network`}>Network</FieldLabel>
-            <EvmChainSelect
-              aria-labelledby={`${id}-network`}
-              {...(fieldState.error ? { "aria-describedby": `${id}-network-error` } : {})}
-              chainIds={chainIds}
-              name={field.name}
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              triggerRef={field.ref}
-              isInvalid={fieldState.invalid}
-            />
-            <FieldError id={`${id}-network-error`}>{fieldState.error?.message}</FieldError>
-          </Field>
-        )}
-      />
+      {props.fixedChainId ? null : (
+        <Controller
+          control={form.control}
+          name="chainId"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel id={`${id}-network`}>Network</FieldLabel>
+              <EvmChainSelect
+                aria-labelledby={`${id}-network`}
+                {...(fieldState.error ? { "aria-describedby": `${id}-network-error` } : {})}
+                chainIds={chainIds}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                triggerRef={field.ref}
+                isInvalid={fieldState.invalid}
+              />
+              <FieldError id={`${id}-network-error`}>{fieldState.error?.message}</FieldError>
+            </Field>
+          )}
+        />
+      )}
       {props.mode === "erc20" ? (
         <Controller
           control={form.control}

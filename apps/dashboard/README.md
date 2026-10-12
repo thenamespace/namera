@@ -60,6 +60,11 @@ Workspace package imports continue to use their package names.
   catalog/deployment metadata or custom chain/address/decimals. `EvmContractSelection`
   preserves full contract metadata or custom chain/address. Custom decimals must
   be explicitly supplied (0–255); no ABI or onchain verification is inferred.
+- `src/components/evm-address-picker-without-network.tsx` — address selection for
+  a caller-owned `chainId`, with generic catalog `types` and an address-only custom
+  form. Preserves full catalog selections; custom values inherit the network and
+  contain only chain/address, not token decimals. Typed-data verifying-contract
+  rules use this picker with both contract and ERC-20 catalog entries.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.
@@ -130,6 +135,10 @@ header action derive visibility from `wallet:create`; the server remains the
 authoritative permission boundary. EVM address displays resolve mainnet ENS names
 and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
+`EvmAddressDisplay` accepts an optional CAIP-2 `chainId`. With a chain, it first
+resolves catalog metadata and shows the token or contract name, logo, chain badge,
+and address info tooltip. Missing metadata falls back to ENS or a truncated address;
+lookup failures expose a retry action. Without a chain, it only resolves ENS.
 The account list starts with Active as its baseline status view; frozen and
 archived accounts remain available through the status facet without counting the
 baseline as a customized filter.
@@ -226,9 +235,20 @@ and are lifetime ceilings per network. Root remains exclusive and requires conse
 Signatures configures Namera signing rules and owner-reviewed onchain authority
 together, counts once in authorization selectors, and discloses direct-signing
 limitations. The existing lower-level API policy contract is unchanged.
+Creation owns an explicit `onchain.installations` array. Each network section
+edits its own lifetime, permissions and signature flag. New networks start without
+access. Metadata selects networks below Custody. The Policies step shows one network
+at a time through the shared chain selector; switching preserves each network's
+configuration and is disabled during inline editing.
+Catalog pickers use the section's network; custom addresses inherit that
+scope. Token metadata is keyed by chain/address, never address alone. Signature
+rules remain shared API policies, and their network selectors are limited to
+networks with signature authority. Remove affected typed-data rules before
+removing a network or disabling its signature authority.
+
 Shared EVM policy components under `src/components/policy/evm/` own the policy
 catalog, summaries, cards, and editors. Installation networks and lifetime remain
-in the setup card, not the policy picker. Existing API policy summaries remain
+outside the policy picker. Existing API policy summaries remain
 readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
 
@@ -494,6 +514,8 @@ without requiring local assets; the existing HTTPS image CSP permits the CDN.
 Production HTML carries a meta CSP restricting scripts to this origin and
 connections to this origin plus `VITE_API_URL`'s origin. Inline styles remain
 allowed for UIKit, charts and Motion; inline scripts and eval are not allowed.
+Vite redirects UIKit's Shiki import to the JavaScript regex engine so syntax
+highlighting works without WebAssembly compilation or relaxed script permissions.
 Images may use HTTPS, data and blob URLs. Passkey creation/authentication is
 limited to this origin by Permissions-Policy.
 

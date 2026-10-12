@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Field, FieldError, FieldGroup, FieldLabel, InputGroup, Typography } from "@namera-ai/ui";
+import { Field, FieldError, FieldGroup, FieldLabel, InputGroup } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import type { OnchainPermissionInput } from "@/components/policy/evm/onchain/catalog";
@@ -47,11 +47,6 @@ export function NativeBudgetEditor({
       }}
     >
       <FieldGroup>
-        <Typography.Paragraph size="sm" color="muted">
-          {type === "gas-limit"
-            ? "Set the total this key can spend on transaction fees."
-            : "Set the total this key can send in native tokens, such as ETH."}
-        </Typography.Paragraph>
         <Controller
           control={form.control}
           name="amount"
@@ -77,11 +72,6 @@ export function NativeBudgetEditor({
             </Field>
           )}
         />
-        <Typography.Paragraph size="xs" color="muted">
-          Per network, in native tokens—not USD. No reset. Zero blocks{" "}
-          {type === "gas-limit" ? "gas spending" : "native spending"}. Requires a separate access
-          policy.
-        </Typography.Paragraph>
         <FieldError errors={[form.formState.errors.root]} />
       </FieldGroup>
     </form>

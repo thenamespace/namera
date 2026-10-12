@@ -86,6 +86,7 @@ export const WalletCreatedEmailVariables = Schema.Struct({
 });
 
 export const SessionKeyCreatedEmailVariables = Schema.Struct({
+  lifetimeSummary: Schema.optionalKey(NonEmptyString),
   sessionKeyLogo: Schema.optionalKey(MetadataLogo),
   walletLogo: Schema.optionalKey(MetadataLogo),
   policyTypes: Schema.optionalKey(Schema.Array(EvmSessionPolicyType)),

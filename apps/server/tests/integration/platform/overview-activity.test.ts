@@ -48,7 +48,12 @@ it.effect("counts platform resources and completed operations, not signature res
       payload: {
         ...request,
         signer: { ...request.signer, publicKey: signer.publicKey },
-        onchain: { ...request.onchain, allowSignatures: true },
+        onchain: {
+          installations: Array.from(request.onchain.installations, (installation) => ({
+            ...installation,
+            allowSignatures: true,
+          })),
+        },
         policies: [{ type: "evm.signature", version: 1, allowedTypes: ["message"] }],
       },
     });

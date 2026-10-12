@@ -12,11 +12,11 @@ export const sessionPolicyCatalog = [
     name: "Contract access",
     group: "Access",
     description: "Allow contracts and actions.",
-    icon: ShieldUserIcon,
+    icon: evmPolicyDefinitions["evm.contract-access"].icon,
   },
   {
     id: "erc20-token-transfer",
-    name: "Token spending",
+    name: "Token Spending (Lifetime)",
     group: "Access",
     description: "Limit transfers and approvals.",
     icon: evmPolicyDefinitions["evm.erc20-token-transfer"].icon,

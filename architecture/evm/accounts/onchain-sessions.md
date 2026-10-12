@@ -25,6 +25,13 @@ are wired through the SDK and local CLI MCP.
 
 ## Contract
 
+Session creation accepts `onchain.installations`, with one independently validated
+permission list, validity window and signature flag per chain. The application
+invokes this existing single-chain compiler for each entry; there is no compiler,
+stored authorization or local-export version change. Permission uniqueness and
+root exclusivity apply within one chain, not across the session. API policies
+remain separate session-level constraints.
+
 `EvmSessionAuthorization` is version 1: signer address, non-root entity ID,
 finite `validAfter`/`validUntil` Unix seconds and typed onchain permissions.
 Optional `allowSignatures` defaults to false. It is a separate owner-approved

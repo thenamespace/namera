@@ -20,6 +20,7 @@ export const SessionKeyCreatedEmail = ({
   provider,
   policyTypes,
   expiresAt,
+  lifetimeSummary,
   organizationName,
   sessionKeyName,
   sessionKeyLogo,
@@ -54,7 +55,10 @@ export const SessionKeyCreatedEmail = ({
                 value={policyTypes.map((type) => evmPolicyDisplayNames[type]).join(", ")}
               />
             ) : null}
-            <EmailDetail label="Expires" value={formatEmailDate(expiresAt)} />
+            <EmailDetail
+              label={lifetimeSummary ? "Lifetime" : "Expires"}
+              value={lifetimeSummary ?? formatEmailDate(expiresAt)}
+            />
           </EmailDetails>
           <EmailAction href={actionUrl}>View session key</EmailAction>
           <EmailNotice>

@@ -8,6 +8,7 @@ import type {
   SessionKeyOperationResponse,
   SessionKeyResponse,
 } from "@namera-ai/protocol/dto";
+import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import { Button, Typography } from "@namera-ai/ui";
 import { useInterval } from "usehooks-ts";
 
@@ -233,9 +234,11 @@ function Installation({
 export function SessionKeyInstallations({
   sessionKey,
   compact = false,
+  visibleChainId,
 }: {
   sessionKey: SessionKeyResponse;
   compact?: boolean;
+  visibleChainId?: SupportedEvmChainId | null;
 }) {
   const lock = useRef(false);
   const [working, setWorking] = useState(false);
@@ -287,16 +290,21 @@ export function SessionKeyInstallations({
       ) : null}
       <div className="grid gap-3">
         {session.installations.map((installation) => (
-          <Installation
-            key={`${installation.id}:${session.status === "revoking"}`}
-            session={session}
-            installation={installation}
-            owner={owner.data}
-            refresh={query.refetch}
-            working={working}
-            beginApproval={beginApproval}
-            endApproval={endApproval}
-          />
+          <div
+            key={installation.id}
+            hidden={visibleChainId !== undefined && installation.chainId !== visibleChainId}
+          >
+            <Installation
+              key={`${installation.id}:${session.status === "revoking"}`}
+              session={session}
+              installation={installation}
+              owner={owner.data}
+              refresh={query.refetch}
+              working={working}
+              beginApproval={beginApproval}
+              endApproval={endApproval}
+            />
+          </div>
         ))}
       </div>
     </section>

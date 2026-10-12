@@ -160,7 +160,13 @@ layer(Live)("1Claw session creation", (it) => {
             .create({
               payload: {
                 ...request,
-                onchain: { ...request.onchain, validAfter: 0, validUntil: 1 },
+                onchain: {
+                  installations: Array.from(request.onchain.installations, (installation) => ({
+                    ...installation,
+                    validAfter: 0,
+                    validUntil: 1,
+                  })),
+                },
               },
             })
             .pipe(Effect.flip),

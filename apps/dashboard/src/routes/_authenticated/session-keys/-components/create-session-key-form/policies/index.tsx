@@ -1,123 +1,259 @@
-// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
-import { useState } from "react";
+// oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-jsx-as-prop
+import { useState, type ReactNode } from "react";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import { FieldError } from "@namera-ai/ui";
-import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { FieldError, Modal, Typography } from "@namera-ai/ui";
+import { HugeiconsIcon } from "@namera-ai/ui/icons";
+import { useWatch, type UseFormReturn } from "react-hook-form";
 
-import { HeadingGroup } from "@/components/heading-group";
 import { EvmPolicySummary, type SignaturePolicyInput } from "@/components/policy/evm";
-import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summary";
+import { OnchainPolicyCard } from "@/components/policy/evm/onchain/display-card";
+import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
+import { SessionPolicyCard } from "@/components/policy/evm/session-policy-card";
 
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
-import { SessionPolicyCard } from "./card";
-import { hasTransactionAccess, policyChoiceFor } from "./catalog";
-import { AddPolicyButton, SessionPolicyDialog, type PolicyEdit } from "./dialog";
+import { policyChoiceFor, type PolicyChoice } from "./catalog";
+import type { ContractAccessDraft } from "./contract-access/editor";
+import { AddPolicyButton, SessionPolicyEditor, type PolicyEdit } from "./editor";
+import { toNativeBudgetPermission } from "./native-budget/form";
 import { RequiredPolicies } from "./required-policies";
-import { signatureConfiguration } from "./signature-configuration";
+
+const signatureChoice = policyChoiceFor("signature");
+const signatureLogo = <HugeiconsIcon icon={signatureChoice.icon} />;
 
 export function PolicySection({
   form,
+  installationIndex,
   wallets,
+  editing,
+  onEditingChange,
+  tokenSelections,
+  onSaveTokenSelection,
+  networkSelector,
 }: {
   form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
+  installationIndex: number;
   wallets: ListWalletsResponse;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
+  tokenSelections: ReadonlyMap<string, TokenSpendingSelection>;
+  onSaveTokenSelection: (selection: TokenSpendingSelection) => void;
+  networkSelector: ReactNode;
 }) {
-  const apiFields = useFieldArray({ control: form.control, name: "policies" });
-  const permissionFields = useFieldArray({ control: form.control, name: "onchain.permissions" });
   const policies = useWatch({ control: form.control, name: "policies" }) ?? [];
-  const onchain = useWatch({ control: form.control, name: "onchain" });
+  const installations = useWatch({ control: form.control, name: "onchain.installations" });
+  const onchain = installations[installationIndex];
   const walletId = useWatch({ control: form.control, name: "walletId" });
-  const [dialog, setDialog] = useState<{ edit?: PolicyEdit } | null>(null);
+  const [pane, setPane] = useState<{
+    edit?: PolicyEdit;
+    draft?: PolicyChoice;
+    required?: "lifetime";
+  } | null>(null);
+  const [contractDrafts, setContractDrafts] = useState<ReadonlyMap<string, ContractAccessDraft>>(
+    () => new Map(),
+  );
+  const close = () => {
+    setPane(null);
+    onEditingChange(false);
+  };
+  const editPolicy = (edit: PolicyEdit) => {
+    setPane({ edit });
+    onEditingChange(true);
+  };
   const permissions = onchain?.permissions ?? [];
-  const signature = policies.find((policy) => policy.type === "evm.signature");
-  const signatureChoice = policyChoiceFor("signature");
-  const errors = form.formState.errors.onchain;
+  const savePermissions = (next: typeof permissions) =>
+    form.setValue(`onchain.installations.${installationIndex}.permissions`, next, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  if (!onchain) throw new Error("Missing installation editor scope");
+  const sharedSignature = policies.find((policy) => policy.type === "evm.signature");
+  const signature = onchain.allowSignatures ? sharedSignature : undefined;
+  const [signatureError, setSignatureError] = useState<string>();
+  const errors = form.formState.errors.onchain?.installations?.[installationIndex];
   const saveSignature = (policy?: SignaturePolicyInput) => {
-    const configuration = signatureConfiguration(policy);
-    apiFields.replace(configuration.policies);
-    form.setValue("onchain.allowSignatures", configuration.allowSignatures, {
+    if (
+      !policy &&
+      sharedSignature?.typedDataRules?.some((rule) => rule.chainId === onchain.chainId)
+    ) {
+      setSignatureError("Remove this network’s typed-data rules before disabling signatures.");
+      return;
+    }
+    setSignatureError(undefined);
+    if (policy) form.setValue("policies", [policy], { shouldDirty: true });
+    else if (
+      !installations.some((entry, index) => index !== installationIndex && entry.allowSignatures)
+    )
+      form.setValue("policies", [], { shouldDirty: true });
+    form.setValue(`onchain.installations.${installationIndex}.allowSignatures`, Boolean(policy), {
       shouldDirty: true,
       shouldValidate: true,
     });
   };
+  const policyEditor =
+    pane && !pane.required ? (
+      <SessionPolicyEditor
+        initialContractDraft={
+          pane.edit?.kind === "permission"
+            ? contractDrafts.get(`${onchain.chainId}:${JSON.stringify(pane.edit.policy)}`)
+            : undefined
+        }
+        onSaveContractDraft={(permission, draft) =>
+          setContractDrafts((previous) =>
+            new Map(previous).set(`${onchain.chainId}:${JSON.stringify(permission)}`, draft),
+          )
+        }
+        initialTokenSelection={
+          pane.edit?.kind === "permission" && pane.edit.policy.type === "erc20-token-transfer"
+            ? tokenSelections.get(`${onchain.chainId}:${pane.edit.policy.address.toLowerCase()}`)
+            : undefined
+        }
+        onSaveTokenSelection={onSaveTokenSelection}
+        chainIds={[onchain.chainId]}
+        signatureChainIds={installations
+          .filter((entry) => entry.allowSignatures || entry.chainId === onchain.chainId)
+          .map(({ chainId }) => chainId)}
+        edit={pane.edit}
+        draft={pane.draft}
+        onClose={close}
+        onAddDraft={(draft) => {
+          setPane({ draft });
+          onEditingChange(true);
+        }}
+        permissions={permissions}
+        hasSignatures={signature !== undefined}
+        onAddSignature={() => {
+          const policy: SignaturePolicyInput = sharedSignature ?? {
+            type: "evm.signature",
+            version: 1,
+            allowedTypes: ["message"],
+          };
+          saveSignature(policy);
+          editPolicy({ kind: "signature", policy });
+        }}
+        onSaveSignature={saveSignature}
+        onAddBudget={(type) => {
+          const policy = toNativeBudgetPermission(type, "0");
+          const index = permissions.length;
+          savePermissions([...permissions, policy]);
+          editPolicy({ kind: "permission", policy, index });
+        }}
+        onSavePermission={(permission, index) =>
+          index === undefined
+            ? savePermissions([...permissions, permission])
+            : savePermissions(
+                permissions.map((existing, position) =>
+                  position === index ? permission : existing,
+                ),
+              )
+        }
+      />
+    ) : null;
 
   return (
     <section className="grid gap-3">
-      <div className="mb-1 flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <HeadingGroup.Title size="sm">Policies</HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Choose what this key can do, then add any limits.
-          </HeadingGroup.Description>
-          {!hasTransactionAccess(permissions) && !onchain?.allowSignatures ? (
-            <FieldError>
-              Add an access policy or Signatures to continue. Networks and Lifetime only set limits.
-            </FieldError>
-          ) : errors?.permissions || errors?.allowSignatures || form.formState.errors.policies ? (
-            <div>
-              <FieldError
-                errors={[
-                  errors?.permissions,
-                  errors?.permissions?.root,
-                  errors?.allowSignatures,
-                  form.formState.errors.policies,
-                ]}
-              />
-            </div>
-          ) : null}
-        </HeadingGroup>
-        <AddPolicyButton
-          disabled={!wallets.some((wallet) => wallet.id === walletId)}
-          onPress={() => setDialog({})}
-        />
+      <div className="mb-1 flex items-end gap-3">
+        <div className="min-w-0 flex-1">{networkSelector}</div>
+        <div className="shrink-0">
+          <AddPolicyButton
+            disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
+            onPress={() => {
+              setPane({});
+              onEditingChange(true);
+            }}
+          />
+        </div>
       </div>
-      <RequiredPolicies form={form} />
-      {permissionFields.fields.map((field, index) => {
-        const permission = permissions[index];
-        if (!permission) return null;
-        const definition = policyChoiceFor(permission.type);
-        return (
-          <SessionPolicyCard
-            key={field.id}
-            name={definition.name}
-            icon={definition.icon}
-            enforcement="Onchain"
-            onEdit={() => setDialog({ edit: { kind: "permission", policy: permission, index } })}
-            onRemove={() => permissionFields.remove(index)}
-          >
-            <OnchainPermissionSummary permission={permission} chainIds={onchain.chains} />
-          </SessionPolicyCard>
-        );
-      })}
-      {signature ? (
-        <SessionPolicyCard
-          name={signatureChoice.name}
-          icon={signatureChoice.icon}
-          enforcement="Namera rules + onchain authority"
-          onEdit={() => setDialog({ edit: { kind: "signature", policy: signature } })}
-          onRemove={() => saveSignature()}
-        >
-          <EvmPolicySummary policy={signature} />
-        </SessionPolicyCard>
-      ) : null}
-      {dialog ? (
-        <SessionPolicyDialog
-          chainIds={onchain.chains}
-          open
-          edit={dialog.edit}
-          onOpenChange={(open) => {
-            if (!open) setDialog(null);
-          }}
-          permissions={permissions}
-          hasSignatures={signature !== undefined}
-          onSaveSignature={saveSignature}
-          onSavePermission={(permission, index) =>
-            index === undefined
-              ? permissionFields.append(permission)
-              : permissionFields.update(index, permission)
-          }
+      {form.formState.isSubmitted &&
+      (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
+        <FieldError
+          errors={[
+            errors?.permissions,
+            errors?.permissions?.root,
+            errors?.allowSignatures,
+            form.formState.errors.policies,
+          ]}
         />
+      ) : null}
+      <div className="grid gap-3" aria-label="Configured policies">
+        <RequiredPolicies
+          form={form}
+          installationIndex={installationIndex}
+          editing={pane?.required}
+          disabled={editing}
+          onClose={close}
+          onEdit={(required) => {
+            setPane({ required });
+            onEditingChange(true);
+          }}
+        />
+        {permissions.map((permission, index) => {
+          return (
+            <OnchainPolicyCard
+              key={"address" in permission ? permission.address.toLowerCase() : permission.type}
+              permission={permission}
+              chainIds={[onchain.chainId]}
+              onEdit={
+                permission.type === "root"
+                  ? undefined
+                  : () => editPolicy({ kind: "permission", policy: permission, index })
+              }
+              disabled={editing}
+              selected={pane?.edit?.kind === "permission" && pane.edit.index === index}
+              editor={
+                pane?.edit?.kind === "permission" && pane.edit.index === index ? policyEditor : null
+              }
+              onRemove={() =>
+                savePermissions(permissions.filter((_, position) => position !== index))
+              }
+            />
+          );
+        })}
+        {signature ? (
+          <SessionPolicyCard
+            name={signatureChoice.name}
+            logo={signatureLogo}
+            onEdit={() => editPolicy({ kind: "signature", policy: signature })}
+            disabled={editing}
+            selected={pane?.edit?.kind === "signature"}
+            editor={pane?.edit?.kind === "signature" ? policyEditor : null}
+            onRemove={() => saveSignature()}
+          >
+            <EvmPolicySummary policy={signature} />
+            <Typography.Paragraph size="xs" className="text-muted mt-2">
+              Signing rules are shared across enabled networks. Onchain authority is enabled on this
+              network.
+            </Typography.Paragraph>
+          </SessionPolicyCard>
+        ) : null}
+        {signatureError ? <FieldError>{signatureError}</FieldError> : null}
+        {pane?.draft ? (
+          <SessionPolicyCard
+            name={pane.draft.name}
+            logo={<HugeiconsIcon icon={pane.draft.icon} />}
+            selected
+            editor={policyEditor}
+          >
+            {pane.draft.description}
+          </SessionPolicyCard>
+        ) : null}
+      </div>
+      {pane && !pane.edit && !pane.required && !pane.draft ? (
+        <Modal
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) close();
+          }}
+        >
+          <Modal.Backdrop>
+            <Modal.Container size="lg">
+              <Modal.Dialog className="max-w-2xl" aria-label="Add a policy">
+                <Modal.CloseTrigger />
+                <Modal.Body className="max-h-[80vh] overflow-y-auto p-0">{policyEditor}</Modal.Body>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
       ) : null}
     </section>
   );
