@@ -262,6 +262,11 @@ The non-root runtime serves the standalone `.output` bundle on port 8080,
 including SSR, static assets, and `/sitemap.xml`. No workspace source or pnpm
 installation is needed at runtime. `NITRO_HOST` and `NITRO_PORT` control binding.
 
+Takumi is externalized and traced into the server output, with Nitro's `unwasm`
+condition disabled so Node uses native bindings. This preserves package-relative
+assets instead of relocating the WASM fallback loader. See
+[Takumi's Nitro guidance](https://takumi.kane.tw/docs/integration/nitro).
+
 The public API defaults to `https://api.namera.ai`. To change it, build with
 `--build-arg DOTENV='VITE_API_URL=https://your-api.example'`. This is browser
 configuration, not a secret; changing the runtime environment cannot update it.

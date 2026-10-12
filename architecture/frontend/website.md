@@ -75,6 +75,10 @@ and Twitter; other pages retain their existing image. Production responses use
 bounded browser/CDN caching, with no caching in development. Public docs images
 are indexable alongside their pages.
 
+Node builds negate Nitro's `unwasm` export condition and externalize/trace
+`takumi-js/response` and its dependencies. Keeping the package intact preserves
+the WASM fallback's relative assets while selecting native rendering on Node.
+
 SEO uses a shared permissions-focused site identity. Server-rendered route heads
 connect WebPage, WebSite, Organization, SoftwareApplication and BlogPosting
 entities through stable IDs. The blog index emits CollectionPage, Blog and
