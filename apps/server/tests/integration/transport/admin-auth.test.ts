@@ -38,15 +38,19 @@ layer(TestServerLayer)("platform session authorization", (it) => {
       const viewer = yield* platformIdentity("viewer@example.com", "viewer");
       const operator = yield* platformIdentity("operator@example.com", "operator");
       expect((yield* viewer.client.platform.me()).member.role).toBe("viewer");
-      expect(
-        (yield* viewer.client.platform.members({
-          responseMode: "response-only",
-        })).status,
-      ).toBe(403);
       expect((yield* operator.client.platform.me()).member.role).toBe("operator");
-      expect(
-        (yield* operator.client.platform.members({ responseMode: "response-only" })).status,
-      ).toBe(403);
+      for (const identity of [viewer, operator]) {
+        expect(
+          (yield* identity.client.platform.members({ responseMode: "response-only" })).status,
+        ).toBe(200);
+        expect(
+          (yield* identity.client.platform.changeStatus({
+            params: { id: viewer.member.id },
+            payload: { status: "suspended" },
+            responseMode: "response-only",
+          })).status,
+        ).toBe(403);
+      }
       yield* owner.client.platform.changeStatus({
         params: { id: operator.member.id },
         payload: { status: "suspended" },
