@@ -22,7 +22,7 @@ export type Recipe<S extends Schema.Top> = {
   readonly display: {
     readonly name: string;
     readonly description: string;
-    readonly logo: MetadataIcon;
+    readonly logo: string;
     readonly banner?: string;
     readonly tags: readonly string[];
   };

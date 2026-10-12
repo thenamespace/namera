@@ -14,8 +14,8 @@ export const usdcAllowanceRecipe = {
     name: "USDC Spend Recipe",
     description:
       "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
-    logo: { type: "image", value: "https://cdn.namera.ai/address-catalog/eip155/erc20/usdc.png" },
-    banner: "https://api.dicebear.com/10.x/glass/svg?seed=namera-usdc-budget&size=600",
+    logo: "address-catalog/eip155/erc20/usdc.png",
+    banner: "recipes/usdc-lifetime-allowance/header.png",
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,

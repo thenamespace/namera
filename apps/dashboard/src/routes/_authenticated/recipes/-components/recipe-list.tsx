@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { recipes } from "@namera-ai/recipes";
-import { Chip, IconPreview, Input, Typography } from "@namera-ai/ui";
+import { Chip, Input, Typography } from "@namera-ai/ui";
 import { ArrowRight01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
@@ -51,7 +51,7 @@ export function RecipeList() {
             className="group overflow-hidden rounded-xl border border-separator transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
           >
             <img
-              src={recipe.display.banner}
+              src={`https://cdn.namera.ai/${recipe.display.banner}`}
               alt=""
               className="h-36 w-full bg-surface object-cover"
               loading="lazy"
@@ -59,9 +59,12 @@ export function RecipeList() {
             <div className="grid gap-4 px-5 pb-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="relative -mt-6 rounded-full bg-background p-1">
-                  <IconPreview value={recipe.display.logo} size="lg" />
+                  <img
+                    src={`https://cdn.namera.ai/${recipe.display.logo}`}
+                    alt=""
+                    className="size-12 rounded-full object-cover"
+                  />
                 </div>
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-muted" aria-hidden />
               </div>
               <div className="grid gap-2">
                 <Typography.Heading level={2} className="text-base">
@@ -71,12 +74,19 @@ export function RecipeList() {
                   {recipe.display.description}
                 </Typography.Paragraph>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {recipe.display.tags.map((tag) => (
-                  <Chip key={tag} size="sm" variant="soft">
-                    {tag}
-                  </Chip>
-                ))}
+              <div className="flex items-end justify-between gap-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {recipe.display.tags.map((tag) => (
+                    <Chip key={tag} size="sm" variant="soft">
+                      {tag}
+                    </Chip>
+                  ))}
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  className="size-5 shrink-0 -translate-x-2 text-muted opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 motion-reduce:transform-none motion-reduce:transition-none"
+                  aria-hidden
+                />
               </div>
             </div>
           </Link>

@@ -33,7 +33,10 @@ Add a focused folder under `src/recipes`, define its schema and typed field list
 test the generated authority and unsafe inputs, then register it in `src/index.ts`.
 Increment a recipe version when changing inputs or generated authority. Add field
 kinds only when needed by a recipe; the dashboard owns their accessible rendering.
-`display.banner` optionally supplies a replaceable card cover image.
+`display.logo` and optional `display.banner` contain CDN-relative asset slugs,
+never URLs. The dashboard resolves them against `https://cdn.namera.ai/`.
+Recipe headers are authored under the gitignored `assets/recipes/<id>/header.png`
+and must be synced to the matching CDN prefix before deployment.
 
 ```sh
 pnpm --filter @namera-ai/recipes test

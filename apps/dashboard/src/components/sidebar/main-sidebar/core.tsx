@@ -29,6 +29,14 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       },
     },
     {
+      id: "recipes",
+      icon: BookOpen01Icon,
+      label: "Recipes",
+      textValue: "Recipes",
+      href: "/recipes",
+      tooltip: { text: "recipes" },
+    },
+    {
       id: "activity",
       icon: Activity02Icon,
       label: "Activity",
@@ -37,14 +45,6 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       tooltip: {
         text: "activity",
       },
-    },
-    {
-      id: "recipes",
-      icon: BookOpen01Icon,
-      label: "Recipes",
-      textValue: "Recipes",
-      href: "/recipes",
-      tooltip: { text: "recipes" },
     },
   ],
 };
