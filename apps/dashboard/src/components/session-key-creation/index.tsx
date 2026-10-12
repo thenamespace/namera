@@ -92,10 +92,8 @@ function SessionKeyForm({
     ...defaultValues,
     metadata: recipe
       ? {
-          version: 1 as const,
-          name: recipe.display.name,
-          description: "",
-          logo: recipe.display.logo,
+          ...defaultValues.metadata,
+          ...recipe.metadata,
         }
       : defaultValues.metadata,
     walletId:

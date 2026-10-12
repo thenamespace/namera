@@ -260,7 +260,9 @@ bounded multi-select with network icons and derived select-all state.
 `/recipes` lists code-owned definitions from the private `@namera-ai/recipes`
 package, with searchable names, descriptions and tags. `/recipes/$recipeId`
 requires session-key creation permission and prefetches accounts and permitted
-billing data. It renders Metadata, schema-driven recipe fields and Create together.
+billing data. Metadata and Continue lead to Configuration with Back to details
+and Create. Both steps retain their form values on the same recipe route.
+Session metadata defaults come from `recipe.metadata`, never `recipe.display`.
 The USDC recipe asks for networks, a per-network lifetime allowance and an expiry
 date in a metadata-style configuration card. Expiry is local midnight at the start
 of the chosen date. Circle-issued token addresses are recipe-owned; no catalog lookup is needed.

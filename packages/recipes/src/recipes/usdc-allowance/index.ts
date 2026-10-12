@@ -11,14 +11,15 @@ export const usdcAllowanceRecipe = {
   id: "usdc-lifetime-allowance",
   version: 2,
   display: {
-    name: "Spend USDC with a fixed budget",
+    name: "USDC Spend Recipe",
     description:
-      "Give an agent or app permission to spend USDC up to a limit you choose. Select the networks and an expiry date. Each network gets its own full budget, which does not reset or carry over to another network.",
+      "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
     logo: { type: "image", value: "https://cdn.namera.ai/address-catalog/eip155/erc20/usdc.png" },
     banner: "https://api.dicebear.com/10.x/glass/svg?seed=namera-usdc-budget&size=600",
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,
+  metadata: { logo: { type: "emoji", value: "💵" } },
   defaults: { networks: [], allowance: "", expiresAt: "" },
   fields: [
     { name: "networks", kind: "networks", label: "Networks", chainIds: usdcNetworks },
@@ -26,8 +27,6 @@ export const usdcAllowanceRecipe = {
       name: "allowance",
       kind: "amount",
       label: "Lifetime allowance per network",
-      description:
-        "Each network gets its own allowance. It does not reset or pool across networks.",
       symbol: "USDC",
       decimals: 6,
     },
@@ -35,7 +34,6 @@ export const usdcAllowanceRecipe = {
       name: "expiresAt",
       kind: "expiry",
       label: "Expires on",
-      description: "Expires at the start of this date in your local time zone.",
     },
   ],
   build(input, { now }) {

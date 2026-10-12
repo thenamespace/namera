@@ -39,7 +39,7 @@ export function RecipeList() {
         placeholder="Search recipes or tags"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
-        fullWidth
+        className="w-80 max-w-full"
         variant="secondary"
       />
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -56,16 +56,18 @@ export function RecipeList() {
               className="h-36 w-full bg-surface object-cover"
               loading="lazy"
             />
-            <div className="grid gap-4 p-5">
+            <div className="grid gap-4 px-5 pb-5">
               <div className="flex items-center justify-between gap-3">
-                <IconPreview value={recipe.display.logo} size="lg" />
+                <div className="relative -mt-6 rounded-full bg-background p-1">
+                  <IconPreview value={recipe.display.logo} size="lg" />
+                </div>
                 <HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-muted" aria-hidden />
               </div>
               <div className="grid gap-2">
                 <Typography.Heading level={2} className="text-base">
                   {recipe.display.name}
                 </Typography.Heading>
-                <Typography.Paragraph size="sm" color="muted">
+                <Typography.Paragraph size="sm" color="muted" className="line-clamp-3">
                   {recipe.display.description}
                 </Typography.Paragraph>
               </div>

@@ -27,6 +27,11 @@ export type Recipe<S extends Schema.Top> = {
     readonly tags: readonly string[];
   };
   readonly inputSchema: S;
+  readonly metadata: {
+    readonly name?: string;
+    readonly description?: string;
+    readonly logo?: MetadataIcon;
+  };
   readonly defaults: S["Encoded"];
   readonly fields: readonly RecipeField<Extract<keyof S["Encoded"], string>>[];
   readonly build: (input: S["Type"], context: { readonly now: number }) => RecipeOutput;

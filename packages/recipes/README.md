@@ -8,7 +8,9 @@ builders. It depends on protocol, not React, the catalog, custody or API clients
 has a stable `id`, a definition `version`, `display`, `inputSchema`, `defaults`,
 `fields` and `build(input, { now })`. Times are Unix seconds. Builders return the
 decoded `onchain` and `policies` portion of the current creation request; amounts
-are bigint base units. The dashboard supplies metadata, account and public signer,
+are bigint base units. `metadata` supplies optional session-key name, description
+and logo defaults, separately from the recipe's `display` identity. The dashboard
+lets the user edit those defaults and supplies account and public signer,
 and the normal creation schema encodes the final request.
 
 ## USDC lifetime allowance

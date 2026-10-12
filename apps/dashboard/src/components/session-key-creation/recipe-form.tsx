@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { DateTime, Schema } from "effect";
 
@@ -58,6 +58,7 @@ export function RecipeCreationForm({
   onCreate: (values: CreateSessionKeyFormValues) => void;
 }) {
   const id = useId();
+  const [step, setStep] = useState<"details" | "configuration">("details");
   const schema = useMemo(
     () =>
       recipe.inputSchema.check(
@@ -87,6 +88,15 @@ export function RecipeCreationForm({
       onSubmit={(event) => {
         event.preventDefault();
         if (disabled) return;
+        if (step === "details") {
+          void metadataForm
+            .trigger(["metadata", "walletId", "custody"], { shouldFocus: true })
+            .then((valid) => {
+              if (valid) setStep("configuration");
+              return valid;
+            });
+          return;
+        }
         void form
           .handleSubmit(async (input) => {
             const generated = recipe.build(input, { now: Math.floor(Date.now() / 1000) });
@@ -98,7 +108,9 @@ export function RecipeCreationForm({
               "policies",
               Schema.encodeSync(CreateEvmSessionKeyRequest.fields.policies)(generated.policies),
             );
-            await metadataForm.handleSubmit(onCreate)();
+            await metadataForm.handleSubmit(onCreate, (errors) => {
+              if (errors.metadata || errors.walletId || errors.custody) setStep("details");
+            })();
           })(event)
           .catch((error) =>
             showErrorToast(error, {
@@ -108,116 +120,138 @@ export function RecipeCreationForm({
           );
       }}
     >
-      <section className="grid gap-4">
-        <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
-        <SessionKeyDetailsCard
-          form={metadataForm}
-          wallets={wallets}
-          limits={limits}
-          custodyLocked={custodyLocked}
-        />
-      </section>
-      <section className="grid gap-4" aria-labelledby={`${id}-configuration`}>
-        <HeadingGroup.Title id={`${id}-configuration`} size="sm">
-          Recipe configuration
-        </HeadingGroup.Title>
-        <DashboardCardRoot>
-          <DashboardCardContent>
-            <FieldGroup className="contents divide-y divide-separator">
-              {recipe.fields.map((definition) => (
-                <Controller
-                  key={definition.name}
-                  name={definition.name}
-                  control={form.control}
-                  render={({ field, fieldState }) => {
-                    const fieldId = `${id}-${definition.name}`;
-                    return (
-                      <DashboardCardRow className="items-start sm:items-start">
-                        <Field className="contents" data-invalid={fieldState.invalid}>
-                          <FieldLabel id={`${fieldId}-label`} htmlFor={fieldId} isRequired>
-                            {definition.label}
-                          </FieldLabel>
-                          <div className="grid w-full min-w-0 gap-2">
-                            {definition.kind === "networks" ? (
-                              <EvmNetworkMultiSelect
-                                aria-labelledby={`${fieldId}-label`}
-                                aria-describedby={`${fieldId}-feedback`}
-                                name={field.name}
-                                chainIds={definition.chainIds}
-                                value={Array.isArray(field.value) ? field.value : emptyNetworks}
-                                onChange={field.onChange}
-                                onBlur={field.onBlur}
-                                triggerRef={field.ref}
-                                isInvalid={fieldState.invalid}
-                                isDisabled={disabled}
-                                operationalOnly
-                              />
-                            ) : definition.kind === "expiry" ? (
-                              <DateTimePolicyField
-                                label={definition.label}
-                                name={field.name}
-                                value={typeof field.value === "string" ? field.value || null : null}
-                                onChange={(value) => field.onChange(value ?? "")}
-                                onBlur={field.onBlur}
-                                error={fieldState.error}
-                                isRequired
-                                isDisabled={disabled}
-                                hideLabel
-                                hideError
-                                aria-describedby={`${fieldId}-feedback`}
-                              />
-                            ) : (
-                              <InputGroup fullWidth variant="secondary">
-                                <InputGroup.Input
-                                  {...field}
-                                  id={fieldId}
+      {step === "details" ? (
+        <section className="grid gap-4">
+          <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
+          <SessionKeyDetailsCard
+            form={metadataForm}
+            wallets={wallets}
+            limits={limits}
+            custodyLocked={custodyLocked}
+          />
+        </section>
+      ) : (
+        <section className="grid gap-4" aria-labelledby={`${id}-configuration`}>
+          <HeadingGroup.Title id={`${id}-configuration`} size="sm">
+            Configuration
+          </HeadingGroup.Title>
+          <DashboardCardRoot>
+            <DashboardCardContent>
+              <FieldGroup className="contents divide-y divide-separator">
+                {recipe.fields.map((definition) => (
+                  <Controller
+                    key={definition.name}
+                    name={definition.name}
+                    control={form.control}
+                    render={({ field, fieldState }) => {
+                      const fieldId = `${id}-${definition.name}`;
+                      return (
+                        <DashboardCardRow className="items-start sm:items-start">
+                          <Field className="contents" data-invalid={fieldState.invalid}>
+                            <FieldLabel id={`${fieldId}-label`} htmlFor={fieldId} isRequired>
+                              {definition.label}
+                            </FieldLabel>
+                            <div className="grid w-full min-w-0 gap-2">
+                              {definition.kind === "networks" ? (
+                                <EvmNetworkMultiSelect
+                                  aria-labelledby={`${fieldId}-label`}
                                   aria-describedby={`${fieldId}-feedback`}
-                                  aria-invalid={fieldState.invalid}
-                                  value={typeof field.value === "string" ? field.value : ""}
-                                  inputMode="decimal"
-                                  autoComplete="off"
-                                  placeholder="100"
-                                  disabled={disabled}
+                                  name={field.name}
+                                  chainIds={definition.chainIds}
+                                  value={Array.isArray(field.value) ? field.value : emptyNetworks}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  triggerRef={field.ref}
+                                  isInvalid={fieldState.invalid}
+                                  isDisabled={disabled}
+                                  operationalOnly
                                 />
-                                <InputGroup.Suffix>
-                                  <span className="text-xs text-muted">{definition.symbol}</span>
-                                </InputGroup.Suffix>
-                              </InputGroup>
-                            )}
-                            <div id={`${fieldId}-feedback`} className="grid gap-1">
-                              {"description" in definition ? (
-                                <Typography.Paragraph size="xs" color="muted">
-                                  {definition.description}
-                                </Typography.Paragraph>
-                              ) : null}
-                              {fieldState.error ? (
-                                <FieldError>{fieldState.error.message}</FieldError>
-                              ) : null}
+                              ) : definition.kind === "expiry" ? (
+                                <DateTimePolicyField
+                                  label={definition.label}
+                                  name={field.name}
+                                  value={
+                                    typeof field.value === "string" ? field.value || null : null
+                                  }
+                                  onChange={(value) => field.onChange(value ?? "")}
+                                  onBlur={field.onBlur}
+                                  error={fieldState.error}
+                                  isRequired
+                                  isDisabled={disabled}
+                                  hideLabel
+                                  hideError
+                                  aria-describedby={`${fieldId}-feedback`}
+                                />
+                              ) : (
+                                <InputGroup fullWidth variant="secondary">
+                                  <InputGroup.Input
+                                    {...field}
+                                    id={fieldId}
+                                    aria-describedby={`${fieldId}-feedback`}
+                                    aria-invalid={fieldState.invalid}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                    inputMode="decimal"
+                                    autoComplete="off"
+                                    placeholder="100"
+                                    disabled={disabled}
+                                  />
+                                  <InputGroup.Suffix>
+                                    <span className="text-xs text-muted">{definition.symbol}</span>
+                                  </InputGroup.Suffix>
+                                </InputGroup>
+                              )}
+                              <div id={`${fieldId}-feedback`} className="grid gap-1">
+                                {"description" in definition &&
+                                typeof definition.description === "string" ? (
+                                  <Typography.Paragraph size="xs" color="muted">
+                                    {definition.description}
+                                  </Typography.Paragraph>
+                                ) : null}
+                                {fieldState.error ? (
+                                  <FieldError>{fieldState.error.message}</FieldError>
+                                ) : null}
+                              </div>
                             </div>
-                          </div>
-                        </Field>
-                      </DashboardCardRow>
-                    );
-                  }}
-                />
-              ))}
-            </FieldGroup>
-          </DashboardCardContent>
-        </DashboardCardRoot>
-      </section>
+                          </Field>
+                        </DashboardCardRow>
+                      );
+                    }}
+                  />
+                ))}
+              </FieldGroup>
+            </DashboardCardContent>
+          </DashboardCardRoot>
+        </section>
+      )}
       {metadataForm.formState.errors.onchain || metadataForm.formState.errors.policies ? (
         <Typography.Paragraph role="alert" size="sm" className="text-danger">
           Review the selected networks and recipe inputs before creating this key.
         </Typography.Paragraph>
       ) : null}
-      <Button
-        fullWidth
-        type="submit"
-        form={id}
-        isDisabled={disabled || form.formState.isSubmitting}
-      >
-        {form.formState.isSubmitting ? "Creating…" : "Create session key"}
-      </Button>
+      {step === "details" ? (
+        <Button
+          fullWidth
+          type="submit"
+          form={id}
+          isDisabled={disabled || metadataForm.formState.isValidating}
+        >
+          Continue
+        </Button>
+      ) : (
+        <div className="flex items-center justify-between gap-3 border-t border-separator pt-5">
+          <Button
+            type="button"
+            variant="tertiary"
+            isDisabled={custodyLocked || form.formState.isSubmitting}
+            onPress={() => setStep("details")}
+          >
+            Back to details
+          </Button>
+          <Button type="submit" form={id} isDisabled={disabled || form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Creating…" : "Create session key"}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

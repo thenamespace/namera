@@ -237,11 +237,15 @@ independently on selected networks using Circle's native deployments. Amounts ar
 exact six-decimal base units. A calendar picker selects expiry at local midnight
 at the start of the chosen date, serialized as a UTC ISO timestamp; the builder
 rejects invalid or elapsed expiry dates. Recipe fields use the same card rows as
-metadata. The list uses the members-page width and optional `display.banner` covers.
+metadata. The list is full width with a compact search field and optional
+`display.banner` covers. Recipe display identity and editable session-key defaults
+are separate: only `recipe.metadata` pre-fills the session metadata fields.
 Signatures remain disabled. There is no cross-chain shared budget or periodic reset.
 
 `components/session-key-creation` is shared by custom creation and recipes. Metadata
-and recipe fields appear together; generated permissions pass through the existing
+and recipe fields appear in Details → Configuration steps on the same route.
+Continue validates metadata, account and custody; Back preserves both forms.
+Generated permissions pass through the existing
 creation resolver before submission. Paused networks are unavailable. The shared
 creation hook owns public registration verification, ambiguous-error recovery,
 private draft lifetime, duplicate-submission guards and backup navigation blocking.
