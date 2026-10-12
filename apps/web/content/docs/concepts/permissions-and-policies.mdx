@@ -28,6 +28,10 @@ enforce them. Depending on the configuration, they govern:
 - When execution authority starts and expires.
 - Whether it has signature authority.
 
+These permissions belong to a specific network installation. Access on one
+network does not grant access on another. Choose the token or contract deployed
+on that network; the same name does not imply the same address.
+
 For example, a key intended to send **0.001 ETH** to one recipient needs both
 permission to call that recipient and a sufficient native-currency allowance.
 A gas budget is separate from the amount transferred.
@@ -39,6 +43,9 @@ to a narrow transfer permission and does not implicitly enable signatures.
 
 API policies apply when an operation goes through Namera. They can restrict
 networks, time windows, contract calls, spending, gas, and signing requests.
+They remain attached to the session key, rather than copied into its network
+installations. Each operation must satisfy the policies applicable to its network
+and operation type.
 
 All applicable policies must pass. For example, an operation below a lifetime
 budget can still be denied because its daily budget is exhausted. Adding a more

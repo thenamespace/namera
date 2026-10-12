@@ -32,6 +32,11 @@ not mean every requested network is ready: each network has its own installation
 and validity period. A pending approval on Base is not made usable by a confirmed
 installation on Ethereum.
 
+Configure each network separately during creation. One key can have a 100 USDC
+lifetime allowance on Ethereum and a 200 USDC allowance on Base, using each
+network's token address. The allowances are independent, not a shared 300 USDC
+budget. Lifetimes and signature authority can also differ by network.
+
 The client also needs an active grant to the key. Namera evaluates the selected
 key's complete permissions for each operation; it does not combine partial
 permissions from different keys to make an action pass.
