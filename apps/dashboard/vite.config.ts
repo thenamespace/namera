@@ -22,7 +22,16 @@ const config = defineConfig(({ mode }) => {
   return {
     server: { headers: developmentHeaders },
     preview: { headers: security.headers },
-    resolve: { conditions: ["namera-source", ...defaultClientConditions], tsconfigPaths: true },
+    resolve: {
+      alias: [
+        {
+          find: /^shiki$/,
+          replacement: fileURLToPath(new URL("./src/lib/syntax-highlighter.ts", import.meta.url)),
+        },
+      ],
+      conditions: ["namera-source", ...defaultClientConditions],
+      tsconfigPaths: true,
+    },
     plugins: [
       security.plugin,
       documentSeo(),
@@ -50,3 +59,4 @@ const config = defineConfig(({ mode }) => {
 });
 
 export default config;
+import { fileURLToPath } from "node:url";

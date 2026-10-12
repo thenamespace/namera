@@ -454,6 +454,9 @@ importers:
       react-hook-form:
         specifier: 'catalog:'
         version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
+      shiki:
+        specifier: 4.5.0
+        version: 4.5.0
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

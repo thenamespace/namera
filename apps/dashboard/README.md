@@ -494,6 +494,8 @@ without requiring local assets; the existing HTTPS image CSP permits the CDN.
 Production HTML carries a meta CSP restricting scripts to this origin and
 connections to this origin plus `VITE_API_URL`'s origin. Inline styles remain
 allowed for UIKit, charts and Motion; inline scripts and eval are not allowed.
+Vite redirects UIKit's Shiki import to the JavaScript regex engine so syntax
+highlighting works without WebAssembly compilation or relaxed script permissions.
 Images may use HTTPS, data and blob URLs. Passkey creation/authentication is
 limited to this origin by Permissions-Policy.
 
