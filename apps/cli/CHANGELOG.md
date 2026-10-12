@@ -1,5 +1,36 @@
 # @namera-ai/cli
 
+## 1.3.0
+
+### Minor Changes
+
+- 7f71f55: Automatically resolve imported local session keys in Node.js for `executions.execute()`
+  and `sign()`, without requiring `resolveSessionSigner`. SDK, CLI, and local MCP now
+  share the same encrypted files, OS-keyring unlock, and trusted installation bindings.
+
+  Keep browser bundles free of native keyring dependencies through conditional exports.
+  Custom resolvers remain supported, and `localSigning: false` disables automatic
+  key-store access. Managed operations do not load the local key store. Add Node-only
+  storage APIs at `@namera-ai/sdk/node` for custom import workflows.
+
+  Accept plain IDs and hex addresses in SDK client inputs while preserving typed
+  namespaces, supported chain IDs, and bigint amounts. Export SDK input types and
+  validate inputs against protocol schemas before requests or signing.
+
+- e87b570: Add 1Claw-managed smart-account owners and session keys, including custody-aware creation, owner approvals, execution, and signing. Support local and managed session keys with either passkey-owned or 1Claw-managed accounts.
+
+  Use the same SDK execution and signing methods, CLI commands, and MCP tools for both session-key custody types. Managed session keys require no local key import or signer resolver; local keys continue signing on the client. Add public custody and signing-method schemas and fix managed smart-account signature verification.
+
+  For self-funded managed executions, configure `maxGasCostWei` on `NameraClient`. Managed signature completion is not automatically retried: retrying a lost result with a new signing request may consume another signature allowance.
+
+### Patch Changes
+
+- Updated dependencies [7f71f55]
+- Updated dependencies [4b4bfc5]
+- Updated dependencies [e87b570]
+  - @namera-ai/sdk@1.3.0
+  - @namera-ai/protocol@1.3.0
+
 ## 1.2.0
 
 ### Patch Changes
