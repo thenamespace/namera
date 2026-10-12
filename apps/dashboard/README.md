@@ -60,6 +60,11 @@ Workspace package imports continue to use their package names.
   catalog/deployment metadata or custom chain/address/decimals. `EvmContractSelection`
   preserves full contract metadata or custom chain/address. Custom decimals must
   be explicitly supplied (0–255); no ABI or onchain verification is inferred.
+- `src/components/evm-address-picker-without-network.tsx` — address selection for
+  a caller-owned `chainId`, with generic catalog `types` and an address-only custom
+  form. Preserves full catalog selections; custom values inherit the network and
+  contain only chain/address, not token decimals. Typed-data verifying-contract
+  rules use this picker with both contract and ERC-20 catalog entries.
 - `src/atoms/` — typed API query and mutation atoms, invalidation keys, and loader prefetching.
 - `src/hooks/` — React Atom adapters and domain hooks.
 - `src/lib/wagmi.ts` — shared Wagmi chain and RPC transport configuration.
@@ -130,6 +135,10 @@ header action derive visibility from `wallet:create`; the server remains the
 authoritative permission boundary. EVM address displays resolve mainnet ENS names
 and avatars, fall back to a deterministic DiceBear Glass avatar when needed, and
 copy the full address while retaining it in an accessible tooltip.
+`EvmAddressDisplay` accepts an optional CAIP-2 `chainId`. With a chain, it first
+resolves catalog metadata and shows the token or contract name, logo, chain badge,
+and address info tooltip. Missing metadata falls back to ENS or a truncated address;
+lookup failures expose a retry action. Without a chain, it only resolves ENS.
 The account list starts with Active as its baseline status view; frozen and
 archived accounts remain available through the status facet without counting the
 baseline as a customized filter.

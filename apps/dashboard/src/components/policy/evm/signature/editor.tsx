@@ -28,13 +28,13 @@ const signatureOptions = [
   {
     id: "message",
     name: "Messages",
-    description: "Sign human-readable text and authentication challenges.",
+    description: "Text and sign-in requests.",
     icon: Message01Icon,
   },
   {
     id: "typed-data",
     name: "Typed data",
-    description: "Sign structured EIP-712 requests for apps and protocols.",
+    description: "Structured EIP-712 requests.",
     icon: SourceCodeIcon,
   },
 ] satisfies ReadonlyArray<{
@@ -93,6 +93,7 @@ export function SignaturePolicyEditor({
                 aria-label="Allowed signature types"
                 isInvalid={fieldState.invalid}
                 layout="grid"
+                className="grid-cols-1 sm:grid-cols-2"
                 name={field.name}
                 value={Array.from(field.value)}
                 onBlur={field.onBlur}
@@ -119,11 +120,6 @@ export function SignaturePolicyEditor({
         />
         {allowedTypes.includes("typed-data") ? (
           <>
-            <Typography.Paragraph color="muted" size="xs">
-              {rules.fields.length === 0
-                ? "All typed data is allowed. Add a rule to limit access."
-                : "Only typed data matching a rule is allowed."}
-            </Typography.Paragraph>
             {rules.fields.map((rule, index) => (
               <SignatureRuleFields
                 key={rule.id}

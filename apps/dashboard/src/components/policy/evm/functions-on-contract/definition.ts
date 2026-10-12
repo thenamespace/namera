@@ -1,5 +1,5 @@
 import { CreateEvmContractFunctionsPolicy } from "@namera-ai/protocol";
-import { ShieldUserIcon } from "@namera-ai/ui/icons";
+import { FileScriptIcon } from "@namera-ai/ui/icons";
 
 export const definition = {
   type: "evm.functions-on-contract",
@@ -7,7 +7,7 @@ export const definition = {
   name: evmPolicyDisplayNames["evm.functions-on-contract"],
   description: "Only call selected functions on this contract through Namera.",
   cardinality: "singleton",
-  icon: ShieldUserIcon,
+  icon: FileScriptIcon,
   schema: CreateEvmContractFunctionsPolicy,
   initial: { type: "evm.functions-on-contract", version: 1, address: "0x", functions: [] },
 } as const;

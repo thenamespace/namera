@@ -1,5 +1,5 @@
 import { CreateEvmContractAccessPolicy } from "@namera-ai/protocol";
-import { ShieldUserIcon } from "@namera-ai/ui/icons";
+import { FileScriptIcon } from "@namera-ai/ui/icons";
 
 export const definition = {
   type: "evm.contract-access",
@@ -7,7 +7,7 @@ export const definition = {
   name: evmPolicyDisplayNames["evm.contract-access"],
   description: "Only call this contract through Namera.",
   cardinality: "singleton",
-  icon: ShieldUserIcon,
+  icon: FileScriptIcon,
   schema: CreateEvmContractAccessPolicy,
   initial: { type: "evm.contract-access", version: 1, address: "0x" },
 } as const;

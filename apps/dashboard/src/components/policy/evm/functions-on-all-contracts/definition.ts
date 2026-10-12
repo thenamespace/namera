@@ -1,5 +1,5 @@
 import { CreateEvmWildcardFunctionsPolicy } from "@namera-ai/protocol";
-import { ShieldUserIcon } from "@namera-ai/ui/icons";
+import { FileScriptIcon } from "@namera-ai/ui/icons";
 
 export const definition = {
   type: "evm.functions-on-all-contracts",
@@ -7,7 +7,7 @@ export const definition = {
   name: evmPolicyDisplayNames["evm.functions-on-all-contracts"],
   description: "Only call these selectors, across non-management contracts.",
   cardinality: "singleton",
-  icon: ShieldUserIcon,
+  icon: FileScriptIcon,
   schema: CreateEvmWildcardFunctionsPolicy,
   initial: { type: "evm.functions-on-all-contracts", version: 1, functions: [] },
 } as const;

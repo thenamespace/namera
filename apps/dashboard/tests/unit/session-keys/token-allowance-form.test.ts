@@ -42,6 +42,7 @@ describe("token allowance form", () => {
     const parse = Schema.decodeUnknownSync(tokenSpendingForm(["eip155:1"]));
     const token = { address, amount: "1", decimals: "6" };
     expect(parse({ token, chainId: "eip155:1" }).chainId).toBe("eip155:1");
+    expect(parse({ token, chainId: null }).chainId).toBeNull();
     for (const chainId of ["", "eip155:8453"]) {
       expect(() => parse({ token, chainId })).toThrow();
     }
@@ -56,13 +57,13 @@ describe("token allowance form", () => {
         source: "custom",
         value: {
           address: Schema.decodeUnknownSync(TokenAllowanceForm.fields.address)(address),
-          chainId: "eip155:1",
           decimals: 18,
         },
       },
       permission,
     );
     expect(fields.amount).toBe("1.234567890123456789");
+    expect(fields.chainId).toBeNull();
     expect(toTokenAllowancePermission(decode(fields))).toEqual(permission);
   });
 });

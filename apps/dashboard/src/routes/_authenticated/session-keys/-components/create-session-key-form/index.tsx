@@ -23,6 +23,7 @@ import { useForm, useWatch, type DefaultValues } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { hasPermissions } from "@/components/permission";
+import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCurrentUser } from "@/hooks/auth";
 import { useBilling } from "@/hooks/billing";
@@ -116,6 +117,11 @@ function SessionKeyForm({
   }>();
   const [registrationError, setRegistrationError] = useState(false);
   const [managedCreationFailed, setManagedCreationFailed] = useState(false);
+  const [step, setStep] = useState<"details" | "policies">("details");
+  const [editingPolicy, setEditingPolicy] = useState(false);
+  const [tokenSelections, setTokenSelections] = useState<
+    ReadonlyMap<string, TokenSpendingSelection>
+  >(() => new Map());
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -221,6 +227,8 @@ function SessionKeyForm({
       registration ||
       managedCreationFailed ||
       limitReached ||
+      step !== "policies" ||
+      editingPolicy ||
       !form.formState.isValid
     )
       return;
@@ -271,7 +279,7 @@ function SessionKeyForm({
   };
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <HeadingGroup className="mb-6">
         <HeadingGroup.Title level={1} size="lg">
           {registration ? "Finish setting up your key" : "Create a session key"}
@@ -317,47 +325,97 @@ function SessionKeyForm({
           ) : null}
         </div>
       ) : (
-        <form id="create-session-key-form" noValidate onSubmit={handleSubmit}>
+        <div>
           {managedCreationFailed ? (
             <Typography.Paragraph role="alert" className="mb-4" color="muted" size="sm">
               Creation could not be confirmed. Check the session-key list before trying again. If no
               key appears, contact support; a provider resource may still have been created.
             </Typography.Paragraph>
           ) : null}
-          <div className="grid gap-8">
-            <section className="grid gap-4">
-              <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
-              <SessionKeyDetailsCard
-                control={form.control}
+          {step === "details" ? (
+            <form
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                void form
+                  .trigger(["metadata", "walletId", "custody"], { shouldFocus: true })
+                  .then((valid) => {
+                    if (valid && !limitReached) setStep("policies");
+                    return valid;
+                  });
+              }}
+              className="grid gap-6"
+            >
+              <section className="grid gap-4">
+                <HeadingGroup.Title size="sm">Metadata</HeadingGroup.Title>
+                <SessionKeyDetailsCard
+                  control={form.control}
+                  wallets={wallets}
+                  limits={limits}
+                  custodyLocked={needsBackup || createSessionKey.isPending || managedCreationFailed}
+                />
+              </section>
+              <Button fullWidth type="submit" isDisabled={limitReached || managedCreationFailed}>
+                Continue
+              </Button>
+            </form>
+          ) : (
+            <>
+              <PolicySection
+                tokenSelections={tokenSelections}
+                onSaveTokenSelection={(selection) => {
+                  const address =
+                    selection.source === "catalog"
+                      ? selection.deployment.address
+                      : selection.value.address;
+                  setTokenSelections((previous) =>
+                    new Map(previous).set(address.toLowerCase(), selection),
+                  );
+                }}
+                form={form}
                 wallets={wallets}
-                limits={limits}
-                custodyLocked={needsBackup || createSessionKey.isPending || managedCreationFailed}
+                editing={editingPolicy}
+                onEditingChange={setEditingPolicy}
               />
-            </section>
-            <PolicySection form={form} wallets={wallets} />
-          </div>
-          {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
-            <Typography.Paragraph role="alert" className="mt-3 text-danger" size="sm">
-              Review the account, lifetime and permission fields before continuing.
-            </Typography.Paragraph>
-          ) : null}
+              {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
+                <Typography.Paragraph role="alert" className="mt-3 text-danger" size="sm">
+                  Review the account, lifetime and permission fields before continuing.
+                </Typography.Paragraph>
+              ) : null}
 
-          <Button
-            className="mt-4"
-            form="create-session-key-form"
-            fullWidth
-            isDisabled={
-              managedCreationFailed ||
-              limitReached ||
-              createSessionKey.isPending ||
-              form.formState.isSubmitting ||
-              !form.formState.isValid
-            }
-            type="submit"
-          >
-            {createSessionKey.isPending ? "Creating…" : "Create session key"}
-          </Button>
-        </form>
+              <form
+                id="create-session-key-form"
+                noValidate
+                onSubmit={handleSubmit}
+                className="mt-6 flex items-center justify-between border-t border-separator pt-5"
+              >
+                <Button
+                  type="button"
+                  variant="tertiary"
+                  isDisabled={editingPolicy || createSessionKey.isPending}
+                  onPress={() => setStep("details")}
+                >
+                  Back to details
+                </Button>
+                <Button
+                  className="mt-4"
+                  form="create-session-key-form"
+                  isDisabled={
+                    managedCreationFailed ||
+                    editingPolicy ||
+                    limitReached ||
+                    createSessionKey.isPending ||
+                    form.formState.isSubmitting ||
+                    !form.formState.isValid
+                  }
+                  type="submit"
+                >
+                  {createSessionKey.isPending ? "Creating…" : "Create session key"}
+                </Button>
+              </form>
+            </>
+          )}
+        </div>
       )}
       <AlertDialog>
         <AlertDialog.Backdrop
@@ -387,6 +445,6 @@ function SessionKeyForm({
           </AlertDialog.Container>
         </AlertDialog.Backdrop>
       </AlertDialog>
-    </>
+    </div>
   );
 }

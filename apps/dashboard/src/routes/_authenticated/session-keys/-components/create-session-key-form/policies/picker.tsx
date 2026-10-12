@@ -29,47 +29,33 @@ export function PolicyPicker({
           variant="secondary"
         />
       </div>
-      <div className="grid gap-4 p-0.5">
-        {(["Access", "Limits", "Advanced"] as const).map((group) => {
-          const entries = choices.filter((entry) => entry.group === group);
-          if (!entries.length) return null;
+      <div className="grid gap-2 p-0.5">
+        {choices.map((entry) => {
+          const reason = unavailable(entry);
+          const disabled = reason !== undefined;
           return (
-            <section key={group} className="grid gap-2 sm:grid-cols-2" aria-label={group}>
-              <Typography.Heading
-                level={3}
-                className="col-span-full text-xs font-medium text-muted"
-              >
-                {group}
-              </Typography.Heading>
-              {entries.map((entry) => {
-                const reason = unavailable(entry);
-                const disabled = reason !== undefined;
-                return (
-                  <Button
-                    key={entry.id}
-                    type="button"
-                    variant="ghost"
-                    className="border-separator h-auto min-h-0 w-full items-start justify-start gap-3 rounded-lg border px-3 py-2 text-left whitespace-normal"
-                    isDisabled={disabled}
-                    aria-label={`${disabled ? `${reason}:` : "Configure"} ${entry.name}`}
-                    onPress={() => onSelect(entry)}
-                  >
-                    <span className="bg-default text-muted grid size-9 shrink-0 place-items-center rounded-lg">
-                      <HugeiconsIcon icon={entry.icon} size={18} />
-                    </span>
-                    <span className="grid min-w-0 flex-1 gap-1">
-                      <span className="text-sm font-medium">{entry.name}</span>
-                      <span
-                        className="text-muted truncate text-xs leading-4 font-normal"
-                        title={reason ?? entry.description}
-                      >
-                        {reason ?? entry.description}
-                      </span>
-                    </span>
-                  </Button>
-                );
-              })}
-            </section>
+            <Button
+              key={entry.id}
+              type="button"
+              variant="ghost"
+              className="border-separator h-auto min-h-0 w-full items-start justify-start gap-3 rounded-lg border px-3 py-2 text-left whitespace-normal"
+              isDisabled={disabled}
+              aria-label={`${disabled ? `${reason}:` : "Configure"} ${entry.name}`}
+              onPress={() => onSelect(entry)}
+            >
+              <span className="bg-default text-muted grid size-9 shrink-0 place-items-center rounded-lg">
+                <HugeiconsIcon icon={entry.icon} size={18} />
+              </span>
+              <span className="grid min-w-0 flex-1 gap-1">
+                <span className="text-sm font-medium">{entry.name}</span>
+                <span
+                  className="text-muted truncate text-xs leading-4 font-normal"
+                  title={reason ?? entry.description}
+                >
+                  {reason ?? entry.description}
+                </span>
+              </span>
+            </Button>
           );
         })}
         {!choices.length ? (

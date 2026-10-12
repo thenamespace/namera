@@ -5,6 +5,7 @@ import type { EvmSessionKeyPolicy } from "@namera-ai/protocol/model";
 import { ChainIcon } from "@namera-ai/ui/icons";
 import { formatUnits } from "viem";
 
+import { chainDataById } from "@/components/display/chain-display";
 import { EvmAddressDisplay } from "@/components/display/evm-address-display";
 
 import { evmChainById, gasBudgetPeriodById, nativeSpendPeriodById } from "./data";
@@ -154,24 +155,39 @@ function SignaturePolicySummary({ policy }: { policy: SignaturePolicySummaryValu
     <span className="grid gap-2">
       <span>{policy.allowedTypes.map((type) => signatureTypeLabels[type]).join(" and ")}</span>
       {policy.allowedTypes.includes("typed-data")
-        ? (policy.typedDataRules?.map((rule, index) => (
-            <span
-              className="bg-surface grid gap-1 rounded-md p-2 text-xs"
-              // Read-only tuples have no IDs and may contain identical rules.
-              // oxlint-disable-next-line react/no-array-index-key
-              key={`${rule.chainId}:${rule.verifyingContract}:${index}`}
-            >
-              <span>
-                {evmChainById.get(rule.chainId)?.name ?? rule.chainId} ·{" "}
-                {rule.primaryTypes.join(", ")}
+        ? (policy.typedDataRules?.map((rule, index) => {
+            const network = chainDataById.get(rule.chainId);
+            return (
+              <span
+                className="bg-surface grid gap-1 rounded-md p-2 text-[11px] leading-4"
+                // Read-only tuples have no IDs and may contain identical rules.
+                // oxlint-disable-next-line react/no-array-index-key
+                key={`${rule.chainId}:${rule.verifyingContract}:${index}`}
+              >
+                <span className="flex flex-wrap items-center gap-1.5">
+                  {network ? (
+                    <ChainIcon
+                      namespace="eip155"
+                      chain={network.name}
+                      className="size-3 shrink-0"
+                      aria-hidden
+                    />
+                  ) : null}
+                  {evmChainById.get(rule.chainId)?.name ?? rule.chainId} ·{" "}
+                  {rule.primaryTypes.join(", ")}
+                </span>
+                <EvmAddressDisplay
+                  size="sm"
+                  address={EthereumAddress.make(rule.verifyingContract)}
+                  chainId={rule.chainId}
+                />
+                <span className="text-muted">
+                  {rule.name === undefined ? "Any domain name" : `Name: ${rule.name}`} ·{" "}
+                  {rule.version === undefined ? "Any version" : `Version: ${rule.version}`}
+                </span>
               </span>
-              <EvmAddressDisplay address={EthereumAddress.make(rule.verifyingContract)} />
-              <span className="text-muted">
-                {rule.name === undefined ? "Any domain name" : `Name: ${rule.name}`} ·{" "}
-                {rule.version === undefined ? "Any version" : `Version: ${rule.version}`}
-              </span>
-            </span>
-          )) ?? null)
+            );
+          }) ?? null)
         : null}
     </span>
   );

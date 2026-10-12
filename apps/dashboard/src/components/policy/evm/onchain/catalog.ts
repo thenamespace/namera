@@ -33,7 +33,7 @@ export const onchainPermissionCatalog = {
     initial: { type: "native-token-transfer", allowance: "0" },
   },
   "erc20-token-transfer": {
-    name: "Token spending",
+    name: "Token Spending (Lifetime)",
     description: "Allow transfers and approvals for one token within a lifetime allowance.",
     initial: { type: "erc20-token-transfer", address: "0x", allowance: "0" },
   },

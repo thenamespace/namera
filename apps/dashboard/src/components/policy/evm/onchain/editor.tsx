@@ -25,6 +25,7 @@ import {
   type OnchainPermissionType,
 } from "./catalog";
 import { TokenAllowanceEditor } from "./token-allowance/editor";
+import type { TokenSpendingSelection } from "./token-allowance/form";
 
 export type OnchainPermissionEditorProps = {
   chainIds: readonly SupportedEvmChainId[];
@@ -35,6 +36,8 @@ export type OnchainPermissionEditorProps = {
   description?: string;
   validatePermission?: (permission: OnchainPermissionInput) => string | undefined;
   onSave: (permission: OnchainPermissionInput) => void;
+  initialTokenSelection?: TokenSpendingSelection | undefined;
+  onSaveTokenSelection?: ((selection: TokenSpendingSelection) => void) | undefined;
 };
 
 export function OnchainPermissionEditor(props: OnchainPermissionEditorProps) {

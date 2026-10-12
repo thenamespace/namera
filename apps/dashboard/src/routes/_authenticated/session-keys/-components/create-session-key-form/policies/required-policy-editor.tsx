@@ -2,14 +2,15 @@ import { Schema } from "effect";
 
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Button, Modal } from "@namera-ai/ui";
+import { Button } from "@namera-ai/ui";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { OnchainSettings } from "../onchain-settings";
 import { CreateSessionKeyFormSchema } from "../schema";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "../types";
+import { EnforcementPills } from "./enforcement-pills";
 
-export function RequiredPolicyDialog({
+export function RequiredPolicyEditor({
   form,
   kind,
   onClose,
@@ -35,34 +36,24 @@ export function RequiredPolicyDialog({
   };
 
   return (
-    <Modal
-      isOpen
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save();
       }}
+      className="grid gap-6"
     >
-      <Modal.Backdrop>
-        <Modal.Container size="lg">
-          <Modal.Dialog className="max-w-2xl">
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>{kind === "networks" ? "Networks" : "Lifetime"}</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="grid max-h-[60vh] min-h-0 gap-4 overflow-y-auto">
-              <OnchainSettings form={draft} kind={kind} />
-            </Modal.Body>
-            <Modal.Footer className="flex-wrap gap-2">
-              <span className="mr-auto self-center text-xs text-muted">Enforced onchain</span>
-              <Button type="button" variant="tertiary" onPress={onClose}>
-                Cancel
-              </Button>
-              <Button type="button" onPress={() => void save()}>
-                Save policy
-              </Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+      <div className="grid gap-4">
+        <OnchainSettings form={draft} kind={kind} />
+      </div>
+      <div className="flex flex-wrap justify-end gap-2 border-t border-separator pt-4">
+        <EnforcementPills />
+        <Button type="button" variant="tertiary" onPress={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit">Save policy</Button>
+      </div>
+    </form>
   );
 }
