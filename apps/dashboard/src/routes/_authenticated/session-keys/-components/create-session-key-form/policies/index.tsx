@@ -1,13 +1,11 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-jsx-as-prop
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
 import { FieldError, Modal, Typography } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
-import { ChainDisplay } from "@/components/display/chain-display";
-import { HeadingGroup } from "@/components/heading-group";
 import { EvmPolicySummary, type SignaturePolicyInput } from "@/components/policy/evm";
 import { OnchainPolicyCard } from "@/components/policy/evm/onchain/display-card";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
@@ -31,6 +29,7 @@ export function PolicySection({
   onEditingChange,
   tokenSelections,
   onSaveTokenSelection,
+  networkSelector,
 }: {
   form: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   installationIndex: number;
@@ -39,6 +38,7 @@ export function PolicySection({
   onEditingChange: (editing: boolean) => void;
   tokenSelections: ReadonlyMap<string, TokenSpendingSelection>;
   onSaveTokenSelection: (selection: TokenSpendingSelection) => void;
+  networkSelector: ReactNode;
 }) {
   const policies = useWatch({ control: form.control, name: "policies" }) ?? [];
   const installations = useWatch({ control: form.control, name: "onchain.installations" });
@@ -152,36 +152,29 @@ export function PolicySection({
 
   return (
     <section className="grid gap-3">
-      <div className="mb-1 flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <HeadingGroup.Title size="sm">
-            <ChainDisplay chainId={onchain.chainId} />
-          </HeadingGroup.Title>
-          <HeadingGroup.Description>
-            Access and lifetime on this network only.
-          </HeadingGroup.Description>
-          {form.formState.isSubmitted &&
-          (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
-            <div>
-              <FieldError
-                errors={[
-                  errors?.permissions,
-                  errors?.permissions?.root,
-                  errors?.allowSignatures,
-                  form.formState.errors.policies,
-                ]}
-              />
-            </div>
-          ) : null}
-        </HeadingGroup>
-        <AddPolicyButton
-          disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
-          onPress={() => {
-            setPane({});
-            onEditingChange(true);
-          }}
-        />
+      <div className="mb-1 flex items-end gap-3">
+        <div className="min-w-0 flex-1">{networkSelector}</div>
+        <div className="shrink-0 pb-0.5">
+          <AddPolicyButton
+            disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
+            onPress={() => {
+              setPane({});
+              onEditingChange(true);
+            }}
+          />
+        </div>
       </div>
+      {form.formState.isSubmitted &&
+      (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
+        <FieldError
+          errors={[
+            errors?.permissions,
+            errors?.permissions?.root,
+            errors?.allowSignatures,
+            form.formState.errors.policies,
+          ]}
+        />
+      ) : null}
       <div className="grid gap-3" aria-label="Configured policies">
         <RequiredPolicies
           form={form}

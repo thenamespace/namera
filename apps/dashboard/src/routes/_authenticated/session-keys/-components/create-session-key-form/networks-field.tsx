@@ -1,7 +1,7 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-new-array-as-prop
 import { useState } from "react";
 
-import { Field, FieldLabel, FieldError, Typography } from "@namera-ai/ui";
+import { Field, FieldLabel, FieldError } from "@namera-ai/ui";
 import { Controller, type UseFormReturn } from "react-hook-form";
 
 import { DashboardCardRow } from "@/components/dashboard-card";
@@ -58,10 +58,6 @@ export function SessionNetworksField({
                   }
                 }}
               />
-              <Typography.Paragraph size="xs" className="text-muted">
-                Configure policies for each network in the next step. Removing a network discards
-                its policies.
-              </Typography.Paragraph>
               {removalError ? <FieldError>{removalError}</FieldError> : null}
               {!field.value.length ? <FieldError>Choose at least one network.</FieldError> : null}
             </div>
