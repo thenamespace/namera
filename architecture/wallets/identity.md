@@ -46,6 +46,12 @@ forms and permission-aware controls; partial errors refresh provider data. Profi
 records never update internal wallet metadata. No owner keys or API secrets enter
 the browser. Sidebar navigation uses the existing responsive shell.
 
+Create identity opens `/identity/new`, using the same centered card-form layout
+as account creation. The selected account is carried in the validated search
+parameter and preselected only if it is active in the current workspace. Direct
+visits can select an account in the form. Successful creation replaces the form
+route with the identity profile; Cancel returns to the account's identity list.
+
 ## Ethereum primary names
 
 `GET /wallets/:walletId/identities/:label/primary` returns live Ethereum forward

@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -11,7 +11,6 @@ import { DataError } from "@/components/data-error";
 import { MetadataDisplay } from "@/components/display";
 import { useIdentities } from "@/hooks/identity";
 
-import { CreateIdentityDialog } from "./create-dialog";
 import { IdentityArtwork } from "./profile-artwork";
 
 type Account = Pick<WalletResponse, "id" | "metadata" | "address">;
@@ -27,7 +26,7 @@ export function IdentityList({
   page: number;
 }) {
   const navigate = useNavigate();
-  const [creating, setCreating] = useState(false);
+  const createSearch = useMemo(() => ({ account: selected?.id }), [selected?.id]);
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -40,7 +39,9 @@ export function IdentityList({
           </Typography>
         </div>
         {selected && canEdit ? (
-          <Button onPress={() => setCreating(true)}>Create identity</Button>
+          <Link to="/identity/new" search={createSearch} className={buttonVariants()}>
+            Create identity
+          </Link>
         ) : null}
       </div>
       {selected ? (
@@ -73,11 +74,7 @@ export function IdentityList({
             walletId={selected.id}
             page={page}
             canEdit={canEdit}
-            onCreate={() => setCreating(true)}
           />
-          {creating ? (
-            <CreateIdentityDialog account={selected} onClose={() => setCreating(false)} />
-          ) : null}
         </>
       ) : (
         <div className="rounded-2xl border border-separator p-8 text-center">
@@ -97,14 +94,13 @@ function AccountIdentities({
   walletId,
   page,
   canEdit,
-  onCreate,
 }: {
   walletId: WalletId;
   page: number;
   canEdit: boolean;
-  onCreate: () => void;
 }) {
   const query = useIdentities(walletId, page);
+  const createSearch = useMemo(() => ({ account: walletId }), [walletId]);
   const cards = useMemo(
     () =>
       query.data?.items.map((identity) => ({
@@ -150,9 +146,13 @@ function AccountIdentities({
             Create a namera.id identity to share your profile and addresses.
           </Typography>
           {canEdit ? (
-            <Button variant="secondary" onPress={onCreate}>
+            <Link
+              to="/identity/new"
+              search={createSearch}
+              className={buttonVariants({ variant: "secondary" })}
+            >
               Create identity
-            </Button>
+            </Link>
           ) : null}
         </div>
       )}

@@ -24,6 +24,7 @@ import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCliAuthorizeRouteImport } from './routes/_authenticated/cli/authorize'
 import { Route as AuthenticatedExecutionExecutionIdRouteImport } from './routes/_authenticated/execution/$executionId'
 import { Route as AuthenticatedIdentityIndexRouteImport } from './routes/_authenticated/identity/index'
+import { Route as AuthenticatedIdentityNewRouteImport } from './routes/_authenticated/identity/new'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
 import { Route as AuthenticatedOauthAuthorizeRouteImport } from './routes/_authenticated/oauth/authorize'
 import { Route as AuthenticatedRecipesIndexRouteImport } from './routes/_authenticated/recipes/index'
@@ -133,6 +134,12 @@ const AuthenticatedIdentityIndexRoute =
   AuthenticatedIdentityIndexRouteImport.update({
     id: '/identity/',
     path: '/identity/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIdentityNewRoute =
+  AuthenticatedIdentityNewRouteImport.update({
+    id: '/identity/new',
+    path: '/identity/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInvitationsInvitationIdRoute =
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -373,6 +381,7 @@ export interface FileRoutesByTo {
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -421,6 +430,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/_authenticated/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/_authenticated/identity/new': typeof AuthenticatedIdentityNewRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/_authenticated/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/_authenticated/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/accounts/new'
     | '/cli/authorize'
     | '/execution/$executionId'
+    | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/recipes/$recipeId'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/accounts/new'
     | '/cli/authorize'
     | '/execution/$executionId'
+    | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/recipes/$recipeId'
@@ -559,6 +571,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/new'
     | '/_authenticated/cli/authorize'
     | '/_authenticated/execution/$executionId'
+    | '/_authenticated/identity/new'
     | '/_authenticated/invitations/$invitationId'
     | '/_authenticated/oauth/authorize'
     | '/_authenticated/recipes/$recipeId'
@@ -702,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/identity'
       fullPath: '/identity/'
       preLoaderRoute: typeof AuthenticatedIdentityIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/identity/new': {
+      id: '/_authenticated/identity/new'
+      path: '/identity/new'
+      fullPath: '/identity/new'
+      preLoaderRoute: typeof AuthenticatedIdentityNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invitations/$invitationId': {
@@ -981,6 +1001,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedCliAuthorizeRoute: typeof AuthenticatedCliAuthorizeRoute
   AuthenticatedExecutionExecutionIdRoute: typeof AuthenticatedExecutionExecutionIdRoute
+  AuthenticatedIdentityNewRoute: typeof AuthenticatedIdentityNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
   AuthenticatedOauthAuthorizeRoute: typeof AuthenticatedOauthAuthorizeRoute
   AuthenticatedRecipesRecipeIdRoute: typeof AuthenticatedRecipesRecipeIdRoute
@@ -1017,6 +1038,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCliAuthorizeRoute: AuthenticatedCliAuthorizeRoute,
   AuthenticatedExecutionExecutionIdRoute:
     AuthenticatedExecutionExecutionIdRoute,
+  AuthenticatedIdentityNewRoute: AuthenticatedIdentityNewRoute,
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
   AuthenticatedOauthAuthorizeRoute: AuthenticatedOauthAuthorizeRoute,
