@@ -22,9 +22,11 @@ export const WalletTransactionRoutes = HttpApiBuilder.group(
           requiredPermissions: { user: ["wallet:update"] },
         });
         if (
-          write &&
-          (yield* HttpServerRequest.HttpServerRequest).headers.origin !==
-            config.dashboardPublicOrigin.origin
+          actor.role.type !== "system" ||
+          actor.role.key !== "owner" ||
+          (write &&
+            (yield* HttpServerRequest.HttpServerRequest).headers.origin !==
+              config.dashboardPublicOrigin.origin)
         )
           return yield* new HttpApiError.Forbidden();
         yield* consumeRateLimit(

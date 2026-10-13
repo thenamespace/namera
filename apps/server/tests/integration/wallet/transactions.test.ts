@@ -187,18 +187,23 @@ layer(fixture.layer)("owner wallet transactions", (it) => {
             },
           });
           const error = yield* other.walletTransaction.complete(completion).pipe(Effect.flip);
-          expect(error).toMatchObject(
-            role === "admin" ? { code: "OPERATION_UNAVAILABLE" } : { _tag: "Forbidden" },
-          );
+          expect(error).toMatchObject({ _tag: "Forbidden" });
+          expect(
+            yield* other.walletTransaction
+              .prepare({
+                params,
+                headers: { "idempotency-key": `blocked-${role}` },
+                payload: request,
+              })
+              .pipe(Effect.flip),
+          ).toMatchObject({ _tag: "Forbidden" });
           expect(
             yield* other.walletTransaction
               .get({
                 params: { ...params, operationId: prepared.operationId },
               })
               .pipe(Effect.flip),
-          ).toMatchObject(
-            role === "admin" ? { code: "OPERATION_UNAVAILABLE" } : { _tag: "Forbidden" },
-          );
+          ).toMatchObject({ _tag: "Forbidden" });
         }
         expect((yield* client.walletTransaction.complete(completion)).status).toBe("signed");
       }),

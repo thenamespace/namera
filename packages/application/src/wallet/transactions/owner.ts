@@ -29,6 +29,8 @@ export const makeTransactionOwner = Effect.gen(function* () {
     if (
       !member ||
       member.organizationMember.removedAt !== null ||
+      member.organizationRole.type !== "system" ||
+      member.organizationRole.key !== "owner" ||
       !member.organizationRole.permissions.includes("wallet:update")
     )
       return yield* new WalletTransactionError({ code: "OWNER_UNAVAILABLE" });
