@@ -31,6 +31,8 @@ remain under [operations](../../architecture/operations/executions.md).
   registry remains declarative, generic state/reservation adapters live in
   `operations.ts`, and individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
+- `src/identity/` — Ethereum ENS forward/reverse resolution, registrar discovery
+  and fixed primary-name calls; browser-safe independent owner-operation review.
 - `src/sessions/` — onchain permission compilation and root-approved
   installation/removal preparation through `evm.sessions`.
 - `src/signing/` — smart-account message and EIP-712 signing and verification
@@ -46,7 +48,9 @@ remain under [operations](../../architecture/operations/executions.md).
 Browser consumers use `@namera-ai/evm/chains` for chain metadata and
 `@namera-ai/evm/session-review` for read-only owner approval review. Both expose
 the same implementations as the root entry without importing the server service,
-provider configuration, or test layers. The root entry remains the backend API.
+provider configuration, or test layers. `@namera-ai/evm/identity-review` provides
+read-only reconstruction and envelope validation for primary-name approvals.
+The root entry remains the backend API.
 All entries preserve the `namera-source` development condition and built ESM exports.
 
 1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain

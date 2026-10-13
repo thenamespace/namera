@@ -19,6 +19,10 @@
       "namera-source": "./src/chains/index.ts",
       "default": "./dist/chains.js"
     },
+    "./identity-review": {
+      "namera-source": "./src/identity/review.ts",
+      "default": "./dist/identity-review.js"
+    },
     "./session-review": {
       "namera-source": "./src/sessions/review.ts",
       "default": "./dist/session-review.js"
@@ -32,6 +36,7 @@
     "exports": {
       ".": "./dist/index.js",
       "./chains": "./dist/chains.js",
+      "./identity-review": "./dist/identity-review.js",
       "./session-review": "./dist/session-review.js",
       "./package.json": "./package.json"
     }

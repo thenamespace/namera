@@ -12,6 +12,7 @@ import { DataError } from "@/components/data-error";
 import { MetadataDisplay } from "@/components/display";
 import { useIdentity, useIdentityNetworks } from "@/hooks/identity";
 
+import { PrimaryName } from "./primary-name";
 import { IdentityArtwork } from "./profile-artwork";
 import { ProfileDialog } from "./profile-dialog";
 import { RecordDialog, type RecordDraft } from "./record-dialog";
@@ -76,6 +77,7 @@ export function IdentityProfile({
           </div>
         </div>
       </section>
+      <PrimaryName wallet={wallet} label={label} canEdit={canEdit} />
       <section className="grid gap-3">
         <div className="flex items-center justify-between gap-3">
           <Typography.Heading level={2} className="text-base">

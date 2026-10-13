@@ -27,6 +27,7 @@ export const BillingUsageSourceType = Schema.Literals([
   "execution-submission",
   "signature-operation",
   "session-key-operation",
+  "wallet-operation",
   "manual-adjustment",
 ]);
 

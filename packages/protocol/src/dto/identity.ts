@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 import { EnsLabel, WalletId } from "#/common/index";
+import { EthereumAddress } from "#/evm/index";
 
 const RecordKey = Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(128));
 const RecordValue = Schema.String.check(Schema.isMaxLength(4096));
@@ -16,7 +17,7 @@ export const CreateIdentityRequest = Schema.Struct({ label: EnsLabel });
 export const IdentityView = Schema.Struct({
   fullName: Schema.String,
   label: EnsLabel,
-  owner: Schema.String,
+  owner: EthereumAddress,
   texts: Schema.Record(Schema.String, Schema.String),
   addresses: Schema.Record(Schema.String, Schema.String),
   contenthash: Schema.NullOr(Schema.String),

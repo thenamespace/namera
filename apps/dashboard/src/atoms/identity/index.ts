@@ -22,3 +22,11 @@ export const identityNetworksAtom = NameraClient.query("identity", "networks", {
 });
 export const createIdentityMutation = NameraClient.mutation("identity", "create");
 export const updateIdentityRecordsMutation = NameraClient.mutation("identity", "updateRecords");
+export const identityPrimaryAtom = (walletId: WalletId, label: EnsLabel) =>
+  NameraClient.query("identity", "primaryStatus", {
+    params: { walletId, label },
+    reactivityKeys: [...QueryKeys.organization.active, ...QueryKeys.identity.all],
+    timeToLive: "10 seconds",
+  });
+export const prepareIdentityPrimaryMutation = NameraClient.mutation("identity", "preparePrimary");
+export const approveIdentityPrimaryMutation = NameraClient.mutation("identity", "approvePrimary");

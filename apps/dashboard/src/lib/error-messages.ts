@@ -13,6 +13,38 @@ const networkPaused: FeedbackMessage = {
 };
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "IdentityPrimaryError:FORWARD_MISMATCH": {
+    title: "Check the Ethereum address",
+    description: "The name must resolve to this account before setting it as primary.",
+  },
+  "IdentityPrimaryError:OWNER_UNAVAILABLE": {
+    title: "Account approval unavailable",
+    description: "Check your permissions and the account’s owner.",
+  },
+  "IdentityPrimaryError:OPERATION_BUSY": {
+    title: "Account approval in progress",
+    description: "Finish the pending Ethereum operation before starting another.",
+  },
+  "IdentityPrimaryError:APPROVAL_EXPIRED": {
+    title: "Approval expired",
+    description: "Refresh and prepare a new approval.",
+  },
+  "IdentityPrimaryError:APPROVAL_INVALID": {
+    title: "Couldn’t verify approval",
+    description: "Retry using this account’s owner passkey.",
+  },
+  "IdentityPrimaryError:PREPARATION_FAILED": {
+    title: "Ethereum unavailable",
+    description: "Check the account’s ETH balance and try again.",
+  },
+  "IdentityPrimaryError:OPERATION_UNAVAILABLE": {
+    title: "Approval unavailable",
+    description: "Refresh to check the latest transaction status.",
+  },
+  "IdentityPrimaryError:IDEMPOTENCY_CONFLICT": {
+    title: "Approval changed",
+    description: "Refresh and start a new approval.",
+  },
   "IdentityError:NAME_UNAVAILABLE": {
     title: "Name unavailable",
     description: "Choose another label and try again.",

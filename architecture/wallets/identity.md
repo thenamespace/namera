@@ -46,5 +46,53 @@ forms and permission-aware controls; partial errors refresh provider data. Profi
 records never update internal wallet metadata. No owner keys or API secrets enter
 the browser. Sidebar navigation uses the existing responsive shell.
 
-The Ethereum primary-name owner-approval flow is not yet wired.
-Offchain creation alone never establishes a primary name or proves reverse resolution.
+## Ethereum primary names
+
+`GET /wallets/:walletId/identities/:label/primary` returns live Ethereum forward
+and reverse resolution plus the latest operation. `POST .../primary/prepare`
+accepts an actor-scoped idempotency key; `POST .../primary/approve` accepts the
+operation ID and, for passkey accounts, an owner assertion. These routes have the
+same dashboard-only authorization and Origin policy as record mutations.
+
+Preparation resolves the name to the account, discovers the Ethereum reverse
+registrar from `addr.reverse` in the ENS registry, and prepares one zero-value
+`setName` call on Ethereum. The account pays ETH gas; sponsorship is not enabled.
+No signing occurs during preparation. The browser independently reconstructs
+the account and call, checks deployment/nonce/fee/challenge fields, and shows the
+maximum ETH network fee before requesting a passkey or explicit 1Claw approval.
+See [ENS reverse resolution](https://docs.ens.domains/registry/reverse/).
+
+`core.wallet_operation` stores **transaction recovery state, not identities**:
+the scoped actor/account, approved name, pinned owner, prepared and signed
+envelopes, idempotency, leases and receipt. Names, ownership, profiles and records
+are always read from Namespace. No identity projection or account-name mapping
+is persisted. The operation ledger is required to resume the exact signed bytes
+after an ambiguous submission without signing a replacement.
+
+Wallet row locks serialize owner operations across this ledger and session-key
+approvals on the same chain. Approval rechecks membership, permissions, active
+account/key and pinned owner; passkeys bind the origin, RP, credential, challenge
+and counter. A signing lease fences concurrent attempts. Accepting the signature,
+advancing the counter, reserving execution quota and the approval audit share a
+transaction. Ethereum operations emit `wallet.operation_prepared`, `approved`,
+`confirmed` and `failed` audit events without record values or signature material.
+
+The wallet-operation worker polls every five seconds, expires only unsigned
+approvals, leases pending work, and resubmits the same envelope until a matching
+receipt is known. Receipt binding checks chain, hash, sender, nonce and EntryPoint.
+Included success and failure settle execution quota; signed operations and their
+holds never expire merely because time elapsed. Permanently missing receipts or
+unusable signed nonces require operator investigation; automatic replacement is
+intentionally not implemented. Worker logs contain operation IDs and bounded
+decisions; standard worker metrics use the `wallet_operation` label.
+
+A confirmed receipt is **not** a verified primary name. The dashboard polls and
+only shows the primary badge when live forward and reverse resolution agree.
+Offchain creation alone never establishes reverse resolution. The Namespace
+parent must resolve through Ethereum ENS/CCIP-read before primary preparation can
+succeed. Local tests use provider substitutes and real passkey verification;
+they do not send live transactions or prove hosted provider/mainnet configuration.
+
+Deployment requires the server (including its startup migration and worker),
+dashboard, existing ENS credential and Ethereum RPC/bundler configuration. No
+additional identity database service or new environment variable is required.

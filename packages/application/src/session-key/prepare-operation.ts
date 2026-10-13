@@ -176,7 +176,12 @@ export const makePrepareSessionKeyOperations = Effect.gen(function* () {
             walletId: owner.wallet.wallet.id,
             chainId: owner.installation.chainId,
           });
-          if (busy !== undefined)
+          const ownerOperation = yield* repository.core.walletOperation.findActiveForWalletChain({
+            organizationId: input.organizationId,
+            walletId: owner.wallet.wallet.id,
+            chainId: owner.installation.chainId,
+          });
+          if (busy !== undefined || ownerOperation !== undefined)
             return yield* new SessionKeyOperationError({ code: "OPERATION_BUSY" });
           const { operation } = yield* repository.core.sessionKeyOperation.insert({
             ...scope,

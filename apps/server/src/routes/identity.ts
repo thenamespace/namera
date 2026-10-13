@@ -32,6 +32,29 @@ export const IdentityRoutes = HttpApiBuilder.group(NameraApi, "identity", (handl
       return { organizationId: actor.organization.id, actorId: actor.actorId };
     });
     return handlers
+      .handle("primaryStatus", ({ params }) =>
+        Effect.gen(function* () {
+          return yield* app.ens.getPrimaryStatus({ ...(yield* authorize(false)), ...params });
+        }),
+      )
+      .handle("preparePrimary", ({ params, payload }) =>
+        Effect.gen(function* () {
+          return yield* app.ens.preparePrimary({
+            ...(yield* authorize(true)),
+            ...params,
+            request: payload,
+          });
+        }),
+      )
+      .handle("approvePrimary", ({ params, payload }) =>
+        Effect.gen(function* () {
+          return yield* app.ens.approvePrimary({
+            ...(yield* authorize(true)),
+            ...params,
+            request: payload,
+          });
+        }),
+      )
       .handle("networks", () =>
         Effect.gen(function* () {
           yield* authorize(false);

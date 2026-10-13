@@ -49,6 +49,7 @@ import {
   sessionKey,
   sessionKeyInstallation,
   sessionKeyOperation,
+  walletOperation,
   sessionKeyGrant,
   sessionKeyPolicyReservation,
   sessionKeyPolicyState,
@@ -143,6 +144,7 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(oauthAuthorizationRequest);
         yield* database.delete(oauthClient);
         yield* database.delete(sessionKeyOperation);
+        yield* database.delete(walletOperation);
         yield* database.delete(sessionKeyInstallation);
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);

@@ -5,6 +5,7 @@ import {
   EvmExecutionError,
   EvmSignatureError,
   Hex,
+  IdentityPrimaryError,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
 
@@ -56,6 +57,10 @@ export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => 
   const { execution, billing, ...serviceOverrides } = options;
 
   return {
+    identity: {
+      status: () => Effect.fail(new IdentityPrimaryError({ code: "PREPARATION_FAILED" })),
+      call: () => Effect.fail(new IdentityPrimaryError({ code: "PREPARATION_FAILED" })),
+    },
     billing: {
       settleGasSponsorship: settleEvmGasSponsorship,
       getGasSponsorshipCost: () =>

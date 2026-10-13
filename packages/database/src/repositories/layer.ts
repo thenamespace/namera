@@ -49,6 +49,7 @@ import {
   SessionKeyRepository,
   SessionKeyInstallationRepository,
   SessionKeyOperationRepository,
+  WalletOperationRepository,
   SessionKeyGrantRepository,
   SessionKeyPolicyReservationRepository,
   SessionKeyPolicyStateRepository,
@@ -116,6 +117,7 @@ export interface RepositoryService {
     sessionKey: SessionKeyRepository["Service"];
     sessionKeyInstallation: SessionKeyInstallationRepository["Service"];
     sessionKeyOperation: SessionKeyOperationRepository["Service"];
+    walletOperation: WalletOperationRepository["Service"];
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
     sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
     sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
@@ -184,6 +186,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyOperation = yield* SessionKeyOperationRepository;
+      const walletOperation = yield* WalletOperationRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
       const execution = yield* ExecutionRepository;
       const executionSubmission = yield* ExecutionSubmissionRepository;
@@ -248,6 +251,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           sessionKey,
           sessionKeyInstallation,
           sessionKeyOperation,
+          walletOperation,
           sessionKeyGrant,
           sessionKeyPolicyReservation,
           sessionKeyPolicyState,
@@ -312,6 +316,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionKeyRepository.layer,
         SessionKeyInstallationRepository.layer,
         SessionKeyOperationRepository.layer,
+        WalletOperationRepository.layer,
         SessionKeyGrantRepository.layer,
         ExecutionRepository.layer,
         ExecutionSubmissionRepository.layer,

@@ -1,6 +1,12 @@
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api";
 
-import { EnsUnavailableError, IdentityError, WalletNotFoundError } from "@namera-ai/protocol";
+import {
+  EnsUnavailableError,
+  IdentityError,
+  IdentityPrimaryError,
+  BillingLimitExceededError,
+  WalletNotFoundError,
+} from "@namera-ai/protocol";
 import {
   CreateIdentityRequest,
   IdentityAccountParams,
@@ -10,6 +16,11 @@ import {
   IdentityNetworksResponse,
   IdentityParams,
   UpdateIdentityRecordsRequest,
+  PrepareIdentityPrimaryRequest,
+  PrepareIdentityPrimaryResponse,
+  ApproveIdentityPrimaryRequest,
+  IdentityPrimaryOperation,
+  IdentityPrimaryStatus,
 } from "@namera-ai/protocol/dto";
 
 import { CommonErrors } from "#/common";
@@ -19,6 +30,23 @@ const errors = [...CommonErrors, EnsUnavailableError, IdentityError, WalletNotFo
 
 export class IdentityGroup extends HttpApiGroup.make("identity")
   .add(
+    HttpApiEndpoint.get("primaryStatus", "/wallets/:walletId/identities/:label/primary", {
+      params: IdentityParams,
+      success: IdentityPrimaryStatus,
+      error: [...errors, IdentityPrimaryError],
+    }),
+    HttpApiEndpoint.post("preparePrimary", "/wallets/:walletId/identities/:label/primary/prepare", {
+      params: IdentityParams,
+      payload: PrepareIdentityPrimaryRequest,
+      success: PrepareIdentityPrimaryResponse,
+      error: [...errors, IdentityPrimaryError],
+    }),
+    HttpApiEndpoint.post("approvePrimary", "/wallets/:walletId/identities/:label/primary/approve", {
+      params: IdentityParams,
+      payload: ApproveIdentityPrimaryRequest,
+      success: IdentityPrimaryOperation,
+      error: [...errors, IdentityPrimaryError, BillingLimitExceededError],
+    }),
     HttpApiEndpoint.get("networks", "/identity/networks", {
       success: IdentityNetworksResponse,
       error: CommonErrors,

@@ -20,6 +20,7 @@ import { makeExecutionClients } from "./clients/execution.js";
 import { EvmConfig } from "./config.js";
 import { makeEvmExecutionService } from "./execution/service.js";
 import type { EvmExecutionService } from "./execution/types.js";
+import { makeEvmIdentityService, type EvmIdentityService } from "./identity/service.js";
 import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPolicyService } from "./policy/types.js";
 import { makeAlchemyPortfolioService } from "./portfolio/alchemy.js";
@@ -42,6 +43,7 @@ const failTestReceipt = (receipt: EvmExecutionReceipt): FailedEvmExecutionReceip
 });
 
 export interface EvmService {
+  readonly identity: EvmIdentityService;
   readonly createAccount: (
     props: CreateAccountProps,
   ) => Effect.Effect<CreateAccountResult, EvmAccountCreationError | UnsupportedChainError>;
@@ -93,6 +95,7 @@ export class Evm extends Context.Service<Evm, EvmService>()("@namera-ai/evm/Evm"
       });
 
       return Evm.of({
+        identity: makeEvmIdentityService(makeExecutionClients(config)),
         createAccount,
         billing: {
           settleGasSponsorship: settleEvmGasSponsorship,

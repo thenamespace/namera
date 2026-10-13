@@ -5,9 +5,9 @@ import { Schema } from "effect";
 import { EnsLabel, WalletId } from "@namera-ai/protocol";
 
 import { currentUserAtom } from "@/atoms/auth/session";
-import { identityAtom, identityNetworksAtom } from "@/atoms/identity";
-import { prefetchQuery } from "@/atoms/prefetch";
-import { walletAtom } from "@/atoms/wallet";
+import { identityAtom, identityNetworksAtom, identityPrimaryAtom } from "@/atoms/identity";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { walletAtom, walletPasskeyOwnerAtom } from "@/atoms/wallet";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 
@@ -25,6 +25,16 @@ export const Route = createFileRoute("/_authenticated/identity/$accountId/$label
       abortController.signal,
     );
     if (!actor) throw redirect({ to: "/auth" });
+    startPrefetchQuery(
+      context.atomRegistry,
+      identityPrimaryAtom(params.accountId, params.label),
+      abortController.signal,
+    );
+    startPrefetchQuery(
+      context.atomRegistry,
+      walletPasskeyOwnerAtom(params.accountId),
+      abortController.signal,
+    );
     const [wallet] = await Promise.all([
       prefetchQuery(context.atomRegistry, walletAtom(params.accountId), abortController.signal),
       prefetchQuery(
