@@ -14,11 +14,11 @@ layer(TestServerLayer)("ENS routes", (it) => {
 
       expect(yield* client.ens.isNameAvailable({ query: { label: "Treasury" } })).toEqual({
         label: "treasury",
-        name: "treasury.namera.eth",
+        name: "treasury.namera.id",
         available: true,
       });
       expect(Exit.isFailure(Schema.decodeUnknownExit(EnsLabel)("abc"))).toBe(true);
-      expect(Exit.isFailure(Schema.decodeUnknownExit(EnsLabel)("name.namera.eth"))).toBe(true);
+      expect(Exit.isFailure(Schema.decodeUnknownExit(EnsLabel)("name.namera.id"))).toBe(true);
     }),
   );
 });
