@@ -198,7 +198,10 @@ gas-report.*
 broadcast/**/31337
 
 # Research
-research
+/research/*
+!/research/security-audit/
+/research/security-audit/*
+!/research/security-audit/*.md
 
 # Local catalog authoring data and generated uploads
 /catalog/
