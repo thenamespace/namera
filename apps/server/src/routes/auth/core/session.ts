@@ -1,5 +1,6 @@
 import { Effect } from "effect";
-import { HttpApiBuilder } from "effect/http-api";
+import { HttpServerRequest } from "effect/http";
+import { HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
@@ -17,6 +18,13 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
     const app = yield* Application.Application;
     const repository = yield* Repository;
     const cookieConfig = yield* AuthCookieConfig;
+    const config = yield* Application.AuthConfig;
+    const requireDashboardOrigin = Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest;
+      if (request.headers.origin !== config.dashboardPublicOrigin.origin) {
+        return yield* new HttpApiError.Forbidden();
+      }
+    });
     return handlers
       .handle("currentActor", () =>
         Effect.gen(function* () {
@@ -49,6 +57,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin;
           yield* app.session.logout(data.session.id, data.user.id);
           yield* clearAuthCookie(cookieConfig.secure);
         }),
@@ -57,6 +66,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin;
           return yield* app.session.revokeOthers(data.session.id, data.user.id);
         }),
       )
@@ -64,6 +74,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin;
           const revoked = yield* app.session.revoke({
             sessionId: params.sessionId,
             currentSessionId: data.session.id,

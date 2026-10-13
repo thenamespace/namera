@@ -2,17 +2,20 @@ import { expect, layer } from "@effect/vitest";
 import { DateTime, Duration, Effect } from "effect";
 import { TestClock } from "effect/testing";
 
+import { NameraApi } from "@namera-ai/api";
 import { Repository } from "@namera-ai/database";
 
+import { handledApi } from "../../../fixtures/http-api-test.js";
 import {
   createSession,
-  makeTestApiClient,
   resetTestState,
   setAuthToken,
   signIn,
   testEmail,
 } from "../../../fixtures/index.js";
 import { TestServerLayer } from "../../../fixtures/layers/index.js";
+
+const makeTestApiClient = handledApi(NameraApi, { headers: { origin: "http://dashboard.test" } });
 
 layer(TestServerLayer)("session routes", (it) => {
   it.effect("expires browser sessions and their cookies after seven days", () =>
