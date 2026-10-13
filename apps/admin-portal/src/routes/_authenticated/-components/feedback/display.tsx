@@ -4,7 +4,6 @@ import type { FeedbackView } from "@namera-ai/protocol/dto";
 import type { FeedbackStatus } from "@namera-ai/protocol/model";
 import { Chip, IconPreview } from "@namera-ai/ui";
 import {
-  HugeiconsIcon,
   InboxIcon,
   Clock01Icon,
   Calendar03Icon,
@@ -52,11 +51,8 @@ export function FeedbackStatusDisplay({ status }: { status: FeedbackStatus }) {
   const presentation = feedbackStatuses.find((option) => option.id === status);
   if (!presentation) return null;
   return (
-    <Chip size="sm" variant="soft" color={presentation.color} className="h-auto w-fit px-2.5 py-1">
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-        <HugeiconsIcon icon={presentation.icon} size={14} aria-hidden="true" />
-        {presentation.label}
-      </span>
+    <Chip size="sm" variant="soft" color={presentation.color} className="h-auto w-fit px-2 py-0.5">
+      {presentation.label}
     </Chip>
   );
 }
