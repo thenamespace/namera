@@ -30,6 +30,19 @@ a no-op. Changes take the platform team lock, recheck session and permission,
 and append an ID/status-only platform audit event in the same transaction.
 All endpoints are excluded from public OpenAPI; no SDK or CLI workflow is added.
 
+The dashboard's main and settings sidebars open one shared feedback dialog, also
+available from mobile navigation. The form sends only the current pathname, never
+queries or fragments. Failed submissions preserve the draft; successful submission
+closes the dialog. Closing without submitting discards the in-memory draft.
+
+The admin portal prefetches feedback through its router-owned query registry.
+The list displays author, organization, a truncated message, category, status,
+and submission time, with status/category filters and cursor pagination. Opening
+the message shows the complete plain-text submission. Owner-only status actions
+refresh both list and detail queries; server authorization remains authoritative.
+Narrow screens scroll the table without expanding the page; detail fields reflow.
+HTTP telemetry uses bounded feedback route templates, never message contents.
+
 The server integration suite covers persisted data and attribution, role separation,
 revoked access, exact origins, validation, pagination, limits, missing records,
 and rollback when either audit write fails. Normal startup applies the migration.

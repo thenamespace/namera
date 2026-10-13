@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedCatalogRouteImport } from './routes/_authenticated/catalog'
+import { Route as AuthenticatedFeedbackRouteImport } from './routes/_authenticated/feedback'
 import { Route as AuthenticatedInterfaceRouteImport } from './routes/_authenticated/interface'
 import { Route as AuthenticatedInvitesRouteImport } from './routes/_authenticated/invites'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
@@ -21,6 +22,7 @@ import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as AuthenticatedCatalogCatalogIdRouteImport } from './routes/_authenticated/catalog_.$catalogId'
+import { Route as AuthenticatedFeedbackFeedbackIdRouteImport } from './routes/_authenticated/feedback_.$feedbackId'
 import { Route as AuthenticatedInterfaceInterfaceIdRouteImport } from './routes/_authenticated/interface_.$interfaceId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -40,6 +42,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedCatalogRoute = AuthenticatedCatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFeedbackRoute = AuthenticatedFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInterfaceRoute = AuthenticatedInterfaceRouteImport.update({
@@ -83,6 +90,12 @@ const AuthenticatedCatalogCatalogIdRoute =
     path: '/catalog/$catalogId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFeedbackFeedbackIdRoute =
+  AuthenticatedFeedbackFeedbackIdRouteImport.update({
+    id: '/feedback_/$feedbackId',
+    path: '/feedback/$feedbackId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInterfaceInterfaceIdRoute =
   AuthenticatedInterfaceInterfaceIdRouteImport.update({
     id: '/interface_/$interfaceId',
@@ -94,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/catalog': typeof AuthenticatedCatalogRoute
+  '/feedback': typeof AuthenticatedFeedbackRoute
   '/interface': typeof AuthenticatedInterfaceRoute
   '/invites': typeof AuthenticatedInvitesRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -102,10 +116,12 @@ export interface FileRoutesByFullPath {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/auth/': typeof AuthIndexRoute
   '/catalog/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
+  '/feedback/$feedbackId': typeof AuthenticatedFeedbackFeedbackIdRoute
   '/interface/$interfaceId': typeof AuthenticatedInterfaceInterfaceIdRoute
 }
 export interface FileRoutesByTo {
   '/catalog': typeof AuthenticatedCatalogRoute
+  '/feedback': typeof AuthenticatedFeedbackRoute
   '/interface': typeof AuthenticatedInterfaceRoute
   '/invites': typeof AuthenticatedInvitesRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -115,6 +131,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/catalog/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
+  '/feedback/$feedbackId': typeof AuthenticatedFeedbackFeedbackIdRoute
   '/interface/$interfaceId': typeof AuthenticatedInterfaceInterfaceIdRoute
 }
 export interface FileRoutesById {
@@ -122,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_authenticated/catalog': typeof AuthenticatedCatalogRoute
+  '/_authenticated/feedback': typeof AuthenticatedFeedbackRoute
   '/_authenticated/interface': typeof AuthenticatedInterfaceRoute
   '/_authenticated/invites': typeof AuthenticatedInvitesRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
@@ -131,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/_authenticated/catalog_/$catalogId': typeof AuthenticatedCatalogCatalogIdRoute
+  '/_authenticated/feedback_/$feedbackId': typeof AuthenticatedFeedbackFeedbackIdRoute
   '/_authenticated/interface_/$interfaceId': typeof AuthenticatedInterfaceInterfaceIdRoute
 }
 export interface FileRouteTypes {
@@ -139,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalog'
+    | '/feedback'
     | '/interface'
     | '/invites'
     | '/team'
@@ -147,10 +167,12 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/auth/'
     | '/catalog/$catalogId'
+    | '/feedback/$feedbackId'
     | '/interface/$interfaceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/catalog'
+    | '/feedback'
     | '/interface'
     | '/invites'
     | '/team'
@@ -160,12 +182,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalog/$catalogId'
+    | '/feedback/$feedbackId'
     | '/interface/$interfaceId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/catalog'
+    | '/_authenticated/feedback'
     | '/_authenticated/interface'
     | '/_authenticated/invites'
     | '/_authenticated/team'
@@ -175,6 +199,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/auth/'
     | '/_authenticated/catalog_/$catalogId'
+    | '/_authenticated/feedback_/$feedbackId'
     | '/_authenticated/interface_/$interfaceId'
   fileRoutesById: FileRoutesById
 }
@@ -212,6 +237,13 @@ declare module '@tanstack/react-router' {
       path: '/catalog'
       fullPath: '/catalog'
       preLoaderRoute: typeof AuthenticatedCatalogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/feedback': {
+      id: '/_authenticated/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AuthenticatedFeedbackRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/interface': {
@@ -270,6 +302,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCatalogCatalogIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/feedback_/$feedbackId': {
+      id: '/_authenticated/feedback_/$feedbackId'
+      path: '/feedback/$feedbackId'
+      fullPath: '/feedback/$feedbackId'
+      preLoaderRoute: typeof AuthenticatedFeedbackFeedbackIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/interface_/$interfaceId': {
       id: '/_authenticated/interface_/$interfaceId'
       path: '/interface/$interfaceId'
@@ -282,23 +321,27 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCatalogRoute: typeof AuthenticatedCatalogRoute
+  AuthenticatedFeedbackRoute: typeof AuthenticatedFeedbackRoute
   AuthenticatedInterfaceRoute: typeof AuthenticatedInterfaceRoute
   AuthenticatedInvitesRoute: typeof AuthenticatedInvitesRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedWaitlistRoute: typeof AuthenticatedWaitlistRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCatalogCatalogIdRoute: typeof AuthenticatedCatalogCatalogIdRoute
+  AuthenticatedFeedbackFeedbackIdRoute: typeof AuthenticatedFeedbackFeedbackIdRoute
   AuthenticatedInterfaceInterfaceIdRoute: typeof AuthenticatedInterfaceInterfaceIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCatalogRoute: AuthenticatedCatalogRoute,
+  AuthenticatedFeedbackRoute: AuthenticatedFeedbackRoute,
   AuthenticatedInterfaceRoute: AuthenticatedInterfaceRoute,
   AuthenticatedInvitesRoute: AuthenticatedInvitesRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedWaitlistRoute: AuthenticatedWaitlistRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCatalogCatalogIdRoute: AuthenticatedCatalogCatalogIdRoute,
+  AuthenticatedFeedbackFeedbackIdRoute: AuthenticatedFeedbackFeedbackIdRoute,
   AuthenticatedInterfaceInterfaceIdRoute:
     AuthenticatedInterfaceInterfaceIdRoute,
 }
