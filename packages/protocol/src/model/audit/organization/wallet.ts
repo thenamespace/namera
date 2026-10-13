@@ -45,3 +45,15 @@ export const SigningKeyCreatedEventData = Schema.Struct({
 });
 
 export type WalletImplementation = typeof WalletImplementation.Type;
+
+export const IdentityChangedEventData = Schema.Struct({
+  event: Schema.Literal("identity.changed"),
+  resourceType: Schema.Literal("wallet"),
+  resourceId: WalletId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    name: Schema.String,
+    action: Schema.Literals(["created", "records_updated"]),
+    applied: Schema.Number,
+  }),
+});

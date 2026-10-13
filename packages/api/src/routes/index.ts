@@ -2,6 +2,7 @@ export * from "./health.js";
 export * from "./auth/core/google.js";
 export * from "./execution.js";
 export * from "./ens.js";
+export * from "./identity.js";
 export * from "./api-key.js";
 export * from "./billing.js";
 export * from "./dashboard.js";

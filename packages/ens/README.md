@@ -44,8 +44,8 @@ program.pipe(Effect.provide(Ens.layer));
 ```
 
 `Ens.layer` uses Namespace mainnet in every runtime environment. `EnsTestLayer`
-provides an in-memory deterministic substitute with resettable availability
-state for boundary tests.
+provides an in-memory deterministic substitute with resettable owner-filtered
+names, records and injected write failures for boundary tests.
 
 ## Commands
 

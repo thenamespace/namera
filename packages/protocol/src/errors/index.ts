@@ -11,6 +11,7 @@ export * from "./rate-limit.js";
 export * from "./session-key.js";
 export * from "./signature.js";
 export * from "./wallet.js";
+export * from "./identity.js";
 export * from "./wallet-key.js";
 export * from "./oauth.js";
 export * from "./google.js";

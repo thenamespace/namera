@@ -6,6 +6,7 @@ export * from "./dashboard-overview.js";
 export * from "./execution.js";
 export * from "./execution-signing.js";
 export * from "./ens.js";
+export * from "./identity.js";
 export * from "./notification/index.js";
 export * from "./mcp.js";
 export * from "./session-key/index.js";

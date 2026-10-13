@@ -33,6 +33,7 @@ import { PortfolioRoutes } from "#/routes/data/index";
 import { EnsRoutes } from "#/routes/ens";
 import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { FeedbackRoutes, AdminFeedbackRoutes } from "#/routes/feedback";
+import { IdentityRoutes } from "#/routes/identity";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
@@ -53,6 +54,7 @@ const ApiHandlers = Layer.mergeAll(
   HealthRoutes,
   ExecutionRoutes,
   EnsRoutes,
+  IdentityRoutes,
   SessionKeyRoutes,
   SignatureRoutes,
   InvitationRoutes,

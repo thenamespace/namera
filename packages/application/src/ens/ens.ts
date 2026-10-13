@@ -4,6 +4,7 @@ import { Ens } from "@namera-ai/ens";
 import { EnsUnavailableError, type EnsLabel } from "@namera-ai/protocol";
 
 import { toEnsName } from "./data.js";
+import { makeIdentities } from "./identities.js";
 
 export const makeEnsApplication = Effect.gen(function* () {
   const ens = yield* Ens;
@@ -23,7 +24,7 @@ export const makeEnsApplication = Effect.gen(function* () {
     };
   });
 
-  return { isNameAvailable } as const;
+  return { isNameAvailable, ...(yield* makeIdentities) } as const;
 });
 
 export type EnsApplication = Effect.Success<typeof makeEnsApplication>;
