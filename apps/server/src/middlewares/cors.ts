@@ -55,7 +55,7 @@ export const CorsMiddleware = Layer.unwrap(
         config.corsOrigin,
         ...Option.toArray(config.adminOrigin).map((url) => url.origin),
       ],
-      allowedMethods: ["GET", "POST", "OPTIONS"],
+      allowedMethods: ["GET", "POST", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "B3", "Traceparent", "Tracestate", "Baggage"],
       credentials: true,
       maxAge: 86400,
@@ -84,7 +84,7 @@ export const CorsMiddleware = Layer.unwrap(
               "/auth/google/start",
               "/auth/magic-link/request",
               "/auth/magic-link/verify",
-              "/auth/session/logout",
+              "/auth/platform/logout",
             ].includes(path)
           )
             return yield* signInCors(httpEffect);

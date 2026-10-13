@@ -11,6 +11,26 @@ import { TestServerLayer } from "../../fixtures/layers/index.js";
 import { platformIdentity } from "../../fixtures/platform.js";
 
 layer(TestServerLayer)("platform session authorization", (it) => {
+  it.effect("rejects untrusted logout origins and revokes the session on authorized logout", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const owner = yield* platformIdentity();
+      const untrusted = yield* handledApi(NameraApi, {
+        headers: { ...owner.headers, origin: "https://evil.example.com" },
+      });
+      expect(
+        (yield* untrusted.platformSession.logout({ responseMode: "response-only" })).status,
+      ).toBe(403);
+      expect((yield* owner.client.platform.me()).member.role).toBe("owner");
+      const [, response] = yield* owner.client.platformSession.logout({
+        responseMode: "decoded-and-response",
+      });
+      expect(response.cookies.cookies["auth-token"]?.value).toBe("");
+      expect(response.cookies.cookies["auth-token"]?.options?.maxAge).toBe(0);
+      expect((yield* owner.client.platform.me({ responseMode: "response-only" })).status).toBe(401);
+    }),
+  );
+
   it.effect("accepts a verified human session independently of organization membership", () =>
     Effect.gen(function* () {
       yield* resetTestState();
