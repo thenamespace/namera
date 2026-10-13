@@ -2,7 +2,8 @@
 
 Namespace is the source of truth for `*.namera.id`. Namera has no identity,
 ownership, profile or record table. The account's smart-account address is the
-Namespace owner. An account can own multiple names.
+Namespace owner. Namera creates at most one identity per account. Names created
+previously or outside Namera remain accessible and are never deleted.
 
 ## Backend
 
@@ -16,6 +17,11 @@ are checked; upstream list filters are not an authorization boundary.
 Creation sets Ethereum and default EVM addresses to the smart-account address.
 A retry for an already-owned name returns the current provider view. Other owners'
 names cannot be claimed. Availability is advisory; the provider arbitrates races.
+Creation locks the existing wallet row while checking Namespace and creating the
+name, serializing Namera requests across server instances. A different name for
+an already-named account returns `ACCOUNT_IDENTITY_EXISTS`; retrying the same
+owned name remains idempotent. No identity row is stored. This cannot prevent
+external Namespace writes or guarantee uniqueness if provider reads are stale.
 
 Text, network address and JSON data records use dedicated provider operations,
 not collection replacement. A batch validates before writing and runs sequentially.
@@ -39,9 +45,11 @@ They do not verify live Namespace configuration or DNS-imported `namera.id` ENS
 resolution. Production needs the parent configured in Namespace and the existing
 `NAMERA_ENS_API_KEY` with access to it.
 
-The dashboard's `/identity` account selector and paginated list share the loader's
-Effect atom registry. `/identity/$accountId/$label` renders a public profile with
-HTTPS artwork, text/address records and expandable JSON data. Mutations use explicit
+The dashboard's `/identity` account selector opens the account's profile directly,
+or a create prompt when unnamed, using the loader's Effect atom registry.
+Existing multi-name accounts retain a name selector; named deep links remain valid.
+`/identity/$accountId/$label` also renders a public profile with
+HTTPS artwork and text/address records. Mutations use explicit
 forms and permission-aware controls; partial errors refresh provider data. Profile
 records never update internal wallet metadata. No owner keys or API secrets enter
 the browser. Sidebar navigation uses the existing responsive shell.
@@ -50,55 +58,81 @@ Create identity opens `/identity/new`, using the same centered card-form layout
 as account creation. The selected account is carried in the validated search
 parameter and preselected only if it is active in the current workspace. Direct
 visits can select an account in the form. Successful creation replaces the form
-route with the identity profile; Cancel returns to the account's identity list.
+route with the account's Identity home; Cancel returns there too. Named accounts
+cannot submit another creation from the UI, and direct creation links redirect
+to their existing profile.
+
+## Profile image uploads
+
+Workspace owners can select avatar/header files directly from the profile. Both
+accept PNG, JPEG, WebP and GIF up to 2 MiB; SVG, empty and oversized files are
+rejected. Images are previewed using revocable browser object URLs, without
+cropping, compression or upload before confirmation. Keyboard focus and touch
+also expose the edit buttons. The shared `TransactionOverview` reviews account,
+custody, namespace, network and the public-image changes as a signature-only action.
+
+After confirmation the dashboard requests a scoped nonce from Namespace's
+`POST /auth/nonce`, constructs SIWE locally for the current origin and Ethereum,
+and uses the owner-only wallet signature prepare/complete endpoints. It checks
+the exact request/account, expiry and passkey RP/credential/replay-safe challenge
+before approval. Each image has a separate authorization. Browser requests send
+the unchanged file, `siweMessage`, `siweSignature` and account address directly to
+`POST /profile/mainnet/:name/avatar` or `/header`; only the returned HTTPS URL is
+sent to Namera's existing records endpoint. No API secret enters the browser.
+
+The browser adapter follows Namespace Avatar 2.0.2's manual upload protocol using
+fetch and existing Viem SIWE helpers. That SDK's published SIWE CommonJS dependency
+does not build with Vite/Rolldown, so it is not a dashboard dependency. CSP permits
+only `https://metadata.namespace.ninja` for these external connections. Requests
+omit cookies/referrers, reject redirects and have a 30-second deadline. Raw SIWE,
+signatures and provider errors are never copied into feedback or telemetry.
+
+Images are saved sequentially. A successful upload is retained in memory if its
+record write fails; retry saves that URL without re-signing/re-uploading. Completed
+fields clear independently. Navigation/authority changes stop subsequent steps;
+in-flight uploads are aborted on unmount. There is no rollback of an upload already
+accepted by Namespace, including an overwrite of a stable image URL. Drafts and
+retry state are not durable across reloads. Existing record auditing is reused;
+no new Namera upload endpoint or database table is introduced.
+
+Tests cover consent-stage orchestration, payload/challenge binding, partial
+recovery, authority cancellation, byte-preserving multipart requests and response
+validation. Live provider upload/verification still needs testing with an owner:
+ERC-6492 signatures are produced for undeployed accounts, but acceptance depends
+on Namespace's verifier. A rejection keeps the draft and never deploys the account.
 
 ## Ethereum primary names
 
-`GET /wallets/:walletId/identities/:label/primary` returns live Ethereum forward
-and reverse resolution plus the latest operation. `POST .../primary/prepare`
-accepts an actor-scoped idempotency key; `POST .../primary/approve` accepts the
-operation ID and, for passkey accounts, an owner assertion. These routes have the
-same dashboard-only authorization and Origin policy as record mutations.
+Primary-name transactions now use the generic [owner wallet transaction flow](transactions.md).
+The old `POST .../primary/prepare` and `POST .../primary/approve` endpoints
+and their request/response schemas have been removed.
 
-Preparation resolves the name to the account, discovers the Ethereum reverse
-registrar from `addr.reverse` in the ENS registry, and prepares one zero-value
-`setName` call on Ethereum. The account pays ETH gas; sponsorship is not enabled.
-No signing occurs during preparation. The browser independently reconstructs
-the account and call, checks deployment/nonce/fee/challenge fields, and shows the
-maximum ETH network fee before requesting a passkey or explicit 1Claw approval.
-See [ENS reverse resolution](https://docs.ens.domains/registry/reverse/).
+`GET /wallets/:walletId/identities/:label/primary` remains an ENS read:
+live forward/reverse resolution and the latest operation matching the exact
+Ethereum registrar call. It does not attach unrelated wallet transactions to the
+identity. Retry metadata is returned only for the initiating user's unsigned
+generic operation, including the selected sponsorship mode for reload recovery.
 
-`core.wallet_operation` stores **transaction recovery state, not identities**:
-the scoped actor/account, approved name, pinned owner, prepared and signed
-envelopes, idempotency, leases and receipt. Names, ownership, profiles and records
-are always read from Namespace. No identity projection or account-name mapping
-is persisted. The operation ledger is required to resume the exact signed bytes
-after an ambiguous submission without signing a replacement.
+The dashboard requires the forward record to match the account, independently
+discovers the Ethereum reverse registrar, encodes `setName(string)`, and sends
+that call through wallet transaction preparation. Before approval it independently
+checks the account, calldata, factory, nonce, fee envelope, expiry and passkey
+challenge against the reviewed intent. Generic backend authorization does not
+claim to enforce ENS-specific forward resolution or Namespace ownership.
 
-Wallet row locks serialize owner operations across this ledger and session-key
-approvals on the same chain. Approval rechecks membership, permissions, active
-account/key and pinned owner; passkeys bind the origin, RP, credential, challenge
-and counter. A signing lease fences concurrent attempts. Accepting the signature,
-advancing the counter, reserving execution quota and the approval audit share a
-transaction. Ethereum operations emit `wallet.operation_prepared`, `approved`,
-`confirmed` and `failed` audit events without record values or signature material.
+The UI first requests sponsorship. Only a definitive gas-allowance rejection
+triggers a new self-funded preparation with a fresh idempotency key. Other
+failures retain the original retry identity. The selected funding is reviewed
+before signing; cancellation never signs. Reloaded unsigned attempts reuse the
+same key and funding choice.
 
-The wallet-operation worker polls every five seconds, expires only unsigned
-approvals, leases pending work, and resubmits the same envelope until a matching
-receipt is known. Receipt binding checks chain, hash, sender, nonce and EntryPoint.
-Included success and failure settle execution quota; signed operations and their
-holds never expire merely because time elapsed. Permanently missing receipts or
-unusable signed nonces require operator investigation; automatic replacement is
-intentionally not implemented. Worker logs contain operation IDs and bounded
-decisions; standard worker metrics use the `wallet_operation` label.
+The review retains its informational Alchemy ETH/USDC quote. It displays estimated
+network gas in ETH (up to six decimals) and USD (two decimals), including when
+Namera sponsors gas. It uses the pre-BSO simulation rather than zeroed account-paid
+fee fields; approval still validates the actual signable envelope separately.
 
-A confirmed receipt is **not** a verified primary name. The dashboard polls and
-only shows the primary badge when live forward and reverse resolution agree.
-Offchain creation alone never establishes reverse resolution. The Namespace
-parent must resolve through Ethereum ENS/CCIP-read before primary preparation can
-succeed. Local tests use provider substitutes and real passkey verification;
-they do not send live transactions or prove hosted provider/mainnet configuration.
-
-Deployment requires the server (including its startup migration and worker),
-dashboard, existing ENS credential and Ethereum RPC/bundler configuration. No
-additional identity database service or new environment variable is required.
+A confirmed receipt is not a verified primary name. The dashboard polls and shows
+the Primary badge only when live forward and reverse resolution agree. Offchain
+creation alone does not establish reverse resolution. Namespace must resolve
+through Ethereum ENS/CCIP-read. Provider-substituted tests do not establish live
+mainnet/provider configuration.

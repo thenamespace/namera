@@ -1,20 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Predicate } from "effect";
 
 import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
-import type { EnsLabel } from "@namera-ai/protocol";
+import { EthereumAddress, Hex, type EnsLabel } from "@namera-ai/protocol";
 import type {
-  ApproveIdentityPrimaryRequest,
+  CompleteWalletTransactionRequest,
   GetWalletPasskeyOwnerResponse,
-  PrepareIdentityPrimaryResponse,
+  EvmNativePriceQuote,
+  PrepareWalletTransactionResponse,
   WalletResponse,
 } from "@namera-ai/protocol/dto";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { createPublicClient, http } from "viem";
 
 import { env } from "@/env";
-import { useApproveIdentityPrimary, usePrepareIdentityPrimary } from "@/hooks/identity";
+import {
+  useCompleteWalletTransaction,
+  usePrepareWalletTransaction,
+} from "@/hooks/wallet/transaction";
 import { isOneClawAccount } from "@/lib/session-owner";
 import { showErrorToast } from "@/lib/toasts";
 
@@ -25,16 +29,22 @@ export function usePrimaryApproval(
   refresh: () => void,
   terminalOperationId: string | undefined,
 ) {
-  const prepare = usePrepareIdentityPrimary();
-  const approve = useApproveIdentityPrimary();
-  const [pending, setPending] = useState(false);
+  const prepare = usePrepareWalletTransaction();
+  const approve = useCompleteWalletTransaction();
+  const [progress, setProgress] = useState<
+    "Preparing…" | "Reviewing…" | "Signing…" | "Submitting…" | null
+  >(null);
   const [reviewFee, setReviewFee] = useState<bigint>();
+  const [sponsored, setSponsored] = useState(false);
+  const [reviewContract, setReviewContract] = useState<`0x${string}`>();
+  const [priceQuote, setPriceQuote] = useState<EvmNativePriceQuote | null>(null);
   const confirm = useRef<((accepted: boolean) => void) | undefined>(undefined);
   const attempt = useRef<
     | {
         key: string;
-        prepared?: PrepareIdentityPrimaryResponse;
-        assertion?: ApproveIdentityPrimaryRequest;
+        sponsor?: boolean;
+        prepared?: PrepareWalletTransactionResponse;
+        assertion?: CompleteWalletTransactionRequest;
       }
     | undefined
   >(undefined);
@@ -56,10 +66,10 @@ export function usePrimaryApproval(
     confirm.current?.(accepted);
     confirm.current = undefined;
   };
-  const start = async (retryKey: string | null) => {
+  const start = async (retryKey: string | null, sponsor = true) => {
     if (busy.current) return;
     busy.current = true;
-    setPending(true);
+    setProgress("Preparing…");
     const controller = new AbortController();
     abort.current = controller;
     try {
@@ -72,7 +82,7 @@ export function usePrimaryApproval(
           owner.signingKeyId !== wallet.owner.signingKeyId)
       )
         throw new Error("Passkey owner unavailable");
-      const current = (attempt.current ??= { key: retryKey ?? crypto.randomUUID() });
+      const current = (attempt.current ??= { key: retryKey ?? crypto.randomUUID(), sponsor });
       if (!current.assertion) {
         const chain = getChainDataByCaip2("eip155:1");
         if (!chain) throw new Error("Ethereum unavailable");
@@ -102,10 +112,41 @@ export function usePrimaryApproval(
           }),
         );
         if (controller.signal.aborted) return;
-        current.prepared ??= await prepare.mutateAsync({
-          params: { walletId: wallet.id, label },
-          payload: { idempotencyKey: current.key },
-        });
+        const prepareRequest = () =>
+          prepare.mutateAsync({
+            params: { walletId: wallet.id },
+            headers: { "idempotency-key": current.key },
+            payload: {
+              namespace: "eip155",
+              chainId: "eip155:1",
+              calls: [
+                {
+                  to: EthereumAddress.make(reviewed.call.to),
+                  value: reviewed.call.value,
+                  data: Hex.make(reviewed.call.data),
+                },
+              ],
+              sponsor: current.sponsor ?? true,
+            },
+          });
+        if (!current.prepared) {
+          try {
+            current.prepared = await prepareRequest();
+          } catch (error) {
+            if (
+              !(
+                Predicate.isTagged(error, "BillingError") &&
+                "limit" in error &&
+                error.limit === "gas-sponsorship"
+              ) ||
+              current.sponsor === false
+            )
+              throw error;
+            current.key = crypto.randomUUID();
+            current.sponsor = false;
+            current.prepared = await prepareRequest();
+          }
+        }
         if (controller.signal.aborted) return;
         const response = current.prepared;
         const operation = response.prepared.userOperation;
@@ -114,28 +155,41 @@ export function usePrimaryApproval(
           operation.maxFeePerGas;
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
         const accepted = await new Promise<boolean>((resolve) => {
+          setProgress("Reviewing…");
           confirm.current = resolve;
-          setReviewFee(fee);
+          setReviewContract(reviewed.call.to);
+          setPriceQuote(response.priceQuote ?? null);
+          const estimate = response.prepared.context.simulation.userOperation;
+          setReviewFee(
+            (estimate.callGasLimit + estimate.verificationGasLimit + estimate.preVerificationGas) *
+              estimate.maxFeePerGas,
+          );
+          setSponsored(response.prepared.sponsorship === "alchemy-bso");
         });
         if (!accepted || controller.signal.aborted) return;
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
-        if (response.approval === "passkey") {
-          if (!response.options) throw new Error("Missing passkey challenge");
+        if (response.signing.method === "passkey") {
+          setProgress("Signing…");
           const assertion = await startAuthentication({
             optionsJSON: {
-              ...response.options,
-              allowCredentials: response.options.allowCredentials.map(({ id, type }) => ({
+              ...response.signing.options,
+              allowCredentials: response.signing.options.allowCredentials.map(({ id, type }) => ({
                 id,
                 type,
               })),
             },
           });
           if (controller.signal.aborted) return;
-          current.assertion = { operationId: response.operationId, response: assertion };
-        } else current.assertion = { operationId: response.operationId };
+          current.assertion = {
+            namespace: "eip155",
+            operationId: response.operationId,
+            response: assertion,
+          };
+        } else current.assertion = { namespace: "eip155", operationId: response.operationId };
       }
+      setProgress("Submitting…");
       await approve.mutateAsync({
-        params: { walletId: wallet.id, label },
+        params: { walletId: wallet.id },
         payload: current.assertion,
       });
       attempt.current = undefined;
@@ -157,10 +211,19 @@ export function usePrimaryApproval(
     } finally {
       busy.current = false;
       if (!controller.signal.aborted) {
-        setPending(false);
+        setProgress(null);
         refresh();
       }
     }
   };
-  return { start, pending, reviewFee, answer };
+  return {
+    start,
+    pending: progress !== null,
+    progress,
+    reviewFee,
+    reviewContract,
+    priceQuote,
+    sponsored,
+    answer,
+  };
 }

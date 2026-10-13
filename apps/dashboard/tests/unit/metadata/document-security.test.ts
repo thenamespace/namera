@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { documentSecurity } from "../../../tooling/document-security";
 
 describe("dashboard document security", () => {
-  it("allows only the API origin for connections and preserves first-party passkeys", () => {
+  it("allows the API, telemetry and Namespace uploads and preserves first-party passkeys", () => {
     const { headers } = documentSecurity("https://api.example.com/base?ignored=value");
     const policy = headers["Content-Security-Policy"];
 
-    expect(policy).toContain("connect-src 'self' https://api.example.com https://t.namera.ai;");
+    expect(policy).toContain(
+      "connect-src 'self' https://api.example.com https://t.namera.ai https://metadata.namespace.ninja;",
+    );
     expect(policy).not.toContain("ignored");
     expect(policy).toContain("script-src 'self' https://t.namera.ai;");
     expect(policy).toContain("manifest-src 'self';");

@@ -28,5 +28,3 @@ export const identityPrimaryAtom = (walletId: WalletId, label: EnsLabel) =>
     reactivityKeys: [...QueryKeys.organization.active, ...QueryKeys.identity.all],
     timeToLive: "10 seconds",
   });
-export const prepareIdentityPrimaryMutation = NameraClient.mutation("identity", "preparePrimary");
-export const approveIdentityPrimaryMutation = NameraClient.mutation("identity", "approvePrimary");

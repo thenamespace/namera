@@ -545,7 +545,11 @@ without requiring local assets; the existing HTTPS image CSP permits the CDN.
 
 `tooling/document-security.ts` owns the dashboard CSP and browser permissions.
 Production HTML carries a meta CSP restricting scripts to this origin and
-connections to this origin plus `VITE_API_URL`'s origin. Inline styles remain
+connections to this origin, `VITE_API_URL`'s origin, telemetry and
+`https://metadata.namespace.ninja` for direct identity image uploads. The upload
+flow uses browser fetch and existing Viem SIWE helpers; no storage credential or
+new upload endpoint is required. See [identity uploads](../../architecture/wallets/identity.md#profile-image-uploads).
+Inline styles remain
 allowed for UIKit, charts and Motion; inline scripts and eval are not allowed.
 Vite redirects UIKit's Shiki import to the JavaScript regex engine so syntax
 highlighting works without WebAssembly compilation or relaxed script permissions.

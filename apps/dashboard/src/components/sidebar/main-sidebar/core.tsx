@@ -18,14 +18,6 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       },
     },
     {
-      id: "identity",
-      icon: ShieldUserIcon,
-      label: "Identity",
-      textValue: "Identity",
-      href: "/identity",
-      tooltip: { text: "identity" },
-    },
-    {
       id: "session-keys",
       icon: Key01Icon,
       label: "Session Keys",
@@ -43,6 +35,14 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       textValue: "Recipes",
       href: "/recipes",
       tooltip: { text: "recipes" },
+    },
+    {
+      id: "identity",
+      icon: ShieldUserIcon,
+      label: "Identity",
+      textValue: "Identity",
+      href: "/identity",
+      tooltip: { text: "identity" },
     },
     {
       id: "activity",

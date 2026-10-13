@@ -1,9 +1,9 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Link, useNavigate } from "@tanstack/react-router";
 
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { WalletId } from "@namera-ai/protocol";
@@ -17,10 +17,12 @@ import {
   InputGroup,
   ListBox,
   Select,
-  Typography,
+  Spinner,
   buttonVariants,
 } from "@namera-ai/ui";
+import { CancelCircleIcon, CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { useDebounceValue } from "usehooks-ts";
 
 import {
   DashboardCardContent,
@@ -29,7 +31,7 @@ import {
 } from "@/components/dashboard-card";
 import { MetadataDisplay } from "@/components/display";
 import { useEnsNameAvailability } from "@/hooks/ens";
-import { useCreateIdentity } from "@/hooks/identity";
+import { useCreateIdentity, useIdentities } from "@/hooks/identity";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const CreateIdentityForm = Schema.Struct({ ...CreateIdentityRequest.fields, walletId: WalletId });
@@ -43,25 +45,56 @@ export function CreateIdentityFormCard({
 }) {
   const id = useId();
   const navigate = useNavigate();
-  const [availability, setAvailability] = useState<{ name: string; available: boolean }>();
+  const [availability, setAvailability] = useState<{
+    label: string;
+    status: "available" | "unavailable" | "error";
+  }>();
   const form = useForm<typeof CreateIdentityForm.Encoded, unknown, typeof CreateIdentityForm.Type>({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateIdentityForm)),
     defaultValues: { label: "", walletId: initialAccount ?? "" },
   });
   const label = useWatch({ control: form.control, name: "label" });
+  const normalizedLabel = Option.getOrUndefined(
+    Schema.decodeUnknownOption(CreateIdentityRequest.fields.label)(label),
+  );
+  const [debouncedLabel] = useDebounceValue(normalizedLabel, 400);
   const accountId = useWatch({ control: form.control, name: "walletId" });
   const selected = wallets.find((wallet) => wallet.id === accountId);
   const cancelSearch = useMemo(() => ({ account: selected?.id, page: 1 }), [selected?.id]);
-  const check = useEnsNameAvailability({
-    onSuccess: setAvailability,
-    onError: (error) => showErrorToast(error, { title: "Couldn’t check name" }),
+  const { mutate: checkAvailability, cancel: cancelAvailability } = useEnsNameAvailability({
+    onSuccess: (result, input) =>
+      setAvailability({
+        label: input.query.label,
+        status: result.available ? "available" : "unavailable",
+      }),
+    onError: (_error, input) => setAvailability({ label: input.query.label, status: "error" }),
   });
+  useEffect(() => {
+    if (!debouncedLabel || debouncedLabel !== normalizedLabel) return;
+    checkAvailability({ query: { label: debouncedLabel } });
+    return cancelAvailability;
+  }, [debouncedLabel, normalizedLabel, checkAvailability, cancelAvailability]);
+  const availabilityStatus = !normalizedLabel
+    ? undefined
+    : normalizedLabel !== debouncedLabel || availability?.label !== normalizedLabel
+      ? "checking"
+      : availability.status;
+  const availabilityText =
+    availabilityStatus === "checking"
+      ? "Checking availability"
+      : availabilityStatus === "available"
+        ? "Name is available"
+        : availabilityStatus === "unavailable"
+          ? "Name is unavailable"
+          : availabilityStatus === "error"
+            ? "Couldn’t check availability. Edit the name to retry."
+            : "";
   const create = useCreateIdentity({
-    onSuccess: (identity, input) => {
+    onSuccess: (_identity, input) => {
       showSuccessToast({ title: "Identity created" });
       void navigate({
-        to: "/identity/$accountId/$label",
-        params: { accountId: input.params.walletId, label: identity.label },
+        to: "/identity",
+        search: { account: input.params.walletId },
         replace: true,
       });
     },
@@ -80,13 +113,13 @@ export function CreateIdentityFormCard({
       })}
     >
       <DashboardCardRoot>
-        <DashboardCardContent>
+        <DashboardCardContent className="gap-0">
           <FieldGroup className="contents divide-y divide-separator">
             <Controller
               control={form.control}
               name="walletId"
               render={({ field, fieldState }) => (
-                <DashboardCardRow className="sm:items-start">
+                <DashboardCardRow>
                   <Field className="contents" data-invalid={fieldState.invalid}>
                     <div className="grid gap-1">
                       <FieldLabel htmlFor={`${id}-account`} isRequired>
@@ -123,14 +156,6 @@ export function CreateIdentityFormCard({
                           </ListBox>
                         </Select.Popover>
                       </Select>
-                      {selected ? (
-                        <Typography
-                          className="truncate text-xs text-muted"
-                          title={selected.address}
-                        >
-                          {selected.address}
-                        </Typography>
-                      ) : null}
                     </div>
                   </Field>
                 </DashboardCardRow>
@@ -140,7 +165,7 @@ export function CreateIdentityFormCard({
               control={form.control}
               name="label"
               render={({ field, fieldState }) => (
-                <DashboardCardRow className="sm:items-start">
+                <DashboardCardRow>
                   <Field className="contents" data-invalid={fieldState.invalid}>
                     <div className="grid gap-1">
                       <FieldLabel htmlFor={`${id}-name`} isRequired>
@@ -157,35 +182,42 @@ export function CreateIdentityFormCard({
                           id={`${id}-name`}
                           required
                           aria-invalid={fieldState.invalid}
+                          aria-describedby={`${id}-availability`}
                           autoComplete="off"
                           autoCapitalize="none"
                           spellCheck={false}
                           placeholder="treasury"
                           disabled={create.isPending}
                         />
-                        <InputGroup.Suffix>.namera.id</InputGroup.Suffix>
+                        <InputGroup.Suffix>
+                          <span className="inline-flex items-center gap-2">
+                            .namera.id
+                            {availabilityStatus ? (
+                              <span title={availabilityText} aria-hidden="true">
+                                {availabilityStatus === "checking" ? (
+                                  <Spinner className="size-4" />
+                                ) : (
+                                  <HugeiconsIcon
+                                    icon={
+                                      availabilityStatus === "available"
+                                        ? CheckmarkCircle02Icon
+                                        : CancelCircleIcon
+                                    }
+                                    className={
+                                      availabilityStatus === "available"
+                                        ? "size-4 text-success"
+                                        : "size-4 text-danger"
+                                    }
+                                  />
+                                )}
+                              </span>
+                            ) : null}
+                          </span>
+                        </InputGroup.Suffix>
                       </InputGroup>
-                      <Button
-                        className="w-fit"
-                        size="sm"
-                        variant="tertiary"
-                        isPending={check.isPending}
-                        isDisabled={check.isPending || create.isPending}
-                        onPress={() =>
-                          void form.handleSubmit(({ label: name }) =>
-                            check.mutate({ query: { label: name } }),
-                          )()
-                        }
-                      >
-                        Check availability
-                      </Button>
-                      {availability?.name === `${label}.namera.id` ? (
-                        <output className="text-sm text-muted">
-                          {availability.available
-                            ? "This name is available."
-                            : "This name is unavailable."}
-                        </output>
-                      ) : null}
+                      <output id={`${id}-availability`} className="sr-only">
+                        {availabilityText}
+                      </output>
                     </div>
                   </Field>
                 </DashboardCardRow>
@@ -194,21 +226,8 @@ export function CreateIdentityFormCard({
           </FieldGroup>
         </DashboardCardContent>
       </DashboardCardRoot>
-      <Typography className="mt-4 text-sm text-muted">
-        You can edit your public profile and set your Ethereum primary name after creation.
-      </Typography>
-      <Button
-        className="mt-4"
-        fullWidth
-        form={id}
-        type="submit"
-        isPending={create.isPending}
-        isDisabled={create.isPending}
-      >
-        Create identity
-      </Button>
-      {!create.isPending ? (
-        <div className="mt-3 text-center">
+      <div className="mt-6 flex items-center justify-between gap-4">
+        {!create.isPending ? (
           <Link
             to="/identity"
             search={cancelSearch}
@@ -216,8 +235,57 @@ export function CreateIdentityFormCard({
           >
             Cancel
           </Link>
-        </div>
-      ) : null}
+        ) : (
+          <span />
+        )}
+        {selected ? (
+          <CreateIdentityAction
+            walletId={selected.id}
+            formId={id}
+            pending={create.isPending}
+            disabled={availabilityStatus === "checking" || availabilityStatus === "unavailable"}
+          />
+        ) : (
+          <Button isDisabled>Create identity</Button>
+        )}
+      </div>
     </form>
+  );
+}
+
+function CreateIdentityAction({
+  walletId,
+  formId,
+  pending,
+  disabled,
+}: {
+  walletId: WalletId;
+  formId: string;
+  pending: boolean;
+  disabled: boolean;
+}) {
+  const identities = useIdentities(walletId);
+  const search = useMemo(() => ({ account: walletId }), [walletId]);
+  if (identities.isError)
+    return (
+      <Button variant="tertiary" onPress={identities.refetch}>
+        Retry account check
+      </Button>
+    );
+  if (identities.data?.items.length)
+    return (
+      <Link to="/identity" search={search} className={buttonVariants({ variant: "secondary" })}>
+        View existing identity
+      </Link>
+    );
+  return (
+    <Button
+      form={formId}
+      type="submit"
+      isPending={pending}
+      isDisabled={pending || disabled || !identities.data}
+    >
+      Create identity
+    </Button>
   );
 }

@@ -5,13 +5,18 @@ import { Schema } from "effect";
 import { WalletId } from "@namera-ai/protocol";
 
 import { currentUserAtom } from "@/atoms/auth/session";
-import { identitiesAtom } from "@/atoms/identity";
-import { prefetchQuery } from "@/atoms/prefetch";
-import { walletsAtom } from "@/atoms/wallet";
+import {
+  identitiesAtom,
+  identityAtom,
+  identityNetworksAtom,
+  identityPrimaryAtom,
+} from "@/atoms/identity";
+import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { walletsAtom, walletPasskeyOwnerAtom } from "@/atoms/wallet";
 import { DashboardPage } from "@/components/page";
 import { hasPermissions } from "@/components/permission";
 
-import { IdentityList } from "./-components/identity-list";
+import { IdentityHome } from "./-components/identity-list";
 
 const Search = Schema.Struct({
   account: Schema.optional(WalletId),
@@ -31,12 +36,34 @@ export const Route = createFileRoute("/_authenticated/identity/")({
     const wallets = await prefetchQuery(context.atomRegistry, walletsAtom, abortController.signal);
     const active = wallets.filter((wallet) => wallet.status === "active");
     const selected = active.find((wallet) => wallet.id === deps.account) ?? active[0];
-    if (selected)
-      await prefetchQuery(
+    if (selected) {
+      const names = await prefetchQuery(
         context.atomRegistry,
-        identitiesAtom(selected.id, deps.page ?? 1),
+        identitiesAtom(selected.id),
         abortController.signal,
       );
+      const identity = names.items[0];
+      if (identity) {
+        startPrefetchQuery(
+          context.atomRegistry,
+          identityPrimaryAtom(selected.id, identity.label),
+          abortController.signal,
+        );
+        startPrefetchQuery(
+          context.atomRegistry,
+          walletPasskeyOwnerAtom(selected.id),
+          abortController.signal,
+        );
+        await Promise.all([
+          prefetchQuery(
+            context.atomRegistry,
+            identityAtom(selected.id, identity.label),
+            abortController.signal,
+          ),
+          prefetchQuery(context.atomRegistry, identityNetworksAtom, abortController.signal),
+        ]);
+      }
+    }
     return {
       wallets: active,
       selected,
@@ -47,14 +74,13 @@ export const Route = createFileRoute("/_authenticated/identity/")({
 });
 function IdentityPage() {
   const data = Route.useLoaderData();
-  const search = Route.useSearch();
   return (
     <DashboardPage>
       <DashboardPage.Header>
         <DashboardPage.Title>Identity</DashboardPage.Title>
       </DashboardPage.Header>
-      <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
-        <IdentityList {...data} page={search.page ?? 1} />
+      <DashboardPage.Content className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+        <IdentityHome {...data} />
       </DashboardPage.Content>
     </DashboardPage>
   );

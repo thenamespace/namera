@@ -6,6 +6,7 @@ import { WalletId } from "@namera-ai/protocol";
 import { buttonVariants, Typography } from "@namera-ai/ui";
 
 import { currentUserAtom } from "@/atoms/auth/session";
+import { identitiesAtom } from "@/atoms/identity";
 import { prefetchQuery } from "@/atoms/prefetch";
 import { walletsAtom } from "@/atoms/wallet";
 import { HeadingGroup } from "@/components/heading-group";
@@ -33,10 +34,20 @@ export const Route = createFileRoute("/_authenticated/identity/new")({
           (wallet) => wallet.status === "active",
         )
       : [];
+    const initialAccount = wallets.find((wallet) => wallet.id === deps.account)?.id;
+    if (initialAccount) {
+      const identities = await prefetchQuery(
+        context.atomRegistry,
+        identitiesAtom(initialAccount),
+        abortController.signal,
+      );
+      if (identities.items.length)
+        throw redirect({ to: "/identity", search: { account: initialAccount }, replace: true });
+    }
     return {
       canCreate,
       wallets,
-      initialAccount: wallets.find((wallet) => wallet.id === deps.account)?.id,
+      initialAccount,
     };
   },
   component: CreateIdentityPage,

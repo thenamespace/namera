@@ -228,6 +228,17 @@ browser builds. See [session lifecycle](../wallets/session-keys.md).
 
 ## Forms and shared components
 
+`components/transaction-overview.tsx` is the controlled transaction review modal.
+It accepts a title, description, stable-ID rich key/value rows, additional body
+content, a footer above the actions, and confirm/cancel labels and callbacks.
+Pending state disables actions and dismissal; confirmation can also be disabled
+independently. ENS primary-name review and managed session-key removal share this
+presentation. Session-key installation and removal both require modal confirmation,
+for managed and passkey accounts, before signing. Prepared operations are validated
+again after confirmation to reject approvals that expire while the dialog is open.
+Their hooks still own preparation, independent validation, signing, cancellation
+and recovery; already-signed retries do not request a second passkey assertion.
+
 ### Recipes
 
 `/recipes` is a sidebar destination with a searchable code-defined recipe list;
@@ -355,7 +366,10 @@ enter the bundle. See [telemetry](../platform/telemetry.md).
 hosts must apply `_headers` or equivalent host configuration; HTML metadata
 cannot enforce framing denial or Permissions-Policy. Production permits
 first-party WebAuthn, HTTPS external images and connections to the configured
-API origin. Development permits HMR.
+API origin, telemetry and Namespace's metadata origin for direct owner-authorized
+image uploads. Development permits HMR. The identity artwork editor keeps file
+previews and retry URLs in memory, uses the shared confirmation component, and
+never sends a file before confirmation; see [identity uploads](../wallets/identity.md#profile-image-uploads).
 
 Route metadata keeps private routes noindex and canonical/social URLs pointed
 to `/auth`. Loaded account names affect tab titles only, never social metadata.

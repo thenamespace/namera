@@ -13,41 +13,70 @@ const networkPaused: FeedbackMessage = {
 };
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "IdentityArtworkError:UPLOAD_FAILED": {
+    title: "Image upload unavailable",
+    description: "Namespace could not accept the upload. Your changes are kept here to retry.",
+  },
+  "IdentityArtworkError:APPROVAL_INVALID": {
+    title: "Couldn’t verify image approval",
+    description: "The signing request did not match this account. Refresh and try again.",
+  },
+  "IdentityArtworkError:AUTHORIZATION_EXPIRED": {
+    title: "Image authorization expired",
+    description: "Confirm again to request a new authorization.",
+  },
+  "WalletSignatureError:APPROVAL_EXPIRED": {
+    title: "Signature approval expired",
+    description: "Confirm again to prepare a new signature.",
+  },
+  WalletSignatureError: {
+    title: "Couldn’t sign the authorization",
+    description: "Check this account’s owner access and try again.",
+  },
+  "WalletTransactionError:INSUFFICIENT_FUNDS": {
+    title: "Not enough ETH for gas",
+    description:
+      "Gas sponsorship allowance is unavailable. Add ETH to this account on Ethereum and try again.",
+  },
   "IdentityPrimaryError:FORWARD_MISMATCH": {
     title: "Check the Ethereum address",
     description: "The name must resolve to this account before setting it as primary.",
   },
-  "IdentityPrimaryError:OWNER_UNAVAILABLE": {
+  "WalletTransactionError:OWNER_UNAVAILABLE": {
     title: "Account approval unavailable",
     description: "Check your permissions and the account’s owner.",
   },
-  "IdentityPrimaryError:OPERATION_BUSY": {
+  "WalletTransactionError:OPERATION_BUSY": {
     title: "Account approval in progress",
     description: "Finish the pending Ethereum operation before starting another.",
   },
-  "IdentityPrimaryError:APPROVAL_EXPIRED": {
+  "WalletTransactionError:APPROVAL_EXPIRED": {
     title: "Approval expired",
     description: "Refresh and prepare a new approval.",
   },
-  "IdentityPrimaryError:APPROVAL_INVALID": {
+  "WalletTransactionError:APPROVAL_INVALID": {
     title: "Couldn’t verify approval",
     description: "Retry using this account’s owner passkey.",
   },
-  "IdentityPrimaryError:PREPARATION_FAILED": {
+  "WalletTransactionError:PREPARATION_FAILED": {
     title: "Ethereum unavailable",
     description: "Check the account’s ETH balance and try again.",
   },
-  "IdentityPrimaryError:OPERATION_UNAVAILABLE": {
+  "WalletTransactionError:OPERATION_UNAVAILABLE": {
     title: "Approval unavailable",
     description: "Refresh to check the latest transaction status.",
   },
-  "IdentityPrimaryError:IDEMPOTENCY_CONFLICT": {
+  "WalletTransactionError:IDEMPOTENCY_CONFLICT": {
     title: "Approval changed",
     description: "Refresh and start a new approval.",
   },
   "IdentityError:NAME_UNAVAILABLE": {
     title: "Name unavailable",
     description: "Choose another label and try again.",
+  },
+  "IdentityError:ACCOUNT_IDENTITY_EXISTS": {
+    title: "Account already has an identity",
+    description: "Open Identity to manage its existing name.",
   },
   "IdentityError:IDENTITY_UNAVAILABLE": {
     title: "Identity unavailable",
