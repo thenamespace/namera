@@ -27,9 +27,13 @@ import type { DataApplication } from "#/data/index";
 import { makeCreateWallet } from "./create.js";
 import { makePasskeyRegistrationApplication } from "./passkey-registration.js";
 import { makeReadWallets } from "./read.js";
+import { makeWalletSignatures } from "./signatures/index.js";
+import { makeWalletTransactions } from "./transactions/index.js";
 import { makeUpdateWallet } from "./update.js";
 
 export interface WalletApplication {
+  readonly signatures: Effect.Success<typeof makeWalletSignatures>;
+  readonly transactions: Effect.Success<typeof makeWalletTransactions>;
   readonly createPasskeyRegistrationOptions: (input: {
     readonly organizationId: OrganizationId;
     readonly userId: UserId;
@@ -76,6 +80,8 @@ export const makeWalletApplication = (data: DataApplication) =>
     const update = yield* makeUpdateWallet;
 
     return {
+      transactions: yield* makeWalletTransactions,
+      signatures: yield* makeWalletSignatures,
       create,
       createPasskeyRegistrationOptions,
       ...read,

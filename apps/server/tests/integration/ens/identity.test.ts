@@ -37,6 +37,11 @@ layer(TestServerLayer)("identities", (it) => {
         expect(yield* client.identity.create({ params, payload: { label: params.label } })).toEqual(
           created,
         );
+        expect(
+          yield* client.identity
+            .create({ params, payload: { label: "another" } })
+            .pipe(Effect.flip),
+        ).toMatchObject({ code: "ACCOUNT_IDENTITY_EXISTS" });
         const list = yield* client.identity.list({ params, query: {} });
         expect(list.totalItems).toBe(1);
         expect(list.items[0]?.fullName).toBe(created.fullName);

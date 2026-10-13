@@ -169,6 +169,7 @@ export class BillingMeterBalanceRepository extends Context.Service<
                   eq(billingMeterBalance.meterKey, meterKey),
                   gte(billingMeterBalance.reservedAmount, reservedAmount),
                   or(
+                    eq(billingMeterBalance.meterKey, "gas-sponsorship"),
                     isNull(billingMeterBalance.hardLimitAmount),
                     gte(
                       billingMeterBalance.hardLimitAmount,
@@ -214,6 +215,7 @@ export class BillingMeterBalanceRepository extends Context.Service<
                   eq(billingMeterBalance.meterKey, meterKey),
                   or(
                     isNull(billingMeterBalance.hardLimitAmount),
+                    eq(billingMeterBalance.meterKey, "gas-sponsorship"),
                     gte(billingMeterBalance.hardLimitAmount, consumedAmount + reservedAmount),
                   ),
                 ),

@@ -63,6 +63,7 @@ export const rateLimitPolicy = {
       algorithm: "token-bucket",
     },
   },
+  walletSignature: { limit: 60, window: Duration.minutes(1), algorithm: "token-bucket" },
   identity: {
     reads: { limit: 120, window: Duration.minutes(1), algorithm: "token-bucket" },
     writes: { limit: 20, window: Duration.minutes(1), algorithm: "token-bucket" },

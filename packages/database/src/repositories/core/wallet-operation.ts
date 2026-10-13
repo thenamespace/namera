@@ -38,10 +38,12 @@ export interface WalletOperationRepositoryService {
     DatabaseError
   >;
   readonly findById: (scope: Scope) => Result;
-  readonly findLatestForName: (input: {
+  readonly findLatestForCall: (input: {
     readonly organizationId: OrganizationId;
     readonly walletId: WalletId;
-    readonly name: string;
+    readonly chainId: SupportedEvmChainId;
+    readonly to: string;
+    readonly data: string;
   }) => Result;
   readonly findByActorAndIdempotencyKey: (input: {
     readonly organizationId: OrganizationId;
@@ -65,6 +67,9 @@ export interface WalletOperationRepositoryService {
     },
   ) => Result;
   readonly markSubmitted: (input: Lease) => Result;
+  readonly recordBroadcastAttempt: (input: Lease) => Result;
+  readonly blockSubmission: (input: Lease) => Result;
+  readonly rejectSubmission: (input: Lease) => Result;
   readonly finishReceipt: (
     input: Lease & {
       readonly userOperationHash: UserOperationHash;
@@ -201,7 +206,7 @@ export class WalletOperationRepository extends Context.Service<
           const db = yield* transactionOrDatabase(database);
           return decode(yield* db.select().from(table).where(scoped(scope)).limit(1));
         }, mapRepositoryError),
-        findLatestForName: Effect.fn("database.walletOperation.findLatestForName")(function* (
+        findLatestForCall: Effect.fn("database.walletOperation.findLatestForCall")(function* (
           input,
         ) {
           const db = yield* transactionOrDatabase(database);
@@ -213,7 +218,11 @@ export class WalletOperationRepository extends Context.Service<
                 and(
                   eq(table.organizationId, input.organizationId),
                   eq(table.walletId, input.walletId),
-                  sql`${table.data}->>'name' = ${input.name}`,
+                  eq(table.chainId, input.chainId),
+                  sql`jsonb_array_length(${table.data}->'prepared'->'context'->'calls') = 1`,
+                  sql`lower(${table.data}->'prepared'->'context'->'calls'->0->>'to') = ${input.to.toLowerCase()}`,
+                  sql`lower(${table.data}->'prepared'->'context'->'calls'->0->>'data') = ${input.data.toLowerCase()}`,
+                  sql`${table.data}->'prepared'->'context'->'calls'->0->>'value' = '0'`,
                 ),
               )
               .orderBy(sql`${table.createdAt} desc`, sql`${table.id} desc`)
@@ -296,6 +305,48 @@ export class WalletOperationRepository extends Context.Service<
               .update(table)
               .set({ status: "submitted" })
               .where(and(leased(input), eq(table.status, "signed")))
+              .returning(),
+          );
+        }, mapRepositoryError),
+        recordBroadcastAttempt: Effect.fn("database.walletOperation.recordBroadcastAttempt")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            return decode(
+              yield* db
+                .update(table)
+                .set({
+                  data: sql`jsonb_set(${table.data}, '{broadcastAttempted}', 'true'::jsonb)`,
+                })
+                .where(and(leased(input), eq(table.status, "signed")))
+                .returning(),
+            );
+          },
+          mapRepositoryError,
+        ),
+        blockSubmission: Effect.fn("database.walletOperation.blockSubmission")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                data: sql`jsonb_set(${table.data}, '{submissionBlocked}', 'true'::jsonb)`,
+              })
+              .where(and(leased(input), inArray(table.status, ["signed", "submitted"])))
+              .returning(),
+          );
+        }, mapRepositoryError),
+        rejectSubmission: Effect.fn("database.walletOperation.rejectSubmission")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                status: "failed",
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
+              .where(and(leased(input), inArray(table.status, ["signed", "submitted"])))
               .returning(),
           );
         }, mapRepositoryError),

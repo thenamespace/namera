@@ -3,6 +3,7 @@ import type { HttpClient } from "effect/http";
 import { makeEvmGasPrice } from "../billing/pricing.js";
 import { makeExecutionClients } from "../clients/execution.js";
 import type { EvmConfigValues } from "../config.js";
+import { makeCheckEvmFunding } from "./funding.js";
 import { makeEvmOwnerApproval } from "./owner-approval.js";
 import { makePrepareEvmExecution } from "./prepare.js";
 import {
@@ -33,6 +34,7 @@ export const makeEvmExecutionService = (
     sign: makeSignEvmExecution(clients),
     ownerApprovalChallenge: ownerApproval.challenge,
     completeOwnerApproval: ownerApproval.complete,
+    checkFunding: makeCheckEvmFunding(clients),
     submit: makeSubmitEvmExecution(clients),
     getReceipt: makeGetEvmExecutionReceipt(clients),
     getStatus: makeGetEvmUserOperationStatus(clients),

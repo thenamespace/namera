@@ -19,3 +19,7 @@ export * from "./admin-waitlist.js";
 export * from "./admin-overview.js";
 export * from "./platform-session.js";
 export * from "./catalog.js";
+
+export * from "./wallet-transaction.js";
+
+export * from "./wallet-signature.js";

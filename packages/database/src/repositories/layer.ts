@@ -50,6 +50,7 @@ import {
   SessionKeyInstallationRepository,
   SessionKeyOperationRepository,
   WalletOperationRepository,
+  WalletSignatureOperationRepository,
   SessionKeyGrantRepository,
   SessionKeyPolicyReservationRepository,
   SessionKeyPolicyStateRepository,
@@ -118,6 +119,7 @@ export interface RepositoryService {
     sessionKeyInstallation: SessionKeyInstallationRepository["Service"];
     sessionKeyOperation: SessionKeyOperationRepository["Service"];
     walletOperation: WalletOperationRepository["Service"];
+    walletSignatureOperation: WalletSignatureOperationRepository["Service"];
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
     sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
     sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
@@ -187,6 +189,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyOperation = yield* SessionKeyOperationRepository;
       const walletOperation = yield* WalletOperationRepository;
+      const walletSignatureOperation = yield* WalletSignatureOperationRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
       const execution = yield* ExecutionRepository;
       const executionSubmission = yield* ExecutionSubmissionRepository;
@@ -252,6 +255,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           sessionKeyInstallation,
           sessionKeyOperation,
           walletOperation,
+          walletSignatureOperation,
           sessionKeyGrant,
           sessionKeyPolicyReservation,
           sessionKeyPolicyState,
@@ -317,6 +321,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionKeyInstallationRepository.layer,
         SessionKeyOperationRepository.layer,
         WalletOperationRepository.layer,
+        WalletSignatureOperationRepository.layer,
         SessionKeyGrantRepository.layer,
         ExecutionRepository.layer,
         ExecutionSubmissionRepository.layer,

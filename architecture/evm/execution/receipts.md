@@ -4,17 +4,26 @@ Receipt operations normalize Alchemy Rundler results into protocol models and ve
 
 ## Adapter receipt operations
 
-| Operation        | Behavior                                                                                           |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| `getReceipt`     | Return `Option.none` only for recognized not-found; map other failures to `RECEIPT_LOOKUP_FAILED`. |
-| `getStatus`      | Normalize Rundler unknown, pending, bundled, preconfirmed, and mined status.                       |
-| `waitForReceipt` | Bound timeout to 1–120,000 ms (default 30,000); timeout returns `Option.none`.                     |
+| Operation        | Behavior                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `getReceipt`     | Return `Option.none` only for recognized not-found; map other failures to `RECEIPT_LOOKUP_FAILED`.   |
+| `getStatus`      | Use `eth_getUserOperationByHash`: null is unobserved; a found operation awaits receipt verification. |
+| `waitForReceipt` | Bound timeout to 1–120,000 ms (default 30,000); timeout returns `Option.none`.                       |
 
 Normalized receipt includes chain ID, UserOperation/transaction/block hashes,
 block number, sender, nonce, EntryPoint, optional provider-reported paymaster,
 actual gas cost/used, success, and optional failure reason. BSO receipts normally
 report no paymaster; sponsorship is determined from the persisted signed
 execution envelope rather than receipt paymaster presence.
+
+Alchemy does not expose `rundler_getUserOperationStatus` on this endpoint.
+The supported lookup's null response maps to `not_found`, which is observational,
+not proof of non-execution: pending operations and operations outside the scan
+window may be absent. RPC/decoding failures remain typed lookup errors. Neither
+absence, timeout nor age fails an accepted or ambiguously submitted operation or
+releases its holds. Only a matching receipt establishes an onchain outcome; a
+first-send definitive validation rejection is separate evidence of non-submission.
+See [Alchemy's lookup semantics](https://www.alchemy.com/docs/wallets/reference/bundler-faqs).
 
 `isReceiptForEvmExecution` additionally compares chain, sender, nonce and
 EntryPoint with a stored signed envelope. Session-key owner-operation and ordinary

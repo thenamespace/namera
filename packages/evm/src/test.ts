@@ -20,12 +20,14 @@ import { makeEvmPolicyService } from "./policy/service.js";
 import type { EvmPortfolioService } from "./portfolio/types.js";
 import { digestEvmSignature } from "./signing/digest.js";
 
-export type EvmTestOptions = Omit<Partial<EvmService>, "execution" | "billing"> & {
+export type EvmTestOptions = Omit<Partial<EvmService>, "execution" | "billing" | "identity"> & {
+  readonly identity?: Partial<EvmService["identity"]>;
   readonly execution?: Partial<EvmExecutionService>;
   readonly billing?: Partial<EvmService["billing"]>;
 };
 
 type TestReceiptMode = "failed" | "immediate" | "pending" | "missing";
+type TestSubmissionMode = "accepted" | "rejected" | "unknown";
 
 export class TestEvmExecution extends Context.Service<
   TestEvmExecution,
@@ -34,17 +36,32 @@ export class TestEvmExecution extends Context.Service<
     readonly setReceiptMode: (mode: TestReceiptMode) => Effect.Effect<void>;
     readonly sponsorshipCost: Effect.Effect<Option.Option<GasSponsorshipCost>>;
     readonly setSponsorshipCost: (cost: Option.Option<GasSponsorshipCost>) => Effect.Effect<void>;
+    readonly submissionMode: Effect.Effect<TestSubmissionMode>;
+    readonly setSubmissionMode: (mode: TestSubmissionMode) => Effect.Effect<void>;
+    readonly submissionCount: Effect.Effect<number>;
+    readonly recordSubmission: Effect.Effect<void>;
+    readonly funded: Effect.Effect<boolean>;
+    readonly setFunded: (funded: boolean) => Effect.Effect<void>;
   }
 >()("@namera-ai/evm/TestEvmExecution") {
   static readonly layer = Layer.effect(
     TestEvmExecution,
     Effect.gen(function* () {
       const receiptMode = yield* Ref.make<TestReceiptMode>("immediate");
+      const submissionMode = yield* Ref.make<TestSubmissionMode>("accepted");
+      const submissionCount = yield* Ref.make(0);
+      const funded = yield* Ref.make(true);
       const sponsorshipCost = yield* Ref.make(
         Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" }),
       );
       return TestEvmExecution.of({
         receiptMode: Ref.get(receiptMode),
+        submissionMode: Ref.get(submissionMode),
+        setSubmissionMode: (mode) => Ref.set(submissionMode, mode),
+        submissionCount: Ref.get(submissionCount),
+        recordSubmission: Ref.update(submissionCount, (count) => count + 1),
+        funded: Ref.get(funded),
+        setFunded: (value) => Ref.set(funded, value),
         setReceiptMode: (mode) => Ref.set(receiptMode, mode),
         sponsorshipCost: Ref.get(sponsorshipCost),
         setSponsorshipCost: (cost) => Ref.set(sponsorshipCost, cost),
@@ -54,14 +71,32 @@ export class TestEvmExecution extends Context.Service<
 }
 
 export const makeEvmTestService = (options: EvmTestOptions = {}): EvmService => {
-  const { execution, billing, ...serviceOverrides } = options;
+  const { execution, billing, identity, ...serviceOverrides } = options;
 
   return {
+    ownerSignatures: {
+      prepare: () =>
+        Effect.fail(
+          new EvmSignatureError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Owner signature test adapter required"),
+          }),
+        ),
+      complete: () =>
+        Effect.fail(
+          new EvmSignatureError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Owner signature test adapter required"),
+          }),
+        ),
+    },
     identity: {
       status: () => Effect.fail(new IdentityPrimaryError({ code: "PREPARATION_FAILED" })),
       call: () => Effect.fail(new IdentityPrimaryError({ code: "PREPARATION_FAILED" })),
+      ...identity,
     },
     billing: {
+      getNativeUsdcQuote: () => Effect.succeed(null),
       settleGasSponsorship: settleEvmGasSponsorship,
       getGasSponsorshipCost: () =>
         Effect.succeed(Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" })),

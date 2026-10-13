@@ -1,8 +1,8 @@
 import { DateTime } from "effect";
 import * as Base64Url from "effect/encoding/Base64Url";
 
-import { EthereumAddress, Hex, WalletOperationId } from "@namera-ai/protocol";
-import type { PrepareIdentityPrimaryResponse } from "@namera-ai/protocol/dto";
+import { EthereumAddress, Hex, WalletOperationId, SigningKeyId } from "@namera-ai/protocol";
+import type { PrepareWalletTransactionResponse } from "@namera-ai/protocol/dto";
 import { createPublicClient, custom, encodeAbiParameters, hashMessage, hexToBytes } from "viem";
 import { entryPoint07Address, getUserOperationHash } from "viem/account-abstraction";
 import { privateKeyToAccount } from "viem/accounts";
@@ -37,10 +37,12 @@ function fixture() {
     },
     [call],
   );
-  const response: PrepareIdentityPrimaryResponse = {
+  const response: PrepareWalletTransactionResponse = {
     operationId: WalletOperationId.make("00000000-0000-7000-8000-000000000001"),
-    approval: "1claw",
-    options: null,
+    namespace: "eip155",
+    signingKeyId: SigningKeyId.make("00000000-0000-7000-8000-000000000002"),
+    signing: { method: "server" },
+    priceQuote: null,
     prepared: {
       ...base,
       chainId: "eip155:1",
@@ -62,6 +64,58 @@ function fixture() {
   return { review, response };
 }
 describe("independent primary-name approval review", () => {
+  it("accepts BSO only with zero account fees and sponsorship billing", () => {
+    const { review, response } = fixture();
+    const prepared = {
+      ...response.prepared,
+      sponsorship: "alchemy-bso" as const,
+      userOperation: {
+        ...response.prepared.userOperation,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        preVerificationGas: 0n,
+      },
+      billing: {
+        executionMeter: "execution.mainnet" as const,
+        sponsorship: {
+          provider: "alchemy" as const,
+          mode: "bso" as const,
+          reservationAmountMicroUsd: 100_000n,
+          quote: {
+            provider: "alchemy" as const,
+            currency: "usd" as const,
+            nativeAsset: "ETH" as const,
+            nativePriceMicroUsd: 3_000_000_000n,
+            surchargeBasisPoints: 800,
+            quotedAt: now,
+          },
+        },
+      },
+    };
+    expect(validatePrimaryApproval(review, { ...response, prepared }, 0n, now)).toMatch(/^0x/);
+    expect(() =>
+      validatePrimaryApproval(
+        review,
+        {
+          ...response,
+          prepared: { ...prepared, userOperation: { ...prepared.userOperation, maxFeePerGas: 1n } },
+        },
+        100n,
+        now,
+      ),
+    ).toThrow();
+    expect(() =>
+      validatePrimaryApproval(
+        review,
+        {
+          ...response,
+          prepared: { ...prepared, billing: { ...prepared.billing, sponsorship: null } },
+        },
+        0n,
+        now,
+      ),
+    ).toThrow();
+  });
   it("reconstructs managed accounts with only their public owner address", async () => {
     const client = createPublicClient({
       chain: mainnet,
@@ -196,14 +250,14 @@ describe("independent primary-name approval review", () => {
       allowCredentials: [{ id: owner.credentialId, type: "public-key" as const }],
       timeout: 60_000,
     };
-    const passkey = { ...response, approval: "passkey" as const, options };
+    const passkey = { ...response, signing: { method: "passkey" as const, options } };
     const expected = { ...review, approval: "passkey", owner };
     expect(validatePrimaryApproval(expected, passkey, 60n, now)).toBe(hash);
     for (const patch of [{ challenge: "wrong" }, { rpId: "other.test" }, { allowCredentials: [] }])
       expect(() =>
         validatePrimaryApproval(
           expected,
-          { ...passkey, options: { ...options, ...patch } },
+          { ...passkey, signing: { method: "passkey", options: { ...options, ...patch } } },
           60n,
           now,
         ),

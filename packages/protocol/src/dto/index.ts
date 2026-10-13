@@ -16,3 +16,9 @@ export * from "./signature-signing.js";
 export * from "./wallet/index.js";
 export * from "./platform.js";
 export * from "./catalog.js";
+
+export * from "./wallet-transaction.js";
+
+export * from "./gas-price.js";
+
+export * from "./wallet-signature.js";

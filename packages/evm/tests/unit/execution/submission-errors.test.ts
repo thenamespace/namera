@@ -54,6 +54,7 @@ it.effect("distinguishes validation rejection from ambiguous RPC failures throug
       429,
       "timeout",
       "http-unavailable",
+      "insufficient-funds",
     ]) {
       const bundler = createBundlerClient({
         chain: chain.chain,
@@ -65,7 +66,13 @@ it.effect("distinguishes validation rejection from ambiguous RPC failures throug
             return Response.json({
               jsonrpc: "2.0",
               id: 1,
-              error: { code, message: "Provider failure" },
+              error: {
+                code: code === "insufficient-funds" ? -32000 : code,
+                message:
+                  code === "insufficient-funds"
+                    ? "precheck failed: sender balance and deposit together is 0 but must be at least 91995114471845 to pay for this operation"
+                    : "Provider failure",
+              },
             });
           },
         }),
@@ -80,7 +87,8 @@ it.effect("distinguishes validation rejection from ambiguous RPC failures throug
         expect(result.failure).toMatchObject({
           _tag: "EvmExecutionError",
           code:
-            typeof code === "string" || [-32603, -32000, -32005, 429].includes(code)
+            (typeof code === "string" && code !== "insufficient-funds") ||
+            (typeof code === "number" && [-32603, -32000, -32005, 429].includes(code))
               ? "SUBMISSION_UNKNOWN"
               : "SUBMISSION_REJECTED",
         });

@@ -1,7 +1,12 @@
 import { Schema } from "effect";
 
-import { SigningKeyId, WalletId, WalletOperationId } from "#/common/index";
-import { AlchemyModularAccountVersion, EthereumAddress, EntryPointVersion } from "#/evm/index";
+import { SignatureOperationId, SigningKeyId, WalletId, WalletOperationId } from "#/common/index";
+import {
+  AlchemyModularAccountVersion,
+  EthereumAddress,
+  EntryPointVersion,
+  SupportedEvmChainId,
+} from "#/evm/index";
 import { SigningKeyCustody } from "#/model/core/signing-key";
 
 export const WalletImplementation = Schema.Struct({
@@ -58,7 +63,7 @@ export const WalletOperationEventData = Schema.Struct({
   data: Schema.Struct({
     version: Schema.Literal(1),
     operationId: WalletOperationId,
-    kind: Schema.Literal("set-primary-name"),
+    kind: Schema.Literals(["set-primary-name", "transaction"]),
   }),
 });
 
@@ -71,5 +76,18 @@ export const IdentityChangedEventData = Schema.Struct({
     name: Schema.String,
     action: Schema.Literals(["created", "records_updated"]),
     applied: Schema.Number,
+  }),
+});
+
+export const WalletSignatureEventData = Schema.Struct({
+  event: Schema.Literals(["wallet.signature_prepared", "wallet.signature_created"]),
+  resourceType: Schema.Literal("wallet"),
+  resourceId: WalletId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    operationId: SignatureOperationId,
+    namespace: Schema.Literal("eip155"),
+    chainId: SupportedEvmChainId,
+    type: Schema.Literals(["message", "typed-data"]),
   }),
 });

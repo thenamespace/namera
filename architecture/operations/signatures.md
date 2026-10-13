@@ -1,7 +1,7 @@
 # Signatures and verification
 
 Namera supports EVM smart-account message signing and EIP-712 typed-data
-signing. Raw digest signing is not public. Signature creation is policy-gated,
+signing. Raw digest signing is not public. Delegated signature creation is policy-gated,
 metered, idempotent, and persisted as an operation; verification is read-only
 and unmetered.
 
@@ -14,7 +14,7 @@ Digesting, smart-account signing, deployed ERC-1271 verification, and
 counterfactual factory verification are documented in
 [EVM signatures](../evm/signatures.md).
 
-The returned signature bytes are never persisted or logged. The message or
+For delegated signing, returned signature bytes are never persisted or logged. The message or
 typed data is persisted because it is the auditable metered operation and is
 required to understand what authority was used.
 
@@ -120,6 +120,56 @@ These quotas govern Namera API completions, not signatures made directly by a
 local key holder. Alchemy's time hook does not expire ERC-1271 signature
 authority: onchain uninstall is required to revoke it. API expiry is not an
 onchain restriction and must be disclosed in client consent.
+
+## Owner wallet signing
+
+Dashboard-only `POST /wallets/:walletId/signatures/prepare` and
+`POST /wallets/:walletId/signatures/complete` create owner signatures without a
+session key. Both require an authenticated user with the system Owner role and
+`wallet:update`, the configured dashboard Origin, and a shared 60/minute/user
+limit. API-key, CLI and MCP actors are forbidden regardless of grants/scopes.
+The routes are excluded from published OpenAPI and have no SDK/CLI/MCP wrapper.
+
+Preparation accepts an idempotency header and the existing EVM message or typed-data
+fields, discriminated by `namespace` and `type`. It validates the account and
+payload without signing, then persists a five-minute approval bound to actor,
+tenant, wallet, signing key, owner identity and request hash. Its response includes
+the original request, account, expiry and either passkey authentication options or
+`signing: { method: "server" }`. Completion accepts namespace, operation ID and
+a passkey response only when required by stored custody; callers cannot change
+the payload or choose custody at completion.
+
+Passkeys sign Alchemy's account/chain/payload-bound replay-safe challenge. Namera
+verifies origin, RP ID, user verification, credential and counter before packing
+the account signature. Managed owners sign through 1Claw only at completion.
+A two-minute exclusive lease fences signing; provider work has a 90-second timeout.
+The final transaction locks wallet/key/provider state, rechecks Owner membership,
+binding and expiry, advances the passkey counter, stores success and writes
+`wallet.signature_created`. Preparation writes `wallet.signature_prepared`
+atomically with its row. Neither audit event contains the payload or signature.
+
+Unlike delegated signing, owner completion stores its response encrypted with a
+purpose bound to tenant, actor, operation and request hash. A lost successful
+response can be replayed by the same authorized actor without signing again,
+including after preparation expiry. Current owner/key availability is checked
+on replay. Prepared retries reuse the same operation; changed input under the
+same key conflicts. Invalid assertions/provider failures release the lease and
+remain retryable until expiry. Expired approvals cannot complete, and a new
+idempotency key is required. No worker, gas reservation or transaction submission
+is involved; owner signatures currently do not consume delegated signature quota.
+
+The challenge is bound to the signable payload, not a fresh authentication nonce.
+Applications must include their own nonce/domain/expiry in login or authorization
+payloads. Preparation expiry does not expire a returned cryptographic signature.
+Counterfactual signatures require an ERC-6492-aware verifier; ordinary EOA
+signature recovery is insufficient.
+
+HTTP tests cover passkey messages/typed data, managed sign-once replay, encrypted
+storage, actor/tenant/origin boundaries, API-key rejection, invalid assertions,
+expiry, disabled keys and lease fencing. Adapter unit tests cover deployed and
+undeployed envelopes. Chain/provider substitutes are used; live external
+verification and frontend upload/consent integration remain separate work.
+Rows/results currently have no automatic retention cleanup.
 
 ## Verification
 

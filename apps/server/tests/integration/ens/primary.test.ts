@@ -1,12 +1,12 @@
 import { expect, layer } from "@effect/vitest";
-import { Duration, Effect, Schema } from "effect";
+import { DateTime, Duration, Effect, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 import { Database, walletOperation } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
-import { EthereumAddress } from "@namera-ai/protocol";
+import { EthereumAddress, WalletId } from "@namera-ai/protocol";
 import { WalletOperation, WalletOperationData } from "@namera-ai/protocol/model";
 
 import { handledApi } from "../../fixtures/http-api-test.js";
@@ -17,6 +17,14 @@ import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 const fixture = makeOwnerSessionTestFixture(
   {},
   {
+    billing: {
+      getNativeUsdcQuote: () =>
+        Effect.map(DateTime.now, (quotedAt) => ({
+          ethUsd: 3000,
+          usdcUsd: 0.998,
+          quotedAt,
+        })),
+    },
     identity: {
       status: (_name, address) =>
         Effect.succeed({ primaryName: null, forwardAddress: address, verified: false }),
@@ -38,7 +46,7 @@ const setup = Effect.gen(function* () {
   const wallet = yield* createTestPasskeyWallet(client);
   const params = { walletId: wallet.id, label: "treasury" };
   yield* client.identity.create({ params, payload: { label: params.label } });
-  return { client, params };
+  return { client, params, wallet };
 });
 
 layer(fixture.layer)("Ethereum primary identity", (it) => {
@@ -47,9 +55,20 @@ layer(fixture.layer)("Ethereum primary identity", (it) => {
     () =>
       Effect.gen(function* () {
         const { client, params } = yield* setup;
-        const prepared = yield* client.identity.preparePrimary({
+        const prepared = yield* client.walletTransaction.prepare({
           params,
-          payload: { idempotencyKey: "tamper" },
+          headers: { "idempotency-key": "tamper" },
+          payload: {
+            namespace: "eip155",
+            chainId: "eip155:1",
+            calls: [
+              {
+                to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+                value: 0n,
+                data: "0x1234",
+              },
+            ],
+          },
         });
         const session = yield* client.sessionKey.create({
           payload: yield* localSessionRequest(params.walletId, ["eip155:1"]),
@@ -86,8 +105,11 @@ layer(fixture.layer)("Ethereum primary identity", (it) => {
           }),
         });
         expect(
-          yield* client.identity
-            .approvePrimary({ params, payload: { operationId: prepared.operationId } })
+          yield* client.walletTransaction
+            .complete({
+              params,
+              payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+            })
             .pipe(Effect.flip),
         ).toMatchObject({ code: "APPROVAL_INVALID" });
         expect((yield* db.query.walletOperation.findMany())[0]?.status).toBe("awaiting-signature");
@@ -96,44 +118,78 @@ layer(fixture.layer)("Ethereum primary identity", (it) => {
   it.effect("requires an owner assertion and resumes one durable operation until its receipt", () =>
     Effect.gen(function* () {
       const { client, params } = yield* setup;
-      const payload = { idempotencyKey: "primary-test" };
-      const prepared = yield* client.identity.preparePrimary({ params, payload });
-      expect(prepared.approval).toBe("passkey");
-      expect((yield* client.identity.preparePrimary({ params, payload })).operationId).toBe(
-        prepared.operationId,
-      );
+      const headers = { "idempotency-key": "primary-test" };
+      const prepared = yield* client.walletTransaction.prepare({
+        params,
+        headers,
+        payload: {
+          namespace: "eip155",
+          chainId: "eip155:1",
+          calls: [
+            {
+              to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+              value: 0n,
+              data: "0x1234",
+            },
+          ],
+        },
+      });
+      expect(prepared.signing.method).toBe("passkey");
+      expect(prepared.priceQuote).toMatchObject({ ethUsd: 3000, usdcUsd: 0.998 });
       expect(
-        yield* client.identity
-          .approvePrimary({ params, payload: { operationId: prepared.operationId } })
+        (yield* client.walletTransaction.prepare({
+          params,
+          headers,
+          payload: {
+            namespace: "eip155",
+            chainId: "eip155:1",
+            calls: [
+              {
+                to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+                value: 0n,
+                data: "0x1234",
+              },
+            ],
+          },
+        })).operationId,
+      ).toBe(prepared.operationId);
+      expect(
+        yield* client.walletTransaction
+          .complete({
+            params,
+            payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+          })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "APPROVAL_INVALID" });
-      if (!prepared.options) return yield* Effect.die("Missing passkey options");
+      if (prepared.signing.method !== "passkey")
+        return yield* Effect.die("Missing passkey options");
       const approval = {
+        namespace: "eip155" as const,
         operationId: prepared.operationId,
         response: fixture.authenticator.authenticate({
-          challenge: prepared.options.challenge,
+          challenge: prepared.signing.options.challenge,
           origin: "http://dashboard.test",
           rpId: "dashboard.test",
           counter: 1,
         }),
       };
-      expect((yield* client.identity.approvePrimary({ params, payload: approval })).status).toBe(
+      expect((yield* client.walletTransaction.complete({ params, payload: approval })).status).toBe(
         "signed",
       );
-      expect((yield* client.identity.approvePrimary({ params, payload: approval })).status).toBe(
+      expect((yield* client.walletTransaction.complete({ params, payload: approval })).status).toBe(
         "signed",
       );
       const execution = yield* TestEvmExecution;
       yield* execution.setReceiptMode("missing");
       yield* TestClock.adjust(Duration.seconds(2));
       const app = yield* Application;
-      expect(yield* app.ens.reconcilePrimary()).toBe(1);
+      expect(yield* app.wallet.transactions.reconcile()).toBe(1);
       expect((yield* client.identity.primaryStatus({ params })).operation?.status).toBe(
         "submitted",
       );
       yield* execution.setReceiptMode("immediate");
       yield* TestClock.adjust(Duration.seconds(16));
-      yield* app.ens.reconcilePrimary();
+      yield* app.wallet.transactions.reconcile();
       const status = yield* client.identity.primaryStatus({ params });
       expect(status.operation?.status).toBe("confirmed");
       expect(status.operation?.transactionHash).toBeTruthy();
@@ -153,41 +209,98 @@ layer(fixture.layer)("Ethereum primary identity", (it) => {
     }),
   );
 
-  it.effect("rejects parallel approvals, mismatched names, and expired challenges", () =>
+  it.effect("rejects parallel approvals, changed requests, and expired challenges", () =>
     Effect.gen(function* () {
       const { client, params } = yield* setup;
-      const prepared = yield* client.identity.preparePrimary({
+      const prepared = yield* client.walletTransaction.prepare({
         params,
-        payload: { idempotencyKey: "first" },
+        headers: { "idempotency-key": "first" },
+        payload: {
+          namespace: "eip155",
+          chainId: "eip155:1",
+          calls: [
+            {
+              to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+              value: 0n,
+              data: "0x1234",
+            },
+          ],
+        },
       });
       expect(
-        yield* client.identity
-          .preparePrimary({ params, payload: { idempotencyKey: "second" } })
+        yield* client.walletTransaction
+          .prepare({
+            params,
+            headers: { "idempotency-key": "second" },
+            payload: {
+              namespace: "eip155",
+              chainId: "eip155:1",
+              calls: [
+                {
+                  to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+                  value: 0n,
+                  data: "0x1234",
+                },
+              ],
+            },
+          })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "OPERATION_BUSY" });
-      const other = { ...params, label: "other" };
-      yield* client.identity.create({ params: other, payload: { label: other.label } });
+      const other = { walletId: WalletId.make("01a00000-0000-7000-8000-000000000099") };
       expect(
-        yield* client.identity
-          .preparePrimary({ params: other, payload: { idempotencyKey: "first" } })
+        yield* client.walletTransaction
+          .prepare({
+            params,
+            headers: { "idempotency-key": "first" },
+            payload: {
+              namespace: "eip155",
+              chainId: "eip155:1",
+              calls: [
+                {
+                  to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+                  value: 0n,
+                  data: "0xabcd",
+                },
+              ],
+            },
+          })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
       expect(
-        yield* client.identity
-          .approvePrimary({ params: other, payload: { operationId: prepared.operationId } })
+        yield* client.walletTransaction
+          .complete({
+            params: other,
+            payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+          })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "OPERATION_UNAVAILABLE" });
       yield* TestClock.adjust(Duration.minutes(20));
-      yield* (yield* Application).ens.reconcilePrimary();
+      yield* (yield* Application).wallet.transactions.reconcile();
       expect((yield* client.identity.primaryStatus({ params })).operation?.status).toBe("expired");
       expect(
-        yield* client.identity
-          .approvePrimary({ params, payload: { operationId: prepared.operationId } })
+        yield* client.walletTransaction
+          .complete({
+            params,
+            payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+          })
           .pipe(Effect.flip),
       ).toMatchObject({ code: "APPROVAL_EXPIRED" });
       expect(
-        (yield* client.identity.preparePrimary({ params, payload: { idempotencyKey: "retry" } }))
-          .operationId,
+        (yield* client.walletTransaction.prepare({
+          params,
+          headers: { "idempotency-key": "retry" },
+          payload: {
+            namespace: "eip155",
+            chainId: "eip155:1",
+            calls: [
+              {
+                to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+                value: 0n,
+                data: "0x1234",
+              },
+            ],
+          },
+        })).operationId,
       ).not.toBe(prepared.operationId);
     }),
   );

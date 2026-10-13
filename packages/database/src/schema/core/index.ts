@@ -15,3 +15,5 @@ export * from "./wallet-operation.js";
 export * from "./signing-key.js";
 export * from "./signature-operation.js";
 export * from "./wallet.js";
+
+export * from "./wallet-signature-operation.js";

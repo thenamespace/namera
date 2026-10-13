@@ -105,7 +105,11 @@ when its discriminated owner is `passkey`. It also accepts
 `{type: "namera-managed", provider: "1claw"}` for account creation and internal
 owner signing. GCP requests still return 403 `MANAGED_WALLETS_DISABLED` before
 provider or billing work. Managed creation is limited to 20 attempts/org/hour.
-No public arbitrary owner-signing endpoint is exposed.
+Dashboard-only `/wallets/:walletId/transactions/prepare`, `/complete`, and
+`/:operationId` support owner-authorized transactions. They require user sessions
+and `wallet:update`; machine actors are rejected and writes require the dashboard
+Origin. They are excluded from public OpenAPI and SDK methods. See
+[owner transactions](../../architecture/wallets/transactions.md).
 The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
@@ -215,6 +219,13 @@ snapshots are cached in memory for five minutes (bounded to 500 keys per server)
 Use `refresh=true` on the first page to refresh from Alchemy. Wallet authorization
 is checked on every request, including cache hits. Provider credentials stay in
 the EVM adapter.
+
+Owner wallet signatures use dashboard-only `POST /wallets/:walletId/signatures/prepare`
+and `POST /wallets/:walletId/signatures/complete`. They require the system Owner
+role, `wallet:update`, a user session and the exact dashboard Origin. API keys
+and OAuth actors are rejected. Both share a 60/minute/user limit and are excluded
+from published OpenAPI. Startup migrations add the separate approval ledger;
+no new configuration is required. See [owner signing](../../architecture/operations/signatures.md#owner-wallet-signing).
 
 Smart-account signatures are limited to 120 requests per API key per minute.
 Smart-account signature verification is limited separately to 240 requests per

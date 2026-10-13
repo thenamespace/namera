@@ -19,3 +19,7 @@ export * from "./platform.js";
 export * from "./provider-connection.js";
 export * from "./one-claw.js";
 export * from "./catalog.js";
+
+export * from "./wallet-transaction.js";
+
+export * from "./wallet-signature.js";

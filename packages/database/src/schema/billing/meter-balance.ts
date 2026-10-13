@@ -40,7 +40,7 @@ export const billingMeterBalance = billingSchema.table(
     ),
     check(
       "billing_meter_balance_hard_limit_check",
-      sql`${table.hardLimitAmount} IS NULL OR (${table.hardLimitAmount} >= ${table.includedAmount} AND ${table.consumedAmount} + ${table.reservedAmount} <= ${table.hardLimitAmount})`,
+      sql`${table.hardLimitAmount} IS NULL OR (${table.hardLimitAmount} >= ${table.includedAmount} AND (${table.meterKey} = 'gas-sponsorship' OR ${table.consumedAmount} + ${table.reservedAmount} <= ${table.hardLimitAmount}))`,
     ),
   ],
 );

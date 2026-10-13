@@ -47,6 +47,10 @@ appear in trace attributes. See [Google authentication](../auth/core/google.md).
 - Context lookup, decoding, field construction, cryptographic primitives, idle
   worker polls, current-session probes, and OTLP forwarding are untraced.
 
+Owner transaction workflow spans use `application.wallet.transactions.*` and retain
+existing `wallet.operation_*` audit events and `wallet_operation` worker metrics.
+Transaction routes are template-normalized; calldata and approval proofs are not logged.
+
 ## Logs
 
 HTTP spans retain Effect's `client.address` socket peer. The trusted-proxy
@@ -121,7 +125,8 @@ Sponsored-gas reconciliation uses `sponsorship_settled` and
 `sponsorship_deferred` outcomes on the existing recovery counter. Provider
 lookup warnings include only a closed reason code; no credential, HTTP response
 or signed envelope is logged. Costs exceeding a hold emit a warning with the
-reservation ID for operator investigation (never a metric label). Missing cost
+reservation ID for estimation monitoring (never a metric label), then settle the
+full cost as Namera-paid usage rather than repeatedly deferring. Missing cost
 records remain normal deferred work.
 
 ### Waitlist signals
@@ -297,3 +302,10 @@ After instrumentation changes, inspect one read and one mutation. Confirm one
 cross-service trace, stable route names, bounded metric attributes, structured
 log fields with trace correlation, no `/t/*` trace loop, and no idle-worker or
 helper-only roots.
+
+Owner wallet signature prepare/complete routes use fixed route templates and
+`application.wallet.signatures.*` / `evm.ownerSignatures.*` spans. Payloads,
+assertions and returned signatures are not span attributes or log fields.
+Prepared/created audit events contain only identifiers, namespace, chain and
+operation type; no new product-analytics milestone or signature billing metric
+is emitted for these owner-only operations.

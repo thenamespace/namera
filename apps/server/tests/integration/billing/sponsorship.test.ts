@@ -126,18 +126,12 @@ layer(fixture.layer)("BSO gas billing", (it) => {
           previousAttempt = nextAttempt;
         }
 
-        // A provider total above the authorized hold requires investigation, not an overcharge.
+        const actualCost = outcome === "failed" ? 3_050_000n : 9644n;
         yield* control.setSponsorshipCost(
-          Option.some({ amountMicroUsd: gas.amount + 1n, confirmedTotalUsd: "1" }),
-        );
-        yield* TestClock.adjust("5 minutes");
-        expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 0 });
-        expect(
-          (yield* repository.billing.usageReservation.findById(organizationId, gas.id))?.status,
-        ).toBe("active");
-
-        yield* control.setSponsorshipCost(
-          Option.some({ amountMicroUsd: 9644n, confirmedTotalUsd: "0.0096432" }),
+          Option.some({
+            amountMicroUsd: actualCost,
+            confirmedTotalUsd: outcome === "failed" ? "3.05" : "0.0096432",
+          }),
         );
         yield* TestClock.adjust("5 minutes");
         expect(yield* app.billing.reconcile()).toMatchObject({ recovered: 1 });
@@ -148,18 +142,37 @@ layer(fixture.layer)("BSO gas billing", (it) => {
             gas.periodId,
             "gas-sponsorship",
           ),
-        ).toMatchObject({ consumedAmount: 9644n, reservedAmount: 0n });
+        ).toMatchObject({
+          consumedAmount: actualCost,
+          reservedAmount: 0n,
+          hardLimitAmount: 3_000_000n,
+        });
         expect(
           yield* repository.billing.usageEvent.getNetAmount(
             organizationId,
             gas.periodId,
             "gas-sponsorship",
           ),
-        ).toBe(9644n);
+        ).toBe(actualCost);
+        expect(
+          (yield* repository.billing.usageReservation.findById(organizationId, gas.id))?.status,
+        ).toBe("settled");
+        expect(
+          (yield* repository.billing.usageEvent.findByIdempotencyKey(
+            organizationId,
+            `billing:settle:${gas.id}`,
+          ))?.data,
+        ).toMatchObject({
+          costBearer: "namera",
+          reservationOverrunMicroUsd: (actualCost > gas.amount
+            ? actualCost - gas.amount
+            : 0n
+          ).toString(),
+        });
         expect(
           (yield* client.billing.get()).meters.find((meter) => meter.key === "gas-sponsorship")
             ?.remainingAmount,
-        ).toBe(2_990_356n);
+        ).toBe(outcome === "failed" ? 0n : 2_990_356n);
         yield* control.setSponsorshipCost(
           Option.some({ amountMicroUsd: 32_400n, confirmedTotalUsd: "0.0324" }),
         );

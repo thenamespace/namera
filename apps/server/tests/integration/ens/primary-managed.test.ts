@@ -71,20 +71,35 @@ layer(testLayer)("managed primary approval", (it) => {
       yield* client.identity.create({ params, payload: { label: params.label } });
       const control = yield* OneClawTestControl;
       yield* Ref.set(control.calls, []);
-      const prepared = yield* client.identity.preparePrimary({
+      const prepared = yield* client.walletTransaction.prepare({
         params,
-        payload: { idempotencyKey: "managed-primary" },
+        headers: { "idempotency-key": "managed-primary" },
+        payload: {
+          namespace: "eip155",
+          chainId: "eip155:1",
+          calls: [
+            {
+              to: EthereumAddress.make("0x4444444444444444444444444444444444444444"),
+              value: 0n,
+              data: "0x1234",
+            },
+          ],
+        },
       });
-      expect(prepared.approval).toBe("1claw");
-      expect(prepared.options).toBeNull();
+      expect(prepared.signing.method).toBe("server");
+      expect(prepared.priceQuote).toBeNull();
+
       expect(yield* Ref.get(control.calls)).toEqual([]);
-      const approval = { params, payload: { operationId: prepared.operationId } };
-      expect((yield* client.identity.approvePrimary(approval)).status).toBe("signed");
-      expect((yield* client.identity.approvePrimary(approval)).status).toBe("signed");
+      const approval = {
+        params,
+        payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+      };
+      expect((yield* client.walletTransaction.complete(approval)).status).toBe("signed");
+      expect((yield* client.walletTransaction.complete(approval)).status).toBe("signed");
       expect(yield* Ref.get(control.calls)).toEqual(["signing.signDigest"]);
       yield* (yield* TestEvmExecution).setReceiptMode("failed");
       yield* TestClock.adjust(Duration.seconds(2));
-      yield* (yield* Application).ens.reconcilePrimary();
+      yield* (yield* Application).wallet.transactions.reconcile();
       expect((yield* client.identity.primaryStatus({ params })).operation?.status).toBe("failed");
     }),
   );

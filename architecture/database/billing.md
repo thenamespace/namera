@@ -159,8 +159,10 @@ the immutable usage ledger remains the historical source of truth.
 - Composite primary key: (`period_id`, `meter_key`).
 - Composite tenant FK (`period_id`, `organization_id`) → period.
 - Checks: version at least 1 and all stored amounts non-negative.
-- Check: hard limit is null or at least the included amount and current
-  consumed-plus-reserved amount.
+- Check: hard limit is null or at least the included amount. Non-gas meters also
+  require consumed plus reserved to stay within that limit. Gas settlement and
+  projection repair preserve actual provider costs above the limit; new gas
+  reservations still enforce the unchanged admission ceiling atomically.
 - Index (`organization_id`, `period_id`) loads all balances for a period.
 
 ## `billing.usage_reservation`

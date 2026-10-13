@@ -127,10 +127,10 @@ export const getWebAuthnFactoryArgs = (
 
 const packUserOperationSignature = (signature: Hex): Hex => concatHex(["0xff", signature]);
 
-const packErc1271Signature = (entityId: number, signature: Hex): Hex =>
+export const packErc1271Signature = (entityId: number, signature: Hex): Hex =>
   concatHex(["0x00", toHex(entityId, { size: 4 }), "0xff", signature]);
 
-const replaySafeTypedData = (input: {
+export const replaySafeTypedData = (input: {
   readonly accountAddress: Address;
   readonly chainId: number;
   readonly hash: Hex;

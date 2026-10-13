@@ -51,7 +51,7 @@ export const walletOperation = coreSchema.table(
     uniqueIndex("wallet_operation_one_pending_unique")
       .on(table.walletId, table.chainId)
       .where(sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted')`),
-    check("wallet_operation_kind_check", sql`${table.kind} IN ('set-primary-name')`),
+    check("wallet_operation_kind_check", sql`${table.kind} IN ('set-primary-name', 'transaction')`),
     check(
       "wallet_operation_status_check",
       sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted', 'confirmed', 'failed', 'expired')`,
@@ -79,7 +79,8 @@ export const walletOperation = coreSchema.table(
     check(
       "wallet_operation_receipt_check",
       sql`
-    (${table.status} IN ('confirmed', 'failed')) = (${table.transactionHash} IS NOT NULL)
+    (${table.status} != 'confirmed' OR ${table.transactionHash} IS NOT NULL)
+    AND (${table.transactionHash} IS NULL OR ${table.status} IN ('confirmed', 'failed'))
     AND (${table.status} IN ('confirmed', 'failed', 'expired')) = (${table.finishedAt} IS NOT NULL)`,
     ),
     check(

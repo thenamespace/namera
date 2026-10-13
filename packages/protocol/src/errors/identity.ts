@@ -10,6 +10,7 @@ export class IdentityPrimaryError extends Schema.TaggedError<IdentityPrimaryErro
       "APPROVAL_EXPIRED",
       "APPROVAL_INVALID",
       "PREPARATION_FAILED",
+      "INSUFFICIENT_FUNDS",
       "FORWARD_MISMATCH",
       "IDEMPOTENCY_CONFLICT",
     ]),
@@ -22,6 +23,7 @@ export class IdentityError extends Schema.TaggedError<IdentityError>()(
   {
     code: Schema.Literals([
       "NAME_UNAVAILABLE",
+      "ACCOUNT_IDENTITY_EXISTS",
       "IDENTITY_UNAVAILABLE",
       "INVALID_RECORD",
       "PARTIAL_UPDATE",

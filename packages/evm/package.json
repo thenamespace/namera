@@ -27,6 +27,10 @@
       "namera-source": "./src/sessions/review.ts",
       "default": "./dist/session-review.js"
     },
+    "./signature-review": {
+      "namera-source": "./src/signing/review.ts",
+      "default": "./dist/signature-review.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -38,6 +42,7 @@
       "./chains": "./dist/chains.js",
       "./identity-review": "./dist/identity-review.js",
       "./session-review": "./dist/session-review.js",
+      "./signature-review": "./dist/signature-review.js",
       "./package.json": "./package.json"
     }
   },

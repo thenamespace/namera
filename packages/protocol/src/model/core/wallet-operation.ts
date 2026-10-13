@@ -11,7 +11,7 @@ import {
 import { NonEmptyString } from "#/model/common";
 import { createInsertSchema } from "#/model/helpers";
 
-export const WalletOperationKind = Schema.Literal("set-primary-name");
+export const WalletOperationKind = Schema.Literals(["set-primary-name", "transaction"]);
 export const WalletOperationStatus = Schema.Literals([
   "awaiting-signature",
   "signed",
@@ -23,10 +23,12 @@ export const WalletOperationStatus = Schema.Literals([
 
 export const WalletOperationData = Schema.Struct({
   version: Schema.Literal(1),
-  name: Schema.String,
+  name: Schema.optionalKey(Schema.String),
   // The canonical JSON codec preserves decoded context timestamps across JSONB.
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signed: Schema.NullOr(EvmSignedExecution),
+  broadcastAttempted: Schema.optionalKey(Schema.Boolean),
+  submissionBlocked: Schema.optionalKey(Schema.Boolean),
   owner: Schema.Struct({ signingKeyId: SigningKeyId, publicKey: Hex }),
 });
 

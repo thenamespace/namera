@@ -81,7 +81,12 @@ export const makeEnsService = (client: OffchainClient): EnsService => ({
     runEnsRequest("isSubnameAvailable", () => client.isSubnameAvailable(fullSubname)),
   ),
   getSingleSubname: Effect.fn("ens.getSingleSubname")((fullSubname) =>
-    runEnsRequest("getSingleSubname", () => client.getSingleSubname(fullSubname)),
+    runEnsRequest("getSingleSubname", () => client.getSingleSubname(fullSubname)).pipe(
+      Effect.catchIf(
+        (error) => error.reason === "NOT_FOUND",
+        () => Effect.succeed(null),
+      ),
+    ),
   ),
   getFilteredSubnames: Effect.fn("ens.getFilteredSubnames")((query) =>
     runEnsRequest("getFilteredSubnames", () => client.getFilteredSubnames(query)),

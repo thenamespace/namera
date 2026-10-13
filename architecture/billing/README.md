@@ -346,6 +346,17 @@ mainnet request still reserves and settles one `execution.mainnet` unit but
 submits through regular Rundler without the BSO policy header and never creates
 a `gas-sponsorship` reservation.
 
+### Primary names
+
+Primary-name owner operations also reserve `gas-sponsorship` during preparation
+when the current allowance can cover the full BSO estimate. Admission and the
+unsigned `wallet-operation` row share one transaction. Insufficient gas quota
+falls back to a separately prepared, balance-checked self-funded operation.
+Unsigned expiry and definitive pre-inclusion rejection release the gas hold;
+receipt confirmation makes it eligible for the same Alchemy-cost reconciliation
+as executions and session operations. Ambiguous signed attempts retain holds.
+See [identity](../wallets/identity.md) for the approval and recovery boundaries.
+
 ### Signatures
 
 Creating a durable reserved signature operation and reserving one `signature`
@@ -405,8 +416,8 @@ minute. A maintenance run:
    execution/signature source cannot be locked;
 5. locks each open meter balance and recomputes consumed usage from immutable
    events plus reserved usage from active reservations;
-6. repairs a divergent projection only when the reconstructed totals remain
-   within the snapshotted hard limit.
+6. repairs a divergent projection from the ledger and active holds. Gas costs
+   may exceed the admission limit; other meters remain hard-capped.
 
 Execution receipt reconciliation remains the authority for uncertain onchain
 state. Billing recovery will not guess gas cost for an active submission.
@@ -430,13 +441,29 @@ There is no retry limit and unresolved cost never releases the hold.
 The server-only `ALCHEMY_ACCESS_TOKEN` must have management access to the
 configured policy. Missing credentials, missing/pending costs, malformed
 responses and lookup failures retain the hold for retry. A reported zero total
-releases it; a total above the authorized hold stays reserved and emits
-`billing.sponsorship_cost_exceeds_reservation` for investigation rather than
-overcharging or discarding the cost. Lookups have a 30-second deadline and a
+releases it. A verified total above the authorized hold settles the full actual
+cost and releases the entire hold atomically, even above the period allowance.
+The gas ledger records `costBearer: "namera"`, `reservedAmountMicroUsd`, and
+`reservationOverrunMicroUsd`; the latter is the amount above the estimate, not
+the amount above the monthly allowance. Free users are never billed extra and
+no payment-provider delivery is created. The existing warning flags estimation
+overruns but no longer defers settlement. Lookups have a 30-second deadline and a
 20-page/2,000-record scan bound. Repeated cursors or exhausted scans fail closed.
 Keep policy access unchanged until pending holds settle; policy rotation and
 costs outside the scan window currently require operator follow-up. Existing
 released reservations are not retroactively charged by this worker.
+
+Gas hard limits govern new reservations, not historical cost accounting. The
+allowance is never raised to accommodate a settlement. For example, $2.80 already
+consumed plus a $0.25 actual charge settles to $3.05, even if only $0.15 was
+reserved. Remaining sponsorship is clamped to zero; new sponsorship is denied
+until renewal. Self-funded transactions remain available subject to execution
+quota and account funds. Already-authorized holds may still settle or release.
+Late costs remain in their original period and do not consume renewed allowance.
+Migration `20261013180122_gas-sponsorship-actual-cost` permits above-limit gas
+balances only; non-gas constraints and all admission guards remain unchanged.
+Deploy the migration before the updated worker. Tests cover concurrent duplicate
+settlement, exhaustion, self-funded admission, projection repair and rollover.
 
 Expiry recovery already owns reservation locks, whereas execution settlement
 owns its submission lock first. Recovery therefore uses `SKIP LOCKED` for the

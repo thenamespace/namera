@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 
-import { Repository } from "@namera-ai/database";
+import { Repository, TransactionService } from "@namera-ai/database";
 import { ChainName, Ens, getCoinType, validateAddress, type SubnameDTO } from "@namera-ai/ens";
 import {
   EnsUnavailableError,
@@ -44,6 +44,7 @@ export const makeIdentities = Effect.gen(function* () {
   const ens = yield* Ens;
   const repository = yield* Repository;
   const audit = yield* Audit;
+  const transaction = yield* TransactionService;
 
   const account = Effect.fnUntraced(function* (scope: AccountScope) {
     const wallet = yield* repository.core.wallet
@@ -119,32 +120,51 @@ export const makeIdentities = Effect.gen(function* () {
     createIdentity: Effect.fn("application.ens.createIdentity")(function* (
       scope: NameScope & { readonly actorId: ActorId },
     ) {
-      const owner = yield* account(scope);
-      const name = toEnsName(scope.label);
-      const existing = yield* ens.getSingleSubname(name).pipe(Effect.mapError(unavailable));
-      if (existing) {
-        if (belongsTo(existing, owner)) return yield* get(scope);
-        return yield* new IdentityError({ code: "NAME_UNAVAILABLE" });
-      }
-      yield* ens
-        .createSubname({
-          parentName: ensPolicy.parentName,
-          label: scope.label,
-          owner,
-          addresses: [
-            { chain: ChainName.Ethereum, value: owner },
-            { chain: ChainName.Default, value: owner },
-          ],
-        })
-        .pipe(
-          Effect.mapError((error) =>
-            error.reason === "ALREADY_EXISTS"
-              ? new IdentityError({ code: "NAME_UNAVAILABLE" })
-              : unavailable(),
-          ),
-        );
-      yield* recordAudit(scope, "created", 1);
-      return yield* get(scope);
+      return yield* transaction
+        .run(
+          Effect.gen(function* () {
+            // Serialize Namera creation requests across server instances without storing identities.
+            yield* repository.core.wallet
+              .findByIdForUpdate(scope.walletId, scope.organizationId)
+              .pipe(Effect.catchTag("DatabaseError", Effect.die));
+            const owner = yield* account(scope);
+            const name = toEnsName(scope.label);
+            const existing = yield* ens.getSingleSubname(name).pipe(Effect.mapError(unavailable));
+            if (existing) {
+              if (belongsTo(existing, owner)) return yield* get(scope);
+              return yield* new IdentityError({ code: "NAME_UNAVAILABLE" });
+            }
+            for (let page = 1; ; page += 1) {
+              const owned = yield* ens
+                .getFilteredSubnames({ parentName: ensPolicy.parentName, owner, page, size: 20 })
+                .pipe(Effect.mapError(unavailable));
+              if (owned.items.some((identity) => belongsTo(identity, owner)))
+                return yield* new IdentityError({ code: "ACCOUNT_IDENTITY_EXISTS" });
+              if (page * owned.size >= owned.totalItems) break;
+              if (owned.size <= 0 || owned.items.length === 0) return yield* unavailable();
+            }
+            yield* ens
+              .createSubname({
+                parentName: ensPolicy.parentName,
+                label: scope.label,
+                owner,
+                addresses: [
+                  { chain: ChainName.Ethereum, value: owner },
+                  { chain: ChainName.Default, value: owner },
+                ],
+              })
+              .pipe(
+                Effect.mapError((error) =>
+                  error.reason === "ALREADY_EXISTS"
+                    ? new IdentityError({ code: "NAME_UNAVAILABLE" })
+                    : unavailable(),
+                ),
+              );
+            yield* recordAudit(scope, "created", 1);
+            return yield* get(scope);
+          }),
+        )
+        .pipe(Effect.catchTag("DatabaseError", Effect.die));
     }),
     updateIdentityRecords: Effect.fn("application.ens.updateIdentityRecords")(function* (
       scope: NameScope & {

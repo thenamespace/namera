@@ -175,7 +175,9 @@ export const makeBillingMetering = Effect.gen(function* () {
           );
         }
         if (reservation.status !== "active") return undefined;
-        if (input.amount > reservation.amount) {
+        // Provider gas costs are actual expenses, not customer overage charges.
+        // Admission stays capped; completed sponsored work must always be accounted for.
+        if (input.amount > reservation.amount && reservation.meterKey !== "gas-sponsorship") {
           return yield* Effect.die("Billing settlement exceeds its reservation");
         }
 

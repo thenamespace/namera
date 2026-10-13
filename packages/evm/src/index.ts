@@ -68,3 +68,5 @@ export type {
   VerifyEvm,
   VerifyEvmInput,
 } from "./signing/types.js";
+
+export { makeTestEvmOwnerSignatureService } from "./signing/owner-test.js";

@@ -24,7 +24,7 @@ import { billingUsageReservation } from "#/schema/index";
 const encodeDate = Schema.encodeSync(Schema.DateTimeUtcFromDate);
 const providerSponsorship = sql`(
   ${eq(billingUsageReservation.meterKey, "gas-sponsorship")}
-  AND ${inArray(billingUsageReservation.sourceType, ["execution-submission", "session-key-operation"])}
+  AND ${inArray(billingUsageReservation.sourceType, ["execution-submission", "session-key-operation", "wallet-operation"])}
 )`;
 
 export interface BillingUsageReservationRepositoryService {

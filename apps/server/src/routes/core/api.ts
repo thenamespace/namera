@@ -34,6 +34,8 @@ import { EnsRoutes } from "#/routes/ens";
 import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
 import { FeedbackRoutes, AdminFeedbackRoutes } from "#/routes/feedback";
 import { IdentityRoutes } from "#/routes/identity";
+import { WalletSignatureRoutes } from "#/routes/wallet-signature";
+import { WalletTransactionRoutes } from "#/routes/wallet-transaction";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
@@ -55,6 +57,8 @@ const ApiHandlers = Layer.mergeAll(
   ExecutionRoutes,
   EnsRoutes,
   IdentityRoutes,
+  WalletTransactionRoutes,
+  WalletSignatureRoutes,
   SessionKeyRoutes,
   SignatureRoutes,
   InvitationRoutes,

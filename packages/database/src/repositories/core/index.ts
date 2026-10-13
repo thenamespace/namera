@@ -18,3 +18,5 @@ export * from "./wallet.js";
 export * from "./catalog/catalog.js";
 export * from "./catalog/entry.js";
 export * from "./catalog/interface.js";
+
+export * from "./wallet-signature-operation.js";

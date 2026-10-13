@@ -5,6 +5,7 @@ import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
 import {
   ExecutionSubmissionId,
   SessionKeyOperationId,
+  WalletOperationId,
   type EvmSignedExecution,
   type EvmExecutionReceipt,
 } from "@namera-ai/protocol";
@@ -39,6 +40,35 @@ export const makeSponsorshipReconciliation = Effect.gen(function* () {
         return false;
       signed = operation.data.signed;
       if (signed !== null && signed.chainId === operation.chainId)
+        evidence = {
+          chainId: operation.chainId,
+          userOperationHash: signed.userOperationHash,
+          transactionHash: operation.transactionHash,
+          sender: signed.userOperation.sender,
+        };
+    } else if (reservation.sourceType === "wallet-operation") {
+      const operation = yield* repository.core.walletOperation.findById({
+        organizationId: reservation.organizationId,
+        id: Schema.decodeUnknownSync(WalletOperationId)(reservation.sourceId),
+      });
+      if (
+        operation?.status === "expired" ||
+        (operation?.status === "failed" && operation.transactionHash === null)
+      ) {
+        yield* metering.release({
+          organizationId: reservation.organizationId,
+          reservationId: reservation.id,
+        });
+        return true;
+      }
+      if (
+        !operation ||
+        operation.transactionHash === null ||
+        (operation.status !== "confirmed" && operation.status !== "failed")
+      )
+        return false;
+      signed = operation.data.signed;
+      if (signed && signed.chainId === operation.chainId)
         evidence = {
           chainId: operation.chainId,
           userOperationHash: signed.userOperationHash,
@@ -82,7 +112,6 @@ export const makeSponsorshipReconciliation = Effect.gen(function* () {
       yield* Effect.logWarning("billing.sponsorship_cost_exceeds_reservation").pipe(
         Effect.annotateLogs({ reservation_id: reservation.id }),
       );
-      return false;
     }
     yield* metering.settle({
       organizationId: reservation.organizationId,
@@ -97,6 +126,12 @@ export const makeSponsorshipReconciliation = Effect.gen(function* () {
         userOperationHash: evidence.userOperationHash,
         transactionHash: evidence.transactionHash,
         confirmedTotalUsd: cost.value.confirmedTotalUsd,
+        costBearer: "namera",
+        reservedAmountMicroUsd: reservation.amount.toString(),
+        reservationOverrunMicroUsd: (cost.value.amountMicroUsd > reservation.amount
+          ? cost.value.amountMicroUsd - reservation.amount
+          : 0n
+        ).toString(),
       },
     });
     return true;

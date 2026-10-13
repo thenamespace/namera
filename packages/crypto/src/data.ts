@@ -15,6 +15,8 @@ export const cryptoPurpose = {
   sessionKeyPolicies: "session-key.policies",
   executionRequest: "execution.request",
   signatureRequest: "signature.request",
+  walletSignatureRequest: "wallet.signature.request",
+  walletSignatureResult: "wallet.signature.result",
   oauthAuthorizationCode: "auth.oauth.authorization-code",
   oauthAccessToken: "auth.oauth.access-token",
   oauthRefreshToken: "auth.oauth.refresh-token",

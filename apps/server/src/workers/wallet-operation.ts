@@ -8,7 +8,7 @@ export const WalletOperationWorkerLayer = Layer.effectDiscard(
     const app = yield* Application;
     yield* Effect.gen(function* () {
       while (true) {
-        yield* app.ens.reconcilePrimary().pipe(
+        yield* app.wallet.transactions.reconcile().pipe(
           Effect.tap(() =>
             Effect.gen(function* () {
               yield* Metric.update(

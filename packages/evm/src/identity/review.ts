@@ -2,7 +2,7 @@ import { DateTime, Effect } from "effect";
 import * as Base64Url from "effect/encoding/Base64Url";
 
 import { toModularAccountV2 } from "@alchemy/smart-accounts";
-import type { PrepareIdentityPrimaryResponse } from "@namera-ai/protocol/dto";
+import type { PrepareWalletTransactionResponse } from "@namera-ai/protocol/dto";
 import type { AlchemyModularV2WalletData } from "@namera-ai/protocol/model";
 import {
   hashMessage,
@@ -98,7 +98,7 @@ const reject = () => {
 /** Compare the entire signable envelope to independently reconstructed account and call data. */
 export function validatePrimaryApproval(
   review: ReviewedPrimaryName,
-  response: PrepareIdentityPrimaryResponse,
+  response: PrepareWalletTransactionResponse,
   maxGasCostWei: bigint,
   now: DateTime.Utc,
 ) {
@@ -106,7 +106,7 @@ export function validatePrimaryApproval(
   const op = prepared.userOperation;
   if (
     DateTime.toEpochMillis(now) >= DateTime.toEpochMillis(response.expiresAt) ||
-    response.approval !== review.approval ||
+    response.signing.method !== (review.approval === "passkey" ? "passkey" : "server") ||
     prepared.chainId !== "eip155:1" ||
     prepared.context.chainId !== "eip155:1" ||
     prepared.entryPointVersion !== "0.7" ||
@@ -139,8 +139,12 @@ export function validatePrimaryApproval(
     reject();
   const fee = (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * op.maxFeePerGas;
   if (
-    prepared.sponsorship !== "none" ||
-    prepared.billing.sponsorship !== null ||
+    (prepared.sponsorship === "none"
+      ? prepared.billing.sponsorship !== null
+      : prepared.billing.sponsorship === null ||
+        op.maxFeePerGas !== 0n ||
+        op.maxPriorityFeePerGas !== 0n ||
+        op.preVerificationGas !== 0n) ||
     op.paymaster !== undefined ||
     op.paymasterData !== undefined ||
     op.paymasterVerificationGasLimit !== undefined ||
@@ -157,7 +161,7 @@ export function validatePrimaryApproval(
     entryPointVersion: "0.7",
   });
   if (review.approval === "passkey") {
-    const options = response.options;
+    const options = response.signing.method === "passkey" ? response.signing.options : undefined;
     if (
       !options ||
       !review.owner ||
@@ -168,6 +172,6 @@ export function validatePrimaryApproval(
       options.challenge !== Base64Url.encode(hexToBytes(hashMessage({ raw: hash })))
     )
       reject();
-  } else if (response.options !== null) reject();
+  } else if (response.signing.method !== "server") reject();
   return hash;
 }

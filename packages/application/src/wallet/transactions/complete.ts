@@ -5,48 +5,59 @@ import * as HexEncoding from "effect/encoding/Hex";
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { IdentityPrimaryError, type EnsLabel } from "@namera-ai/protocol";
-import type { ApproveIdentityPrimaryRequest } from "@namera-ai/protocol/dto";
+import { WalletTransactionError } from "@namera-ai/protocol";
+import type { CompleteWalletTransactionRequest } from "@namera-ai/protocol/dto";
 import type { WalletOperation } from "@namera-ai/protocol/model";
 import { generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import { lockOrganizationBilling } from "#/billing/lock";
 import { makeBillingMetering } from "#/billing/metering";
 import { makeLoadOneClawOwner } from "#/oneclaw/owner";
 
-import { toEnsName } from "./data.js";
-import { makePrimaryOwner, primaryFailure, type PrimaryScope } from "./primary-owner.js";
+import { makeTransactionOwner, transactionFailure, type WalletTransactionScope } from "./owner.js";
+import { makeHashWalletTransaction } from "./request.js";
 
-export const primaryOperationView = (
-  operation: WalletOperation,
-  actorId: PrimaryScope["actorId"],
-) => ({
+export const walletTransactionView = (operation: WalletOperation) => ({
+  namespace: "eip155" as const,
   operationId: operation.id,
-  name: operation.data.name,
   status: operation.status,
+  userOperationHash: operation.data.signed?.userOperationHash ?? null,
   transactionHash: operation.transactionHash,
-  retryKey:
-    operation.status === "awaiting-signature" && operation.actorId === actorId
-      ? operation.idempotencyKey
-      : null,
+  submissionBlocked:
+    (operation.status === "signed" || operation.status === "submitted") &&
+    (operation.data.submissionBlocked ?? false),
 });
+const completedView = (operation: WalletOperation) => {
+  if (
+    !operation.data.signed ||
+    !["signed", "submitted", "confirmed", "failed"].includes(operation.status)
+  )
+    throw new Error("Completed wallet operation lacks its signed envelope");
+  return {
+    namespace: "eip155" as const,
+    operationId: operation.id,
+    status: operation.status as "signed" | "submitted" | "confirmed" | "failed",
+    userOperationHash: operation.data.signed.userOperationHash,
+  };
+};
 
-export const makeApproveIdentityPrimary = Effect.gen(function* () {
+export const makeCompleteWalletTransaction = Effect.gen(function* () {
   const repository = yield* Repository;
+  const hashWalletTransaction = yield* makeHashWalletTransaction;
   const transaction = yield* TransactionService;
   const evm = yield* Evm;
   const passkeys = yield* Passkeys;
   const config = yield* AuthConfig;
-  const owners = yield* makePrimaryOwner;
+  const owners = yield* makeTransactionOwner;
   const loadSigner = yield* makeLoadOneClawOwner;
   const billing = yield* makeBillingMetering;
   const audit = yield* Audit;
-  return Effect.fn("application.ens.approvePrimary")(
+  return Effect.fn("application.wallet.transactions.complete")(
     function* (
-      scope: PrimaryScope & {
-        readonly label: EnsLabel;
-        readonly request: ApproveIdentityPrimaryRequest;
+      scope: WalletTransactionScope & {
+        readonly request: CompleteWalletTransactionRequest;
       },
     ) {
       const operationScope = {
@@ -58,13 +69,15 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
         !operation ||
         operation.walletId !== scope.walletId ||
         operation.actorId !== scope.actorId ||
-        operation.data.name !== toEnsName(scope.label)
+        operation.kind !== "transaction" ||
+        operation.data.prepared.namespace !== scope.request.namespace
       )
-        return yield* new IdentityPrimaryError({ code: "OPERATION_UNAVAILABLE" });
+        return yield* new WalletTransactionError({ code: "OPERATION_UNAVAILABLE" });
+      yield* owners.load(scope);
       if (["signed", "submitted", "confirmed", "failed"].includes(operation.status))
-        return primaryOperationView(operation, scope.actorId);
+        return completedView(operation);
       if (operation.status !== "awaiting-signature")
-        return yield* new IdentityPrimaryError({ code: "APPROVAL_EXPIRED" });
+        return yield* new WalletTransactionError({ code: "APPROVAL_EXPIRED" });
       const leaseToken = generateUniqueId();
       const owner = yield* Effect.acquireRelease(
         transaction.run(
@@ -79,7 +92,7 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
               leaseToken,
               leaseExpiresAt: DateTime.addDuration(now, Duration.minutes(2)),
             });
-            if (!claimed) return yield* new IdentityPrimaryError({ code: "OPERATION_BUSY" });
+            if (!claimed) return yield* new WalletTransactionError({ code: "OPERATION_BUSY" });
             return current;
           }),
         ),
@@ -88,19 +101,22 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
             .releaseSigningLease({ ...operationScope, leaseToken })
             .pipe(Effect.orDie),
       );
-      yield* owners.checkCall(operation);
-      const status = yield* evm.identity.status(
-        operation.data.name,
-        owner.wallet.wallet.data.address,
-      );
-      if (status.forwardAddress?.toLowerCase() !== owner.wallet.wallet.data.address.toLowerCase())
-        return yield* new IdentityPrimaryError({ code: "FORWARD_MISMATCH" });
+      const prepared = operation.data.prepared;
+      const hash = yield* hashWalletTransaction(scope.walletId, {
+        namespace: prepared.namespace,
+        chainId: prepared.chainId,
+        calls: prepared.context.calls,
+        sponsor: prepared.sponsorship === "alchemy-bso",
+      });
+      if (hash !== operation.requestHash)
+        return yield* new WalletTransactionError({ code: "APPROVAL_INVALID" });
+      yield* evm.execution.checkFunding(prepared);
       const result = yield* Effect.gen(function* () {
         if (owner.type === "1claw") {
           if (scope.request.response)
-            return yield* new IdentityPrimaryError({ code: "APPROVAL_INVALID" });
+            return yield* new WalletTransactionError({ code: "APPROVAL_INVALID" });
           const signer = yield* loadSigner(owner.wallet).pipe(
-            Effect.mapError(() => new IdentityPrimaryError({ code: "OWNER_UNAVAILABLE" })),
+            Effect.mapError(() => new WalletTransactionError({ code: "OWNER_UNAVAILABLE" })),
           );
           const signed = yield* evm.execution
             .sign({
@@ -110,14 +126,14 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
               },
               prepared: operation.data.prepared,
             })
-            .pipe(Effect.timeout(Duration.seconds(90)), Effect.mapError(primaryFailure));
+            .pipe(Effect.timeout(Duration.seconds(90)), Effect.mapError(transactionFailure));
           return { signed, assertion: undefined };
         }
         if (!scope.request.response)
-          return yield* new IdentityPrimaryError({ code: "APPROVAL_INVALID" });
+          return yield* new WalletTransactionError({ code: "APPROVAL_INVALID" });
         const challenge = yield* evm.execution
           .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
-          .pipe(Effect.mapError(primaryFailure));
+          .pipe(Effect.mapError(transactionFailure));
         const assertion = yield* passkeys
           .verifyAuthentication({
             response: scope.request.response,
@@ -130,18 +146,19 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
             publicKeyHex: owner.wallet.signingKey.publicKeyHex,
             signCount: owner.credential.signCount,
           })
-          .pipe(Effect.mapError(() => new IdentityPrimaryError({ code: "APPROVAL_INVALID" })));
+          .pipe(Effect.mapError(() => new WalletTransactionError({ code: "APPROVAL_INVALID" })));
         const signed = yield* evm.execution
           .completeOwnerApproval({
             account: owner.account,
             prepared: operation.data.prepared,
             assertion,
           })
-          .pipe(Effect.mapError(() => new IdentityPrimaryError({ code: "APPROVAL_INVALID" })));
+          .pipe(Effect.mapError(() => new WalletTransactionError({ code: "APPROVAL_INVALID" })));
         return { signed, assertion };
       });
       const committed = yield* transaction.run(
         Effect.gen(function* () {
+          yield* lockOrganizationBilling(repository, scope.organizationId);
           yield* repository.core.wallet.findByIdForUpdate(scope.walletId, scope.organizationId);
           yield* owners.check(operation);
           if (owner.type === "passkey" && result.assertion) {
@@ -152,9 +169,24 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
               expectedCounter: owner.credential.signCount,
               nextCounter: result.assertion.signCount,
             });
-            if (!advanced) return yield* new IdentityPrimaryError({ code: "APPROVAL_INVALID" });
+            if (!advanced) return yield* new WalletTransactionError({ code: "APPROVAL_INVALID" });
           }
           const now = yield* DateTime.now;
+          if (operation.data.prepared.billing.sponsorship) {
+            const holds = yield* repository.billing.usageReservation.listBySource(
+              scope.organizationId,
+              "wallet-operation",
+              operation.id,
+            );
+            const gas = holds.find(
+              (hold) => hold.meterKey === "gas-sponsorship" && hold.status === "active",
+            );
+            if (
+              !gas ||
+              gas.amount !== operation.data.prepared.billing.sponsorship.reservationAmountMicroUsd
+            )
+              return yield* new WalletTransactionError({ code: "APPROVAL_EXPIRED" });
+          }
           const accepted = yield* repository.core.walletOperation.acceptSignature({
             ...operationScope,
             actorId: scope.actorId,
@@ -165,7 +197,7 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
             leaseExpiresAt: DateTime.addDuration(now, Duration.seconds(1)),
             signingLeaseToken: leaseToken,
           });
-          if (!accepted) return yield* new IdentityPrimaryError({ code: "APPROVAL_EXPIRED" });
+          if (!accepted) return yield* new WalletTransactionError({ code: "APPROVAL_EXPIRED" });
           yield* billing.reserve({
             organizationId: scope.organizationId,
             sourceType: "wallet-operation",
@@ -185,7 +217,7 @@ export const makeApproveIdentityPrimary = Effect.gen(function* () {
           return accepted;
         }),
       );
-      return primaryOperationView(committed, scope.actorId);
+      return completedView(committed);
     },
     Effect.scoped,
     Effect.catchTag("DatabaseError", Effect.die),
