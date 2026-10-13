@@ -353,9 +353,12 @@ the dashboard.
 validates against `CreateOrganizationRequest`, creates and activates the new
 workspace through the existing organization operation, then navigates home.
 
-Unimplemented Identity and Templates routes are excluded from the beta route
-tree and sidebar. Their former URLs reach the shared not-found boundary rather
-than an empty page.
+`/identity` lists Namespace-owned names for the selected account. Creation checks
+availability and registers the name; detail routes show public profile artwork,
+account ownership and editable text, address and JSON records. Changes use explicit
+Save actions, not private account metadata updates. See
+[account identities](../../architecture/wallets/identity.md) for provider boundaries.
+The retired Templates URL remains excluded from the route tree.
 
 Shared page and section composition should use `DashboardPage`,
 `HeadingGroup.Title`/`Description`, and the individual `DashboardCardRoot`,

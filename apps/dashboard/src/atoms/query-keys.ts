@@ -12,6 +12,7 @@ import type {
 } from "@namera-ai/protocol";
 
 export const QueryKeys = {
+  identity: { all: ["identity:all"] as const },
   connectedAccounts: { lists: ["connected-accounts:lists"] as const },
   session: {
     current: ["session:current"] as const,
@@ -105,6 +106,7 @@ export const QueryKeys = {
 } as const;
 
 export type QueryKey =
+  | (typeof QueryKeys.identity.all)[number]
   | (typeof QueryKeys.connectedAccounts.lists)[number]
   | (typeof QueryKeys.session.current)[number]
   | (typeof QueryKeys.session.lists)[number]

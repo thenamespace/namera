@@ -39,5 +39,12 @@ They do not verify live Namespace configuration or DNS-imported `namera.id` ENS
 resolution. Production needs the parent configured in Namespace and the existing
 `NAMERA_ENS_API_KEY` with access to it.
 
-The dashboard and Ethereum primary-name owner-approval flow are not yet wired.
+The dashboard's `/identity` account selector and paginated list share the loader's
+Effect atom registry. `/identity/$accountId/$label` renders a public profile with
+HTTPS artwork, text/address records and expandable JSON data. Mutations use explicit
+forms and permission-aware controls; partial errors refresh provider data. Profile
+records never update internal wallet metadata. No owner keys or API secrets enter
+the browser. Sidebar navigation uses the existing responsive shell.
+
+The Ethereum primary-name owner-approval flow is not yet wired.
 Offchain creation alone never establishes a primary name or proves reverse resolution.

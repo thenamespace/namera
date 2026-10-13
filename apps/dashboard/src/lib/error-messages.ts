@@ -13,6 +13,22 @@ const networkPaused: FeedbackMessage = {
 };
 
 const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
+  "IdentityError:NAME_UNAVAILABLE": {
+    title: "Name unavailable",
+    description: "Choose another label and try again.",
+  },
+  "IdentityError:IDENTITY_UNAVAILABLE": {
+    title: "Identity unavailable",
+    description: "This name is not owned by the selected account.",
+  },
+  "IdentityError:INVALID_RECORD": {
+    title: "Check the record",
+    description: "Check its network, address format and value length.",
+  },
+  "IdentityError:PARTIAL_UPDATE": {
+    title: "Some records were saved",
+    description: "Refresh the identity before retrying the remaining changes.",
+  },
   "GoogleAuthError:GOOGLE_NOT_CONFIGURED": {
     title: "Google sign-in unavailable",
     description: "Use email to sign in for now.",
