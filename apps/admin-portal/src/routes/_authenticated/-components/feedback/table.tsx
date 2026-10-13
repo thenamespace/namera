@@ -11,6 +11,7 @@ import { useFeedback } from "@/hooks/feedback";
 
 import {
   FeedbackDate,
+  FeedbackOrganizationDisplay,
   FeedbackStatusDisplay,
   feedbackCategories,
   feedbackStatuses,
@@ -26,11 +27,8 @@ const columns: DataGridColumn<FeedbackView>[] = [
     id: "organization",
     header: "Organization",
     width: 180,
-    cell: (entry) => (
-      <span className="block truncate text-sm">
-        {entry.organization?.metadata.name ?? "No organization"}
-      </span>
-    ),
+    cellClassName: "max-w-0",
+    cell: (entry) => <FeedbackOrganizationDisplay organization={entry.organization} />,
   },
   {
     id: "message",
@@ -38,6 +36,7 @@ const columns: DataGridColumn<FeedbackView>[] = [
     isRowHeader: true,
     minWidth: 250,
     width: "1fr",
+    cellClassName: "max-w-0",
     cell: (entry) => (
       <Link
         to="/feedback/$feedbackId"
@@ -61,7 +60,7 @@ const columns: DataGridColumn<FeedbackView>[] = [
   {
     id: "status",
     header: "Status",
-    width: 125,
+    width: 150,
     cell: (entry) => <FeedbackStatusDisplay status={entry.status} />,
   },
   {

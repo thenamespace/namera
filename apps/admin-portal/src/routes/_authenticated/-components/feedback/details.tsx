@@ -2,10 +2,16 @@ import { Link } from "@tanstack/react-router";
 
 import type { FeedbackView } from "@namera-ai/protocol/dto";
 import { Typography } from "@namera-ai/ui";
+import { ArrowLeft01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { EmailDisplay, MemberDisplay } from "@/components/team-display";
 
-import { feedbackCategories, FeedbackDate, FeedbackStatusDisplay } from "./display";
+import {
+  feedbackCategories,
+  FeedbackDate,
+  FeedbackStatusDisplay,
+  FeedbackOrganizationDisplay,
+} from "./display";
 import { FeedbackStatusActions } from "./status-actions";
 
 export function FeedbackDetails({ entry }: { entry: FeedbackView }) {
@@ -13,8 +19,9 @@ export function FeedbackDetails({ entry }: { entry: FeedbackView }) {
     <article className="mx-auto grid w-full max-w-4xl gap-6 py-4 sm:py-8">
       <Link
         to="/feedback"
-        className="w-fit text-sm text-muted hover:text-foreground hover:underline"
+        className="flex w-fit items-center gap-2 text-sm text-muted hover:text-foreground hover:underline"
       >
+        <HugeiconsIcon icon={ArrowLeft01Icon} size={16} aria-hidden="true" />
         Back to feedback
       </Link>
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -36,7 +43,9 @@ export function FeedbackDetails({ entry }: { entry: FeedbackView }) {
         </div>
         <div className="grid min-w-0 content-start gap-2">
           <dt className="text-muted">Organization</dt>
-          <dd className="break-words">{entry.organization?.metadata.name ?? "No organization"}</dd>
+          <dd className="min-w-0">
+            <FeedbackOrganizationDisplay organization={entry.organization} />
+          </dd>
         </div>
         <div className="grid gap-2">
           <dt className="text-muted">Submitted</dt>

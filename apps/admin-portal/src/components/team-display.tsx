@@ -64,7 +64,7 @@ export function EmailDisplay({ email }: { email: string }) {
       type="button"
       onClick={copy}
       aria-label={`Copy ${email}`}
-      className="text-muted hover:text-foreground h-auto min-w-0 justify-start p-0 cursor-pointer transition-all duration-100 ease-in-out"
+      className="text-muted hover:text-foreground flex h-auto min-w-0 justify-start text-start p-0 cursor-pointer transition-all duration-100 ease-in-out"
     >
       <span className="truncate">{email}</span>
     </button>
