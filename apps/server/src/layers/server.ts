@@ -12,6 +12,7 @@ import {
   EmailWorkerLive,
   ExecutionWorkerLive,
   SessionKeyWorkerLive,
+  WalletOperationWorkerLive,
   ServicesLive,
 } from "#/layers/services";
 import { AnalyticsMiddleware } from "#/middlewares/analytics";
@@ -76,6 +77,7 @@ const Routes = Layer.mergeAll(
   BillingWorkerLive,
   ExecutionWorkerLive,
   SessionKeyWorkerLive,
+  WalletOperationWorkerLive,
   AnalyticsWorkerLive,
 );
 

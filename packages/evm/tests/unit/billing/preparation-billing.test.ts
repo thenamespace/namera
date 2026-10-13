@@ -121,6 +121,11 @@ for (const scenario of cases) {
         scenario.sponsorship === "alchemy-bso" ? 0n : 1_000_000_000n,
       );
       expect(prepared.context.simulation.userOperation.maxFeePerGas).toBe(1_000_000_000n);
+      const estimate = prepared.context.simulation.userOperation;
+      expect(
+        (estimate.callGasLimit + estimate.verificationGasLimit + estimate.preVerificationGas) *
+          estimate.maxFeePerGas,
+      ).toBe(250_000_000_000_000n);
     }),
   );
 }

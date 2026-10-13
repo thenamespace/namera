@@ -18,15 +18,9 @@ import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
 import type { GetEvmExecutionReceiptInput, WaitForEvmExecutionReceiptInput } from "./types.js";
 
-const AlchemyUserOperationStatus = Schema.Struct({
-  status: Schema.Literals(["unknown", "pending", "pendingBundle", "mined", "preconfirmed"]),
-  receipt: Schema.NullOr(
-    Schema.Struct({
-      success: Schema.Boolean,
-      receipt: Schema.Struct({ transactionHash: TransactionHash }),
-    }),
-  ),
-});
+const AlchemyUserOperationLookup = Schema.NullOr(
+  Schema.Struct({ transactionHash: Schema.NullOr(TransactionHash) }),
+);
 
 const normalizeReceipt = Effect.fn("evm.execution.normalizeReceipt")(function* (
   chainId: GetEvmExecutionReceiptInput["chainId"],
@@ -105,29 +99,20 @@ export const makeGetEvmUserOperationStatus = (getClients: (chain: ChainData) => 
     const response = yield* Effect.tryPromise({
       try: () =>
         getClients(chain).statusClient.request({
-          method: "rundler_getUserOperationStatus",
+          method: "eth_getUserOperationByHash",
           params: [input.userOperationHash],
         }),
       catch: (cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause }),
     });
-    const status = yield* Schema.decodeUnknownEffect(AlchemyUserOperationStatus)(response).pipe(
+    const operation = yield* Schema.decodeUnknownEffect(AlchemyUserOperationLookup)(response).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),
     );
-    const normalized = (() => {
-      if (status.status === "unknown") {
-        return { status: "not_found", transactionHash: null } as const;
-      }
-      if (status.status === "pending" || status.status === "pendingBundle") {
-        return { status: "submitted", transactionHash: null } as const;
-      }
-      if (status.receipt === null) {
-        return { status: "submitted", transactionHash: null } as const;
-      }
-      return {
-        status: status.receipt.success ? ("included" as const) : ("failed" as const),
-        transactionHash: status.receipt.receipt.transactionHash,
-      };
-    })();
+    // Alchemy may return null for pending operations or operations outside its scan window.
+    // Absence is not rejection. Even observed inclusion must recover a bound receipt to settle.
+    const normalized =
+      operation === null
+        ? ({ status: "not_found", transactionHash: null } as const)
+        : ({ status: "submitted", transactionHash: operation.transactionHash } as const);
 
     return yield* Schema.decodeUnknownEffect(EvmUserOperationStatus)(normalized).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),

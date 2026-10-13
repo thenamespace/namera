@@ -149,7 +149,9 @@ and have no overage price. Managed software and HSM wallets retain their existin
 resource entitlements and billing classification.
 
 `GET /ens/availability?label=...` remains an unauthenticated, IP-rate-limited
-lookup. Wallet creation does not check,
+lookup under the `namera.id` parent (for example, `treasury.namera.id`).
+Namespace must be configured to manage this parent with the server's API key.
+Wallet creation does not check,
 reserve, or create an ENS subname.
 
 ## EVM implementations

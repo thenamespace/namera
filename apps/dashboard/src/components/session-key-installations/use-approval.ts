@@ -43,6 +43,11 @@ export function useInstallationApproval(
     confirmation.current?.(confirmed);
     confirmation.current = undefined;
   };
+  const requestConfirmation = () =>
+    new Promise<boolean>((resolve) => {
+      confirmation.current = resolve;
+      setReviewOpen(true);
+    });
   const attempt = useRef<
     | {
         key: string;
@@ -107,15 +112,10 @@ export function useInstallationApproval(
         const response = current.managedPrepared;
         setOperationId(response.operationId);
         const confirmed = await confirmManagedApproval({
-          kind,
           reviewed,
           response,
           signal: abort.signal,
-          requestConfirmation: () =>
-            new Promise<boolean>((resolve) => {
-              confirmation.current = resolve;
-              setReviewOpen(true);
-            }),
+          requestConfirmation,
           approve: (payload) => approveManaged.mutateAsync({ payload }),
         });
         if (abort.signal.aborted) return;
@@ -143,6 +143,17 @@ export function useInstallationApproval(
         });
         if (abort.signal.aborted) return;
         setOperationId(current.prepared.operationId);
+        validateOwnerApproval({
+          reviewed,
+          response: current.prepared,
+          now: Effect.runSync(DateTime.now),
+        });
+        const confirmed = await requestConfirmation();
+        if (abort.signal.aborted) return;
+        if (!confirmed) {
+          setError(true);
+          return;
+        }
         validateOwnerApproval({
           reviewed,
           response: current.prepared,

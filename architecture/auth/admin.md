@@ -29,6 +29,10 @@ Permissions are a fixed protocol-owned map, not editable database roles.
 
 Only implemented permissions are defined.
 
+Feedback adds `feedback:read` for all active roles and `feedback:manage` for the
+owner only. List/detail routes and atomic status changes are described in
+[feedback](../feedback.md).
+
 The sidebar's all-role member action opens Team; mutation controls remain owner-only. Logout uses
 `DELETE /auth/platform/logout` with `PlatformSessionAuthorization`, exact-origin
 protection and the existing session-revocation workflow/cookie clearing.

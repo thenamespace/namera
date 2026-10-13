@@ -25,7 +25,7 @@ import { isChainOperationEnabled } from "@/lib/chain-availability";
 import { isOneClawAccount } from "@/lib/session-owner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-import { ManagedReviewDialog } from "./managed-review-dialog";
+import { SessionKeyReviewDialog } from "./managed-review-dialog";
 import { recoverSponsoredApproval } from "./recovery";
 import { useInstallationApproval } from "./use-approval";
 
@@ -157,7 +157,7 @@ function Installation({
           <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>
             <div className="shrink-0">
               <Button
-                variant={kind === "uninstall" ? "danger" : "tertiary"}
+                variant={kind === "uninstall" ? "danger-soft" : "tertiary"}
                 size="sm"
                 isPending={approval.pending || waitingForConfirmation}
                 isDisabled={
@@ -173,17 +173,15 @@ function Installation({
                 onPress={approve}
               >
                 {approval.pending
-                  ? "Approving…"
+                  ? kind === "uninstall"
+                    ? "Revoking…"
+                    : "Approving…"
                   : waitingForConfirmation
                     ? "Waiting…"
-                    : approval.error || resumable
-                      ? kind === "uninstall"
-                        ? "Retry removal"
-                        : "Retry approval"
-                      : kind === "uninstall"
-                        ? isOneClawAccount(session.wallet)
-                          ? "Remove with 1Claw"
-                          : "Remove with passkey"
+                    : kind === "uninstall"
+                      ? "Revoke"
+                      : approval.error || resumable
+                        ? "Retry approval"
                         : "Approve"}
               </Button>
             </div>
@@ -219,14 +217,13 @@ function Installation({
           onTerminal={finish}
         />
       ) : null}
-      {kind === "uninstall" ? (
-        <ManagedReviewDialog
-          session={session}
-          installation={installation}
-          isOpen={approval.reviewOpen}
-          confirm={approval.confirm}
-        />
-      ) : null}
+      <SessionKeyReviewDialog
+        session={session}
+        installation={installation}
+        kind={kind}
+        isOpen={approval.reviewOpen}
+        confirm={approval.confirm}
+      />
     </article>
   );
 }

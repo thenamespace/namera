@@ -388,6 +388,30 @@ replay, expiry and lease transitions. Application routes and the scoped server
 worker use this ledger for owner approval and recovery; see
 [session keys](../wallets/session-keys.md) and [test lanes](../engineering/testing.md).
 
+## `core.wallet_operation`
+
+The owner transaction ledger stores the actor, organization, wallet,
+chain, kind, scoped idempotency key, request hash, status, approval expiry, leases,
+transaction hash and completion timestamps. Its versioned JSON contains an optional legacy primary name,
+pinned public owner, prepared envelope and nullable signed envelope; these are
+transaction recovery records, not an identity projection. New operations use kind
+`transaction` with no name; legacy `set-primary-name` rows remain recoverable.
+Migration `20261013185757_wallet-transactions` expands the kind constraint.
+
+New preparations explicitly store `broadcastAttempted: false`. A leased atomic
+write sets it to true before RPC; absence on legacy rows means unknown history,
+not proof of no broadcast. `submissionBlocked` stops sending while retaining
+receipt recovery after an uncertain prior attempt's rejection. Both are optional
+JSON fields, preserving decoding of existing operations.
+
+Signature acceptance and receipt/rejection transitions require the scoped live
+lease. Confirmed rows require a transaction hash; failed rows may omit one only
+for pre-inclusion failure. Terminal rows require `finished_at` and no lease.
+Signed-envelope binding and the unique active wallet/chain constraint remain
+unchanged. Migration `20261013172627_wallet-operation-rejection` relaxes only the
+failed-row receipt requirement. See [owner transactions](../wallets/transactions.md) for billing,
+audit, rejection evidence and conservative legacy recovery.
+
 ## `core.session_key_grant`
 
 Connects an actor to a session key. API-key and OAuth principals can only use delegated authority through an active grant; the session-key record alone is not actor authorization.
@@ -685,6 +709,28 @@ Auditable, idempotent signature attempt. `data` is a discriminated message or ty
 - (`organization_id`, `wallet_id`, `created_at`).
 - (`organization_id`, `session_key_id`, `status`, `created_at`).
 - (`organization_id`, `actor_id`, `created_at`).
+
+## `core.wallet_signature_operation`
+
+Separate owner-approval ledger; delegated `signature_operation` keeps its
+mandatory session/grant constraints unchanged. Added by the
+`20261013195447_wallet-signatures` migration.
+
+- UUIDv7 `id`, tenant/actor/wallet/signing-key IDs and timestamps.
+- `idempotency_key` is unique per tenant/actor; `request_hash`, JSONB
+  discriminated `request` and `owner_binding` pin the reviewed payload and owner.
+- `expires_at` bounds preparation; `status` is `prepared` or `succeeded`.
+- `encrypted_result` and `succeeded_at` must both be absent while prepared
+  and present after success. Result encryption is purpose-bound to the
+  organization, actor, operation and request hash.
+- `lease_token` and `lease_expires_at` must both be absent or both present
+  on a prepared row. Claims require an unexpired preparation and absent/expired
+  lease; success requires the current live lease and clears it.
+- Restrictive composite tenant FKs bind actor, wallet and signing key; the
+  organization FK is also restrictive. Owner binding is checked by application.
+- Success and its audit event share a transaction, as do preparation and its audit.
+  A failed completion releases only its own lease. Expired rows cannot complete;
+  there is no recovery worker or automatic retention deletion for this ledger.
 
 ## Why submissions and executions are separate
 

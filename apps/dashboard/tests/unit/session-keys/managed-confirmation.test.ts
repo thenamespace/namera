@@ -20,11 +20,22 @@ const fixture = () => ({
 
 describe("managed-owner approval consent", () => {
   beforeEach(() => validate.mockReset());
-  it("approves installation after validation without a second confirmation", async () => {
+  it("waits for installation confirmation before approving", async () => {
     const input = { ...fixture(), kind: "install" as const };
-    await expect(confirmManagedApproval(input)).resolves.toBe(true);
-    expect(input.requestConfirmation).not.toHaveBeenCalled();
+    let answer!: (confirmed: boolean) => void;
+    input.requestConfirmation.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const result = confirmManagedApproval(input);
+    expect(input.requestConfirmation).toHaveBeenCalledOnce();
+    expect(input.approve).not.toHaveBeenCalled();
     expect(validate).toHaveBeenCalledTimes(1);
+    answer(true);
+    await expect(result).resolves.toBe(true);
+    expect(validate).toHaveBeenCalledTimes(2);
     expect(input.approve).toHaveBeenCalledExactlyOnceWith({ operationId });
     expect(validate.mock.invocationCallOrder[0]).toBeLessThan(
       Number(input.approve.mock.invocationCallOrder[0]),
@@ -61,12 +72,15 @@ describe("managed-owner approval consent", () => {
       Number(input.approve.mock.invocationCallOrder[0]),
     );
   });
-  it("does not sign when the user cancels", async () => {
-    const input = fixture();
-    input.requestConfirmation.mockResolvedValue(false);
-    await expect(confirmManagedApproval(input)).resolves.toBe(false);
-    expect(input.approve).not.toHaveBeenCalled();
-  });
+  it.each(["install", "uninstall"] as const)(
+    "does not sign %s when the user cancels",
+    async (kind) => {
+      const input = { ...fixture(), kind };
+      input.requestConfirmation.mockResolvedValue(false);
+      await expect(confirmManagedApproval(input)).resolves.toBe(false);
+      expect(input.approve).not.toHaveBeenCalled();
+    },
+  );
   it("does not sign after navigating away during confirmation", async () => {
     const input = fixture();
     const controller = new AbortController();

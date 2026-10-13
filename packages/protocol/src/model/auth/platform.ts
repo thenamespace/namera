@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import { Email, UserId } from "#/common/index";
 
+import { FeedbackStatus } from "../feedback.js";
 import { UserMetadata } from "./core/user.js";
 
 export const PlatformRole = Schema.Literals(["owner", "operator", "viewer"]);
@@ -9,6 +10,8 @@ export type PlatformRole = typeof PlatformRole.Type;
 export const PlatformAssignableRole = Schema.Literals(["operator", "viewer"]);
 export const PlatformMemberStatus = Schema.Literals(["active", "suspended", "removed"]);
 export const PlatformPermission = Schema.Literals([
+  "feedback:read",
+  "feedback:manage",
   "catalog:read",
   "catalog:manage",
   "overview:read",
@@ -24,6 +27,8 @@ export type PlatformPermission = typeof PlatformPermission.Type;
 
 export const platformPermissions: Readonly<Record<PlatformRole, readonly PlatformPermission[]>> = {
   owner: [
+    "feedback:read",
+    "feedback:manage",
     "catalog:read",
     "catalog:manage",
     "overview:read",
@@ -36,6 +41,7 @@ export const platformPermissions: Readonly<Record<PlatformRole, readonly Platfor
     "waitlist:accept",
   ],
   operator: [
+    "feedback:read",
     "team:read",
     "catalog:read",
     "overview:read",
@@ -44,7 +50,14 @@ export const platformPermissions: Readonly<Record<PlatformRole, readonly Platfor
     "waitlist:read",
     "waitlist:accept",
   ],
-  viewer: ["team:read", "catalog:read", "overview:read", "invites:read", "waitlist:read"],
+  viewer: [
+    "feedback:read",
+    "team:read",
+    "catalog:read",
+    "overview:read",
+    "invites:read",
+    "waitlist:read",
+  ],
 };
 
 export const PlatformMember = Schema.Struct({
@@ -77,6 +90,13 @@ export const PlatformInvitation = Schema.Struct({
 export type PlatformInvitation = typeof PlatformInvitation.Type;
 
 export const PlatformEventData = Schema.Union([
+  Schema.Struct({
+    version: Schema.Literal(1),
+    type: Schema.Literal("feedback.status-changed"),
+    feedbackId: Schema.String,
+    previousStatus: FeedbackStatus,
+    status: FeedbackStatus,
+  }),
   Schema.Struct({
     version: Schema.Literal(1),
     type: Schema.Literal("catalog.imported"),

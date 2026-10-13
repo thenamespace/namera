@@ -17,6 +17,8 @@ export default defineConfig({
     index: "src/index.ts",
     chains: "src/chains/index.ts",
     "session-review": "src/sessions/review.ts",
+    "identity-review": "src/identity/review.ts",
+    "signature-review": "src/signing/review.ts",
   },
   publint: "ci-only",
   unbundle: true,

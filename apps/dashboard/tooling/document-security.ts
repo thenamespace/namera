@@ -16,7 +16,7 @@ export const documentSecurity = (apiUrl: string) => {
     "font-src 'self'",
     "manifest-src 'self'",
     "img-src 'self' https: data: blob:",
-    `connect-src 'self' ${api.origin} https://t.namera.ai`,
+    `connect-src 'self' ${api.origin} https://t.namera.ai https://metadata.namespace.ninja`,
     "form-action 'self'",
   ].join("; ");
   const headers = {

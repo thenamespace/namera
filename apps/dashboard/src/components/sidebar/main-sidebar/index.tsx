@@ -1,7 +1,9 @@
-import type { PropsWithChildren } from "react";
+import { useCallback, useState, type PropsWithChildren } from "react";
 
 import { Sidebar } from "@namera-ai/ui";
 
+import { FeedbackDialog } from "@/components/feedback/dialog";
+import { FeedbackSidebarFooter } from "@/components/feedback/sidebar-footer";
 import { DashboardShellContext } from "@/components/page/route-state";
 
 import { ResponsiveSidebar } from "../responsive-sidebar";
@@ -12,6 +14,9 @@ import { SidebarHeader } from "./header";
 import { primaryGroupItems } from "./primary";
 
 export const AppSidebar = ({ children }: PropsWithChildren) => {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const openFeedback = useCallback(() => setFeedbackOpen(true), []);
+  const closeFeedback = useCallback(() => setFeedbackOpen(false), []);
   return (
     <Sidebar.Provider variant="inset" collapsible="offcanvas">
       <ResponsiveSidebar>
@@ -21,8 +26,10 @@ export const AppSidebar = ({ children }: PropsWithChildren) => {
           <SidebarGroup {...coreGroupItems} />
           <SidebarGroup {...adminGroupItems} />
         </Sidebar.Content>
+        <FeedbackSidebarFooter onOpen={openFeedback} />
       </ResponsiveSidebar>
       <DashboardShellContext.Provider value={true}>{children}</DashboardShellContext.Provider>
+      {feedbackOpen ? <FeedbackDialog onClose={closeFeedback} /> : null}
     </Sidebar.Provider>
   );
 };

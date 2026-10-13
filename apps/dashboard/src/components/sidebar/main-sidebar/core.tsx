@@ -37,6 +37,14 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       tooltip: { text: "recipes" },
     },
     {
+      id: "identity",
+      icon: ShieldUserIcon,
+      label: "Identity",
+      textValue: "Identity",
+      href: "/identity",
+      tooltip: { text: "identity" },
+    },
+    {
       id: "activity",
       icon: Activity02Icon,
       label: "Activity",

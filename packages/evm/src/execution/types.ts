@@ -1,6 +1,7 @@
 import type { Effect, Option } from "effect";
 
 import type {
+  WalletTransactionError,
   EvmExecutionError,
   EvmExecutionReceipt,
   EvmExecutionSponsorship,
@@ -60,6 +61,9 @@ export type WaitForEvmExecutionReceiptInput = GetEvmExecutionReceiptInput & {
 type EvmExecutionFailure = EvmExecutionError | UnsupportedChainError;
 
 export interface EvmExecutionService {
+  readonly checkFunding: (
+    prepared: EvmPreparedExecution,
+  ) => Effect.Effect<void, WalletTransactionError>;
   readonly sessionSigningMessage: (
     input: SignEvmSessionExecutionInput,
   ) => Effect.Effect<Hex, EvmExecutionFailure>;

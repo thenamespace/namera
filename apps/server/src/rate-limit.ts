@@ -7,6 +7,9 @@ import { RateLimitExceeded } from "@namera-ai/protocol";
 import { rateLimitRejections } from "@namera-ai/telemetry";
 
 export const rateLimitPolicy = {
+  feedback: {
+    byUser: { limit: 10, window: Duration.hours(1), algorithm: "fixed-window" },
+  },
   managedWallet: {
     createByOrganization: { limit: 20, window: Duration.hours(1), algorithm: "fixed-window" },
   },
@@ -59,6 +62,11 @@ export const rateLimitPolicy = {
       window: Duration.minutes(1),
       algorithm: "token-bucket",
     },
+  },
+  walletSignature: { limit: 60, window: Duration.minutes(1), algorithm: "token-bucket" },
+  identity: {
+    reads: { limit: 120, window: Duration.minutes(1), algorithm: "token-bucket" },
+    writes: { limit: 20, window: Duration.minutes(1), algorithm: "token-bucket" },
   },
   invitation: {
     createByOrganization: {

@@ -1,5 +1,6 @@
 import {
   DashboardSquare01Icon,
+  Comment01Icon,
   InboxIcon,
   Key01Icon,
   SourceCodeIcon,
@@ -9,7 +10,10 @@ import {
 export const navigationGroups = [
   {
     label: "Primary",
-    items: [{ label: "Overview", href: "/", icon: DashboardSquare01Icon }],
+    items: [
+      { label: "Overview", href: "/", icon: DashboardSquare01Icon },
+      { label: "Feedback", href: "/feedback", icon: Comment01Icon },
+    ],
   },
   {
     label: "Access",

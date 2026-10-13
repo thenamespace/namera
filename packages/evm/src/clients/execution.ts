@@ -13,7 +13,7 @@ import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 
 type UserOperationStatusRpcSchema = {
-  Method: "rundler_getUserOperationStatus";
+  Method: "eth_getUserOperationByHash";
   Parameters: [`0x${string}`];
   ReturnType: unknown;
 };
@@ -25,7 +25,7 @@ export type ExecutionClients = {
   readonly bundlerClient: BundlerClient;
   readonly statusClient: {
     readonly request: (parameters: {
-      readonly method: "rundler_getUserOperationStatus";
+      readonly method: "eth_getUserOperationByHash";
       readonly params: [`0x${string}`];
     }) => Promise<unknown>;
   };

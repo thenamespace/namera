@@ -1,4 +1,5 @@
 export * from "./database.js";
+export * from "./feedback.js";
 export * from "./auth.js";
 export * from "./billing.js";
 export * from "./chain.js";
@@ -10,6 +11,7 @@ export * from "./rate-limit.js";
 export * from "./session-key.js";
 export * from "./signature.js";
 export * from "./wallet.js";
+export * from "./identity.js";
 export * from "./wallet-key.js";
 export * from "./oauth.js";
 export * from "./google.js";
@@ -17,3 +19,7 @@ export * from "./platform.js";
 export * from "./provider-connection.js";
 export * from "./one-claw.js";
 export * from "./catalog.js";
+
+export * from "./wallet-transaction.js";
+
+export * from "./wallet-signature.js";

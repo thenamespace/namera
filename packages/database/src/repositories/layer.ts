@@ -37,6 +37,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   AdminOverviewRepository,
+  FeedbackRepository,
   AddressCatalogRepository,
   AddressCatalogEntryRepository,
   ContractInterfaceRepository,
@@ -48,6 +49,8 @@ import {
   SessionKeyRepository,
   SessionKeyInstallationRepository,
   SessionKeyOperationRepository,
+  WalletOperationRepository,
+  WalletSignatureOperationRepository,
   SessionKeyGrantRepository,
   SessionKeyPolicyReservationRepository,
   SessionKeyPolicyStateRepository,
@@ -102,6 +105,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    feedback: FeedbackRepository["Service"];
     catalog: AddressCatalogRepository["Service"];
     catalogEntry: AddressCatalogEntryRepository["Service"];
     contractInterface: ContractInterfaceRepository["Service"];
@@ -114,6 +118,8 @@ export interface RepositoryService {
     sessionKey: SessionKeyRepository["Service"];
     sessionKeyInstallation: SessionKeyInstallationRepository["Service"];
     sessionKeyOperation: SessionKeyOperationRepository["Service"];
+    walletOperation: WalletOperationRepository["Service"];
+    walletSignatureOperation: WalletSignatureOperationRepository["Service"];
     sessionKeyGrant: SessionKeyGrantRepository["Service"];
     sessionKeyPolicyReservation: SessionKeyPolicyReservationRepository["Service"];
     sessionKeyPolicyState: SessionKeyPolicyStateRepository["Service"];
@@ -138,6 +144,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const feedback = yield* FeedbackRepository;
       const catalog = yield* AddressCatalogRepository;
       const catalogEntry = yield* AddressCatalogEntryRepository;
       const contractInterface = yield* ContractInterfaceRepository;
@@ -181,6 +188,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const sessionKey = yield* SessionKeyRepository;
       const sessionKeyInstallation = yield* SessionKeyInstallationRepository;
       const sessionKeyOperation = yield* SessionKeyOperationRepository;
+      const walletOperation = yield* WalletOperationRepository;
+      const walletSignatureOperation = yield* WalletSignatureOperationRepository;
       const sessionKeyGrant = yield* SessionKeyGrantRepository;
       const execution = yield* ExecutionRepository;
       const executionSubmission = yield* ExecutionSubmissionRepository;
@@ -232,6 +241,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          feedback,
           catalog,
           catalogEntry,
           contractInterface,
@@ -244,6 +254,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           sessionKey,
           sessionKeyInstallation,
           sessionKeyOperation,
+          walletOperation,
+          walletSignatureOperation,
           sessionKeyGrant,
           sessionKeyPolicyReservation,
           sessionKeyPolicyState,
@@ -265,6 +277,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        FeedbackRepository.layer,
         AddressCatalogRepository.layer,
         AddressCatalogEntryRepository.layer,
         ContractInterfaceRepository.layer,
@@ -307,6 +320,8 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SessionKeyRepository.layer,
         SessionKeyInstallationRepository.layer,
         SessionKeyOperationRepository.layer,
+        WalletOperationRepository.layer,
+        WalletSignatureOperationRepository.layer,
         SessionKeyGrantRepository.layer,
         ExecutionRepository.layer,
         ExecutionSubmissionRepository.layer,

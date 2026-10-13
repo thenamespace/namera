@@ -1,0 +1,1 @@
+ALTER TABLE "billing"."meter_balance" DROP CONSTRAINT "billing_meter_balance_hard_limit_check", ADD CONSTRAINT "billing_meter_balance_hard_limit_check" CHECK ("hard_limit_amount" IS NULL OR ("hard_limit_amount" >= "included_amount" AND ("meter_key" = 'gas-sponsorship' OR "consumed_amount" + "reserved_amount" <= "hard_limit_amount")));

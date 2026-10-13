@@ -4,6 +4,8 @@ This directory is the canonical catalog for Namera's PostgreSQL data model. Feat
 
 ## Schemas
 
+Private product correspondence is documented in [feedback](feedback.md).
+
 Platform membership, team invitations and their audit events are documented in
 [platform administration](auth-platform.md).
 

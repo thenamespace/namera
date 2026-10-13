@@ -18,6 +18,7 @@ import { AnalyticsWorkerLayer } from "#/workers/analytics";
 import { BillingWorkerLayer } from "#/workers/billing";
 import { ExecutionWorkerLayer } from "#/workers/execution";
 import { SessionKeyWorkerLayer } from "#/workers/session-key";
+import { WalletOperationWorkerLayer } from "#/workers/wallet-operation";
 
 import { BillingStartupUpgrade } from "./billing-upgrade.js";
 
@@ -112,6 +113,22 @@ export const SessionKeyWorkerLive = Layer.unwrap(
     yield* BillingStartupUpgrade;
     const analytics = yield* ProductAnalytics;
     return SessionKeyWorkerLayer.pipe(
+      Layer.provide(
+        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
+      ),
+    );
+  }),
+).pipe(
+  Layer.provide(BillingStartupUpgrade.layer),
+  Layer.provide(ApplicationLive),
+  Layer.provide(ServicesLive),
+);
+
+export const WalletOperationWorkerLive = Layer.unwrap(
+  Effect.gen(function* () {
+    yield* BillingStartupUpgrade;
+    const analytics = yield* ProductAnalytics;
+    return WalletOperationWorkerLayer.pipe(
       Layer.provide(
         Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
       ),

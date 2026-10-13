@@ -12,6 +12,7 @@ import { systemRoles } from "#/migrations/data";
 import { runDatabaseMigrations } from "#/migrations/layer";
 import {
   account,
+  feedback,
   addressCatalog,
   addressCatalogEntry,
   contractInterface,
@@ -48,6 +49,8 @@ import {
   sessionKey,
   sessionKeyInstallation,
   sessionKeyOperation,
+  walletOperation,
+  walletSignatureOperation,
   sessionKeyGrant,
   sessionKeyPolicyReservation,
   sessionKeyPolicyState,
@@ -102,6 +105,7 @@ export class TestDatabase extends Context.Service<
       const database = yield* Database;
 
       const reset = Effect.fn("database.testDatabase.reset")(function* () {
+        yield* database.delete(feedback);
         yield* database.delete(addressCatalogEntry);
         yield* database.delete(addressCatalog);
         yield* database.delete(contractInterface);
@@ -141,6 +145,8 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(oauthAuthorizationRequest);
         yield* database.delete(oauthClient);
         yield* database.delete(sessionKeyOperation);
+        yield* database.delete(walletSignatureOperation);
+        yield* database.delete(walletOperation);
         yield* database.delete(sessionKeyInstallation);
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);

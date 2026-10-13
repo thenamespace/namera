@@ -2,6 +2,7 @@ export * from "./health.js";
 export * from "./auth/core/google.js";
 export * from "./execution.js";
 export * from "./ens.js";
+export * from "./identity.js";
 export * from "./api-key.js";
 export * from "./billing.js";
 export * from "./dashboard.js";
@@ -11,9 +12,14 @@ export * from "./session-key.js";
 export * from "./signature.js";
 export * from "./auth/index.js";
 export * from "./waitlist.js";
+export * from "./feedback.js";
 export * from "./platform.js";
 export * from "./beta-invite.js";
 export * from "./admin-waitlist.js";
 export * from "./admin-overview.js";
 export * from "./platform-session.js";
 export * from "./catalog.js";
+
+export * from "./wallet-transaction.js";
+
+export * from "./wallet-signature.js";

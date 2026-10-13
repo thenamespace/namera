@@ -26,6 +26,11 @@ not a portal callback URI.
 - `/waitlist`: Email/status filters, 25-row pagination and confirmed acceptance with an emailed invite.
 - `/invites`: Beta invite table, email/status filters, pagination, create and revoke dialogs.
 - `/team`: All-role admin members table; only the owner can invite, update roles, or remove members.
+- `/feedback`: Customer feedback with organization logos, message previews, status/category
+  filters and pagination. Every reader can open the detail page from the row menu;
+  only the owner can change statuses.
+- `/feedback/:feedbackId`: Complete feedback message, submitter and organization details,
+  with the same text-only status pills and icon-enhanced actions as the table.
 - `/catalog`: All-role catalog listing with name/symbol/address search, status/type
   filters, 25-row pagination and deployment details. Owner-only JSON uploads run a
   server dry-run before explicit confirmation; validation errors remain in the dialog.

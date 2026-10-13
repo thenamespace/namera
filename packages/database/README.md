@@ -343,6 +343,15 @@ the repository service remains centered on queries and transaction behavior. Bot
 the transaction context so confirmation can atomically settle policy state and
 create the successful execution.
 
+## Wallet owner operations
+
+`core.wallet_operation` is the durable owner-transaction ledger for Ethereum
+primary-name approvals. It stores prepared/signed envelopes, actor idempotency,
+fenced leases and receipts, with one active operation per account/chain. It does
+not store identities or mirror ENS records. See the
+[identity lifecycle](../../architecture/wallets/identity.md) for cross-ledger
+locking, owner approval and receipt reconciliation.
+
 ## Billing persistence
 
 The `billing` schema keeps plan state separate from organization identity:

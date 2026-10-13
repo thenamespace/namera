@@ -59,7 +59,12 @@ export const makeSubmitEvmExecution = (getClients: (chain: ChainData) => Executi
             : null;
         return new EvmExecutionError({
           code:
-            rpcError instanceof RpcRequestError && rejectionCodes.has(rpcError.code)
+            rpcError instanceof RpcRequestError &&
+            (rejectionCodes.has(rpcError.code) ||
+              (rpcError.code === -32000 &&
+                /^precheck failed: sender balance and deposit together is \d+ but must be at least \d+ to pay for this operation$/.test(
+                  rpcError.details,
+                )))
               ? "SUBMISSION_REJECTED"
               : "SUBMISSION_UNKNOWN",
           cause,

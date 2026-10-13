@@ -35,7 +35,28 @@ reconstruction, rejection before installation and after removal, changed-payload
 rejection, and the domain replay protections. Alchemy's time hook does not
 expire ERC-1271 signatures; see [onchain sessions](accounts/onchain-sessions.md).
 
+## Owner signing adapter
+
+`Evm.ownerSignatures.prepare/complete` reconstruct the stored account and reuse
+the message/EIP-712 digest schemas. Prepare uses a public-only owner and never
+signs. Passkey completion accepts an already verified WebAuthn assertion, checks
+its replay-safe challenge again, and packs the root entity envelope. Managed
+completion calls the reconstructed smart account's signer, not a raw EOA signer.
+
+Undeployed factory accounts return an ERC-6492 envelope containing factory,
+deployment calldata and the inner signature. Deployed accounts return their
+normal signature; existing ERC-6492 wrappers are not doubled. Unit coverage
+checks both account custodians in both deployment states using a read-only RPC
+substitute. No deployment transaction is sent by this adapter. External apps
+must support smart-account verification.
+
 ## ERC-1271-compatible verification
+
+The browser-safe `@namera-ai/evm/signature-review` entry exposes
+`ownerMessageChallenge` for independent WebAuthn message approval checks. It uses
+the same replay-safe domain/account salt as the owner adapter, without a signer
+or runtime provider configuration. The identity image flow checks this alongside
+the returned request, account, credential, RP and expiration before authentication.
 
 Verification is account-aware, not an EOA `recoverAddress` shortcut:
 

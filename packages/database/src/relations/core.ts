@@ -348,6 +348,19 @@ export const coreRelations = defineRelationsPart(schema, (r) => ({
       optional: false,
     }),
   },
+  walletSignatureOperation: {
+    // Owner approvals are scoped to the same tenant as their wallet and signing key.
+    wallet: r.one.wallet({
+      from: [r.walletSignatureOperation.walletId, r.walletSignatureOperation.organizationId],
+      to: [r.wallet.id, r.wallet.organizationId],
+      optional: false,
+    }),
+    signingKey: r.one.signingKey({
+      from: [r.walletSignatureOperation.signingKeyId, r.walletSignatureOperation.organizationId],
+      to: [r.signingKey.id, r.signingKey.organizationId],
+      optional: false,
+    }),
+  },
   sessionKeyPolicyState: {
     // Each policy-state record belongs to one organization.
     organization: r.one.organization({

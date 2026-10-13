@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Predicate } from "effect";
 
 import {
   AuthenticationError,
@@ -23,7 +23,16 @@ const reasonFromCause = (cause: unknown): EnsErrorReason => {
 export const toEnsError = (operation: EnsOperation, cause: unknown) =>
   new EnsError({
     operation,
-    reason: reasonFromCause(cause),
+    // SDK 1.0.13 returns the lookup promise without awaiting it, so its 404 catch is bypassed.
+    reason:
+      operation === "getSingleSubname" &&
+      Predicate.hasProperty(cause, "isAxiosError") &&
+      cause.isAxiosError === true &&
+      Predicate.hasProperty(cause, "response") &&
+      Predicate.hasProperty(cause.response, "status") &&
+      cause.response.status === 404
+        ? "NOT_FOUND"
+        : reasonFromCause(cause),
     cause,
   });
 

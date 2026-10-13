@@ -28,7 +28,7 @@ const program = Effect.gen(function* () {
   const ens = yield* Ens;
 
   yield* ens.createSubname({
-    parentName: "namera.eth",
+    parentName: "namera.id",
     label: "alice",
     owner: "0x0000000000000000000000000000000000000000",
     addresses: [
@@ -44,8 +44,13 @@ program.pipe(Effect.provide(Ens.layer));
 ```
 
 `Ens.layer` uses Namespace mainnet in every runtime environment. `EnsTestLayer`
-provides an in-memory deterministic substitute with resettable availability
-state for boundary tests.
+provides an in-memory deterministic substitute with resettable owner-filtered
+names, records and injected write failures for boundary tests.
+
+Single-name lookups normalize Namespace's missing-name 404 to `null`, including
+the rejected-promise behavior in SDK 1.0.13. Other provider failures remain errors.
+Adapter regression tests exercise the real SDK against a local HTTP fixture;
+they require no API key or external network.
 
 ## Commands
 

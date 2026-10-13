@@ -31,6 +31,8 @@ remain under [operations](../../architecture/operations/executions.md).
   registry remains declarative, generic state/reservation adapters live in
   `operations.ts`, and individual handlers live in `src/policy/policies/`.
 - `src/signatures/` — provider signature conversion for EVM validators.
+- `src/identity/` — Ethereum ENS forward/reverse resolution, registrar discovery
+  and fixed primary-name calls; browser-safe independent owner-operation review.
 - `src/sessions/` — onchain permission compilation and root-approved
   installation/removal preparation through `evm.sessions`.
 - `src/signing/` — smart-account message and EIP-712 signing and verification
@@ -46,7 +48,11 @@ remain under [operations](../../architecture/operations/executions.md).
 Browser consumers use `@namera-ai/evm/chains` for chain metadata and
 `@namera-ai/evm/session-review` for read-only owner approval review. Both expose
 the same implementations as the root entry without importing the server service,
-provider configuration, or test layers. The root entry remains the backend API.
+provider configuration, or test layers. `@namera-ai/evm/identity-review` provides
+read-only reconstruction and envelope validation for primary-name approvals.
+`@namera-ai/evm/signature-review` derives the owner message WebAuthn challenge for
+independent browser approval checks.
+The root entry remains the backend API.
 All entries preserve the `namera-source` development condition and built ESM exports.
 
 1. Put chain metadata and CAIP-2 lookup changes in `chains`; never scatter chain
@@ -143,8 +149,10 @@ verifies the account again, signs the exact prepared operation, and computes
 its deterministic hash. `submit` verifies that hash before and after sending
 the exact signed payload to Alchemy Rundler. `getReceipt` and `waitForReceipt` normalize
 confirmed receipts and return `Option.none` while a receipt is unavailable or a
-bounded wait expires. `getStatus` uses Rundler's lifecycle status method so
-reconciliation can distinguish unknown, pending, preconfirmed, and mined operations.
+bounded wait expires. `getStatus` uses Alchemy's supported
+`eth_getUserOperationByHash` lookup. A null result means unobserved, not rejected:
+the operation may still be pending or outside the provider's scan window. A found
+operation remains submitted until a matching receipt establishes its outcome.
 Rundler has no dedicated bulk receipt action, so background processing batches
 database claims and performs bounded concurrent lookups across their chains.
 

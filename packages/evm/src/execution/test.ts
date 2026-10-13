@@ -218,6 +218,7 @@ export const makeTestEvmExecutionService = (
         billing: input.prepared.billing,
       };
     }),
+    checkFunding: () => Effect.void,
     submit: Effect.fn("evm.execution.test.submit")((input) =>
       Effect.succeed({
         version: 1,

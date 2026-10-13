@@ -45,6 +45,10 @@ import { DashboardRoutes } from "#/routes/dashboard/index";
 import { PortfolioRoutes } from "#/routes/data/index";
 import { EnsRoutes } from "#/routes/ens";
 import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
+import { FeedbackRoutes, AdminFeedbackRoutes } from "#/routes/feedback";
+import { IdentityRoutes } from "#/routes/identity";
+import { WalletSignatureRoutes } from "#/routes/wallet-signature";
+import { WalletTransactionRoutes } from "#/routes/wallet-transaction";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 import { TestAuthToken, TestAuthorizationClientLayer } from "./auth.js";
@@ -114,6 +118,8 @@ export const makeTestServerLayer = (
     PlatformRoutes,
     BetaInviteRoutes,
     AdminWaitlistRoutes,
+    FeedbackRoutes,
+    AdminFeedbackRoutes,
     AdminOverviewRoutes,
     GoogleRoutes,
     ConnectedAccountRoutes,
@@ -124,6 +130,9 @@ export const makeTestServerLayer = (
     HealthRoutes,
     ExecutionRoutes,
     EnsRoutes,
+    IdentityRoutes,
+    WalletTransactionRoutes,
+    WalletSignatureRoutes,
     SessionKeyRoutes,
     SignatureRoutes,
     InvitationRoutes,

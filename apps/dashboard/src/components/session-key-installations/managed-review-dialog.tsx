@@ -1,94 +1,72 @@
-// oxlint-disable react-perf/jsx-no-new-function-as-prop
-import { Schema } from "effect";
-
+// oxlint-disable react-perf/jsx-no-new-function-as-prop, react-perf/jsx-no-new-array-as-prop, react-perf/jsx-no-jsx-as-prop
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
-import { EvmSessionPermission } from "@namera-ai/protocol/evm";
-import { Button, Modal, Typography } from "@namera-ai/ui";
 
-import { ChainDisplay, EvmAddressDisplay, WalletOwnerDisplay } from "@/components/display";
-import { onchainPermissionCatalog } from "@/components/policy/evm/onchain/catalog";
-import { OnchainPermissionSummary } from "@/components/policy/evm/onchain/summary";
+import {
+  ChainDisplay,
+  EvmAddressDisplay,
+  NamespaceDisplay,
+  WalletOwnerDisplay,
+} from "@/components/display";
+import { TransactionOverview } from "@/components/transaction-overview";
+import { isOneClawAccount } from "@/lib/session-owner";
 
-export function ManagedReviewDialog({
+export function SessionKeyReviewDialog({
   session,
   installation,
+  kind,
   isOpen,
   confirm,
 }: {
   session: SessionKeyResponse;
   installation: SessionKeyResponse["installations"][number];
+  kind: "install" | "uninstall";
   isOpen: boolean;
   confirm: (confirmed: boolean) => void;
 }) {
   const authorization = installation.authorization;
+  const removal = kind === "uninstall";
+  const managed = isOneClawAccount(session.wallet);
   return (
-    <Modal
+    <TransactionOverview
       isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) confirm(false);
-      }}
-    >
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog className="sm:max-w-lg">
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>Remove network access</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body className="grid gap-4">
-              <div className="grid gap-2">
-                <Typography.Paragraph size="sm">
-                  {session.wallet.metadata.name} · {session.metadata.name}
-                </Typography.Paragraph>
-                <WalletOwnerDisplay custody="namera-managed" provider="1claw" />
-                <ChainDisplay chainId={installation.chainId} />
-                <EvmAddressDisplay address={session.wallet.address} />
-                <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-                  Session signer <EvmAddressDisplay address={authorization.signerAddress} />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                {authorization.permissions.map((permission) => (
-                  <div key={JSON.stringify(Schema.encodeSync(EvmSessionPermission)(permission))}>
-                    <Typography.Paragraph size="sm" weight="medium">
-                      {onchainPermissionCatalog[permission.type].name}
-                    </Typography.Paragraph>
-                    <div className="text-sm text-muted">
-                      <OnchainPermissionSummary
-                        permission={Schema.encodeSync(EvmSessionPermission)(permission)}
-                      />
-                    </div>
-                  </div>
-                ))}
-                <Typography.Paragraph size="sm" color="muted">
-                  Starts{" "}
-                  {authorization.validAfter === 0
-                    ? "immediately"
-                    : new Date(authorization.validAfter * 1000).toLocaleString()}
-                  . Expires {new Date(authorization.validUntil * 1000).toLocaleString()}.
-                </Typography.Paragraph>
-                <Typography.Paragraph size="sm" color="muted">
-                  {authorization.allowSignatures
-                    ? "Signature authority is included. Onchain removal is required to revoke it."
-                    : "No onchain signature authority."}
-                </Typography.Paragraph>
-              </div>
-              <Typography.Paragraph size="sm" color="muted">
-                1Claw will sign the onchain removal. API access remains revoked while confirmation
-                is pending. Gas is sponsored within your workspace’s available allowance.
-              </Typography.Paragraph>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="tertiary" onPress={() => confirm(false)}>
-                Cancel
-              </Button>
-              <Button variant="danger" onPress={() => confirm(true)}>
-                Remove with 1Claw
-              </Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+      title={removal ? "Remove network access" : "Approve network access"}
+      description={
+        removal
+          ? `Remove ${session.metadata.name}’s onchain permissions for this network.`
+          : `Allow ${session.metadata.name} to use its configured permissions on this network.`
+      }
+      confirmText={removal ? "Confirm removal" : "Confirm and approve"}
+      confirmVariant={removal ? "danger" : "primary"}
+      onConfirm={() => confirm(true)}
+      onCancel={() => confirm(false)}
+      rows={[
+        { id: "account", key: "Account", value: session.wallet.metadata.name },
+        {
+          id: "namespace",
+          key: "Namespace",
+          value: <NamespaceDisplay namespace={session.wallet.namespace} />,
+        },
+        {
+          id: "owner",
+          key: "Owner",
+          value: managed ? (
+            <WalletOwnerDisplay custody="namera-managed" provider="1claw" />
+          ) : (
+            <WalletOwnerDisplay custody="local" />
+          ),
+        },
+        { id: "network", key: "Network", value: <ChainDisplay chainId={installation.chainId} /> },
+        {
+          id: "address",
+          key: "Account address",
+          value: <EvmAddressDisplay address={session.wallet.address} />,
+        },
+        {
+          id: "signer",
+          key: "Session signer",
+          value: <EvmAddressDisplay address={authorization.signerAddress} />,
+        },
+      ]}
+    />
   );
 }

@@ -45,6 +45,9 @@ import {
   WalletCreatedEventData,
   SigningKeyCreatedEventData,
   WalletUpdatedEventData,
+  IdentityChangedEventData,
+  WalletOperationEventData,
+  WalletSignatureEventData,
 } from "./wallet.js";
 
 const organizationEvent = <Fields extends Schema.Struct.Fields>(fields: Schema.Struct<Fields>) =>
@@ -63,6 +66,9 @@ export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const SigningKeyCreatedEvent = organizationEvent(SigningKeyCreatedEventData);
 export const WalletUpdatedEvent = organizationEvent(WalletUpdatedEventData);
+export const IdentityChangedEvent = organizationEvent(IdentityChangedEventData);
+export const WalletSignatureEvent = organizationEvent(WalletSignatureEventData);
+export const WalletOperationEvent = organizationEvent(WalletOperationEventData);
 export const SessionKeyCreatedEvent = organizationEvent(SessionKeyCreatedEventData);
 export const SessionKeyRevokedEvent = organizationEvent(SessionKeyRevokedEventData);
 export const SessionKeyOperationEvent = organizationEvent(SessionKeyOperationEventData);
@@ -94,6 +100,9 @@ export const OrganizationEvent = Schema.Union([
   WalletCreatedEvent,
   SigningKeyCreatedEvent,
   WalletUpdatedEvent,
+  IdentityChangedEvent,
+  WalletOperationEvent,
+  WalletSignatureEvent,
   SessionKeyCreatedEvent,
   SessionKeyRevokedEvent,
   SessionKeyOperationEvent,

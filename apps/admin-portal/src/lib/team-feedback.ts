@@ -3,6 +3,8 @@ import { Predicate } from "effect";
 import { toast } from "@namera-ai/ui";
 
 export function teamErrorMessage(error: unknown): string {
+  if (Predicate.isTagged(error, "FeedbackNotFoundError"))
+    return "This feedback is no longer available. Refresh the page.";
   if (Predicate.isTagged(error, "PlatformAuthError") && "code" in error) {
     switch (error.code) {
       case "MEMBER_ALREADY_EXISTS":

@@ -1,4 +1,5 @@
 export * from "./admin-overview.js";
+export * from "./feedback.js";
 export * from "./credentials.js";
 export * from "./provider-connections.js";
 export * from "./dashboard-overview.js";
@@ -10,9 +11,12 @@ export * from "./session-key-policy-state.js";
 export * from "./session-key.js";
 export * from "./session-key-installation.js";
 export * from "./session-key-operation.js";
+export * from "./wallet-operation.js";
 export * from "./signing-key.js";
 export * from "./signature-operation.js";
 export * from "./wallet.js";
 export * from "./catalog/catalog.js";
 export * from "./catalog/entry.js";
 export * from "./catalog/interface.js";
+
+export * from "./wallet-signature-operation.js";

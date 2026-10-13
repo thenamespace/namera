@@ -23,6 +23,8 @@ import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAccountsNewRouteImport } from './routes/_authenticated/accounts/new'
 import { Route as AuthenticatedCliAuthorizeRouteImport } from './routes/_authenticated/cli/authorize'
 import { Route as AuthenticatedExecutionExecutionIdRouteImport } from './routes/_authenticated/execution/$executionId'
+import { Route as AuthenticatedIdentityIndexRouteImport } from './routes/_authenticated/identity/index'
+import { Route as AuthenticatedIdentityNewRouteImport } from './routes/_authenticated/identity/new'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
 import { Route as AuthenticatedOauthAuthorizeRouteImport } from './routes/_authenticated/oauth/authorize'
 import { Route as AuthenticatedRecipesIndexRouteImport } from './routes/_authenticated/recipes/index'
@@ -40,6 +42,7 @@ import { Route as AuthenticatedAccountAccountIdOverviewRouteImport } from './rou
 import { Route as AuthenticatedAccountAccountIdSessionKeysRouteImport } from './routes/_authenticated/account/$accountId/session-keys'
 import { Route as AuthenticatedAccountAccountIdUsageRouteImport } from './routes/_authenticated/account/$accountId/usage'
 import { Route as AuthenticatedAccountsCreatedAccountIdRouteImport } from './routes/_authenticated/accounts/created/$accountId'
+import { Route as AuthenticatedIdentityAccountIdLabelRouteImport } from './routes/_authenticated/identity/$accountId/$label'
 import { Route as AuthenticatedSessionKeySessionKeyIdIndexRouteImport } from './routes/_authenticated/session-key/$sessionKeyId/index'
 import { Route as AuthenticatedSessionKeySessionKeyIdExecutionsRouteImport } from './routes/_authenticated/session-key/$sessionKeyId/executions'
 import { Route as AuthenticatedSessionKeySessionKeyIdOverviewRouteImport } from './routes/_authenticated/session-key/$sessionKeyId/overview'
@@ -125,6 +128,18 @@ const AuthenticatedExecutionExecutionIdRoute =
   AuthenticatedExecutionExecutionIdRouteImport.update({
     id: '/execution/$executionId',
     path: '/execution/$executionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIdentityIndexRoute =
+  AuthenticatedIdentityIndexRouteImport.update({
+    id: '/identity/',
+    path: '/identity/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIdentityNewRoute =
+  AuthenticatedIdentityNewRouteImport.update({
+    id: '/identity/new',
+    path: '/identity/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInvitationsInvitationIdRoute =
@@ -229,6 +244,12 @@ const AuthenticatedAccountsCreatedAccountIdRoute =
     path: '/accounts/created/$accountId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedIdentityAccountIdLabelRoute =
+  AuthenticatedIdentityAccountIdLabelRouteImport.update({
+    id: '/identity/$accountId/$label',
+    path: '/identity/$accountId/$label',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSessionKeySessionKeyIdIndexRoute =
   AuthenticatedSessionKeySessionKeyIdIndexRouteImport.update({
     id: '/',
@@ -316,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -325,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/identity/': typeof AuthenticatedIdentityIndexRoute
   '/recipes/': typeof AuthenticatedRecipesIndexRoute
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
@@ -332,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/accounts/created/$accountId': typeof AuthenticatedAccountsCreatedAccountIdRoute
+  '/identity/$accountId/$label': typeof AuthenticatedIdentityAccountIdLabelRoute
   '/session-key/$sessionKeyId/executions': typeof AuthenticatedSessionKeySessionKeyIdExecutionsRoute
   '/session-key/$sessionKeyId/overview': typeof AuthenticatedSessionKeySessionKeyIdOverviewRoute
   '/session-key/$sessionKeyId/policies': typeof AuthenticatedSessionKeySessionKeyIdPoliciesRoute
@@ -357,6 +381,7 @@ export interface FileRoutesByTo {
   '/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -366,6 +391,7 @@ export interface FileRoutesByTo {
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
+  '/identity': typeof AuthenticatedIdentityIndexRoute
   '/recipes': typeof AuthenticatedRecipesIndexRoute
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
   '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
@@ -373,6 +399,7 @@ export interface FileRoutesByTo {
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/accounts/created/$accountId': typeof AuthenticatedAccountsCreatedAccountIdRoute
+  '/identity/$accountId/$label': typeof AuthenticatedIdentityAccountIdLabelRoute
   '/session-key/$sessionKeyId/executions': typeof AuthenticatedSessionKeySessionKeyIdExecutionsRoute
   '/session-key/$sessionKeyId/overview': typeof AuthenticatedSessionKeySessionKeyIdOverviewRoute
   '/session-key/$sessionKeyId/policies': typeof AuthenticatedSessionKeySessionKeyIdPoliciesRoute
@@ -403,6 +430,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts/new': typeof AuthenticatedAccountsNewRoute
   '/_authenticated/cli/authorize': typeof AuthenticatedCliAuthorizeRoute
   '/_authenticated/execution/$executionId': typeof AuthenticatedExecutionExecutionIdRoute
+  '/_authenticated/identity/new': typeof AuthenticatedIdentityNewRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/_authenticated/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
   '/_authenticated/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
@@ -412,6 +440,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/_authenticated/identity/': typeof AuthenticatedIdentityIndexRoute
   '/_authenticated/recipes/': typeof AuthenticatedRecipesIndexRoute
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
   '/_authenticated/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
@@ -419,6 +448,7 @@ export interface FileRoutesById {
   '/_authenticated/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
   '/_authenticated/account/$accountId/usage': typeof AuthenticatedAccountAccountIdUsageRoute
   '/_authenticated/accounts/created/$accountId': typeof AuthenticatedAccountsCreatedAccountIdRoute
+  '/_authenticated/identity/$accountId/$label': typeof AuthenticatedIdentityAccountIdLabelRoute
   '/_authenticated/session-key/$sessionKeyId/executions': typeof AuthenticatedSessionKeySessionKeyIdExecutionsRoute
   '/_authenticated/session-key/$sessionKeyId/overview': typeof AuthenticatedSessionKeySessionKeyIdOverviewRoute
   '/_authenticated/session-key/$sessionKeyId/policies': typeof AuthenticatedSessionKeySessionKeyIdPoliciesRoute
@@ -449,6 +479,7 @@ export interface FileRouteTypes {
     | '/accounts/new'
     | '/cli/authorize'
     | '/execution/$executionId'
+    | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/recipes/$recipeId'
@@ -458,6 +489,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/workspace/new'
     | '/accounts/'
+    | '/identity/'
     | '/recipes/'
     | '/session-keys/'
     | '/account/$accountId/assets'
@@ -465,6 +497,7 @@ export interface FileRouteTypes {
     | '/account/$accountId/session-keys'
     | '/account/$accountId/usage'
     | '/accounts/created/$accountId'
+    | '/identity/$accountId/$label'
     | '/session-key/$sessionKeyId/executions'
     | '/session-key/$sessionKeyId/overview'
     | '/session-key/$sessionKeyId/policies'
@@ -490,6 +523,7 @@ export interface FileRouteTypes {
     | '/accounts/new'
     | '/cli/authorize'
     | '/execution/$executionId'
+    | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
     | '/recipes/$recipeId'
@@ -499,6 +533,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/workspace/new'
     | '/accounts'
+    | '/identity'
     | '/recipes'
     | '/session-keys'
     | '/account/$accountId/assets'
@@ -506,6 +541,7 @@ export interface FileRouteTypes {
     | '/account/$accountId/session-keys'
     | '/account/$accountId/usage'
     | '/accounts/created/$accountId'
+    | '/identity/$accountId/$label'
     | '/session-key/$sessionKeyId/executions'
     | '/session-key/$sessionKeyId/overview'
     | '/session-key/$sessionKeyId/policies'
@@ -535,6 +571,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/new'
     | '/_authenticated/cli/authorize'
     | '/_authenticated/execution/$executionId'
+    | '/_authenticated/identity/new'
     | '/_authenticated/invitations/$invitationId'
     | '/_authenticated/oauth/authorize'
     | '/_authenticated/recipes/$recipeId'
@@ -544,6 +581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/security'
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
+    | '/_authenticated/identity/'
     | '/_authenticated/recipes/'
     | '/_authenticated/session-keys/'
     | '/_authenticated/account/$accountId/assets'
@@ -551,6 +589,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/$accountId/session-keys'
     | '/_authenticated/account/$accountId/usage'
     | '/_authenticated/accounts/created/$accountId'
+    | '/_authenticated/identity/$accountId/$label'
     | '/_authenticated/session-key/$sessionKeyId/executions'
     | '/_authenticated/session-key/$sessionKeyId/overview'
     | '/_authenticated/session-key/$sessionKeyId/policies'
@@ -671,6 +710,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExecutionExecutionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/identity/': {
+      id: '/_authenticated/identity/'
+      path: '/identity'
+      fullPath: '/identity/'
+      preLoaderRoute: typeof AuthenticatedIdentityIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/identity/new': {
+      id: '/_authenticated/identity/new'
+      path: '/identity/new'
+      fullPath: '/identity/new'
+      preLoaderRoute: typeof AuthenticatedIdentityNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/invitations/$invitationId': {
       id: '/_authenticated/invitations/$invitationId'
       path: '/invitations/$invitationId'
@@ -788,6 +841,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts/created/$accountId'
       fullPath: '/accounts/created/$accountId'
       preLoaderRoute: typeof AuthenticatedAccountsCreatedAccountIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/identity/$accountId/$label': {
+      id: '/_authenticated/identity/$accountId/$label'
+      path: '/identity/$accountId/$label'
+      fullPath: '/identity/$accountId/$label'
+      preLoaderRoute: typeof AuthenticatedIdentityAccountIdLabelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/session-key/$sessionKeyId/': {
@@ -941,6 +1001,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsNewRoute: typeof AuthenticatedAccountsNewRoute
   AuthenticatedCliAuthorizeRoute: typeof AuthenticatedCliAuthorizeRoute
   AuthenticatedExecutionExecutionIdRoute: typeof AuthenticatedExecutionExecutionIdRoute
+  AuthenticatedIdentityNewRoute: typeof AuthenticatedIdentityNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
   AuthenticatedOauthAuthorizeRoute: typeof AuthenticatedOauthAuthorizeRoute
   AuthenticatedRecipesRecipeIdRoute: typeof AuthenticatedRecipesRecipeIdRoute
@@ -950,9 +1011,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
   AuthenticatedWorkspaceNewRoute: typeof AuthenticatedWorkspaceNewRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
+  AuthenticatedIdentityIndexRoute: typeof AuthenticatedIdentityIndexRoute
   AuthenticatedRecipesIndexRoute: typeof AuthenticatedRecipesIndexRoute
   AuthenticatedSessionKeysIndexRoute: typeof AuthenticatedSessionKeysIndexRoute
   AuthenticatedAccountsCreatedAccountIdRoute: typeof AuthenticatedAccountsCreatedAccountIdRoute
+  AuthenticatedIdentityAccountIdLabelRoute: typeof AuthenticatedIdentityAccountIdLabelRoute
   AuthenticatedSessionKeysCreatedSessionKeyIdRoute: typeof AuthenticatedSessionKeysCreatedSessionKeyIdRoute
   AuthenticatedSettingsWorkspaceApiKeysRoute: typeof AuthenticatedSettingsWorkspaceApiKeysRoute
   AuthenticatedSettingsWorkspaceBillingsRoute: typeof AuthenticatedSettingsWorkspaceBillingsRoute
@@ -975,6 +1038,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCliAuthorizeRoute: AuthenticatedCliAuthorizeRoute,
   AuthenticatedExecutionExecutionIdRoute:
     AuthenticatedExecutionExecutionIdRoute,
+  AuthenticatedIdentityNewRoute: AuthenticatedIdentityNewRoute,
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
   AuthenticatedOauthAuthorizeRoute: AuthenticatedOauthAuthorizeRoute,
@@ -986,10 +1050,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
   AuthenticatedWorkspaceNewRoute: AuthenticatedWorkspaceNewRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
+  AuthenticatedIdentityIndexRoute: AuthenticatedIdentityIndexRoute,
   AuthenticatedRecipesIndexRoute: AuthenticatedRecipesIndexRoute,
   AuthenticatedSessionKeysIndexRoute: AuthenticatedSessionKeysIndexRoute,
   AuthenticatedAccountsCreatedAccountIdRoute:
     AuthenticatedAccountsCreatedAccountIdRoute,
+  AuthenticatedIdentityAccountIdLabelRoute:
+    AuthenticatedIdentityAccountIdLabelRoute,
   AuthenticatedSessionKeysCreatedSessionKeyIdRoute:
     AuthenticatedSessionKeysCreatedSessionKeyIdRoute,
   AuthenticatedSettingsWorkspaceApiKeysRoute:

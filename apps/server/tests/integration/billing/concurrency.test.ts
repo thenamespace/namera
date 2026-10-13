@@ -19,6 +19,63 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
   "PostgreSQL billing concurrency",
   () => {
     layer(TestServerLayer)((it) => {
+      it.effect("settles concurrent gas overruns exactly once without reopening sponsorship", () =>
+        Effect.gen(function* () {
+          yield* resetTestState();
+          const client = yield* makeTestApiClient;
+          const { actor } = yield* signIn(client, testEmail("concurrent-gas-overrun@example.com"));
+          const organizationId = actor.organization.id;
+          const metering = yield* makeBillingMetering;
+          const repository = yield* Repository;
+          const expiresAt = DateTime.add(yield* DateTime.now, { minutes: 5 });
+          const reservation = yield* metering.reserve({
+            organizationId,
+            meterKey: "gas-sponsorship",
+            amount: 150_000n,
+            sourceType: "manual-adjustment",
+            sourceId: "concurrent-overrun",
+            expiresAt,
+          });
+          const events = yield* Effect.all(
+            Array.from({ length: 8 }, () =>
+              metering.settle({
+                organizationId,
+                reservationId: reservation.id,
+                amount: 3_050_000n,
+              }),
+            ),
+            { concurrency: 8 },
+          );
+          expect(new Set(events.map((event) => event?.id)).size).toBe(1);
+          expect(
+            yield* repository.billing.meterBalance.find(
+              organizationId,
+              reservation.periodId,
+              "gas-sponsorship",
+            ),
+          ).toMatchObject({
+            consumedAmount: 3_050_000n,
+            reservedAmount: 0n,
+            hardLimitAmount: 3_000_000n,
+          });
+          const admissions = yield* Effect.all(
+            Array.from({ length: 8 }, (_, index) =>
+              metering
+                .reserve({
+                  organizationId,
+                  meterKey: "gas-sponsorship",
+                  amount: 1n,
+                  sourceType: "manual-adjustment",
+                  sourceId: `after-overrun-${index}`,
+                  expiresAt,
+                })
+                .pipe(Effect.result),
+            ),
+            { concurrency: 8 },
+          );
+          expect(admissions.every(Result.isFailure)).toBe(true);
+        }),
+      );
       it.effect("settles concurrent passkey creation retries once at the wallet cap", () =>
         Effect.gen(function* () {
           yield* resetTestState();

@@ -77,6 +77,8 @@ application contracts are the extension point for future chain families.
 ### Wallet domain
 
 - [Accounts and smart wallets](wallets/accounts.md)
+- [Account identities](wallets/identity.md)
+- [Owner wallet transactions](wallets/transactions.md)
 - [Wallet-key providers](wallets/wallet-keys.md)
 - [Session keys and grants](wallets/session-keys.md)
 - [EVM namespace adapter](evm/README.md)
@@ -93,6 +95,8 @@ application contracts are the extension point for future chain families.
 - [Signatures and verification](operations/signatures.md)
 
 ### Product services and clients
+
+- [Product feedback](feedback.md)
 
 - [Billing and entitlements](billing/README.md)
 - [Billing margin model](billing/pricing.md)
