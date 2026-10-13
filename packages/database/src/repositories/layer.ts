@@ -37,6 +37,7 @@ import {
 } from "#/repositories/billing/index";
 import {
   AdminOverviewRepository,
+  FeedbackRepository,
   AddressCatalogRepository,
   AddressCatalogEntryRepository,
   ContractInterfaceRepository,
@@ -102,6 +103,7 @@ export interface RepositoryService {
     usage: BillingUsageRepository["Service"];
   };
   core: {
+    feedback: FeedbackRepository["Service"];
     catalog: AddressCatalogRepository["Service"];
     catalogEntry: AddressCatalogEntryRepository["Service"];
     contractInterface: ContractInterfaceRepository["Service"];
@@ -138,6 +140,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Repository,
     Effect.gen(function* () {
       const actor = yield* ActorRepository;
+      const feedback = yield* FeedbackRepository;
       const catalog = yield* AddressCatalogRepository;
       const catalogEntry = yield* AddressCatalogEntryRepository;
       const contractInterface = yield* ContractInterfaceRepository;
@@ -232,6 +235,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           usage: billingUsage,
         },
         core: {
+          feedback,
           catalog,
           catalogEntry,
           contractInterface,
@@ -265,6 +269,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
     Layer.provide(
       Layer.mergeAll(
         ActorRepository.layer,
+        FeedbackRepository.layer,
         AddressCatalogRepository.layer,
         AddressCatalogEntryRepository.layer,
         ContractInterfaceRepository.layer,

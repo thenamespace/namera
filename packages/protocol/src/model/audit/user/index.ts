@@ -45,6 +45,12 @@ export const NotificationPreferenceUpdatedEventV1 = UserEventCommon.mapFields(
 );
 
 export const UserEvent = Schema.Union([
+  UserEventCommon.mapFields(
+    Struct.assign({
+      event: Schema.Literal("feedback.created"),
+      data: Schema.Struct({ version: Schema.Literal(1), feedbackId: Schema.String }),
+    }),
+  ),
   UserEventCommon.mapFields(Struct.assign(UserAccountChangedEventData.fields)),
   UserCreatedEvent,
   UserSignedInEvent,

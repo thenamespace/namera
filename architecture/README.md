@@ -94,6 +94,8 @@ application contracts are the extension point for future chain families.
 
 ### Product services and clients
 
+- [Product feedback](feedback.md)
+
 - [Billing and entitlements](billing/README.md)
 - [Billing margin model](billing/pricing.md)
 - [Notifications](notifications/README.md)

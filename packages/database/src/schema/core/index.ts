@@ -1,4 +1,5 @@
 export * from "./common.js";
+export * from "./feedback.js";
 export * from "./catalog/index.js";
 export * from "./credentials.js";
 export * from "./provider-connections.js";

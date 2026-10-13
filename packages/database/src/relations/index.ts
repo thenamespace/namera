@@ -7,6 +7,7 @@ import { authRelations } from "./auth.js";
 import { billingRelations } from "./billing.js";
 import { catalogRelations } from "./catalog.js";
 import { coreRelations } from "./core.js";
+import { feedbackRelations } from "./feedback.js";
 import { jobRelations } from "./jobs.js";
 import { notificationRelations } from "./notification.js";
 import { oauthRelations } from "./oauth.js";
@@ -23,6 +24,7 @@ export const relations = {
   ...billingRelations,
   ...coreRelations,
   ...catalogRelations,
+  ...feedbackRelations,
   ...jobRelations,
   ...notificationRelations,
 };

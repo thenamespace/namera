@@ -1,4 +1,5 @@
 export * from "./database.js";
+export * from "./feedback.js";
 export * from "./auth.js";
 export * from "./billing.js";
 export * from "./chain.js";

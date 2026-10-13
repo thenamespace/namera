@@ -32,6 +32,7 @@ import { DashboardRoutes } from "#/routes/dashboard/index";
 import { PortfolioRoutes } from "#/routes/data/index";
 import { EnsRoutes } from "#/routes/ens";
 import { ExecutionRoutes, SignatureRoutes } from "#/routes/execution/index";
+import { FeedbackRoutes, AdminFeedbackRoutes } from "#/routes/feedback";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
 const ApiHandlers = Layer.mergeAll(
@@ -40,6 +41,8 @@ const ApiHandlers = Layer.mergeAll(
   PlatformRoutes,
   BetaInviteRoutes,
   AdminWaitlistRoutes,
+  FeedbackRoutes,
+  AdminFeedbackRoutes,
   AdminOverviewRoutes,
   GoogleRoutes,
   ConnectedAccountRoutes,

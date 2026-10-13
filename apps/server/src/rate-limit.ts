@@ -7,6 +7,9 @@ import { RateLimitExceeded } from "@namera-ai/protocol";
 import { rateLimitRejections } from "@namera-ai/telemetry";
 
 export const rateLimitPolicy = {
+  feedback: {
+    byUser: { limit: 10, window: Duration.hours(1), algorithm: "fixed-window" },
+  },
   managedWallet: {
     createByOrganization: { limit: 20, window: Duration.hours(1), algorithm: "fixed-window" },
   },

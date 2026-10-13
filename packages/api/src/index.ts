@@ -2,6 +2,8 @@ import { HttpApi, OpenApi } from "effect/http-api";
 
 import {
   CatalogGroup,
+  FeedbackGroup,
+  AdminFeedbackGroup,
   AdminCatalogGroup,
   PlatformGroup,
   PlatformSessionGroup,
@@ -40,6 +42,8 @@ export * from "./middlewares/index.js";
 export class NameraApi extends HttpApi.make("NameraAPI")
   .add(
     CatalogGroup,
+    FeedbackGroup,
+    AdminFeedbackGroup,
     AdminCatalogGroup,
     PlatformGroup,
     PlatformSessionGroup,
