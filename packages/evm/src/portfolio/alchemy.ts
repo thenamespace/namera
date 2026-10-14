@@ -56,11 +56,6 @@ const pageSchema = Schema.Struct({
   ),
 });
 
-const unavailable = () =>
-  new EvmPortfolioError({
-    code: "PROVIDER_UNAVAILABLE",
-    cause: new Error("Alchemy portfolio unavailable"),
-  });
 const textOrNull = (value: string | null | undefined) => value?.trim() || null;
 
 export const makeAlchemyPortfolioService = (
@@ -90,13 +85,21 @@ export const makeAlchemyPortfolioService = (
         }),
       );
       const response = yield* httpClient.execute(request);
-      if (response.status !== 200) return yield* unavailable();
+      if (response.status !== 200)
+        return yield* new EvmPortfolioError({
+          code: "PROVIDER_UNAVAILABLE",
+          cause: new Error("Alchemy portfolio unavailable"),
+        });
       const body = yield* response.json.pipe(
         Effect.flatMap(Schema.decodeUnknownEffect(pageSchema)),
       );
       for (const failure of body.error?.partialErrors ?? []) {
         const chain = networks.get(failure.network);
-        if (!chain) return yield* unavailable();
+        if (!chain)
+          return yield* new EvmPortfolioError({
+            code: "PROVIDER_UNAVAILABLE",
+            cause: new Error("Alchemy portfolio unavailable"),
+          });
         failedChains.add(chain.chainId);
       }
       for (const token of body.data.tokens) {
@@ -106,7 +109,10 @@ export const makeAlchemyPortfolioService = (
           token.address.toLowerCase() !== address.toLowerCase() ||
           !/^0x[\da-f]+$/i.test(token.tokenBalance)
         )
-          return yield* unavailable();
+          return yield* new EvmPortfolioError({
+            code: "PROVIDER_UNAVAILABLE",
+            cause: new Error("Alchemy portfolio unavailable"),
+          });
         if (failedChains.has(chain.chainId) || BigInt(token.tokenBalance) === 0n) continue;
         const native = token.tokenAddress === null;
         const decimals =
@@ -168,11 +174,18 @@ export const makeAlchemyPortfolioService = (
             code: "PROVIDER_UNAVAILABLE" as const,
           })),
         };
-      if (cursors.has(next)) return yield* unavailable();
+      if (cursors.has(next))
+        return yield* new EvmPortfolioError({
+          code: "PROVIDER_UNAVAILABLE",
+          cause: new Error("Alchemy portfolio unavailable"),
+        });
       cursors.add(next);
       pageKey = next;
     }
-    return yield* unavailable();
+    return yield* new EvmPortfolioError({
+      code: "PROVIDER_UNAVAILABLE",
+      cause: new Error("Alchemy portfolio unavailable"),
+    });
   });
 
   return {
@@ -202,7 +215,10 @@ export const makeAlchemyPortfolioService = (
       const items = results.flatMap((result) => result.items);
       const partialFailures = results.flatMap((result) => result.partialFailures);
       if (selected.length > 0 && partialFailures.length === selected.length)
-        return yield* unavailable();
+        return yield* new EvmPortfolioError({
+          code: "PROVIDER_UNAVAILABLE",
+          cause: new Error("Alchemy portfolio unavailable"),
+        });
       return { items, partialFailures };
     }),
   };

@@ -25,7 +25,6 @@ import type { SignEvmInput } from "./types.js";
 const ClientData = Schema.fromJsonString(
   Schema.Struct({ type: Schema.Literal("webauthn.get"), challenge: Schema.String }),
 );
-const failure = (cause: unknown) => new EvmSignatureError({ code: "SIGNING_FAILED", cause });
 
 export const makeEvmOwnerSignatureService = (
   getClients: (chain: ChainData) => Pick<ExecutionClients, "publicClient">,
@@ -41,7 +40,7 @@ export const makeEvmOwnerSignatureService = (
       });
     const client = getClients(chain).publicClient;
     const account = yield* reconstructEvmAccount(input.account, client).pipe(
-      Effect.mapError(failure),
+      Effect.mapError((cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause })),
     );
     const digest = yield* digestEvmSignature(input);
     const challenge =
@@ -69,26 +68,38 @@ export const makeEvmOwnerSignatureService = (
       const signature = yield* Effect.gen(function* () {
         if (input.account.wallet.validatorType === "webauthn_p256") {
           if (!input.assertion || !challenge)
-            return yield* failure(new Error("Missing verified assertion"));
+            return yield* new EvmSignatureError({
+              code: "SIGNING_FAILED",
+              cause: new Error("Missing verified assertion"),
+            });
           const clientData = yield* Schema.decodeUnknownEffect(ClientData)(
             input.assertion.clientDataJSON,
-          ).pipe(Effect.mapError(failure));
+          ).pipe(
+            Effect.mapError((cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause })),
+          );
           if (clientData.challenge !== Base64Url.encode(hexToBytes(challenge)))
-            return yield* failure(new Error("Assertion payload mismatch"));
+            return yield* new EvmSignatureError({
+              code: "SIGNING_FAILED",
+              cause: new Error("Assertion payload mismatch"),
+            });
           const assertion = input.assertion;
           const entityId = input.account.wallet.entityId;
           return yield* Effect.try({
             try: () => packErc1271Signature(entityId, encodeVerifiedOwnerAssertion(assertion)),
-            catch: failure,
+            catch: (cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause }),
           });
         }
-        if (input.assertion) return yield* failure(new Error("Unexpected assertion"));
+        if (input.assertion)
+          return yield* new EvmSignatureError({
+            code: "SIGNING_FAILED",
+            cause: new Error("Unexpected assertion"),
+          });
         return yield* Effect.tryPromise({
           try: () =>
             input.type === "message"
               ? account.signMessage({ message: input.message })
               : account.signTypedData(input.typedData as unknown as TypedDataDefinition),
-          catch: failure,
+          catch: (cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause }),
         });
       });
       // External verifiers need the deployment envelope, not just the root signature.
@@ -102,7 +113,7 @@ export const makeEvmOwnerSignatureService = (
               : signature,
           );
         },
-        catch: failure,
+        catch: (cause) => new EvmSignatureError({ code: "SIGNING_FAILED", cause }),
       });
     }),
   };

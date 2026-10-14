@@ -16,7 +16,7 @@ export type WalletTransactionScope = {
   readonly actorId: ActorId;
   readonly walletId: WalletId;
 };
-export const transactionFailure = () => new WalletTransactionError({ code: "PREPARATION_FAILED" });
+
 export const makeTransactionOwner = Effect.gen(function* () {
   const repository = yield* Repository;
   const publicOwner = yield* makeLoadPublicSessionOwner;

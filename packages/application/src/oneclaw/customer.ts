@@ -20,8 +20,6 @@ import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-o
 
 import { Audit } from "#/audit/layer";
 
-const failure = () => new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
-
 export const makeEnsureOneClawCustomer = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
@@ -37,12 +35,16 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
     });
     const payload = yield* Schema.decodeUnknownEffect(
       Schema.fromJsonString(OneClawCustomerCredentialPayload),
-    )(cleartext).pipe(Effect.mapError(failure));
+    )(cleartext).pipe(
+      Effect.mapError(() => new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" })),
+    );
     return yield* Schema.decodeUnknownEffect(Schema.toType(OneClawCustomerAuthority))({
       connection,
       credential,
       payload,
-    }).pipe(Effect.mapError(failure));
+    }).pipe(
+      Effect.mapError(() => new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" })),
+    );
   });
 
   return Effect.fn("application.oneclaw.ensureCustomer")(function* (
@@ -98,15 +100,17 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       newlyReserved = connection !== undefined;
       connection ??= yield* connections.findByOrganization(organizationId, appId);
     }
-    if (!connection) return yield* failure();
+    if (!connection) return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
     if (connection.status === "disabled")
       return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
     const lease = { id: connection.id, organizationId, leaseToken: yield* crypto.randomToken() };
-    if (!(yield* connections.acquireLease(lease))) return yield* failure();
+    if (!(yield* connections.acquireLease(lease)))
+      return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
 
     const setup = Effect.gen(function* () {
       let current = yield* connections.findByOrganization(organizationId, appId);
-      if (!current || current.status === "disabled") return yield* failure();
+      if (!current || current.status === "disabled")
+        return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
       if (current.externalConnectionId === null) {
         const recovered = yield* claw.connections.findBySubject(current.data.oidcSubject);
         let remote;
@@ -116,7 +120,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
           if (!newlyReserved)
             return yield* new ProviderConnectionError({ code: "RECOVERY_AMBIGUOUS" });
           const organization = yield* repository.auth.organization.findById(organizationId);
-          if (!organization) return yield* failure();
+          if (!organization)
+            return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
           const subjectToken = yield* oidc.issue({
             organizationId,
             email: current.data.email,
@@ -136,7 +141,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
               externalConnectionId: identity.connectionId,
               customerId: identity.customerId,
             });
-            if (!updated) return yield* failure();
+            if (!updated)
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             yield* changed(updated, "identity");
             return updated;
           }),
@@ -144,7 +150,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       }
       const externalConnectionId = current.externalConnectionId;
       const customerId = current.data.customerId;
-      if (!externalConnectionId || !customerId) return yield* failure();
+      if (!externalConnectionId || !customerId)
+        return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
 
       if (current.data.bootstrapCompletedAt === null) {
         if (current.data.bootstrapAttemptedAt !== undefined)
@@ -152,7 +159,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
         const beforeBootstrap = current;
         yield* transaction.run(
           Effect.gen(function* () {
-            if (!(yield* connections.startBootstrap(lease))) return yield* failure();
+            if (!(yield* connections.startBootstrap(lease)))
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             yield* changed(beforeBootstrap, "bootstrap_started");
           }),
         );
@@ -160,7 +168,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
         current = yield* transaction.run(
           Effect.gen(function* () {
             const updated = yield* connections.recordBootstrap(lease);
-            if (!updated) return yield* failure();
+            if (!updated)
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             yield* changed(updated, "bootstrapped");
             return updated;
           }),
@@ -174,7 +183,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
               current.customerCredentialId,
               organizationId,
             );
-      if (credential && credential.type !== "1claw-customer") return yield* failure();
+      if (credential && credential.type !== "1claw-customer")
+        return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
       // Authenticate the existing envelope before renewing it; metadata alone is not authority.
       if (credential) yield* decodeAuthority(current, credential);
       const now = yield* DateTime.now;
@@ -229,12 +239,13 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
                   expiresAt: redeemed.expiresAt,
                   encryptedPayload,
                 });
-            if (!saved) return yield* failure();
+            if (!saved)
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             if (
               !previous &&
               !(yield* connections.attachCustomerCredential({ ...lease, credentialId: id }))
             )
-              return yield* failure();
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             yield* audit.organization(
               {
                 organizationId,
@@ -251,7 +262,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
         );
       }
       current = yield* connections.findByOrganization(organizationId, appId);
-      if (!current || !credential || credential.type !== "1claw-customer") return yield* failure();
+      if (!current || !credential || credential.type !== "1claw-customer")
+        return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
       let authority = yield* decodeAuthority(current, credential);
       yield* claw.customers.getIdentity(authority);
       if (current.status !== "ready") {
@@ -259,7 +271,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
         current = yield* transaction.run(
           Effect.gen(function* () {
             const ready = yield* connections.markReady(lease);
-            if (!ready) return yield* failure();
+            if (!ready)
+              return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
             yield* changed(ready, "ready");
             return ready;
           }),
@@ -271,7 +284,11 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
     const heartbeat = Effect.forever(
       Effect.sleep("20 seconds").pipe(
         Effect.andThen(() => connections.renewLease(lease)),
-        Effect.flatMap((renewed) => (renewed ? Effect.void : Effect.fail(failure()))),
+        Effect.flatMap((renewed) =>
+          renewed
+            ? Effect.void
+            : Effect.fail(new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" })),
+        ),
       ),
     );
     return yield* Effect.raceFirst(setup, heartbeat).pipe(
