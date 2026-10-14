@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest";
-import { DateTime, Effect, Schema } from "effect";
+import { Effect, Redacted, Schema } from "effect";
+import { HttpClient, HttpClientResponse } from "effect/http";
 
 import { EthereumAddress, EvmPreparedExecution, Hex } from "@namera-ai/protocol";
 import type { EvmExecutionSponsorship, SupportedEvmChainId } from "@namera-ai/protocol";
@@ -7,6 +8,7 @@ import { createPublicClient, custom } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { createWalletKeySecp256k1Account } from "../../../src/accounts/secp256k1.js";
+import { makeEvmGasPrice } from "../../../src/billing/pricing.js";
 import type { ExecutionClients } from "../../../src/clients/execution.js";
 import { makePrepareEvmExecution } from "../../../src/execution/prepare.js";
 
@@ -14,11 +16,30 @@ const cases: ReadonlyArray<{
   readonly name: string;
   readonly chainId: SupportedEvmChainId;
   readonly sponsorship: EvmExecutionSponsorship;
+  readonly invalidPrice?: boolean;
 }> = [
   { name: "sponsored Base", chainId: "eip155:8453", sponsorship: "alchemy-bso" },
   { name: "sponsored Ethereum", chainId: "eip155:1", sponsorship: "alchemy-bso" },
   { name: "sponsored Sepolia", chainId: "eip155:11155111", sponsorship: "alchemy-bso" },
   { name: "self-funded Base", chainId: "eip155:8453", sponsorship: "none" },
+  {
+    name: "sponsored Base with invalid price",
+    chainId: "eip155:8453",
+    sponsorship: "alchemy-bso",
+    invalidPrice: true,
+  },
+  {
+    name: "testnet with unavailable pricing",
+    chainId: "eip155:11155111",
+    sponsorship: "alchemy-bso",
+    invalidPrice: true,
+  },
+  {
+    name: "self-funded with unavailable pricing",
+    chainId: "eip155:1",
+    sponsorship: "none",
+    invalidPrice: true,
+  },
 ];
 
 for (const scenario of cases) {
@@ -27,6 +48,32 @@ for (const scenario of cases) {
       const owner = privateKeyToAccount(generatePrivateKey());
       const address = EthereumAddress.make(owner.address);
       let quoteRequests = 0;
+      const getGasPrice = makeEvmGasPrice(
+        { alchemyApiKey: Redacted.make("test"), alchemyBsoPolicyId: Redacted.make("test") },
+        HttpClient.make((request) =>
+          Effect.succeed(
+            HttpClientResponse.fromWeb(
+              request,
+              new Response(
+                JSON.stringify({
+                  data: [
+                    {
+                      symbol: "ETH",
+                      prices: [
+                        {
+                          currency: "usd",
+                          value: scenario.invalidPrice ? "0" : "3000",
+                          lastUpdatedAt: "1970-01-01T00:00:00.000Z",
+                        },
+                      ],
+                    },
+                  ],
+                }),
+              ),
+            ),
+          ),
+        ),
+      );
       const prepare = makePrepareEvmExecution(
         (chain) => {
           const publicClient = createPublicClient({
@@ -63,17 +110,10 @@ for (const scenario of cases) {
         },
         () => {
           quoteRequests += 1;
-          return Effect.succeed({
-            provider: "alchemy",
-            currency: "usd",
-            nativeAsset: "ETH",
-            nativePriceMicroUsd: 3_000_000_000n,
-            surchargeBasisPoints: 800,
-            quotedAt: DateTime.fromEpochSeconds(0),
-          });
+          return getGasPrice();
         },
       );
-      const prepared = yield* prepare({
+      const preparation = prepare({
         account: {
           wallet: {
             version: 1,
@@ -99,6 +139,12 @@ for (const scenario of cases) {
         sponsorship: scenario.sponsorship,
         calls: [{ to: address, value: 0n, data: Hex.make("0x") }],
       });
+      if (scenario.invalidPrice && scenario.chainId === "eip155:8453") {
+        expect(yield* preparation.pipe(Effect.flip)).toMatchObject({ code: "PREPARATION_FAILED" });
+        expect(quoteRequests).toBe(1);
+        return;
+      }
+      const prepared = yield* preparation;
       const encoded = yield* Schema.encodeEffect(EvmPreparedExecution)(prepared);
       const decoded = yield* Schema.decodeUnknownEffect(EvmPreparedExecution)(encoded);
       expect(decoded.billing).toEqual(prepared.billing);

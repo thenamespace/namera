@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 
-import type {
+import {
   EvmExecutionError,
-  EvmExecutionBilling,
-  EvmExecutionSponsorship,
-  EvmExecutionReceipt,
-  EvmGasPriceQuote,
-  EvmSerializedUserOperation,
+  type EvmExecutionBilling,
+  type EvmExecutionSponsorship,
+  type EvmExecutionReceipt,
+  type EvmGasPriceQuote,
+  type EvmSerializedUserOperation,
 } from "@namera-ai/protocol";
 
 import type { ChainData } from "../chains/data.js";
@@ -29,16 +29,22 @@ export const makeEvmExecutionBilling = Effect.fn("evm.billing.prepareExecution")
   }
 
   const quote = yield* input.getGasPrice();
+  const reservationAmountMicroUsd = nativeWeiToMicroUsd({
+    amountWei: maximumUserOperationCost(input.estimatedUserOperation),
+    nativePriceMicroUsd: quote.nativePriceMicroUsd,
+    surchargeBasisPoints: quote.surchargeBasisPoints,
+  });
+  if (quote.nativePriceMicroUsd <= 0n || reservationAmountMicroUsd <= 0n)
+    return yield* new EvmExecutionError({
+      code: "PREPARATION_FAILED",
+      cause: new Error("Sponsored mainnet execution requires a positive gas reservation"),
+    });
   return {
     executionMeter,
     sponsorship: {
       provider: "alchemy",
       mode: "bso",
-      reservationAmountMicroUsd: nativeWeiToMicroUsd({
-        amountWei: maximumUserOperationCost(input.estimatedUserOperation),
-        nativePriceMicroUsd: quote.nativePriceMicroUsd,
-        surchargeBasisPoints: quote.surchargeBasisPoints,
-      }),
+      reservationAmountMicroUsd,
       quote,
     },
   };

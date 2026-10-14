@@ -341,6 +341,16 @@ to integer micro-USD. No additional 8% surcharge or estimated ETH conversion is
 applied to that provider total. If pricing is unavailable, sponsored mainnet
 preparation fails closed before signing or submission.
 
+Financial ETH/USD quotes require a successful HTTP response, no token error and a
+positive decimal price (at most 64 characters). The timestamp must be no more than
+ten minutes old or one minute in the future. Fetching and decoding have a five-second
+deadline; malformed values and unavailable quotes return the existing typed
+preparation error. Conversion remains bigint-based and rounds upward. Sponsored
+mainnet preparation also rejects a nonpositive calculated reservation; it cannot
+return a zero-cost billing envelope. Self-funded and testnet preparation do not
+request this quote. Adapter tests cover invalid quotes, timeout, boundary timestamps
+and preparation through the real financial quote adapter.
+
 Execution sponsorship defaults to enabled. An explicit `sponsor: false`
 mainnet request still reserves and settles one `execution.mainnet` unit but
 submits through regular Rundler without the BSO policy header and never creates
