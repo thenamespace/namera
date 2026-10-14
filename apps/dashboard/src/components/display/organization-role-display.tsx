@@ -1,7 +1,6 @@
 import type { GetOrganizationRoleResponse } from "@namera-ai/protocol/dto";
+import { StatusDisplay } from "@namera-ai/ui";
 import { CrownIcon, UserIcon, UserShield01Icon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay } from "./status-display";
 
 type OrganizationRoleDisplayProps = {
   role: GetOrganizationRoleResponse;

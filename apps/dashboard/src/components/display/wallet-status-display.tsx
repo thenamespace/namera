@@ -1,7 +1,6 @@
 import type { WalletResponse } from "@namera-ai/protocol/dto";
+import { StatusDisplay } from "@namera-ai/ui";
 import { ArchiveIcon, CheckmarkCircle02Icon, SnowIcon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay } from "./status-display";
 
 const statusPresentation = {
   active: { icon: CheckmarkCircle02Icon, label: "Active", tone: "success" as const },

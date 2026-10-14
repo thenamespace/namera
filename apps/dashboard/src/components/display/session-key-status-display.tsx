@@ -1,7 +1,6 @@
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
+import { StatusDisplay, type StatusDisplayProps } from "@namera-ai/ui";
 import { CancelCircleIcon, CheckmarkCircle02Icon, Clock01Icon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay, type StatusDisplayProps } from "./status-display";
 
 type SessionKeyStatusDisplayProps = {
   status: SessionKeyResponse["status"];

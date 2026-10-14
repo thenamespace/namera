@@ -29,6 +29,9 @@ the UI package boundary.
   Modal and alert-dialog surfaces share the same `rounded-xl` corner override.
 - `src/components/transition.tsx` — shared step transition used by dashboard and
   admin auth pages, preserving the dashboard timing and reduced-motion behavior.
+- `src/components/metadata-display.tsx` and `status-display.tsx` — shared avatar/name
+  and icon/status presentation for dashboard and admin tables. Apps supply domain
+  labels, icons, and semantic tones; authorization and queries remain app-owned.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
 
 ## Usage

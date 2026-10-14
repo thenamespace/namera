@@ -1,7 +1,6 @@
 import type { OAuthAuthorizationStatus } from "@namera-ai/protocol/model";
+import { StatusDisplay } from "@namera-ai/ui";
 import { CancelCircleIcon, CheckmarkCircle02Icon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay } from "./status-display";
 
 type OAuthAuthorizationStatusDisplayProps = {
   status: OAuthAuthorizationStatus;

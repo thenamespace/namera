@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { cn } from "@namera-ai/ui";
-import { HugeiconsIcon, type IconSvgElement } from "@namera-ai/ui/icons";
+import { HugeiconsIcon, type IconSvgElement } from "../icons/index.js";
+import { cn } from "../utils.js";
 
 type StatusTone = "accent" | "danger" | "muted" | "success" | "warning";
 

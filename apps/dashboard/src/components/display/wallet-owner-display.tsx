@@ -1,7 +1,6 @@
 import type { WalletKeyProtectionLevel } from "@namera-ai/protocol/model";
+import { StatusDisplay } from "@namera-ai/ui";
 import { BrandOneClawIcon, ComputerIcon, NameraIcon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay } from "./status-display";
 
 type WalletOwnerDisplayProps = {
   custody: "local" | "namera-managed";

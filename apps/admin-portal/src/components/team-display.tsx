@@ -3,10 +3,9 @@ import { useCallback } from "react";
 import { DateTime } from "effect";
 
 import type { PlatformMember, UserMetadata } from "@namera-ai/protocol/model";
-import { IconPreview, Tooltip, Typography, toast } from "@namera-ai/ui";
+import { MetadataDisplay, StatusDisplay, Tooltip, toast } from "@namera-ai/ui";
 import {
   CrownIcon,
-  HugeiconsIcon,
   UserIcon,
   UserShield01Icon,
   CheckmarkCircle02Icon,
@@ -14,7 +13,6 @@ import {
   PauseCircleIcon,
 } from "@namera-ai/ui/icons";
 
-const fallbackIcon = { type: "emoji", value: "👤" } as const;
 const rolePresentation = {
   owner: {
     label: "Owner",
@@ -30,24 +28,21 @@ const rolePresentation = {
   },
 };
 const statusPresentation = {
-  active: { label: "Active" },
+  active: { label: "Active", icon: CheckmarkCircle02Icon, tone: "success" },
   suspended: {
     label: "Suspended",
+    icon: PauseCircleIcon,
+    tone: "warning",
   },
   removed: {
     label: "Removed",
+    icon: CancelCircleIcon,
+    tone: "danger",
   },
 } as const;
 
 export function MemberDisplay({ email, metadata }: { email: string; metadata: UserMetadata }) {
-  return (
-    <div className="flex min-w-0 items-center gap-2.5">
-      <IconPreview size="xs" value={metadata.image ?? fallbackIcon} />
-      <Typography className="truncate text-sm! leading-[1.2]" weight="normal">
-        {metadata.name ?? email}
-      </Typography>
-    </div>
-  );
+  return <MetadataDisplay fallbackName={email} metadata={metadata} />;
 }
 
 export function EmailDisplay({ email }: { email: string }) {
@@ -74,39 +69,17 @@ export function EmailDisplay({ email }: { email: string }) {
 export function RoleDisplay({ role }: { role: PlatformMember["role"] }) {
   const presentation = rolePresentation[role];
   return (
-    <span className="inline-flex min-w-0 items-center gap-2 text-sm">
-      <HugeiconsIcon
-        icon={presentation.icon}
-        className={role === "owner" ? "size-4 shrink-0 text-accent" : "size-4 shrink-0 text-muted"}
-      />
-      <span className="truncate text-foreground">{presentation.label}</span>
-    </span>
+    <StatusDisplay
+      icon={presentation.icon}
+      label={presentation.label}
+      tone={role === "owner" ? "accent" : "muted"}
+    />
   );
 }
 
 export function MemberStatusDisplay({ status }: { status: PlatformMember["status"] }) {
   const presentation = statusPresentation[status];
-  return (
-    <span className="inline-flex min-w-0 items-center gap-2 text-sm">
-      <HugeiconsIcon
-        icon={
-          status === "active"
-            ? CheckmarkCircle02Icon
-            : status === "suspended"
-              ? PauseCircleIcon
-              : CancelCircleIcon
-        }
-        className={
-          status === "active"
-            ? "size-4 shrink-0 text-success"
-            : status === "suspended"
-              ? "size-4 shrink-0 text-warning"
-              : "size-4 shrink-0 text-danger"
-        }
-      />
-      <span className="truncate text-foreground">{presentation.label}</span>
-    </span>
-  );
+  return <StatusDisplay {...presentation} />;
 }
 
 export function JoinedDisplay({ value }: { value: DateTime.DateTime }) {

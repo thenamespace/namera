@@ -3,3 +3,5 @@
 export * from "@thenamespace/uikit";
 export { Field, FieldError, FieldGroup, FieldLabel } from "./components/field.js";
 export * from "./components/icon-picker/index.js";
+export * from "./components/metadata-display.js";
+export * from "./components/status-display.js";
