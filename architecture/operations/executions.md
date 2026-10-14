@@ -191,14 +191,21 @@ proof of rejection. Recovery retains holds when the canonical hash is initially
 not found and keeps looking up that canonical hash. The HTTP regression covers
 this visibility delay and a later matching receipt settling billing exactly once.
 
-Each broadcast is preceded by a leased durable attempt marker. Only a first
-attempt's validation rejection can be combined with an absent provider status to
-release holds. Once an earlier attempt may have reached the bundler, a later send
-rejection is insufficient; recovery retains holds until status/receipt evidence
-resolves that canonical operation. The regression also covers rejection of a
-retry between the lost first response and eventual receipt visibility.
+Signature acceptance records `broadcastAttempted: false`, including acceptance
+of an older unsigned preparation. Each first send atomically changes it to `true`
+under the live lease before RPC. Missing markers on legacy signed rows mean
+unknown, not permission to submit. Attempted and legacy-unknown operations use
+read-only recovery; they are never automatically rebroadcast. Only the worker
+that wins that first-send transition can combine its validation rejection with
+an absent provider status to release holds. Later rejection/null status alone
+cannot terminate previously uncertain work. A crash between marker persistence
+and RPC deliberately leaves an unresolved operation rather than risking resend.
 
-Automatic broadcasts stop 24 hours after the submission was created. Recovery
+Each batch claims at most five operations for five concurrent attempts. A
+60-second timeout bounds each attempt inside its two-minute lease. Interrupted
+work retains durable send evidence and holds for lease takeover.
+
+Even a never-sent operation is not automatically sent after 24 hours. Recovery
 then performs read-only receipt/status checks every five minutes and emits
 `execution.reconciliation.unresolved` with the submission ID and a fixed reason.
 The reconciliation counter uses `result=unresolved`; it contains no tenant IDs.

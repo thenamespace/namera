@@ -194,6 +194,7 @@ export const makePrepareSessionKeyOperations = Effect.gen(function* () {
               version: 1,
               prepared,
               signed: null,
+              broadcastAttempted: false,
               ...(owner.type === "1claw"
                 ? {
                     managedOwner: {

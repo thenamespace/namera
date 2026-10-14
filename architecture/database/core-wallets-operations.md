@@ -350,7 +350,10 @@ without overwriting history. It contains public signatures, never private keys.
   one. The signed operation may differ only in its signature and computed hash:
   all unsigned fields, chain/EntryPoint, sponsorship and billing data must match
   the prepared JSON. Cryptographic hash/signature verification remains EVM-owned.
-- Confirmed/failed states require a transaction hash. Terminal states require
+- Confirmed and included-failure states require a transaction hash. A failed row
+  without one requires both `data.submissionRejected: true` and
+  `data.broadcastAttempted: true`, recording a definitive first-send rejection.
+  Terminal states require
   `finished_at`; nonterminal states cannot carry either terminal field.
 - Awaiting-signature, signed and submitted states can carry lease fields; a token
   requires a deadline. Unsigned leases serialize managed-provider signing.
@@ -366,7 +369,7 @@ remain valid without it.
 Signature acceptance atomically requires the initiating actor, request hash,
 awaiting status and `now < expires_at`. Managed acceptance additionally requires
 the current live signing lease; passkey acceptance requires no signing lease.
-It persists the signed payload and leases
+It persists the signed payload, initializes `broadcastAttempted: false`, and leases
 the initial submission before any broadcast. Duplicate completion returns no row.
 The application must verify the passkey first and compose counter advancement,
 approval consumption, billing and audit changes in the same transaction.
@@ -379,8 +382,12 @@ or clear a replacement. Remote signing never holds a database transaction open.
 Reconciliation claims signed/submitted rows with `FOR UPDATE SKIP LOCKED`.
 Submit, receipt finalization and rescheduling require the current token and a
 still-live lease. Receipt finalization also matches the signed UserOperation
-hash. Only a chain receipt can mark a signed attempt failed here: an RPC timeout
-or rejection does not invalidate a root signature that may still be broadcast.
+hash. `recordBroadcastAttempt` requires signed state, a live lease and an explicit
+false marker, then atomically sets it true. Missing legacy markers are unknown.
+`rejectSubmission` requires the same live token and signed attempted state; only
+the first-send worker with definitive rejection evidence invokes it. Failure,
+release and audit are transactional. A later rejection or timeout cannot
+invalidate an earlier potentially accepted root signature.
 Unsigned expiry never touches signed attempts, even after `expires_at` passes.
 
 `cancelUnsigned` requires actor/tenant ownership, awaiting-signature state, a null
@@ -597,7 +604,7 @@ Idempotent execution attempt and orchestration state. It exists before external 
 ### Local signature acceptance
 
 `cancelUnsigned` changes only actor-owned `reserved` submissions with a null
-signed envelope, no broadcast marker and no live lease to `cancelled`. It clears
+signed envelope, no true broadcast marker and no live lease to `cancelled`. It clears
 leases without fabricating failure or receipt timestamps. The application locks
 the submission and atomically releases policy/billing holds and writes an audit.
 Cancelled rows remain idempotency tombstones and are excluded from worker claims.
@@ -611,8 +618,9 @@ The existing lease columns serve signing before acceptance and reconciliation
 after acceptance; no execution table migration is needed.
 
 The version-1 EVM payload now retains the full `prepared` operation alongside
-`signedExecution`. `acceptSignature` changes only the signed envelope and
-lifecycle fields; it never replaces prepared calls or gas. Its conditional write
+`signedExecution`. `acceptSignature` attaches the signed envelope, initializes
+`broadcastAttempted: false` and changes lifecycle fields; it never replaces
+prepared calls or gas. Its conditional write
 requires the original actor, tenant, request hash, `reserved` state and an
 unexpired deadline. Replays cannot overwrite an accepted signature. The caller
 must cryptographically verify the envelope and recheck current authority before
@@ -620,8 +628,8 @@ this write, within the billing/policy transaction.
 
 Before external submission, `recordBroadcastAttempt` stores
 `data.broadcastAttempted: true` while requiring a prepared signed row and the
-current, unexpired lease in the same organization. Absence means no recorded
-broadcast attempt. This monotonic marker survives lost responses and worker
+current, unexpired lease in the same organization and an explicit false marker.
+Absence on legacy signed rows means unknown, not never sent. This monotonic marker survives lost responses and worker
 takeover; it does not assert provider acceptance. A later send rejection alone
 cannot prove an earlier attempt was not accepted. No new column or index is
 needed; the marker is part of the version-1 typed JSON payload.

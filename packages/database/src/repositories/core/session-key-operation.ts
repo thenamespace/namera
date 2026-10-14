@@ -70,6 +70,8 @@ export interface SessionKeyOperationRepositoryService {
     },
   ) => Result;
   readonly markSubmitted: (input: Lease) => Result;
+  readonly recordBroadcastAttempt: (input: Lease) => Result;
+  readonly rejectSubmission: (input: Lease) => Result;
   readonly finishReceipt: (
     input: Lease & {
       readonly userOperationHash: UserOperationHash;
@@ -304,7 +306,7 @@ export class SessionKeyOperationRepository extends Context.Service<
               .update(table)
               .set({
                 status: "signed",
-                data: sql`jsonb_set(${table.data}, '{signed}', ${signed}::jsonb)`,
+                data: sql`jsonb_set(jsonb_set(${table.data}, '{signed}', ${signed}::jsonb), '{broadcastAttempted}', 'false'::jsonb)`,
                 leaseToken: input.leaseToken,
                 leaseExpiresAt: date(input.leaseExpiresAt),
               })
@@ -334,6 +336,52 @@ export class SessionKeyOperationRepository extends Context.Service<
               .update(table)
               .set({ status: "submitted" })
               .where(and(leased(input), eq(table.status, "signed")))
+              .returning(),
+          );
+        }, mapRepositoryError),
+        recordBroadcastAttempt: Effect.fn("database.sessionKeyOperation.recordBroadcastAttempt")(
+          function* (input) {
+            const db = yield* transactionOrDatabase(database);
+            return decode(
+              yield* db
+                .update(table)
+                .set({
+                  data: sql`jsonb_set(${table.data}, '{broadcastAttempted}', 'true'::jsonb)`,
+                })
+                .where(
+                  and(
+                    leased(input),
+                    eq(table.status, "signed"),
+                    sql`${table.data}->'broadcastAttempted' = 'false'::jsonb`,
+                    sql`${table.data}->'signed' != 'null'::jsonb`,
+                  ),
+                )
+                .returning(),
+            );
+          },
+          mapRepositoryError,
+        ),
+        rejectSubmission: Effect.fn("database.sessionKeyOperation.rejectSubmission")(function* (
+          input,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                status: "failed",
+                data: sql`jsonb_set(${table.data}, '{submissionRejected}', 'true'::jsonb)`,
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
+              .where(
+                and(
+                  leased(input),
+                  eq(table.status, "signed"),
+                  sql`${table.data}->'broadcastAttempted' = 'true'::jsonb`,
+                ),
+              )
               .returning(),
           );
         }, mapRepositoryError),

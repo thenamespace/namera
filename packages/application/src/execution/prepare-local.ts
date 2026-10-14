@@ -122,6 +122,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 calls: request.calls,
                 prepared,
                 signedExecution: null,
+                broadcastAttempted: false,
                 ...(custody === "namera-managed"
                   ? { managedSignerBinding: sessionSignerBinding(current.signer) }
                   : {}),

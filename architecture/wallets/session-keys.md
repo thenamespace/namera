@@ -313,10 +313,26 @@ selection and explicit approval UI are wired.
 ## Receipt recovery
 
 The worker runs every five seconds after database migrations, expires only
-unsigned approvals, and claims up to 20 signed/submitted operations with two-minute
-leases. Four operations may reconcile concurrently. It queries receipts before
-resubmitting the identical stored signed operation; ambiguous provider failures
-retain both signature and quota reservation and retry after 15 seconds.
+unsigned approvals, and claims up to four signed/submitted operations with
+two-minute leases. Four operations reconcile concurrently, each bounded by a
+60-second timeout. It queries receipts before a first send. Approval records
+`broadcastAttempted: false`; a live-lease compare-and-set changes it to `true`
+before RPC. Only that winner sends. Attempted operations and legacy signed rows
+without a marker recover read-only, never automatically rebroadcast.
+
+A definitive first-send validation rejection plus an absent status lookup marks
+the operation failed, records `submissionRejected: true`, releases its billing
+holds and writes the operation-failed audit atomically. No receipt hash is
+fabricated; the database constraint permits this explicit non-included failure.
+Installation state and revoked grants remain unchanged, allowing another
+explicit owner approval where the lifecycle permits. A pending revocation may
+finish only through its usual no-remaining-authority check.
+
+Ambiguous sends, lookup errors and legacy unknown outcomes retain the signature
+and reservations. They retry read-only after 15 seconds, slowing to five minutes
+after 24 hours. Age never proves failure. A crash after recording an attempt but
+before RPC also stays unknown. Historical rows are not backfilled as unsent.
+The migration changes the receipt constraint, not existing operation outcomes.
 
 Receipt chain, UserOperation hash, sender, nonce and EntryPoint must match the
 persisted signed envelope. Under the wallet lock and a live lease, one transaction

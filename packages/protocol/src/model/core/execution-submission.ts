@@ -28,7 +28,8 @@ export const EvmExecutionSubmissionData = Schema.Struct({
   calls: Schema.Array(EvmIntentCall),
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signedExecution: Schema.NullOr(EvmSignedExecution),
-  broadcastAttempted: Schema.optionalKey(Schema.Literal(true)),
+  // Missing on legacy rows means unknown, never permission to submit.
+  broadcastAttempted: Schema.optionalKey(Schema.Boolean),
   managedSignerBinding: Schema.optionalKey(NonEmptyString),
 });
 
