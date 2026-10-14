@@ -10,16 +10,6 @@ import { SITE_LINKS } from "#/lib/site-links";
 import { Check } from "./check";
 import { GROUPS, PLANS, type PlanId } from "./plans";
 
-/*
- * One table, two shapes. Wide enough and every plan is a column, which is the
- * only way to compare them, and the header row stays put while the rows scroll
- * under it. On a phone the reader picks one plan and reads it down instead.
- *
- * What a row means lives behind an info mark rather than under the label: the
- * page was carrying three lines of explanation per row and reading like a
- * manual. The mark appears when the row is hovered or the button is focused.
- */
-
 const Value = ({ value }: { readonly value: string }) => {
   if (value === "Yes") {
     return (

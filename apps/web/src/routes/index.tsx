@@ -84,8 +84,6 @@ function HomePage() {
           <Pillars />
           <Playground />
           <KeyAnatomy />
-          {/* Hidden for now — "Four things the policy stops" */}
-          {/* <PolicyGrid /> */}
           <ExecutionPath />
           <Clients />
           <Industries />

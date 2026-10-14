@@ -8,15 +8,6 @@ import { cn } from "@namera-ai/ui/utils";
 import { formatDemoExpiry } from "#/components/marketing/demo-expiry";
 import { Container, Reveal, Section, SectionIntro } from "#/components/marketing/primitives";
 
-/* -------------------------------------------------------------------------
- * Anatomy of a session key.
- *
- * The spec sheet this replaced said the same thing three times: the field, the
- * value, and a sentence explaining the value. Here the key states its own
- * values and the margins name the guarantee — four labels, eight words each,
- * set in mono the way a drawing is annotated rather than a paragraph written.
- * ---------------------------------------------------------------------- */
-
 const Note = ({
   label,
   children,

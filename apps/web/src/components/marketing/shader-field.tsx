@@ -2,19 +2,6 @@ import { useEffect, useState } from "react";
 
 import { NeuroNoise } from "@paper-design/shaders-react";
 
-/*
- * The field behind the closing ask, from Paper's shader set.
- *
- * Neuro noise rather than a mesh gradient: the branching filaments read as a
- * network, which is what the product sits in, and a mesh gradient is the one
- * background treatment every generated page already ships.
- *
- * The three colours are the palette's own steps (DESIGN.md): the canvas, the
- * accent, and the lighter accent used for text on dark. Brightness and contrast
- * are held low so the type in front keeps its contrast ratio, with the scrim in
- * `closing-cta.tsx` doing the rest.
- */
-
 const BACK = "#08090a";
 const MID = "#5e6ad2";
 const FRONT = "#828fff";

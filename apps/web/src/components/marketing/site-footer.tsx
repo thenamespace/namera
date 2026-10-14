@@ -14,13 +14,6 @@ import { cn } from "@namera-ai/ui/utils";
 import { Container } from "#/components/marketing/primitives";
 import { linked, SITE_LINKS } from "#/lib/site-links";
 
-/*
- * Columns of links, in the shape the reference set uses, with one rule of our
- * own: a link renders only when it has somewhere real to go. Internal routes
- * are `Link`s, everything else comes from `site-links.ts` and is dropped when
- * its value is null. A column with nothing left in it does not render.
- */
-
 type FooterLink = {
   readonly label: string;
   readonly href: string | null;

@@ -2,20 +2,6 @@ import { cn } from "@namera-ai/ui/utils";
 
 import { Container, Reveal, Section } from "#/components/marketing/primitives";
 
-/* -------------------------------------------------------------------------
- * The three ideas, drawn.
- *
- * A statement in two weights — the claim in white, the reasoning in grey —
- * and then three figures that carry the argument without prose doing all the
- * work. The drawings are isometric line art: a projection, not a picture, so
- * they read as diagrams of how the product behaves rather than decoration.
- *
- * Each one says a single thing:
- *   0.1  a request that does not fit the opening does not go through
- *   0.2  every key is fenced, and the fence is drawn when it is issued
- *   0.3  the key never leaves; only the signature does
- * ---------------------------------------------------------------------- */
-
 /* ------------------------------ isometry ---------------------------------- */
 
 const ISO_X = Math.cos(Math.PI / 6);

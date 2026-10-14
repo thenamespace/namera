@@ -29,17 +29,6 @@ import {
   type SourceId,
 } from "./model";
 
-/*
- * Every card is the same object: a header that names the step, then property
- * rows, label left and value right, separated by hairlines. That is the shape
- * the product's own detail screens use (DESIGN.md, "The hero surface"), so the
- * canvas reads as the product rather than as a diagram about it.
- *
- * Colour carries one meaning each. Accent marks progress and is the only hue
- * on the wiring. Green appears once, on the confirmation, and red once, on a
- * refusal: the two places the product reports a real allow or block.
- */
-
 const shell = (state: CardState) =>
   cn(
     "edge-top flex size-full flex-col overflow-hidden rounded-xl border-1 bg-surface",
