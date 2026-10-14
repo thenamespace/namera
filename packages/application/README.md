@@ -252,6 +252,14 @@ Successful mutations append audit events in the same `TransactionService.run`
 boundary as the state change. Read-only operations are not audited. Audit data
 must remain safe historical context and must never contain credentials.
 
+Removing a member atomically revokes personal CLI/MCP authorizations approved
+by that membership, their tokens and delegated grants, with the existing OAuth
+revocation audit events and notifications. Consent approval locks the membership;
+token issuance and revocation lock the authorization. Active OAuth lookup also
+requires the original membership to remain active, including for legacy rows.
+Rejoining creates a new membership and does not revive old delegations. Shared
+API keys, session keys, and in-flight operation/reservation records are retained.
+
 Member administration uses permission dominance as a partial role hierarchy.
 An actor may manage only roles whose permissions are a strict subset of their
 own and may assign only roles whose permissions are also a strict subset. This

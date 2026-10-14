@@ -13,16 +13,17 @@ import {
   type OAuthAuthorization as OAuthAuthorizationModel,
   type OAuthAuthorizationType,
 } from "@namera-ai/protocol/model";
-import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
+import { and, desc, eq, exists, gt, isNull, or } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
-import { oauthAuthorization } from "#/schema/index";
+import { oauthAuthorization, organizationMember } from "#/schema/index";
 
 export interface OAuthAuthorizationRepositoryService {
   /** Hold inside a transaction to serialize token rotation and revocation. */
   readonly lockById: (
     id: OAuthAuthorizationId,
+    organizationId?: OrganizationId,
   ) => Effect.Effect<OAuthAuthorizationModel | undefined, DatabaseError>;
   readonly insert: (
     data: OAuthAuthorizationInsert,
@@ -42,6 +43,10 @@ export interface OAuthAuthorizationRepositoryService {
   readonly findForOrganization: (
     organizationId: OrganizationId,
     type?: OAuthAuthorizationType,
+  ) => Effect.Effect<ReadonlyArray<OAuthAuthorizationModel>, DatabaseError>;
+  readonly findActiveForAuthorizer: (
+    organizationId: OrganizationId,
+    actorId: ActorId,
   ) => Effect.Effect<ReadonlyArray<OAuthAuthorizationModel>, DatabaseError>;
   readonly revoke: (params: {
     id: OAuthAuthorizationId;
@@ -65,12 +70,22 @@ export class OAuthAuthorizationRepository extends Context.Service<
       const database = yield* Database;
 
       return OAuthAuthorizationRepository.of({
-        lockById: Effect.fn("database.oauthAuthorizationRepository.lockById")(function* (id) {
+        lockById: Effect.fn("database.oauthAuthorizationRepository.lockById")(function* (
+          id,
+          organizationId,
+        ) {
           const db = yield* transactionOrDatabase(database);
           const rows = yield* db
             .select()
             .from(oauthAuthorization)
-            .where(eq(oauthAuthorization.id, id))
+            .where(
+              and(
+                eq(oauthAuthorization.id, id),
+                organizationId === undefined
+                  ? undefined
+                  : eq(oauthAuthorization.organizationId, organizationId),
+              ),
+            )
             .limit(1)
             .for("update");
           return rows[0] ? Schema.decodeSync(OAuthAuthorization)(rows[0]) : undefined;
@@ -95,6 +110,18 @@ export class OAuthAuthorizationRepository extends Context.Service<
                 and(
                   eq(oauthAuthorization.id, id),
                   eq(oauthAuthorization.status, "active"),
+                  exists(
+                    db
+                      .select({ id: organizationMember.id })
+                      .from(organizationMember)
+                      .where(
+                        and(
+                          eq(organizationMember.organizationId, oauthAuthorization.organizationId),
+                          eq(organizationMember.actorId, oauthAuthorization.authorizedByActorId),
+                          isNull(organizationMember.removedAt),
+                        ),
+                      ),
+                  ),
                   or(
                     isNull(oauthAuthorization.expiresAt),
                     gt(oauthAuthorization.expiresAt, encodedNow),
@@ -159,6 +186,23 @@ export class OAuthAuthorizationRepository extends Context.Service<
           },
           mapRepositoryError,
         ),
+        findActiveForAuthorizer: Effect.fn(
+          "database.oauthAuthorizationRepository.findActiveForAuthorizer",
+        )(function* (organizationId, actorId) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(oauthAuthorization)
+            .where(
+              and(
+                eq(oauthAuthorization.organizationId, organizationId),
+                eq(oauthAuthorization.authorizedByActorId, actorId),
+                eq(oauthAuthorization.status, "active"),
+              ),
+            )
+            .orderBy(oauthAuthorization.id);
+          return rows.map((row) => Schema.decodeSync(OAuthAuthorization)(row));
+        }, mapRepositoryError),
         revoke: Effect.fn("database.oauthAuthorizationRepository.revoke")(function* ({
           id,
           organizationId,

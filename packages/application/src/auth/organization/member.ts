@@ -16,6 +16,7 @@ import type { OrganizationMember, OrganizationRole, User } from "@namera-ai/prot
 import { organizationMemberEvents } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+import { makeOAuthAuthorizationApplication } from "#/auth/oauth/authorization";
 
 import {
   canAssignOrganizationRole,
@@ -59,6 +60,7 @@ export const makeMemberApplication = Effect.gen(function* () {
   const audit = yield* Audit;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
+  const oauth = yield* makeOAuthAuthorizationApplication;
 
   const listMembers = Effect.fn("application.organization.member.listMembers")(
     function* (organizationId: OrganizationId) {
@@ -193,6 +195,21 @@ export const makeMemberApplication = Effect.gen(function* () {
             return yield* new OrganizationMemberNotFoundError({
               code: "ORGANIZATION_MEMBER_NOT_FOUND",
             });
+          }
+          // The removal UPDATE holds the membership lock used by consent approval.
+          // Only personal OAuth delegations are revoked, never shared keys or operations.
+          const authorizations = yield* repository.auth.oauth.authorization.findActiveForAuthorizer(
+            input.organizationId,
+            member.actorId,
+          );
+          for (const authorization of authorizations) {
+            yield* oauth
+              .revoke({
+                organizationId: input.organizationId,
+                actorId: input.actorId,
+                authorizationId: authorization.id,
+              })
+              .pipe(Effect.catchTag("OAuthAuthorizationError", Effect.die));
           }
           yield* audit.organization({
             organizationId: input.organizationId,

@@ -235,6 +235,14 @@ export const makeOAuthDeviceApplication = (token: OAuthTokenApplication) =>
 
         const authorization = yield* transaction.run(
           Effect.gen(function* () {
+            // Consent and member removal must lock the same membership first.
+            const member = yield* repository.auth.member.lockByActorId(
+              input.organizationId,
+              input.actorId,
+            );
+            if (!member || member.removedAt !== null || member.userId !== input.userId) {
+              return yield* new OAuthDeviceAuthorizationError({ code: "REQUEST_NOT_FOUND" });
+            }
             const actor = yield* repository.auth.actor.insert({
               organizationId: input.organizationId,
               type: "cli",

@@ -31,6 +31,20 @@ export const makeOAuthTokenApplication = Effect.gen(function* () {
     readonly refreshFamilyId?: OAuthTokenFamilyId;
     readonly refreshParentId?: OAuthToken["id"];
   }) {
+    // All issuers run inside a transaction. Serialize issuance with revocation,
+    // including device/code exchange, then recheck the original membership.
+    yield* repository.auth.oauth.authorization.lockById(input.authorizationId);
+    const authorization = yield* repository.auth.oauth.authorization.findActiveById(
+      input.authorizationId,
+      input.now,
+    );
+    if (
+      !authorization ||
+      authorization.clientId !== input.clientId ||
+      authorization.resource !== input.resource
+    ) {
+      return yield* new OAuthTokenError({ code: "INVALID_GRANT" });
+    }
     const accessToken = yield* crypto.randomToken(config.oauth.tokenBytes);
     const accessTokenHash = yield* crypto.hash({
       purpose: cryptoPurpose.oauthAccessToken,
