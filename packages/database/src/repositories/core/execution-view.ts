@@ -1,6 +1,5 @@
 // Drizzle rows are untrusted persistence values and are decoded before leaving
 // the repository boundary.
-// oxlint-disable typescript/no-explicit-any
 import { Schema, type DateTime } from "effect";
 
 import { ExecutionId, SessionKeyId, WalletId } from "@namera-ai/protocol";
@@ -62,24 +61,24 @@ export const decodeExecutionListView = (row: {
   readonly actorType: unknown;
 }): ExecutionListView => ({
   details: {
-    id: Schema.decodeSync(ExecutionId)(row.executionId as any),
-    namespace: Schema.decodeSync(Schema.Literal("eip155"))(row.executionNamespace as any),
-    chainId: Schema.decodeSync(SupportedEvmChainId)(row.chainId as any),
-    transactionHash: Schema.decodeSync(TransactionHash)(row.transactionHash as any),
-    createdAt: Schema.decodeSync(Schema.DateTimeUtcFromDate)(row.executionCreatedAt as any),
+    id: Schema.decodeUnknownSync(ExecutionId)(row.executionId),
+    namespace: Schema.decodeUnknownSync(Schema.Literal("eip155"))(row.executionNamespace),
+    chainId: Schema.decodeUnknownSync(SupportedEvmChainId)(row.chainId),
+    transactionHash: Schema.decodeUnknownSync(TransactionHash)(row.transactionHash),
+    createdAt: Schema.decodeUnknownSync(Schema.DateTimeUtcFromDate)(row.executionCreatedAt),
   },
   wallet: {
-    id: Schema.decodeSync(WalletId)(row.walletId as any),
-    namespace: Schema.decodeSync(Schema.Literal("eip155"))(row.walletNamespace as any),
-    address: Schema.decodeSync(EthereumAddress)(row.walletAddress as any),
-    metadata: Schema.decodeSync(WalletMetadata)(row.walletMetadata as any),
+    id: Schema.decodeUnknownSync(WalletId)(row.walletId),
+    namespace: Schema.decodeUnknownSync(Schema.Literal("eip155"))(row.walletNamespace),
+    address: Schema.decodeUnknownSync(EthereumAddress)(row.walletAddress),
+    metadata: Schema.decodeUnknownSync(WalletMetadata)(row.walletMetadata),
   },
   sessionKey: {
-    id: Schema.decodeSync(SessionKeyId)(row.sessionKeyId as any),
-    namespace: Schema.decodeSync(Schema.Literal("eip155"))(row.sessionKeyNamespace as any),
-    metadata: Schema.decodeSync(SessionKeyMetadata)(row.sessionKeyMetadata as any),
+    id: Schema.decodeUnknownSync(SessionKeyId)(row.sessionKeyId),
+    namespace: Schema.decodeUnknownSync(Schema.Literal("eip155"))(row.sessionKeyNamespace),
+    metadata: Schema.decodeUnknownSync(SessionKeyMetadata)(row.sessionKeyMetadata),
   },
-  actorType: Schema.decodeSync(ActorType)(row.actorType as any),
+  actorType: Schema.decodeUnknownSync(ActorType)(row.actorType),
 });
 
 export interface ExecutionDetailsView {
@@ -96,12 +95,12 @@ export const decodeExecutionDetailsView = (row: {
   readonly wallet: unknown;
   readonly signingKey: unknown;
 }): ExecutionDetailsView => ({
-  execution: Schema.decodeSync(Execution)(row.execution as any),
-  actor: Schema.decodeSync(Actor)(row.actor as any),
-  sessionKey: Schema.decodeSync(SessionKey)(row.sessionKey as any),
+  execution: Schema.decodeUnknownSync(Execution)(row.execution),
+  actor: Schema.decodeUnknownSync(Actor)(row.actor),
+  sessionKey: Schema.decodeUnknownSync(SessionKey)(row.sessionKey),
   wallet: {
-    wallet: Schema.decodeSync(Wallet)(row.wallet as any),
-    signingKey: Schema.decodeSync(SigningKey)(row.signingKey as any),
+    wallet: Schema.decodeUnknownSync(Wallet)(row.wallet),
+    signingKey: Schema.decodeUnknownSync(SigningKey)(row.signingKey),
   },
 });
 

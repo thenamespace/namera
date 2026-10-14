@@ -5,8 +5,7 @@ import type {
   MemberPermission,
 } from "@namera-ai/protocol/model";
 import { sql } from "drizzle-orm";
-import { text, jsonb } from "drizzle-orm/pg-core";
-import { check, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, index, jsonb, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { generateUniqueId, timestamps } from "#/schema/common";
 

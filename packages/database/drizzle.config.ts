@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/nursery/noUndeclaredEnvVars: safe */
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
