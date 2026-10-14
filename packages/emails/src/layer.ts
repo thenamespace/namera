@@ -74,6 +74,9 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
 
       const send = Effect.fn("emails.provider.send")(function* (input: SendEmailProps) {
         const template = emailTemplates[input.type];
+        const replyTo =
+          input.replyTo === undefined ? configuredReplyTo : toProviderRecipients(input.replyTo);
+
         const response = yield* Effect.tryPromise({
           try: () =>
             resend.emails.send(
@@ -82,11 +85,7 @@ export class EmailService extends Context.Service<EmailService, EmailServiceValu
                 to: toProviderRecipients(input.to),
                 react: renderEmail(input),
                 subject: input.subject ?? template.subject,
-                ...(input.replyTo === undefined
-                  ? configuredReplyTo === undefined
-                    ? {}
-                    : { replyTo: configuredReplyTo }
-                  : { replyTo: toProviderRecipients(input.replyTo) }),
+                ...(replyTo === undefined ? {} : { replyTo }),
                 ...(input.cc === undefined ? {} : { cc: toProviderRecipients(input.cc) }),
                 ...(input.bcc === undefined ? {} : { bcc: toProviderRecipients(input.bcc) }),
                 ...(input.tags === undefined

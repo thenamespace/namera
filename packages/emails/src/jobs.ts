@@ -39,13 +39,9 @@ export class EmailJobs extends Context.Service<
         const plaintext = yield* crypto
           .decrypt({ purpose: cryptoPurpose.emailOutbox, value: encryptedPayload })
           .pipe(Effect.mapError(() => "DECRYPT_FAILED" as const));
-        const parsed = yield* Effect.try({
-          try: () => JSON.parse(plaintext) as unknown,
-          catch: () => "INVALID_PAYLOAD" as const,
-        });
-        return yield* Schema.decodeUnknownEffect(EmailJobPayload)(parsed).pipe(
-          Effect.mapError(() => "INVALID_PAYLOAD" as const),
-        );
+        return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(EmailJobPayload))(
+          plaintext,
+        ).pipe(Effect.mapError(() => "INVALID_PAYLOAD" as const));
       });
 
       const markTerminal = Effect.fnUntraced(function* (
