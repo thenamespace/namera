@@ -69,6 +69,7 @@ layer(live)("wallet mutation Origin", (it) => {
           verifications: yield* db.query.verification.findMany(),
           wallets: yield* client.wallet.list(),
           keys: yield* db.query.signingKey.findMany(),
+          provisioning: yield* db.query.signerProvisioning.findMany(),
           billing: yield* client.billing.get(),
           audit: (yield* repository.audit.organization.findForOrganization(
             owner.actor.organization.id,
@@ -100,6 +101,7 @@ layer(live)("wallet mutation Origin", (it) => {
             namespace: "eip155",
             owner: { type: "namera-managed", provider: "1claw" },
             metadata: payload.metadata,
+            idempotencyKey: crypto.randomUUID(),
           },
         },
         {
