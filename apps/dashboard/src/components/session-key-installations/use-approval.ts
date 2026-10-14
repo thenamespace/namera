@@ -18,6 +18,7 @@ import { useCompleteSessionKeyOperation, usePrepareSessionKeyOperation } from "@
 import {
   usePrepareManagedSessionKeyOperation,
   useApproveManagedSessionKeyOperation,
+  useCancelSessionKeyOperation,
 } from "@/hooks/session-key/operation";
 import { isOneClawAccount } from "@/lib/session-owner";
 import { showErrorToast } from "@/lib/toasts";
@@ -35,6 +36,7 @@ export function useInstallationApproval(
   const complete = useCompleteSessionKeyOperation();
   const prepareManaged = usePrepareManagedSessionKeyOperation();
   const approveManaged = useApproveManagedSessionKeyOperation();
+  const cancel = useCancelSessionKeyOperation();
   const managed = isOneClawAccount(session.wallet);
   const confirmation = useRef<((confirmed: boolean) => void) | undefined>(undefined);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -119,7 +121,10 @@ export function useInstallationApproval(
           approve: (payload) => approveManaged.mutateAsync({ payload }),
         });
         if (abort.signal.aborted) return;
-        if (!confirmed) setError(true);
+        if (!confirmed) {
+          await cancel.mutateAsync({ params: { operationId: response.operationId } });
+          finish();
+        }
         return;
       }
       if (!descriptor) return;
@@ -151,7 +156,8 @@ export function useInstallationApproval(
         const confirmed = await requestConfirmation();
         if (abort.signal.aborted) return;
         if (!confirmed) {
-          setError(true);
+          await cancel.mutateAsync({ params: { operationId: current.prepared.operationId } });
+          finish();
           return;
         }
         validateOwnerApproval({
