@@ -11,6 +11,10 @@ import { makeGetEvmUserOperationStatus } from "../../../src/execution/receipt.js
 
 const hash = UserOperationHash.make(`0x${"11".repeat(32)}`);
 const transactionHash = `0x${"22".repeat(32)}`;
+const pendingOperation = {
+  entryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+  userOperation: { sender: `0x${"33".repeat(20)}`, nonce: "0x0" },
+};
 
 const lookup = (result: unknown, error = false) => {
   const chain = getChainDataByCaip2("eip155:1");
@@ -49,10 +53,15 @@ it.effect("treats a null Alchemy lookup as unobserved, not rejected or failed", 
 
 it.effect("keeps observed operations pending receipt verification", () =>
   Effect.gen(function* () {
-    for (const tx of [null, transactionHash]) {
-      expect(yield* lookup({ transactionHash: tx })).toEqual({
+    for (const tx of [undefined, null, transactionHash]) {
+      expect(
+        yield* lookup({
+          ...pendingOperation,
+          ...(tx === undefined ? {} : { transactionHash: tx }),
+        }),
+      ).toEqual({
         status: "submitted",
-        transactionHash: tx,
+        transactionHash: tx ?? null,
       });
     }
   }),
@@ -63,7 +72,9 @@ it.effect("does not turn RPC failures or malformed responses into absence or rej
     for (const effect of [
       lookup({ code: -32601, message: "Method not found" }, true),
       lookup({ code: -32000, message: "Provider unavailable" }, true),
-      lookup({ transactionHash: "invalid" }),
+      lookup({ ...pendingOperation, transactionHash: "invalid" }),
+      lookup({ ...pendingOperation, userOperation: null }),
+      lookup({ ...pendingOperation, entryPoint: "invalid" }),
       lookup({}),
     ]) {
       const result = yield* effect.pipe(Effect.result);
