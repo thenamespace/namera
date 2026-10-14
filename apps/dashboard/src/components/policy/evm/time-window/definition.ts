@@ -1,3 +1,4 @@
+import { evmPolicyDisplayNames } from "@namera-ai/protocol";
 import { CalendarClockIcon } from "@namera-ai/ui/icons";
 
 export const definition = {
@@ -8,4 +9,3 @@ export const definition = {
   cardinality: "singleton",
   icon: CalendarClockIcon,
 } as const;
-import { evmPolicyDisplayNames } from "@namera-ai/protocol";

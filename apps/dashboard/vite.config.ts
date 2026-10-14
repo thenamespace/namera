@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
@@ -59,4 +61,3 @@ const config = defineConfig(({ mode }) => {
 });
 
 export default config;
-import { fileURLToPath } from "node:url";

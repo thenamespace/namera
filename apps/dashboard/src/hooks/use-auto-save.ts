@@ -23,8 +23,6 @@ interface UseAutoSaveOptions<T extends FieldValues, TTransformedValues> {
   flushOnUnmount?: boolean;
 }
 
-const stableStringify = (value: unknown) => JSON.stringify(value);
-
 type SaveOptions = {
   silent?: boolean;
 };
@@ -40,10 +38,10 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
   const authority = useRef(sessionAuthority(queryData(registry.get(currentUserAtom))));
   const [status, setStatus] = useState<AutoSaveStatus>("idle");
   const [baselineSignature, setBaselineSignature] = useState(() =>
-    stableStringify(form.getValues()),
+    JSON.stringify(form.getValues()),
   );
   const watchedValues = useWatch({ control: form.control });
-  const hasPendingChanges = enabled && stableStringify(watchedValues) !== baselineSignature;
+  const hasPendingChanges = enabled && JSON.stringify(watchedValues) !== baselineSignature;
   const onSaveRef = useRef(onSave);
   const enabledRef = useRef(enabled);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -86,7 +84,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
         return;
 
       const data = form.getValues();
-      const dataSignature = stableStringify(data);
+      const dataSignature = JSON.stringify(data);
       if (dataSignature === baselineRef.current) {
         return;
       }
@@ -158,7 +156,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
       return;
     }
 
-    const pending = stableStringify(form.getValues()) !== baselineRef.current;
+    const pending = JSON.stringify(form.getValues()) !== baselineRef.current;
     if (pending) queueSave();
   }, [clearSaveTimeout, enabled, form, queueSave]);
 
@@ -171,7 +169,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
       form.subscribe({
         formState: { values: true },
         callback: ({ values }) => {
-          const signature = stableStringify(values);
+          const signature = JSON.stringify(values);
           if (signature === observedSignatureRef.current) return;
 
           observedSignatureRef.current = signature;
@@ -189,7 +187,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
     const flushPendingChanges = () => {
       if (!flushOnUnmount || !enabledRef.current) return;
-      if (stableStringify(form.getValues()) === baselineRef.current) return;
+      if (JSON.stringify(form.getValues()) === baselineRef.current) return;
 
       void saveRef.current({ silent: true });
     };
@@ -207,7 +205,7 @@ export function useAutoSave<T extends FieldValues, TTransformedValues = T>({
 
   const resetBaseline = useCallback(
     (nextValue?: T) => {
-      const signature = stableStringify(nextValue ?? form.getValues());
+      const signature = JSON.stringify(nextValue ?? form.getValues());
       baselineRef.current = signature;
       observedSignatureRef.current = signature;
       clearSaveTimeout();

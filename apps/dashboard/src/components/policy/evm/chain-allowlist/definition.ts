@@ -1,3 +1,4 @@
+import { evmPolicyDisplayNames } from "@namera-ai/protocol";
 import { GlobalIcon } from "@namera-ai/ui/icons";
 
 export const definition = {
@@ -7,4 +8,3 @@ export const definition = {
   cardinality: "singleton",
   icon: GlobalIcon,
 } as const;
-import { evmPolicyDisplayNames } from "@namera-ai/protocol";
