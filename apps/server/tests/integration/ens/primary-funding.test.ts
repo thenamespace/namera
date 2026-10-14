@@ -181,13 +181,16 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
     }),
   );
 
-  it.effect("stops ambiguous broadcasts after 24 hours without releasing holds", () =>
+  it.effect("never repeats an ambiguous broadcast, including after 24 hours", () =>
     Effect.gen(function* () {
       const { approve, control, db, app, client, params } = yield* setup;
       yield* approve();
       yield* control.setSubmissionMode("unknown");
       yield* app.wallet.transactions.reconcile();
       const sent = yield* control.submissionCount;
+      yield* TestClock.adjust(Duration.minutes(20));
+      yield* app.wallet.transactions.reconcile();
+      expect(yield* control.submissionCount).toBe(sent);
       yield* TestClock.adjust(Duration.hours(25));
       yield* app.wallet.transactions.reconcile();
       expect(yield* control.submissionCount).toBe(sent);
@@ -195,7 +198,7 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
         (yield* db.query.billingUsageReservation.findMany()).every((r) => r.status === "active"),
       ).toBe(true);
       yield* control.setReceiptMode("immediate");
-      yield* TestClock.adjust(Duration.minutes(6));
+      yield* TestClock.adjust(Duration.minutes(20));
       yield* app.wallet.transactions.reconcile();
       expect((yield* client.identity.primaryStatus({ params })).operation?.status).toBe(
         "confirmed",
@@ -214,7 +217,7 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
       expect(
         (yield* db.query.billingUsageReservation.findMany()).every((r) => r.status === "released"),
       ).toBe(true);
-      yield* TestClock.adjust(Duration.minutes(6));
+      yield* TestClock.adjust(Duration.minutes(20));
       yield* app.wallet.transactions.reconcile();
       expect(yield* control.submissionCount).toBe(before + 1);
     }),
@@ -222,7 +225,7 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
 
   for (const legacy of [false, true])
     it.effect(
-      `preserves ${legacy ? "legacy" : "ambiguous"} sends on rejection and recovers a later receipt`,
+      `preserves ${legacy ? "legacy" : "ambiguous"} sends without rebroadcast and recovers a later receipt`,
       () =>
         Effect.gen(function* () {
           const { approve, control, db, app, client, params } = yield* setup;
@@ -239,15 +242,17 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
           } else {
             yield* control.setSubmissionMode("unknown");
             yield* app.wallet.transactions.reconcile();
-            yield* TestClock.adjust(Duration.seconds(16));
+            yield* TestClock.adjust(Duration.minutes(20));
           }
           yield* control.setSubmissionMode("rejected");
+          const sendsBeforeRecovery = yield* control.submissionCount;
           yield* app.wallet.transactions.reconcile();
+          expect(yield* control.submissionCount).toBe(sendsBeforeRecovery);
           const status = (yield* client.identity.primaryStatus({ params })).operation;
           expect(status?.status).toBe("signed");
           expect(status?.submissionBlocked).toBe(true);
           const sends = yield* control.submissionCount;
-          yield* TestClock.adjust(Duration.minutes(6));
+          yield* TestClock.adjust(Duration.minutes(20));
           yield* app.wallet.transactions.reconcile();
           expect(yield* control.submissionCount).toBe(sends);
           expect(
@@ -256,7 +261,7 @@ layer(fixture.layer)("primary name funding and recovery", (it) => {
             ),
           ).toBe(true);
           yield* control.setReceiptMode("immediate");
-          yield* TestClock.adjust(Duration.minutes(6));
+          yield* TestClock.adjust(Duration.minutes(20));
           yield* app.wallet.transactions.reconcile();
           expect((yield* client.identity.primaryStatus({ params })).operation?.status).toBe(
             "confirmed",
