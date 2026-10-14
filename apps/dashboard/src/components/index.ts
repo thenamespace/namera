@@ -1,5 +1,5 @@
 export * from "./dashboard-card";
-export * from "./copy-icon-button";
+export { CopyIconButton, CopyDropdownItem } from "@namera-ai/ui";
 export * from "./data-loading";
 export * from "./device-icon";
 export * from "./display";

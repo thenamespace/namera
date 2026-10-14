@@ -1,7 +1,7 @@
 import { Surface, Tooltip } from "@namera-ai/ui";
+import { CopyIconButton } from "@namera-ai/ui";
 import { useEventCallback } from "usehooks-ts";
 
-import { CopyIconButton } from "@/components/copy-icon-button";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 type CopyableOAuthValueProps = {

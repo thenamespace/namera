@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { EnsLabel } from "@namera-ai/protocol";
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Typography } from "@namera-ai/ui";
+import { CopyIconButton } from "@namera-ai/ui";
 
 import { sessionAuthority } from "@/atoms/auth/authority";
-import { CopyIconButton } from "@/components/copy-icon-button";
 import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { EvmAddressDisplay } from "@/components/display";

@@ -1,6 +1,5 @@
 import { CodeBlock, cn } from "@namera-ai/ui";
-
-import { CopyIconButton } from "@/components/copy-icon-button";
+import { CopyIconButton } from "@namera-ai/ui";
 
 export function CommandBlock({
   command,

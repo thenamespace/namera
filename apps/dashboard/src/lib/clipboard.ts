@@ -1,14 +1,9 @@
+import { writeClipboardText } from "@namera-ai/ui/utils";
+
 import type { FeedbackMessage } from "@/lib/error-messages";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
-export const writeClipboardText = async (value: string): Promise<boolean> => {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    return false;
-  }
-};
+export { writeClipboardText };
 
 export const copyTextWithFeedback = async (
   value: string,

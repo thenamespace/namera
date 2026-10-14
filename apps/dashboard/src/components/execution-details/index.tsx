@@ -6,10 +6,10 @@ import { DateTime } from "effect";
 
 import type { ExecutionDetailsResponse } from "@namera-ai/protocol/dto";
 import { buttonVariants, cn, Typography } from "@namera-ai/ui";
+import { CopyIconButton } from "@namera-ai/ui";
 import { ArrowUpRight01Icon, CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { formatUnits } from "viem";
 
-import { CopyIconButton } from "@/components/copy-icon-button";
 import {
   ChainDisplay,
   DateDisplay,

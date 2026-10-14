@@ -7,8 +7,7 @@ import { DateTime } from "effect";
 import type { NotificationResponse } from "@namera-ai/protocol/dto";
 import type { NotificationType } from "@namera-ai/protocol/model";
 import { buttonVariants, Surface, Typography } from "@namera-ai/ui";
-
-import { CopyIconButton } from "@/components/copy-icon-button";
+import { CopyIconButton } from "@namera-ai/ui";
 
 import { notificationPresentation } from "../data";
 import { NotificationIcon } from "../notification-icon";

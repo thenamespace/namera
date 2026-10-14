@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import { IconPreview, Typography } from "@namera-ai/ui";
+import { CopyIconButton } from "@namera-ai/ui";
 
-import { CopyIconButton } from "@/components/copy-icon-button";
 import {
   DateDisplay,
   EvmAddressDisplay,

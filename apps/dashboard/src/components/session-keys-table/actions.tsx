@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
+import { CopyDropdownItem } from "@namera-ai/ui";
 import {
   CancelCircleIcon,
   HugeiconsIcon,
@@ -12,7 +13,6 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { hasPermissions } from "@/components/permission";
 import { useCurrentUser } from "@/hooks/auth";
 import { useRevokeSessionKey } from "@/hooks/session-key";

@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Button, cn, Dropdown, Label, Tooltip } from "@namera-ai/ui";
-import { CheckIcon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Button, cn, Dropdown, Label, Tooltip } from "@thenamespace/uikit";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEventCallback } from "usehooks-ts";
 
-import { writeClipboardText } from "@/lib/clipboard";
+import { writeClipboardText } from "../clipboard.js";
+import { CheckIcon, Copy01Icon, HugeiconsIcon } from "../icons/index.js";
 
 type CopyIconButtonProps = {
   label: string;
@@ -41,7 +40,7 @@ function useCopyFeedback({
 }) {
   const [isCopied, setIsCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copy = useEventCallback(() => {
+  const copy = useCallback(() => {
     void (async () => {
       const copied = await writeClipboardText(value);
       if (copied) {
@@ -53,7 +52,7 @@ function useCopyFeedback({
         onCopyError?.();
       }
     })();
-  });
+  }, [value, onCopyError, onCopySuccess]);
 
   useEffect(
     () => () => {

@@ -32,6 +32,11 @@ the UI package boundary.
 - `src/components/metadata-display.tsx` and `status-display.tsx` — shared avatar/name
   and icon/status presentation for dashboard and admin tables. Apps supply domain
   labels, icons, and semantic tones; authorization and queries remain app-owned.
+- `src/components/copy-icon-button.tsx` — accessible copy buttons and menu items
+  with copied-state feedback. Apps supply toast callbacks; `writeClipboardText`
+  is also available from the utilities entry point.
+- `src/components/sign-in-code-input.tsx` — the shared eight-digit email code
+  input. Forms retain validation, submission, and authentication state.
 - `tsconfig.json` — Klarity React library TypeScript configuration.
 
 ## Usage
