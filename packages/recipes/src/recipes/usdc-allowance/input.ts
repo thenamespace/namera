@@ -16,7 +16,7 @@ export const UsdcAllowanceInput = Schema.Struct({
       new Set(networks).size === networks.length &&
       networks.every((chainId) => usdcNetworks.includes(chainId))
         ? undefined
-        : "Choose unique networks supported by this recipe.",
+        : "Choose unique networks supported by this template.",
     ),
   ),
   allowance: Schema.String.check(

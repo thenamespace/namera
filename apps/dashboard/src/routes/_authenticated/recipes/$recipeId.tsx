@@ -38,7 +38,7 @@ function RecipePage() {
       <DashboardPage.Header>
         <DashboardPage.Title>
           <Link to="/recipes" className="text-muted hover:text-foreground">
-            Recipes
+            Templates
           </Link>
           <span className="text-muted">/</span>
           {recipe.display.name}
