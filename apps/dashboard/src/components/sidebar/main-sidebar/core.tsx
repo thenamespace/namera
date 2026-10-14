@@ -31,10 +31,10 @@ export const coreGroupItems: SidebarGroupItemsProps = {
     {
       id: "recipes",
       icon: BookOpen01Icon,
-      label: "Recipes",
-      textValue: "Recipes",
+      label: "Templates",
+      textValue: "Templates",
       href: "/recipes",
-      tooltip: { text: "recipes" },
+      tooltip: { text: "Templates" },
     },
     {
       id: "identity",
