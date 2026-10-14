@@ -9,11 +9,7 @@ import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
 import { billingSubscription } from "#/schema/index";
 
-import { makeFreeV2UpgradeMethods } from "./free-v2-upgrade.js";
-
-export interface BillingSubscriptionRepositoryService extends ReturnType<
-  typeof makeFreeV2UpgradeMethods
-> {
+export interface BillingSubscriptionRepositoryService {
   readonly upgradeFreeV2: (
     organizationId: OrganizationId,
   ) => Effect.Effect<BillingSubscription | undefined, DatabaseError>;
@@ -35,7 +31,6 @@ export class BillingSubscriptionRepository extends Context.Service<
       const database = yield* Database;
 
       return BillingSubscriptionRepository.of({
-        ...makeFreeV2UpgradeMethods(database),
         upgradeFreeV2: Effect.fn("database.billingSubscriptionRepository.upgradeFreeV2")(function* (
           organizationId,
         ) {

@@ -35,16 +35,13 @@ the server/application ownership split.
 
 Before binding the HTTP port, the server applies pending database migrations
 and synchronizes the canonical system roles through
-`@namera-ai/database/DatabaseMigration`. The temporary `BillingStartupUpgrade`
-then upgrades current Free v1 subscriptions to v2, preserving usage and reset
-dates. HTTP and every worker wait for completion; errors fail startup and the
-next run safely resumes. No extra environment variables are required. See
-[billing rollout](../../architecture/billing/README.md#rollout-and-historical-periods)
-before removing the hook after all environments have migrated.
+`@namera-ai/database/DatabaseMigration`. HTTP and every worker wait for completion;
+migration errors fail startup. The completed Free v2 startup upgrade has been
+removed; historical SQL migrations and anniversary rollover compatibility remain.
 It then optionally bootstraps the first
 platform owner from `ADMIN_BOOTSTRAP_OWNER_EMAIL` before accepting traffic.
 
-After migrations and the billing upgrade complete, the server starts scoped email, execution, and
+After migrations complete, the server starts scoped email, execution, and
 billing workers. They use locked/leased claims safe for multiple instances and
 stop with the server scope. The execution worker claims bounded batches, checks receipts concurrently,
 and settles, releases, or reschedules submissions left pending by HTTP requests.
