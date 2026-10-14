@@ -33,6 +33,9 @@ const request = {
     metadata: { version: 1 as const, name: "Managed account" },
   },
 };
+const freshRequest = () => ({
+  payload: { ...request.payload, idempotencyKey: crypto.randomUUID() },
+});
 const setup = Effect.gen(function* () {
   yield* resetTestState();
   // Lease and credential constraints use the database's real clock.
@@ -80,13 +83,13 @@ layer(Live)("1Claw managed account creation", (it) => {
         expect(
           JSON.stringify(first, (_, value) => (typeof value === "bigint" ? String(value) : value)),
         ).not.toMatch(/credentialId|agentId|providerKeyId|test-agent-key/);
-        yield* client.wallet.create(request);
-        yield* client.wallet.create(request);
+        yield* client.wallet.create(freshRequest());
+        yield* client.wallet.create(freshRequest());
         const calls = yield* Ref.get(control.calls);
         expect(calls.filter((op) => op === "connections.bootstrapEmpty")).toHaveLength(1);
         expect(calls.filter((op) => op === "customers.enableDelegation")).toHaveLength(1);
         expect(calls.filter((op) => op === "agents.create")).toHaveLength(3);
-        const error = yield* client.wallet.create(request).pipe(Effect.flip);
+        const error = yield* client.wallet.create(freshRequest()).pipe(Effect.flip);
         expect(error).toMatchObject({ _tag: "BillingError" });
         expect(yield* Ref.get(control.calls)).toEqual(calls);
         expect(yield* client.wallet.list()).toHaveLength(3);
@@ -135,10 +138,15 @@ layer(Live)("1Claw managed account creation", (it) => {
       );
       expect(saved).toHaveLength(1);
       expect(events.some((event) => event.event === "wallet.created")).toBe(false);
-      yield* client.wallet.create(request);
-      expect(
-        (yield* Ref.get(control.calls)).filter((op) => op === "connections.bootstrapEmpty"),
-      ).toHaveLength(1);
+      const beforeRetry = yield* Ref.get(control.calls);
+      expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+        code: "PROVIDER_RECOVERY_REQUIRED",
+      });
+      expect(yield* Ref.get(control.calls)).toEqual(beforeRetry);
+      expect((yield* (yield* Database).query.signerProvisioning.findMany())[0]).toMatchObject({
+        status: "recovery_required",
+        stage: "key_create_started",
+      });
     }),
   );
 
@@ -194,6 +202,19 @@ layer(Live)("1Claw managed account creation", (it) => {
               .pipe(Effect.orDie),
           ),
         );
+        const calls = yield* Ref.get(control.calls);
+        const recovered = yield* client.wallet.create(request);
+        expect((yield* client.wallet.create(request)).id).toBe(recovered.id);
+        expect(
+          (yield* Ref.get(control.calls)).filter(
+            (call) => call === "agents.create" || call === "signingKeys.create",
+          ),
+        ).toEqual(
+          calls.filter((call) => call === "agents.create" || call === "signingKeys.create"),
+        );
+        expect(yield* client.wallet.list()).toHaveLength(1);
+        const events = yield* repository.audit.organization.findForOrganization(organizationId);
+        expect(events.filter(({ event }) => event === "wallet.created")).toHaveLength(1);
       }),
   );
 
@@ -206,7 +227,7 @@ layer(Live)("1Claw managed account creation", (it) => {
       );
       yield* TestClock.adjust("25 hours");
       yield* Ref.set(control.calls, []);
-      expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+      expect(yield* client.wallet.create(freshRequest()).pipe(Effect.flip)).toMatchObject({
         code: "PROVIDER_SETUP_FAILED",
       });
       expect(yield* Ref.get(control.calls)).toEqual([]);
@@ -250,7 +271,7 @@ layer(Live)("1Claw managed account creation", (it) => {
         "test-app",
       );
       yield* TestClock.adjust("25 hours");
-      yield* client.wallet.create(request);
+      yield* client.wallet.create(freshRequest());
       const after = yield* repository.core.providerConnections.findByOrganization(
         organizationId,
         "test-app",
@@ -274,7 +295,7 @@ layer(Live)("1Claw managed account creation", (it) => {
       if (!connection) return yield* Effect.die("Missing connection");
       yield* repository.core.providerConnections.disable({ id: connection.id, organizationId });
       yield* Ref.set(control.calls, []);
-      expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+      expect(yield* client.wallet.create(freshRequest()).pipe(Effect.flip)).toMatchObject({
         _tag: "WalletCreationError",
       });
       expect(yield* Ref.get(control.calls)).toEqual([]);
@@ -296,11 +317,11 @@ layer(Live)("1Claw managed account creation", (it) => {
             (yield* Ref.get(control.calls)).filter((op) => op === "connections.bootstrapEmpty"),
           ).toHaveLength(1);
           const { client: capacityClient } = yield* setup;
-          yield* capacityClient.wallet.create(request);
-          yield* capacityClient.wallet.create(request);
+          yield* capacityClient.wallet.create(freshRequest());
+          yield* capacityClient.wallet.create(freshRequest());
           const outcomes = yield* Effect.all(
             Array.from({ length: 5 }, () =>
-              capacityClient.wallet.create(request).pipe(Effect.result),
+              capacityClient.wallet.create(freshRequest()).pipe(Effect.result),
             ),
             { concurrency: "unbounded" },
           );

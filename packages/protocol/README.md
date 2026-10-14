@@ -67,6 +67,13 @@ Full session responses include a public `signer` descriptor independent of accou
 ownership. Creation accepts `namera-managed` custody with provider `1claw` and
 algorithm `secp256k1`, without caller-supplied keys or provider identifiers.
 This provisions a pending session; execution/signing requires installed authority.
+Managed wallet and session creation accept an optional `idempotencyKey` (1–128
+characters). Reuse it with the same payload to retry; changing the payload under
+that key is rejected. Successful retries return the existing resource. Without
+a key, identical requests from the same actor deduplicate, including completed
+requests. Supply a new key to intentionally create a distinct identical resource,
+not to bypass an unresolved provider failure. Keys are scoped to organization,
+actor, provider and signer purpose. Local/passkey creation behavior is unchanged.
 The unified prepare/complete APIs and SDK support both session custodians.
 Use the [SDK](https://www.npmjs.com/package/@namera-ai/sdk) for API operations.
 API, protocol, SDK and CLI share a version starting with 1.0.0.

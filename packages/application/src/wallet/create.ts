@@ -8,11 +8,12 @@ import {
   SigningKeyId,
   WalletCreationError,
   WalletCustodyUnavailableError,
+  WalletId,
   type ActorId,
   type OrganizationId,
   type UserId,
 } from "@namera-ai/protocol";
-import type { CreateWalletRequest } from "@namera-ai/protocol/dto";
+import { CreateWalletRequest } from "@namera-ai/protocol/dto";
 import type { SigningKeyInsert } from "@namera-ai/protocol/model";
 import { walletCreationDuration, walletCreationResults } from "@namera-ai/telemetry";
 import { generateUniqueId } from "@namera-ai/utils";
@@ -32,6 +33,7 @@ import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
 import { makeProvisionOneClawSigner } from "#/oneclaw/provision";
+import { makeSignerProvisioning, type ProvisioningAttempt } from "#/provisioning/lifecycle";
 
 import { walletPolicy } from "./data.js";
 import { makeVerifyPasskeyRegistration } from "./passkey-registration.js";
@@ -48,12 +50,14 @@ export const makeCreateWallet = Effect.gen(function* () {
   const verifyPasskeyRegistration = yield* makeVerifyPasskeyRegistration;
   const provisionOneClaw = yield* makeProvisionOneClawSigner;
   const oneClaw = yield* Effect.serviceOption(OneClawService);
+  const provisioning = yield* makeSignerProvisioning;
 
-  return Effect.fn("application.wallet.create")(function* (input: {
+  const create = Effect.fn("application.wallet.create")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly userId: UserId;
     readonly request: CreateWalletRequest;
+    readonly attempt?: ProvisioningAttempt;
   }) {
     const requestedOwner = input.request.owner;
     if (
@@ -126,7 +130,12 @@ export const makeCreateWallet = Effect.gen(function* () {
         })
       : requestedOwner.provider === "1claw"
         ? Effect.gen(function* () {
-            const prepared = yield* provisionOneClaw({ ...input, purpose: "wallet-root" });
+            if (!input.attempt) return yield* Effect.die("Managed provisioning attempt missing");
+            const prepared = yield* provisionOneClaw({
+              ...input,
+              attempt: input.attempt,
+              purpose: "wallet-root",
+            });
             return {
               signingKey: prepared.signingKey,
               publicKeyHex: prepared.signingKey.publicKeyHex,
@@ -245,7 +254,12 @@ export const makeCreateWallet = Effect.gen(function* () {
           } else if (requestedOwner.provider === "1claw") {
             yield* enforceOneClawWalletLimit(repository, input.organizationId, periods);
             const key = preparedOwner.signingKey;
-            if (key.data.type !== "1claw" || !("providerConnectionId" in key))
+            if (
+              key.data.type !== "1claw" ||
+              !("providerConnectionId" in key) ||
+              !key.providerConnectionId ||
+              !key.credentialId
+            )
               return yield* Effect.die("Invalid 1Claw signer binding");
             const credential = yield* repository.core.credentials.findById(
               key.credentialId,
@@ -394,6 +408,14 @@ export const makeCreateWallet = Effect.gen(function* () {
                 },
               })),
           });
+          if (
+            input.attempt &&
+            !(yield* repository.core.signerProvisioning.complete(input.attempt.lease, wallet.id))
+          )
+            return yield* new WalletCreationError({
+              code: "PROVIDER_RECOVERY_REQUIRED",
+              namespace: "eip155",
+            });
           return { wallet, signingKey };
         }),
       )
@@ -428,4 +450,40 @@ export const makeCreateWallet = Effect.gen(function* () {
     );
     return result;
   }, Effect.trackDuration(walletCreationDuration));
+
+  return Effect.fn("application.wallet.createIdempotent")(function* (
+    input: Omit<Parameters<typeof create>[0], "attempt">,
+  ) {
+    if (input.request.owner.type !== "namera-managed" || input.request.owner.provider !== "1claw")
+      return yield* create(input).pipe(Effect.catchTag("DatabaseError", Effect.die));
+    const { idempotencyKey, ...request } = Schema.encodeSync(CreateWalletRequest)(input.request);
+    return yield* provisioning({
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      provider: "1claw",
+      purpose: "wallet-root",
+      ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      request,
+      create: (attempt) =>
+        create({ ...input, attempt }).pipe(Effect.catchTag("DatabaseError", Effect.die)),
+      completed: (id) =>
+        Effect.gen(function* () {
+          const existing = yield* repository.core.wallet
+            .findById(WalletId.make(id), input.organizationId)
+            .pipe(Effect.orDie);
+          if (!existing)
+            return yield* new WalletCreationError({
+              code: "PROVIDER_RECOVERY_REQUIRED",
+              namespace: "eip155",
+            });
+          return { wallet: existing.wallet, signingKey: existing.signingKey };
+        }),
+    }).pipe(
+      Effect.catchTag("SignerProvisioningError", () =>
+        Effect.fail(
+          new WalletCreationError({ code: "PROVIDER_RECOVERY_REQUIRED", namespace: "eip155" }),
+        ),
+      ),
+    );
+  });
 });

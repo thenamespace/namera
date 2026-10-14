@@ -126,6 +126,17 @@ Provider key deletion is intentionally not part of the current service, so a
 failed final transaction may leave an unreferenced provider key for later
 operational reconciliation.
 
+Managed wallet and session creation now run through `src/provisioning/lifecycle.ts`.
+The provider-neutral attempt ledger binds a request hash and planned IDs to an
+organization, actor, provider, purpose and idempotency key. A 60-second fenced
+lease renews every 20 seconds. Remote intent is persisted before each mutation;
+ambiguous outcomes stop for recovery instead of allocating another agent. A
+verified signer survives a final transaction failure and is rechecked with the
+provider before reuse. Resource creation and attempt completion commit together.
+Completed retries return the existing resource. Provider clients remain explicit;
+this does not introduce a shared provider dispatcher or enable another provider.
+See the [Phase 09 recovery notes](../../research/security-audit/09-custody-crypto-and-provisioning.md).
+
 Session-key creation validates the organization wallet and its namespace before
 persisting versioned policy instances. Registry-owned cardinality rejects a
 second instance only for policy types declared singleton; repeatable types and

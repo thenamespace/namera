@@ -121,6 +121,15 @@ for (const scenario of ["lease-loss", "credential-save-failure"] as const) {
                 .pipe(Effect.orDie),
             ),
           );
+          const calls = yield* Ref.get(control.calls);
+          expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+            code: "PROVIDER_RECOVERY_REQUIRED",
+          });
+          expect(yield* Ref.get(control.calls)).toEqual(calls);
+          expect((yield* db.query.signerProvisioning.findMany())[0]).toMatchObject({
+            status: "recovery_required",
+            stage: "agent_create_started",
+          });
         } else yield* verify;
       }),
     );

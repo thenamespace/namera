@@ -43,6 +43,7 @@ import {
   ContractInterfaceRepository,
   CredentialsRepository,
   ProviderConnectionsRepository,
+  SignerProvisioningRepository,
   DashboardOverviewRepository,
   ExecutionRepository,
   ExecutionSubmissionRepository,
@@ -111,6 +112,7 @@ export interface RepositoryService {
     contractInterface: ContractInterfaceRepository["Service"];
     credentials: CredentialsRepository["Service"];
     providerConnections: ProviderConnectionsRepository["Service"];
+    signerProvisioning: SignerProvisioningRepository["Service"];
     adminOverview: AdminOverviewRepository["Service"];
     dashboardOverview: DashboardOverviewRepository["Service"];
     execution: ExecutionRepository["Service"];
@@ -198,6 +200,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const signingKey = yield* SigningKeyRepository;
       const credentials = yield* CredentialsRepository;
       const providerConnections = yield* ProviderConnectionsRepository;
+      const signerProvisioning = yield* SignerProvisioningRepository;
       const signatureOperation = yield* SignatureOperationRepository;
 
       return Repository.of({
@@ -247,6 +250,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           contractInterface,
           credentials,
           providerConnections,
+          signerProvisioning,
           adminOverview,
           dashboardOverview,
           execution,
@@ -330,6 +334,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         SigningKeyRepository.layer,
         CredentialsRepository.layer,
         ProviderConnectionsRepository.layer,
+        SignerProvisioningRepository.layer,
         SignatureOperationRepository.layer,
         WalletRepository.layer,
       ),

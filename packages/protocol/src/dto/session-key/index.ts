@@ -22,6 +22,7 @@ import {
   SessionKeyMetadata,
   SessionKeyStatus,
   SessionKeyInstallationStatus,
+  ProvisioningIdempotencyKey,
 } from "#/model/index";
 
 import { GetOrganizationMemberResponse } from "../auth/organization/member.js";
@@ -54,6 +55,7 @@ export const CreateEvmSessionInstallation = Schema.Struct({
 export type CreateEvmSessionInstallation = typeof CreateEvmSessionInstallation.Type;
 
 export const CreateEvmSessionKeyRequest = Schema.Struct({
+  idempotencyKey: Schema.optionalKey(ProvisioningIdempotencyKey),
   namespace: Schema.Literal("eip155"),
   walletId: WalletId,
   metadata: SessionKeyMetadata,

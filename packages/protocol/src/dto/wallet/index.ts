@@ -14,6 +14,7 @@ import {
   WalletKeyProtectionLevel,
   WalletMetadata,
   WalletStatus,
+  ProvisioningIdempotencyKey,
 } from "#/model/index";
 
 import { PasskeyRegistrationResponse } from "./passkey.js";
@@ -43,6 +44,7 @@ export const CreateWalletOwnerRequest = Schema.Union([
 });
 
 export const CreateEvmWalletRequest = Schema.Struct({
+  idempotencyKey: Schema.optionalKey(ProvisioningIdempotencyKey),
   namespace: Schema.Literal("eip155"),
   owner: CreateWalletOwnerRequest,
   metadata: WalletMetadata,

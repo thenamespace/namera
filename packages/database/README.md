@@ -256,6 +256,14 @@ from the user's current memberships.
 
 ## Wallet persistence
 
+`core.signer_provisioning` durably tracks managed signer creation independently
+of its provider. Its unique request scope includes organization, actor, provider,
+purpose and idempotency key. It retains planned signer/credential IDs, request
+hash, stage and a verified public signer reference, never credential plaintext.
+Token-owned leases fence writes. Expired remote work requires recovery; verified
+signers can be reclaimed. Completion belongs in the resource creation transaction.
+The repository does not call providers or automatically delete remote resources.
+
 `core.provider_connections` stores organization-scoped 1Claw identity and setup
 readiness. Its repository provides expiring token-owned setup/renewal leases and
 guarded transitions. `core.credentials` accepts encrypted agent/customer variants;
