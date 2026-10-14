@@ -16,7 +16,10 @@ Before inserting, the application:
 8. expires stale pending rows for the email;
 9. inserts the invitation, audit event, and delivery state.
 
-The billing lock serializes the final available seat. Two concurrent invitations cannot both pass the same stale member-count check.
+The billing lock serializes the final available seat. Acceptance acquires the same
+lock before changing invitation or membership rows, so converting a reserved seat
+cannot interleave with admission. Member and pending-invitation counts also share
+one SQL statement snapshot, including unlocked billing reads.
 
 ## Delivery sequence
 
@@ -62,6 +65,13 @@ stateDiagram-v2
 ## Acceptance transaction
 
 Acceptance requires the signed-in user's normalized email to match the invitation. It rejects owner-role invitations and existing memberships, conditionally changes `pending` to `accepted`, creates the user actor/membership, changes the current browser session's active organization, writes organization and user audit rows, expires the inbox notification, and cancels pending invitation email delivery in one transaction.
+
+Acquire the organization billing lock before invitation/member write locks, matching
+creation's lock order. Acceptance consumes an already-reserved seat; it does not
+perform a new capacity admission check or reject a valid invitation merely because
+the plan is full. PostgreSQL regressions in `billing/member-cap.test.ts` hold each
+side's transaction open and observe the competing billing-lock waiter before
+allowing commit, then verify capacity and audit outcomes.
 
 ## Rejection and cancellation
 
