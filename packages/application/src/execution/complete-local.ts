@@ -41,7 +41,11 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
       const managed = submission.data.managedSignerBinding !== undefined;
       if (managed === (input.request.signature !== undefined))
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-      if (submission.status !== "reserved" && submission.data.signedExecution !== null)
+      if (
+        submission.status !== "reserved" &&
+        submission.status !== "cancelled" &&
+        submission.data.signedExecution !== null
+      )
         return {
           namespace: "eip155",
           submissionId: submission.id,
@@ -149,7 +153,11 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
           );
           if (existing === undefined)
             return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-          if (existing.status !== "reserved" && existing.data.signedExecution !== null)
+          if (
+            existing.status !== "reserved" &&
+            existing.status !== "cancelled" &&
+            existing.data.signedExecution !== null
+          )
             return existing;
           if (
             current.installation.id !== submission.installationId ||
@@ -199,7 +207,11 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
           return updated;
         }),
       );
-      if (accepted.status === "reserved" || accepted.data.signedExecution === null)
+      if (
+        accepted.status === "reserved" ||
+        accepted.status === "cancelled" ||
+        accepted.data.signedExecution === null
+      )
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
       return {
         namespace: "eip155",

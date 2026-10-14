@@ -23,6 +23,12 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { executionSubmission } from "#/schema/index";
 
 export interface ExecutionSubmissionRepositoryService {
+  readonly cancelUnsigned: (input: {
+    readonly id: ExecutionSubmissionId;
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly now: DateTime.Utc;
+  }) => Effect.Effect<ExecutionSubmissionModel | undefined, DatabaseError>;
   readonly claimForSigning: (input: {
     readonly id: ExecutionSubmissionId;
     readonly organizationId: OrganizationId;
@@ -127,6 +133,34 @@ export class ExecutionSubmissionRepository extends Context.Service<
       const database = yield* Database;
 
       return ExecutionSubmissionRepository.of({
+        cancelUnsigned: Effect.fn("database.executionSubmission.cancelUnsigned")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(executionSubmission)
+            .set({
+              status: "cancelled",
+              leaseToken: null,
+              leaseExpiresAt: null,
+            })
+            .where(
+              and(
+                eq(executionSubmission.id, input.id),
+                eq(executionSubmission.organizationId, input.organizationId),
+                eq(executionSubmission.actorId, input.actorId),
+                eq(executionSubmission.status, "reserved"),
+                sql`${executionSubmission.data}->'signedExecution' = 'null'::jsonb`,
+                sql`${executionSubmission.data}->>'broadcastAttempted' IS NULL`,
+                or(
+                  isNull(executionSubmission.leaseExpiresAt),
+                  lte(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
+                ),
+              ),
+            )
+            .returning();
+          return rows[0] === undefined
+            ? undefined
+            : Schema.decodeSync(ExecutionSubmission)(rows[0]);
+        }, mapRepositoryError),
         claimForSigning: Effect.fn("database.executionSubmissionRepository.claimForSigning")(
           function* (input) {
             const db = yield* transactionOrDatabase(database);

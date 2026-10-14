@@ -34,6 +34,7 @@ const submissionLabels = {
   submitted: "Pending confirmation",
   confirmed: "Confirmed",
   failed: "Failed",
+  cancelled: "Cancelled",
 } as const;
 
 export const executionStatusView = (

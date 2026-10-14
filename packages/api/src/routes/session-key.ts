@@ -33,6 +33,11 @@ import { Authorization } from "#/middlewares/index";
 
 export class SessionKeyGroup extends HttpApiGroup.make("sessionKey")
   .add(
+    HttpApiEndpoint.post("cancelOperation", "/operations/:operationId/cancel", {
+      params: GetSessionKeyOperationRequest,
+      success: SessionKeyOperationResponse,
+      error: [SessionKeyOperationError, ...CommonErrors],
+    }).annotate(OpenApi.Summary, "Cancel an unsigned installation or removal preparation"),
     HttpApiEndpoint.post("prepareManagedOperation", "/operations/managed/prepare", {
       payload: PrepareSessionKeyOperationRequest,
       success: PrepareManagedSessionKeyOperationResponse,

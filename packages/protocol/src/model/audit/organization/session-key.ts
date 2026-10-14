@@ -12,6 +12,7 @@ import { EvmSessionPolicyType } from "#/model/core/session-key";
 export const SessionKeyOperationEventData = Schema.Struct({
   event: Schema.Literals([
     "session_key.operation_prepared",
+    "session_key.operation_cancelled",
     "session_key.operation_approved",
     "session_key.operation_confirmed",
     "session_key.operation_failed",

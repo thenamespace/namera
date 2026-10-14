@@ -24,6 +24,7 @@ import type {
   ApproveManagedSessionKeyOperationRequest,
 } from "@namera-ai/protocol/dto";
 
+import { makeCancelSessionKeyOperation } from "./cancel-operation.js";
 import { makeCompleteSessionKeyOperations } from "./complete-operation.js";
 import { makeCreateSessionKey } from "./create.js";
 import { makePrepareSessionKeyOperations } from "./prepare-operation.js";
@@ -33,6 +34,12 @@ import { makeRevokeSessionKey } from "./revoke.js";
 import type { SessionKeyView } from "./view.js";
 
 export interface SessionKeyApplication {
+  readonly cancelOperation: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly operationId: SessionKeyOperationId;
+    readonly allowedKinds: ReadonlyArray<"install" | "uninstall">;
+  }) => Effect.Effect<SessionKeyOperationResponse, SessionKeyOperationError>;
   readonly prepareManagedOperation: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -106,6 +113,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   const revoke = yield* makeRevokeSessionKey;
   const prepare = yield* makePrepareSessionKeyOperations;
   const complete = yield* makeCompleteSessionKeyOperations;
+  const cancelOperation = yield* makeCancelSessionKeyOperation;
   const reconcileOperations = yield* makeReconcileSessionKeyOperations;
 
   return {
@@ -115,6 +123,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
     ...prepare,
     ...complete,
     reconcileOperations,
+    cancelOperation,
   } satisfies SessionKeyApplication;
 });
 

@@ -33,6 +33,23 @@ The SDK and local MCP use client-held local keys or server-held 1Claw session ke
 through the same execute/sign methods and HTTP endpoints.
 The dashboard can register/export a local signer and approve installation/removal.
 
+### Cancelling an approval
+
+`POST /session-keys/operations/:operationId/cancel` takes no body and returns
+`{ operationId, status: "cancelled" }`. It is user-only, scoped to the initiating
+actor/organization, and checks the existing installation/removal permission.
+Both passkey and managed review dialogs call it on Cancel/close and clear their
+attempt only on success. A new attempt uses a fresh idempotency key.
+
+Only unsigned `awaiting-signature` operations without an active signing lease
+can transition. Cancellation and `session_key.operation_cancelled` audit are
+atomic and idempotent. These preparations have no billing holds yet: holds are
+created at approval. Signed/submitted operations cannot be cancelled or have
+their holds released through this route. Cancelling removal never restores
+API access or changes session/grant authority; onchain removal still needs a
+new approval. PostgreSQL tests cover both owner custodians, completion races,
+pending hold retention and preservation of revocation state.
+
 ## Persistence and policy references
 
 The complete `core.session_key`, `core.session_key_grant`, policy-state, and

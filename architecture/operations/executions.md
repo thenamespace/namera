@@ -26,6 +26,23 @@ contracts for granted delegated actors. The SDK, CLI and local MCP
 use the same prepare/complete endpoints for both session custodians.
 No routine execution falls back to the wallet owner's signing key.
 
+### Cancelling unsigned preparations
+
+`POST /executions/submissions/:submissionId/cancel` takes no body and returns
+`{ namespace: "eip155", submissionId, status: "cancelled" }`. It uses the same
+API-key/CLI/MCP scopes as completion and is restricted to the initiating actor
+and organization. There is no dashboard delegated-execution review dialog or
+new SDK convenience method. Status reads also expose the terminal `cancelled` state.
+
+The submission lock and conditional transition admit only `reserved` rows with
+no signed envelope, broadcast attempt or active signing lease. Cancellation,
+policy-state release, gas/count reservation release and `execution.cancelled`
+audit commit together. Repeated cancellation is idempotent. Old signatures and
+idempotency keys cannot revive a cancelled preparation. Signed, submitted and
+uncertain operations retain reservations regardless of receipt age. PostgreSQL
+tests exercise competing completion/cancellation, managed signing leases,
+actor isolation and policy/billing release; pending receipt tests verify hold retention.
+
 ### Managed sessions
 
 `POST /executions/prepare` and `/executions/complete` resolve custody from the stored session, with the same

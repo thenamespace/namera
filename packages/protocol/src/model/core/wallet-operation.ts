@@ -19,6 +19,7 @@ export const WalletOperationStatus = Schema.Literals([
   "confirmed",
   "failed",
   "expired",
+  "cancelled",
 ]);
 
 export const WalletOperationData = Schema.Struct({

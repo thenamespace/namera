@@ -19,6 +19,7 @@ export const ExecutionSubmissionStatus = Schema.Literals([
   "submitted",
   "confirmed",
   "failed",
+  "cancelled",
 ]);
 
 export const EvmExecutionSubmissionData = Schema.Struct({
