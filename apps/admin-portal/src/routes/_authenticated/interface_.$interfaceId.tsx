@@ -5,11 +5,10 @@ import { Schema } from "effect";
 import { ContractInterfaceId } from "@namera-ai/protocol";
 import { Button } from "@namera-ai/ui";
 
-import { currentAdminAtom } from "@/atoms/auth";
 import { interfaceAtom } from "@/atoms/interfaces";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchAuthorizedQuery } from "@/atoms/prefetch";
 import { AdminPage } from "@/components/page";
-import { hasPermissions, PermissionGuard, readCatalogPermission } from "@/components/permission";
+import { PermissionGuard, readCatalogPermission } from "@/components/permission";
 import { useInterface } from "@/hooks/interfaces";
 
 import { InterfaceDetails } from "./-components/interfaces/interface-details";
@@ -21,21 +20,12 @@ export const Route = createFileRoute("/_authenticated/interface_/$interfaceId")(
     }),
   },
   loader: async ({ context, params, abortController }) => {
-    const access = await prefetchQuery(
+    await prefetchAuthorizedQuery(
       context.atomRegistry,
-      currentAdminAtom,
+      readCatalogPermission,
+      () => interfaceAtom(params.interfaceId),
       abortController.signal,
     );
-    if (
-      access.status === "authorized" &&
-      hasPermissions(access.admin.permissions, readCatalogPermission)
-    ) {
-      await prefetchQuery(
-        context.atomRegistry,
-        interfaceAtom(params.interfaceId),
-        abortController.signal,
-      );
-    }
   },
   errorComponent: () => (
     <AdminPage title="Interface">

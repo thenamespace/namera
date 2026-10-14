@@ -5,11 +5,10 @@ import { Schema } from "effect";
 import { AddressCatalogId } from "@namera-ai/protocol";
 import { Button } from "@namera-ai/ui";
 
-import { currentAdminAtom } from "@/atoms/auth";
 import { catalogDetailAtom } from "@/atoms/catalog";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchAuthorizedQuery } from "@/atoms/prefetch";
 import { AdminPage } from "@/components/page";
-import { hasPermissions, PermissionGuard, readCatalogPermission } from "@/components/permission";
+import { PermissionGuard, readCatalogPermission } from "@/components/permission";
 import { useCatalogDetail } from "@/hooks/catalog";
 
 import { CatalogDetails } from "./-components/catalog/catalog-details";
@@ -21,21 +20,12 @@ export const Route = createFileRoute("/_authenticated/catalog_/$catalogId")({
     }),
   },
   loader: async ({ context, params, abortController }) => {
-    const access = await prefetchQuery(
+    await prefetchAuthorizedQuery(
       context.atomRegistry,
-      currentAdminAtom,
+      readCatalogPermission,
+      () => catalogDetailAtom(params.catalogId),
       abortController.signal,
     );
-    if (
-      access.status === "authorized" &&
-      hasPermissions(access.admin.permissions, readCatalogPermission)
-    ) {
-      await prefetchQuery(
-        context.atomRegistry,
-        catalogDetailAtom(params.catalogId),
-        abortController.signal,
-      );
-    }
   },
   errorComponent: () => (
     <AdminPage title="Catalog">

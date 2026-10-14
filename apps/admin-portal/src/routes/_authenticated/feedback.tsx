@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { currentAdminAtom } from "@/atoms/auth";
 import { feedbackAtom } from "@/atoms/feedback";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchAuthorizedQuery } from "@/atoms/prefetch";
 import { AdminPage } from "@/components/page";
-import { hasPermissions, PermissionGuard, readFeedbackPermission } from "@/components/permission";
+import { PermissionGuard, readFeedbackPermission } from "@/components/permission";
 
 import { FeedbackTable } from "./-components/feedback/table";
 
@@ -12,17 +11,12 @@ const noAccess = <p className="text-muted text-sm">You do not have access to fee
 
 export const Route = createFileRoute("/_authenticated/feedback")({
   loader: async ({ context, abortController }) => {
-    const access = await prefetchQuery(
+    await prefetchAuthorizedQuery(
       context.atomRegistry,
-      currentAdminAtom,
+      readFeedbackPermission,
+      () => feedbackAtom(),
       abortController.signal,
     );
-    if (
-      access.status === "authorized" &&
-      hasPermissions(access.admin.permissions, readFeedbackPermission)
-    ) {
-      await prefetchQuery(context.atomRegistry, feedbackAtom(), abortController.signal);
-    }
   },
   component: () => (
     <AdminPage title="Feedback">

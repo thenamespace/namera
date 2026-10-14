@@ -4,15 +4,11 @@ import type { PlatformPermission } from "@namera-ai/protocol/model";
 
 import { currentAdminAtom } from "@/atoms/auth";
 import { toQuery } from "@/hooks/atom";
+import { hasPermissions } from "@/lib/permissions";
+
+export { hasPermissions } from "@/lib/permissions";
 
 const useCurrentAdmin = toQuery(() => currentAdminAtom);
-
-export function hasPermissions(
-  granted: ReadonlyArray<PlatformPermission>,
-  required: ReadonlyArray<PlatformPermission>,
-) {
-  return required.every((permission) => granted.includes(permission));
-}
 
 export function usePermissions() {
   const { data } = useCurrentAdmin();
