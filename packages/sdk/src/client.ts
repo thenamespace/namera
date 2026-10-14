@@ -41,6 +41,7 @@ export class NameraClient {
     const decoded = decodeVerify(input);
     if (!decoded.success) return decoded;
     const request = decoded.data;
+    // HttpApi's request union needs the payload narrowed before constructing its envelope.
     if (request.type === "message") {
       return this.#transport.requestWithRetry(
         this.#transport.client.signature.verify({ payload: request }),

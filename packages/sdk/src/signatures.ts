@@ -32,6 +32,7 @@ export class SignatureClient {
 
   #prepare(request: PrepareSignatureRequest) {
     const headers = { "idempotency-key": globalThis.crypto.randomUUID() };
+    // Keep each payload narrowed for HttpApi's discriminated request envelopes.
     return this.transport.requestWithRetry(
       request.type === "message"
         ? this.transport.client.signature.prepare({ payload: request, headers })
