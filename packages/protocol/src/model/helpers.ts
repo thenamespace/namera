@@ -1,7 +1,6 @@
 // oxlint-disable typescript/no-explicit-any
 import { Schema, Struct } from "effect";
 
-// Update Schema
 export const createStructUpdateSchema = <Fields extends Schema.Struct.Fields>(
   schema: Schema.Struct<Fields>,
 ) => {
@@ -18,7 +17,7 @@ export const createStructUnionUpdateSchema = <Members extends ReadonlyArray<Sche
   };
 
   return Schema.Union(
-    schema.members.map((m) => m.mapFields(Struct.map(Schema.optional))) as PartialMembers,
+    schema.members.map((member) => member.mapFields(Struct.map(Schema.optional))) as PartialMembers,
   );
 };
 
@@ -37,7 +36,6 @@ export function createUpdateSchema(schema: any): any {
   return createStructUnionUpdateSchema(schema);
 }
 
-// Insert Schema
 export const createStructInsertSchema = <
   Fields extends Schema.Struct.Fields,
   Keys extends ReadonlyArray<keyof Fields>,
@@ -68,11 +66,10 @@ export const createStructUnionInsertSchema = <
   };
 
   return Schema.Union(
-    schema.members.map((m: any) => {
-      // Runtime check: Filter out keys that don't belong to this specific struct
-      // before passing them to Struct.pick/omit.
-      const validKeys = keys.filter((k) => k in m.fields);
-      return createStructInsertSchema(m, ...validKeys);
+    schema.members.map((member: any) => {
+      // Union variants may not contain every requested insert field.
+      const validKeys = keys.filter((key) => key in member.fields);
+      return createStructInsertSchema(member, ...validKeys);
     }) as any,
   ) as Schema.Union<InsertMembers>;
 };

@@ -1,5 +1,4 @@
-import { Schema } from "effect";
-import { Struct } from "effect";
+import { Schema, Struct } from "effect";
 
 import { createInsertSchema, createUpdateSchema } from "#/model/helpers";
 
