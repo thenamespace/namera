@@ -1,12 +1,12 @@
-import { type ReactNode, useMemo } from "react";
+import { useMemo } from "react";
 
 import { Link } from "@tanstack/react-router";
 
 import type { SessionKeyResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { IconPreview, Typography } from "@namera-ai/ui";
-import { CopyIconButton } from "@namera-ai/ui";
+import { CopyIconButton, IconPreview, Typography } from "@namera-ai/ui";
 
+import { DetailProperty } from "@/components/detail-property";
 import {
   DateDisplay,
   MetadataDisplay,
@@ -19,22 +19,6 @@ import { SessionKeyActions } from "@/components/session-keys-table/actions";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const fallbackSessionKeyIcon: MetadataIcon = { type: "emoji", value: "🔑" };
-
-type PropertyProps = {
-  children: ReactNode;
-  label: string;
-};
-
-function Property({ children, label }: PropertyProps) {
-  return (
-    <div className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 sm:grid-cols-[11rem_minmax(0,1fr)]">
-      <Typography className="text-sm!" color="muted" weight="normal">
-        {label}
-      </Typography>
-      <div className="min-w-0 text-sm">{children}</div>
-    </div>
-  );
-}
 
 const showSessionKeyIdCopyError = () =>
   showErrorToast(undefined, { title: "Couldn't copy session key ID" });
@@ -84,10 +68,10 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
           Properties
         </Typography.Heading>
         <div className="grid gap-2">
-          <Property label="Status">
+          <DetailProperty label="Status">
             <SessionKeyStatusDisplay status={sessionKey.status} />
-          </Property>
-          <Property label="Account">
+          </DetailProperty>
+          <DetailProperty label="Account">
             <Link
               className="inline-flex rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               params={accountParams}
@@ -98,20 +82,20 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
                 metadata={sessionKey.wallet.metadata}
               />
             </Link>
-          </Property>
-          <Property label="Custody">
+          </DetailProperty>
+          <DetailProperty label="Custody">
             <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
-          </Property>
-          <Property label="Namespace">
+          </DetailProperty>
+          <DetailProperty label="Namespace">
             <NamespaceDisplay namespace={sessionKey.namespace} />
-          </Property>
-          <Property label="Created by">
+          </DetailProperty>
+          <DetailProperty label="Created by">
             <MetadataDisplay
               fallbackName={sessionKey.creator.user.email}
               metadata={sessionKey.creator.user.metadata}
             />
-          </Property>
-          <Property label="Session key ID">
+          </DetailProperty>
+          <DetailProperty label="Session key ID">
             <div className="flex min-w-0 items-center gap-2">
               <span className="break-all font-mono text-xs text-foreground">{sessionKey.id}</span>
               <CopyIconButton
@@ -122,14 +106,14 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
                 onCopySuccess={showSessionKeyIdCopySuccess}
               />
             </div>
-          </Property>
-          <Property label="Created">
+          </DetailProperty>
+          <DetailProperty label="Created">
             <DateDisplay label="Created" value={sessionKey.createdAt} />
-          </Property>
+          </DetailProperty>
           {sessionKey.revokedAt ? (
-            <Property label="Revoked">
+            <DetailProperty label="Revoked">
               <DateDisplay label="Revoked" value={sessionKey.revokedAt} />
-            </Property>
+            </DetailProperty>
           ) : null}
         </div>
       </section>
