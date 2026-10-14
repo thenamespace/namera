@@ -7,14 +7,6 @@ import {
   type EvmSignatureContext,
 } from "@namera-ai/protocol";
 
-const evaluateChainAllowlist = (
-  policy: EvmChainAllowlistPolicy,
-  chainId: EvmSignatureContext["chainId"],
-): EvmPolicyDecision =>
-  policy.chainIds.includes(chainId)
-    ? { allowed: true }
-    : { allowed: false, policyId: policy.id, code: "CHAIN_NOT_ALLOWED" };
-
 export class EvmChainAllowlistSignaturePolicyHandler extends PolicyHandler<
   EvmChainAllowlistPolicy,
   EvmSignatureContext,
@@ -25,6 +17,14 @@ export class EvmChainAllowlistSignaturePolicyHandler extends PolicyHandler<
 
   readonly evaluate = Effect.fn("evm.policy.chain-allowlist.evaluate-signature")(
     (policy: EvmChainAllowlistPolicy, context: EvmSignatureContext) =>
-      Effect.succeed(evaluateChainAllowlist(policy, context.chainId)),
+      Effect.succeed(
+        policy.chainIds.includes(context.chainId)
+          ? ({ allowed: true } satisfies EvmPolicyDecision)
+          : ({
+              allowed: false,
+              policyId: policy.id,
+              code: "CHAIN_NOT_ALLOWED",
+            } satisfies EvmPolicyDecision),
+      ),
   );
 }
