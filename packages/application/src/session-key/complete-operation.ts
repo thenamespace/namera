@@ -122,6 +122,24 @@ export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
 
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
+          // Lock membership before wallet/billing so role changes and offboarding
+          // serialize with acceptance, including approvals verified outside this transaction.
+          const membership = yield* repository.auth.member.lockByActorId(
+            input.organizationId,
+            input.actorId,
+          );
+          const [member] = yield* repository.auth.member.findByActorIds(input.organizationId, [
+            input.actorId,
+          ]);
+          if (
+            !membership ||
+            membership.removedAt !== null ||
+            !member ||
+            !member.organizationRole.permissions.includes(
+              operation.kind === "install" ? "session-key:create" : "session-key:revoke",
+            )
+          )
+            return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
           const wallet = yield* repository.core.wallet.findByIdForUpdate(
             operation.walletId,
             input.organizationId,

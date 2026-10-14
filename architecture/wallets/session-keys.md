@@ -191,6 +191,11 @@ only after confirming the installation.
 
 ## Owner approval
 
+All seven cookie-authenticated session mutations (create, revoke, prepare,
+complete, managed prepare/approve and cancel) require the exact configured
+dashboard Origin before mutation or provider work. Missing, opaque and foreign
+origins are rejected; CORS is not the mutation authorization boundary.
+
 Registration and delegated execution reconstruct the parent account using only
 public owner material: either a local passkey or a 1Claw-managed Ethereum
 secp256k1 factory-account owner. Compilation, simulation and local session
@@ -243,7 +248,13 @@ account's WebAuthn encoding, not an unrelated random approval token.
 assertion. The original actor must still have the operation's permission. The
 live passkey verifier checks credential, RP, origin, user verification, challenge
 and counter. EVM validates and encodes the assertion against the persisted
-operation. The transaction repeats owner/lifecycle checks, advances the counter,
+operation. Both custody branches first lock the initiating membership, reload
+its current role and require the operation's create/revoke permission. Membership
+locks precede wallet and billing locks and serialize acceptance with role changes
+and removal. A losing approval neither consumes a counter nor persists a signature,
+billing hold or approval audit. Already accepted operations remain reconcilable;
+offboarding does not revoke shared session/API keys. The transaction then repeats
+owner/lifecycle checks, advances the counter,
 conditionally accepts the signature, reserves execution/gas usage and appends
 the approval audit event. Quota failure rolls back all these writes. A successful
 retry reads the durable state without advancing the counter or charging twice.
