@@ -12,7 +12,7 @@ function RecipesPage() {
   return (
     <DashboardPage>
       <DashboardPage.Header>
-        <DashboardPage.Title>Recipes</DashboardPage.Title>
+        <DashboardPage.Title>Templates</DashboardPage.Title>
       </DashboardPage.Header>
       <DashboardPage.Content className="w-full px-4 py-6 sm:px-6">
         <RecipeList />
