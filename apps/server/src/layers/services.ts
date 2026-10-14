@@ -3,22 +3,15 @@ import { Config, Effect, Layer } from "effect";
 
 import { Application, GoogleIdentityProvider } from "@namera-ai/application";
 import { CryptoService } from "@namera-ai/crypto";
-import { Database, DatabaseMigration, Repository, TransactionService } from "@namera-ai/database";
-import { EmailJobs, EmailService, EmailWorkerLayer } from "@namera-ai/emails";
+import { Database, Repository, TransactionService } from "@namera-ai/database";
+import { EmailJobs, EmailService } from "@namera-ai/emails";
 import { Ens } from "@namera-ai/ens";
 import { Evm } from "@namera-ai/evm";
 import { Passkeys } from "@namera-ai/passkeys";
-import { AnalyticsCollection } from "@namera-ai/telemetry/analytics/collection";
 import { ProductAnalytics } from "@namera-ai/telemetry/analytics/server";
 import { GcpService } from "@namera-ai/wallet-provider-gcp";
 import { LocalService } from "@namera-ai/wallet-provider-local";
 import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-oneclaw";
-
-import { AnalyticsWorkerLayer } from "#/workers/analytics";
-import { BillingWorkerLayer } from "#/workers/billing";
-import { ExecutionWorkerLayer } from "#/workers/execution";
-import { SessionKeyWorkerLayer } from "#/workers/session-key";
-import { WalletOperationWorkerLayer } from "#/workers/wallet-operation";
 
 const PersistenceLive = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
   Layer.provide(Database.layer),
@@ -69,78 +62,3 @@ export const ServicesLive = Layer.mergeAll(
 );
 
 export const ApplicationLive = Application.layer;
-
-// Workers wait for migrations independently because they are long-lived layers
-// and may begin polling before the HTTP listener is constructed.
-export const EmailWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    return EmailWorkerLayer;
-  }),
-).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
-
-export const ExecutionWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    const analytics = yield* ProductAnalytics;
-    return ExecutionWorkerLayer.pipe(
-      Layer.provide(
-        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
-      ),
-    );
-  }),
-).pipe(
-  Layer.provide(DatabaseMigration.layer),
-  Layer.provide(ApplicationLive),
-  Layer.provide(ServicesLive),
-);
-
-export const BillingWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    return BillingWorkerLayer;
-  }),
-).pipe(
-  Layer.provide(DatabaseMigration.layer),
-  Layer.provide(ApplicationLive),
-  Layer.provide(ServicesLive),
-);
-
-export const SessionKeyWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    const analytics = yield* ProductAnalytics;
-    return SessionKeyWorkerLayer.pipe(
-      Layer.provide(
-        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
-      ),
-    );
-  }),
-).pipe(
-  Layer.provide(DatabaseMigration.layer),
-  Layer.provide(ApplicationLive),
-  Layer.provide(ServicesLive),
-);
-
-export const WalletOperationWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    const analytics = yield* ProductAnalytics;
-    return WalletOperationWorkerLayer.pipe(
-      Layer.provide(
-        Layer.succeed(AnalyticsCollection)(analytics.enabled ? "background" : "disabled"),
-      ),
-    );
-  }),
-).pipe(
-  Layer.provide(DatabaseMigration.layer),
-  Layer.provide(ApplicationLive),
-  Layer.provide(ServicesLive),
-);
-
-export const AnalyticsWorkerLive = Layer.unwrap(
-  Effect.gen(function* () {
-    yield* DatabaseMigration;
-    return AnalyticsWorkerLayer;
-  }),
-).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));

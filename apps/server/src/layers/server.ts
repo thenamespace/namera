@@ -6,16 +6,8 @@ import { DatabaseMigration } from "@namera-ai/database";
 import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
-import {
-  ApplicationLive,
-  AnalyticsWorkerLive,
-  BillingWorkerLive,
-  EmailWorkerLive,
-  ExecutionWorkerLive,
-  SessionKeyWorkerLive,
-  WalletOperationWorkerLive,
-  ServicesLive,
-} from "#/layers/services";
+import { ApplicationLive, ServicesLive } from "#/layers/services";
+import { WorkersLive } from "#/layers/workers";
 import { AnalyticsMiddleware } from "#/middlewares/analytics";
 import {
   CorsMiddleware,
@@ -73,12 +65,7 @@ const Routes = Layer.mergeAll(
       ),
     ),
   ),
-  EmailWorkerLive,
-  BillingWorkerLive,
-  ExecutionWorkerLive,
-  SessionKeyWorkerLive,
-  WalletOperationWorkerLive,
-  AnalyticsWorkerLive,
+  WorkersLive,
 );
 
 // ServerLive is the transport composition root. Middleware order is intentional:
