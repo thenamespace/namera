@@ -1,8 +1,7 @@
 import { useState, type Key } from "react";
 
 import type { OAuthAuthorizationResponse } from "@namera-ai/protocol/dto";
-import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
-import { CopyDropdownItem } from "@namera-ai/ui";
+import { AlertDialog, Button, CopyDropdownItem, Dropdown, Label } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 

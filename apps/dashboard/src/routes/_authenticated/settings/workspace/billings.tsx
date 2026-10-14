@@ -1,10 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { Button } from "@namera-ai/ui";
-
 import { currentUserAtom } from "@/atoms/auth/session";
 import { billingAtom } from "@/atoms/billing";
 import { prefetchQuery, startPrefetchQuery } from "@/atoms/prefetch";
+import { DataError } from "@/components/data-error";
 import { DataLoading } from "@/components/data-loading";
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
@@ -56,15 +55,7 @@ function BillingPage() {
           billing.data ? (
             <BillingOverview billing={billing.data} />
           ) : billing.isError ? (
-            <div
-              className="grid min-h-64 place-content-center justify-items-center gap-3 text-center"
-              role="alert"
-            >
-              <p className="text-sm text-muted">Billing data could not be loaded.</p>
-              <Button variant="tertiary" onPress={billing.refetch}>
-                Try again
-              </Button>
-            </div>
+            <DataError label="billing" onRetry={billing.refetch} isRetrying={billing.isFetching} />
           ) : (
             <DataLoading className="min-h-64" label="Loading billing" />
           )

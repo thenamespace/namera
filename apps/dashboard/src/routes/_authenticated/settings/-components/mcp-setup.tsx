@@ -1,7 +1,6 @@
 import { useState } from "react";
 
-import { CodeBlock, ListBox, Select } from "@namera-ai/ui";
-import { CopyIconButton } from "@namera-ai/ui";
+import { CodeBlock, CopyIconButton, ListBox, Select } from "@namera-ai/ui";
 import { BrandClaudeIcon, BrandOpenaiIcon } from "@namera-ai/ui/icons";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
