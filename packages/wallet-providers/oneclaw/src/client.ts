@@ -18,44 +18,45 @@ export const makeClientContext = Effect.gen(function* () {
   const platform = client(config.platformApiKey);
   const anonymous = client();
 
-  const request = <S extends Schema.Top & { readonly DecodingServices: never }>(
+  const request = Effect.fnUntraced(function* <
+    S extends Schema.Top & { readonly DecodingServices: never },
+  >(
     operation: OneClawOperation,
     schema: S,
     call: () => Promise<OneclawResponse<unknown>>,
-  ): Effect.Effect<S["Type"], OneClawError> =>
-    Effect.gen(function* () {
-      const response = yield* Effect.tryPromise({
-        try: call,
-        catch: (cause) => fromOneClawException(operation, cause),
-      }).pipe(
-        Effect.timeoutOrElse({
-          duration: config.requestTimeout,
-          orElse: () => Effect.fail(new OneClawError({ operation, code: "TIMEOUT" })),
-        }),
+  ): Effect.fn.Return<S["Type"], OneClawError> {
+    const response = yield* Effect.tryPromise({
+      try: call,
+      catch: (cause) => fromOneClawException(operation, cause),
+    }).pipe(
+      Effect.timeoutOrElse({
+        duration: config.requestTimeout,
+        orElse: () => Effect.fail(new OneClawError({ operation, code: "TIMEOUT" })),
+      }),
+    );
+    const status = response.meta?.status;
+    if (status === undefined)
+      return yield* new OneClawError({ operation, code: "INVALID_RESPONSE" });
+    if (
+      Schema.is(
+        Schema.Struct({ status: Schema.Literals(["pending_approval", "approval_required"]) }),
+      )(response.data)
+    ) {
+      return yield* new OneClawError({ operation, code: "APPROVAL_REQUIRED" });
+    }
+    // upsertUser deliberately returns 409 in data with error=null.
+    if (response.error !== null || status < 200 || status >= 300 || status === 202) {
+      const link =
+        operation === "connections.upsert" &&
+        Schema.is(Schema.Struct({ link_required: Schema.Unknown }))(response.data);
+      return yield* fromOneClawResponse(
+        operation,
+        status,
+        link ? "link_required" : response.error?.type,
       );
-      const status = response.meta?.status;
-      if (status === undefined)
-        return yield* new OneClawError({ operation, code: "INVALID_RESPONSE" });
-      if (
-        Schema.is(
-          Schema.Struct({ status: Schema.Literals(["pending_approval", "approval_required"]) }),
-        )(response.data)
-      ) {
-        return yield* new OneClawError({ operation, code: "APPROVAL_REQUIRED" });
-      }
-      // upsertUser deliberately returns 409 in data with error=null.
-      if (response.error !== null || status < 200 || status >= 300 || status === 202) {
-        const link =
-          operation === "connections.upsert" &&
-          Schema.is(Schema.Struct({ link_required: Schema.Unknown }))(response.data);
-        return yield* fromOneClawResponse(
-          operation,
-          status,
-          link ? "link_required" : response.error?.type,
-        );
-      }
-      return yield* decodeResponse(operation, schema, response.data);
-    });
+    }
+    return yield* decodeResponse(operation, schema, response.data);
+  });
 
   const customer = Effect.fnUntraced(function* (
     operation: OneClawOperation,

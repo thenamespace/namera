@@ -18,8 +18,10 @@ export const makeSigning = ({ anonymous, client, request }: ClientContext) => ({
     yield* Schema.decodeUnknownEffect(Schema.toType(OneClawAgentCredentialPayload))(
       input.credential,
     ).pipe(Effect.mapError(() => new OneClawError({ operation, code: "INVALID_REQUEST" })));
-    if (input.digest.length !== 32)
+    if (input.digest.length !== 32) {
       return yield* new OneClawError({ operation, code: "INVALID_REQUEST" });
+    }
+
     const agentId = input.credential.agentId;
     if (
       input.key.agentId !== agentId ||
@@ -28,6 +30,7 @@ export const makeSigning = ({ anonymous, client, request }: ClientContext) => ({
     ) {
       return yield* new OneClawError({ operation, code: "KEY_MISMATCH" });
     }
+
     // Explicit exchange preserves typed HTTP failures. SDK automatic refresh
     // throws unstructured errors containing provider bodies. No token is persisted.
     const token = yield* request(operation, TokenResponse, () =>
@@ -40,17 +43,22 @@ export const makeSigning = ({ anonymous, client, request }: ClientContext) => ({
     const keys = yield* request(operation, KeysResponse, () =>
       authenticated.signingKeys.list(agentId),
     );
+
     const matching = keys.keys.filter((key) => key.chain === "ethereum" && key.is_active);
     const remote = matching[0];
-    if (matching.length !== 1 || remote === undefined || remote.id !== input.key.id)
+    if (matching.length !== 1 || remote === undefined || remote.id !== input.key.id) {
       return yield* new OneClawError({ operation, code: "KEY_MISMATCH" });
+    }
+
     const key = yield* validateKey(operation, agentId, remote);
     if (
       key.version !== input.key.version ||
       key.publicKey.toLowerCase() !== input.key.publicKey.toLowerCase() ||
       key.address.toLowerCase() !== input.key.address.toLowerCase()
-    )
+    ) {
       return yield* new OneClawError({ operation, code: "KEY_MISMATCH" });
+    }
+
     const digest = bytesToHex(input.digest);
     const response = yield* request(operation, SignResponse, () =>
       authenticated.agents.sign(agentId, {
@@ -59,6 +67,7 @@ export const makeSigning = ({ anonymous, client, request }: ClientContext) => ({
         hash: digest,
       }),
     );
+
     return yield* verifyDigestSignature(key, digest, response);
   }),
 });

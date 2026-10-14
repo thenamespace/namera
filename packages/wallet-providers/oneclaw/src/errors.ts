@@ -38,7 +38,10 @@ export const fromOneClawResponse = (
 export const fromOneClawException = (operation: OneClawOperation, cause: unknown): OneClawError =>
   cause instanceof SdkError
     ? fromOneClawResponse(operation, cause.status, cause.type)
-    : oneClawError(operation, cause instanceof SyntaxError ? "INVALID_RESPONSE" : "UNAVAILABLE");
+    : new OneClawError({
+        operation,
+        code: cause instanceof SyntaxError ? "INVALID_RESPONSE" : "UNAVAILABLE",
+      });
 
 export const decodeResponse = <S extends Schema.Top & { readonly DecodingServices: never }>(
   operation: OneClawOperation,
@@ -46,5 +49,5 @@ export const decodeResponse = <S extends Schema.Top & { readonly DecodingService
   value: unknown,
 ): Effect.Effect<S["Type"], OneClawError> =>
   Schema.decodeUnknownEffect(schema)(value).pipe(
-    Effect.mapError(() => oneClawError(operation, "INVALID_RESPONSE")),
+    Effect.mapError(() => new OneClawError({ operation, code: "INVALID_RESPONSE" })),
   );
