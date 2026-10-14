@@ -4,12 +4,8 @@ import { feedbackAtom, feedbackDetailAtom, updateFeedbackStatusMutation } from "
 import { QueryKeys } from "@/atoms/query-keys";
 import { toMutation, toQuery } from "@/hooks/atom";
 
-export function useFeedback(query: ListFeedbackRequest) {
-  return toQuery(() => feedbackAtom(query))();
-}
-export function useFeedbackDetail(id: string) {
-  return toQuery(() => feedbackDetailAtom(id))();
-}
+export const useFeedback = toQuery((query: ListFeedbackRequest) => feedbackAtom(query));
+export const useFeedbackDetail = toQuery((id: string) => feedbackDetailAtom(id));
 export const useUpdateFeedbackStatus = toMutation(updateFeedbackStatusMutation, {
   invalidates: QueryKeys.feedback.all,
 });
