@@ -19,6 +19,7 @@ import { NAMERA_API_ORIGIN } from "./defaults.js";
 
 type NameraClientBaseConfig = {
   readonly baseUrl?: string;
+  /** Trusted Fetch implementation; must honor the SDK's manual redirect policy. */
   readonly fetch?: NameraFetch;
   readonly resolveSessionSigner?: ResolveSessionSigner;
   /** Disable automatic Node key-store access. Explicit resolvers still take precedence. */
@@ -162,21 +163,28 @@ export class NameraTransport {
     // Effect failures remain fully typed until this boundary. Declared HttpApi
     // errors are preserved as `cause`; only transport and decoding failures are
     // normalized into SDK infrastructure errors.
-    const handled = Effect.matchCause(effect, {
-      onFailure: (cause) =>
-        failure<A, NameraEndpointError<E>>(
-          Option.match(Cause.findErrorOption(cause), {
-            onNone: (): NameraSdkError<NameraEndpointError<E>> => ({
-              kind: "unexpected",
-              message: "The SDK encountered an unexpected failure.",
-              status: null,
-              cause: Cause.squash(cause),
+    // Manual redirects return a non-success status instead of a retryable network
+    // error, without forwarding credentials or replaying a mutation at Location.
+    const handled = Effect.matchCause(
+      Effect.provideService(effect, FetchHttpClient.RequestInit, {
+        redirect: "manual",
+      }),
+      {
+        onFailure: (cause) =>
+          failure<A, NameraEndpointError<E>>(
+            Option.match(Cause.findErrorOption(cause), {
+              onNone: (): NameraSdkError<NameraEndpointError<E>> => ({
+                kind: "unexpected",
+                message: "The SDK encountered an unexpected failure.",
+                status: null,
+                cause: Cause.squash(cause),
+              }),
+              onSome: (error) => toSdkError<E>(error),
             }),
-            onSome: (error) => toSdkError<E>(error),
-          }),
-        ),
-      onSuccess: (value) => success<A, NameraEndpointError<E>>(value),
-    });
+          ),
+        onSuccess: (value) => success<A, NameraEndpointError<E>>(value),
+      },
+    );
 
     return Effect.runPromise(
       this.#fetch === undefined

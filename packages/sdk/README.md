@@ -40,6 +40,11 @@ The default API is `https://api.namera.ai`. For another deployment:
 const local = new NameraClient({ apiKey, baseUrl: "http://localhost:8080" });
 ```
 
+Use the final API URL: the SDK does not follow redirects, including same-origin
+redirects. Redirect responses fail without automatic retries, so credentials and
+transaction payloads are not forwarded to another URL. A custom `fetch` must
+honor the supplied `redirect: "manual"` option; it is trusted with your credentials.
+
 ## OAuth authentication
 
 Supply a bearer token or an asynchronous token supplier. The supplier can refresh

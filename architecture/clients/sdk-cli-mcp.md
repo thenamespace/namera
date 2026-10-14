@@ -10,6 +10,15 @@ and `api`; adapters do not hand-build competing request schemas.
 returning a discriminated `NameraResult`. It supports `x-api-key`, a fixed bearer
 token, or an asynchronous bearer supplier for refreshable interactive clients.
 
+Authenticated transport supplies `redirect: "manual"` to native and injected
+Fetch. Same-origin and cross-origin redirects fail without retry: Node exposes
+the 3xx status, while a browser may expose status zero. This prevents credentials
+and mutation bodies from reaching a redirect target. Configure the final API URL;
+custom Fetch implementations must honor this option and remain trusted with
+credentials. Real loopback tests cover 301/302/303/307/308, all credential modes,
+reads and execution preparation; a substitute covers opaque status-zero responses.
+No server authorization or audit-event behavior changes.
+
 SDK client input types are derived from protocol DTOs with brands removed:
 IDs are strings, addresses and bytes are `0x`-prefixed strings, and amounts are
 bigints. Namespace and the eight supported CAIP-2 chain literals stay narrow.
