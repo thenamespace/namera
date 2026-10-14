@@ -345,6 +345,13 @@ create the successful execution.
 
 ## Wallet owner operations
 
+Wallet-operation retry counters live in optional `data.reconciliation` metadata;
+legacy rows start with zero counters. Lease release atomically stores those
+counters and the next eligible time in `leaseExpiresAt` with a null lease token.
+Claims order by oldest eligible time, then creation and ID, and skip locked rows.
+The existing JSONB column and scheduling index require no migration for this
+metadata. Retry scheduling is operational bookkeeping, not a new audit event.
+
 `core.wallet_operation` is the durable owner-transaction ledger for Ethereum
 primary-name approvals. It stores prepared/signed envelopes, actor idempotency,
 fenced leases and receipts, with one active operation per account/chain. It does

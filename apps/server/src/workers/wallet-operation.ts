@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect, Layer, Metric } from "effect";
+import { Cause, DateTime, Duration, Effect, Layer, Metric, Random } from "effect";
 
 import { Application } from "@namera-ai/application";
 import { workerLastSuccess, workerPollResults } from "@namera-ai/telemetry";
@@ -7,8 +7,9 @@ export const WalletOperationWorkerLayer = Layer.effectDiscard(
   Effect.gen(function* () {
     const app = yield* Application;
     yield* Effect.gen(function* () {
+      let failures = 0;
       while (true) {
-        yield* app.wallet.transactions.reconcile().pipe(
+        const succeeded = yield* app.wallet.transactions.reconcile().pipe(
           Effect.tap(() =>
             Effect.gen(function* () {
               yield* Metric.update(
@@ -24,8 +25,10 @@ export const WalletOperationWorkerLayer = Layer.effectDiscard(
               );
             }),
           ),
-          Effect.catchCause(() =>
-            Effect.logError("wallet_operation.worker.failed").pipe(
+          Effect.as(true),
+          Effect.catchCause((cause) => {
+            if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
+            return Effect.logError("wallet_operation.worker.failed").pipe(
               Effect.andThen(
                 Metric.update(
                   Metric.withAttributes(workerPollResults, {
@@ -35,11 +38,16 @@ export const WalletOperationWorkerLayer = Layer.effectDiscard(
                   1,
                 ),
               ),
-            ),
-          ),
+              Effect.as(false),
+            );
+          }),
         );
+        failures = succeeded ? 0 : Math.min(failures + 1, 5);
         // Always yield between batches, including continuously retrying operations.
-        yield* Effect.sleep(Duration.seconds(5));
+        const delay = succeeded
+          ? 5
+          : Math.min(5 * 2 ** failures, 60) * (0.8 + (yield* Random.next) * 0.4);
+        yield* Effect.sleep(Duration.seconds(delay));
       }
     }).pipe(
       Effect.onInterrupt(() => Effect.logInfo("wallet_operation.worker.stopped")),

@@ -153,6 +153,9 @@ bounded wait expires. `getStatus` uses Alchemy's supported
 `eth_getUserOperationByHash` lookup. A null result means unobserved, not rejected:
 the operation may still be pending or outside the provider's scan window. A found
 operation remains submitted until a matching receipt establishes its outcome.
+Pending lookup responses may omit `transactionHash` or return it as null; both
+normalize to a submitted operation with no transaction hash. Malformed operation
+metadata and invalid hashes remain lookup errors, not evidence of rejection.
 Rundler has no dedicated bulk receipt action, so background processing batches
 database claims and performs bounded concurrent lookups across their chains.
 
