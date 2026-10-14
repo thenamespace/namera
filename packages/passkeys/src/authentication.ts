@@ -61,11 +61,15 @@ export const verifyAuthentication = Effect.fn("passkeys.verifyAuthentication")(
     Effect.tryPromise({
       try: async (): Promise<VerifiedPasskeyAuthentication> => {
         const response = input.response as AuthenticationResponseJSON;
-        if (response?.id !== input.credentialId)
+        if (response?.id !== input.credentialId) {
           throw new Error("Authentication credential does not match the wallet owner");
+        }
+
         assertFirstPartyClientData(response.response.clientDataJSON);
-        if (!/^0x04[0-9a-fA-F]{128}$/.test(input.publicKeyHex))
+        if (!/^0x04[0-9a-fA-F]{128}$/.test(input.publicKeyHex)) {
           throw new Error("Expected an uncompressed P-256 public key");
+        }
+
         const publicKey = Buffer.from(input.publicKeyHex.slice(2), "hex");
         const cose = isoCBOR.encode(
           new Map<number, number | Uint8Array>([
@@ -76,6 +80,7 @@ export const verifyAuthentication = Effect.fn("passkeys.verifyAuthentication")(
             [-3, publicKey.subarray(33, 65)],
           ]),
         );
+
         const result = await verifyAuthenticationResponse({
           response,
           expectedChallenge: input.expectedChallenge,
@@ -84,7 +89,9 @@ export const verifyAuthentication = Effect.fn("passkeys.verifyAuthentication")(
           requireUserVerification: true,
           credential: { id: input.credentialId, publicKey: cose, counter: input.signCount },
         });
+
         if (!result.verified) throw new Error("Passkey authentication signature is invalid");
+
         return {
           credentialId: input.credentialId,
           signCount: result.authenticationInfo.newCounter,
