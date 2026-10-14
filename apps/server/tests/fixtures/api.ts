@@ -10,7 +10,9 @@ import { TestAuthToken, TestDatabase, TestEmails, TestEns } from "./layers/index
 
 export type TestApiClient = HttpApiClient.ForApi<typeof NameraApi>;
 
-export const makeTestApiClient = handledApi(NameraApi);
+export const makeTestApiClient = handledApi(NameraApi, {
+  headers: { origin: "http://dashboard.test" },
+});
 
 export const resetTestState = Effect.fn("server.resetTestState")(function* () {
   const database = yield* TestDatabase;

@@ -144,10 +144,13 @@ layer(TestServerLayer)("organization tenant boundaries", (it) => {
         const invitation = yield* inviteMember(client, email, owner.actor.organization.id);
         const recipient = yield* signIn(client, email);
         const ownerClient = yield* handledApi(NameraApi, {
-          headers: { cookie: `auth-token=${owner.cookie.value}` },
+          headers: { cookie: `auth-token=${owner.cookie.value}`, origin: "http://dashboard.test" },
         });
         const recipientClient = yield* handledApi(NameraApi, {
-          headers: { cookie: `auth-token=${recipient.cookie.value}` },
+          headers: {
+            cookie: `auth-token=${recipient.cookie.value}`,
+            origin: "http://dashboard.test",
+          },
         });
         const payload = { invitationId: invitation.invitation.id };
         const results = yield* Effect.all(

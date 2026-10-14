@@ -365,6 +365,11 @@ The composition root also loads:
 Local configuration defaults are kept in `apps/server/.env.example`.
 Package READMEs remain authoritative for each service's variables.
 
+All organization, membership and invitation mutations require the exact
+`AUTH_DASHBOARD_PUBLIC_ORIGIN` Origin after user authorization. Missing, opaque
+(`null`) and foreign origins are rejected before mutations, independent of
+Content-Type or CORS response headers. Organization reads are unchanged.
+
 The dashboard and internal admin surfaces each use their configured exact origin;
 credentialed requests never use a wildcard origin. The legacy admin SPA rebuild
 is a separate step; see the admin architecture for rollout limitations.
