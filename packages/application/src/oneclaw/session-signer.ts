@@ -1,11 +1,12 @@
-import { Config, Effect, Option, Schema } from "effect";
+import { Config, Effect, Option } from "effect";
 
-import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
 import { createSecp256k1OwnerAccount } from "@namera-ai/evm";
 import { ProviderConnectionError } from "@namera-ai/protocol";
-import { OneClawAgentCredentialPayload, type SigningKey } from "@namera-ai/protocol/model";
+import type { SigningKey } from "@namera-ai/protocol/model";
 import { OneClawService } from "@namera-ai/wallet-provider-oneclaw";
+
+import { makeLoadOneClawAgentCredential } from "./agent-credential.js";
 
 /** Public identity only; excludes timestamps so reads do not invalidate a preparation. */
 export const sessionSignerBinding = (key: SigningKey): string =>
@@ -23,7 +24,7 @@ export const sessionSignerBinding = (key: SigningKey): string =>
 
 export const makeLoadOneClawSessionSigner = Effect.gen(function* () {
   const repository = yield* Repository;
-  const crypto = yield* CryptoService;
+  const loadCredential = yield* makeLoadOneClawAgentCredential;
   const provider = yield* Effect.serviceOption(OneClawService);
   return Effect.fnUntraced(function* (key: SigningKey) {
     if (
@@ -39,7 +40,6 @@ export const makeLoadOneClawSessionSigner = Effect.gen(function* () {
       return yield* new ProviderConnectionError({ code: "IDENTITY_MISMATCH" });
     const claw = provider.value;
     const data = key.data;
-    const connectionId = key.providerConnectionId;
     const appId = yield* Config.String("ONECLAW_PLATFORM_APP_ID");
     const sign = Effect.fnUntraced(function* (digest: Uint8Array) {
       const fresh = yield* repository.core.signingKey.findById(key.id, key.organizationId);
@@ -49,37 +49,9 @@ export const makeLoadOneClawSessionSigner = Effect.gen(function* () {
         sessionSignerBinding(fresh) !== sessionSignerBinding(key)
       )
         return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
-      const connection = yield* repository.core.providerConnections.findByOrganization(
-        key.organizationId,
-        appId,
-      );
-      if (!connection || connection.id !== connectionId || connection.status !== "ready")
-        return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
-      const credential = yield* repository.core.credentials.findById(
-        key.credentialId,
-        key.organizationId,
-      );
-      if (
-        !credential ||
-        credential.type !== "1claw-agent" ||
-        credential.data.agentId !== data.agentId
-      )
-        return yield* new ProviderConnectionError({ code: "IDENTITY_MISMATCH" });
-      const cleartext = yield* crypto.decrypt({
-        purpose: cryptoPurpose.providerCredential,
-        value: credential.encryptedPayload,
-      });
-      const payload = yield* Schema.decodeUnknownEffect(
-        Schema.fromJsonString(OneClawAgentCredentialPayload),
-      )(cleartext).pipe(
-        Effect.mapError(() => new ProviderConnectionError({ code: "IDENTITY_MISMATCH" })),
-      );
-      if (
-        payload.organizationId !== key.organizationId ||
-        payload.credentialId !== key.credentialId ||
-        payload.agentId !== data.agentId
-      )
-        return yield* new ProviderConnectionError({ code: "IDENTITY_MISMATCH" });
+
+      const payload = yield* loadCredential(key, data.agentId, appId);
+
       return yield* claw.signing.signDigest({
         credential: payload,
         digest,
