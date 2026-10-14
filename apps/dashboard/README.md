@@ -33,7 +33,7 @@ Workspace package imports continue to use their package names.
   separate declarative column module.
 - `src/components/session-key-creation/` — shared metadata, policy editing,
   registration/recovery, local export and network approval used by custom creation
-  and Recipes. Private drafts stay in the creation hook, never in form state.
+  and Templates. Private drafts stay in the creation hook, never in form state.
 - `src/components/common/table/` — shared table controls and pure collection
   helpers for facet counts, unique values, and controlled selections.
 - `src/components/display/` — reusable compact value renderers for metadata,
@@ -255,7 +255,10 @@ outside the policy picker. Existing API policy summaries remain
 readable on session details. Chain-based editors share one
 bounded multi-select with network icons and derived select-all state.
 
-## Recipes
+## Templates
+
+The dashboard presents recipes as Templates. Existing `/recipes` URLs and
+internal recipe/package identifiers remain unchanged for compatibility.
 
 `/recipes` lists code-owned definitions from the private `@namera-ai/recipes`
 package, with searchable names, descriptions and tags. `/recipes/$recipeId`

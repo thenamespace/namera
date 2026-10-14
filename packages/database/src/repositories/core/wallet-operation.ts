@@ -24,6 +24,9 @@ type Result = Effect.Effect<WalletOperation | undefined, DatabaseError>;
 type Batch = Effect.Effect<ReadonlyArray<WalletOperation>, DatabaseError>;
 
 export interface WalletOperationRepositoryService {
+  readonly cancelUnsigned: (
+    input: Scope & { readonly actorId: ActorId; readonly now: DateTime.Utc },
+  ) => Result;
   readonly claimForSigning: (
     input: Lease & { readonly actorId: ActorId; readonly leaseExpiresAt: DateTime.Utc },
   ) => Result;
@@ -83,7 +86,12 @@ export interface WalletOperationRepositoryService {
     readonly leaseExpiresAt: DateTime.Utc;
     readonly limit: number;
   }) => Batch;
-  readonly releaseLease: (input: Lease & { readonly nextReconcileAt: DateTime.Utc }) => Result;
+  readonly releaseLease: (
+    input: Lease & {
+      readonly nextReconcileAt: DateTime.Utc;
+      readonly reconciliation?: NonNullable<WalletOperation["data"]["reconciliation"]>;
+    },
+  ) => Result;
   readonly expireAwaitingSignatures: (input: {
     readonly now: DateTime.Utc;
     readonly limit: number;
@@ -113,6 +121,29 @@ export class WalletOperationRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return WalletOperationRepository.of({
+        cancelUnsigned: Effect.fn("database.walletOperation.cancelUnsigned")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                status: "cancelled",
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
+              .where(
+                and(
+                  scoped(input),
+                  eq(table.actorId, input.actorId),
+                  eq(table.status, "awaiting-signature"),
+                  sql`${table.data}->'signed' = 'null'::jsonb`,
+                  or(isNull(table.leaseExpiresAt), lte(table.leaseExpiresAt, date(input.now))),
+                ),
+              )
+              .returning(),
+          );
+        }, mapRepositoryError),
         claimForSigning: Effect.fn("database.walletOperation.claimForSigning")(function* (input) {
           const db = yield* transactionOrDatabase(database);
           return decode(
@@ -385,7 +416,11 @@ export class WalletOperationRepository extends Context.Service<
                   sql`${date(input.leaseExpiresAt)}::timestamptz > ${date(input.now)}::timestamptz`,
                 ),
               )
-              .orderBy(asc(table.createdAt), asc(table.id))
+              .orderBy(
+                sql`${table.leaseExpiresAt} ASC NULLS FIRST`,
+                asc(table.createdAt),
+                asc(table.id),
+              )
               .limit(input.limit)
               .for("update", { skipLocked: true });
             return decodeBatch(
@@ -403,7 +438,15 @@ export class WalletOperationRepository extends Context.Service<
           return decode(
             yield* db
               .update(table)
-              .set({ leaseToken: null, leaseExpiresAt: date(input.nextReconcileAt) })
+              .set({
+                leaseToken: null,
+                leaseExpiresAt: date(input.nextReconcileAt),
+                ...(input.reconciliation === undefined
+                  ? {}
+                  : {
+                      data: sql`jsonb_set(${table.data}, '{reconciliation}', ${JSON.stringify(input.reconciliation)}::jsonb)`,
+                    }),
+              })
               .where(and(leased(input), inArray(table.status, ["signed", "submitted"])))
               .returning(),
           );

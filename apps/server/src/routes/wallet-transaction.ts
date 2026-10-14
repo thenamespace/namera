@@ -37,6 +37,14 @@ export const WalletTransactionRoutes = HttpApiBuilder.group(
         return { organizationId: actor.organization.id, actorId: actor.actorId };
       });
       return handlers
+        .handle("cancel", ({ params }) =>
+          Effect.gen(function* () {
+            return yield* app.wallet.transactions.cancel({
+              ...(yield* authorize(true)),
+              ...params,
+            });
+          }),
+        )
         .handle("prepare", ({ params, payload, headers }) =>
           Effect.gen(function* () {
             return yield* app.wallet.transactions.prepare({

@@ -179,7 +179,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     readonly actorId: ActorId;
     readonly submissionId: ExecutionSubmissionId;
     readonly sessionKey: EvmSessionKey;
-    readonly stage: "sign" | "submit" | "receipt";
+    readonly stage: "sign" | "submit" | "receipt" | "cancel";
     readonly receipt?: EvmExecutionReceipt;
     readonly leaseToken?: string;
   }) {
@@ -189,13 +189,27 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           input.submissionId,
           input.organizationId,
         );
+        if (input.stage === "cancel" && submission?.status === "cancelled")
+          return submission.actorId === input.actorId;
         if (
           submission === undefined ||
+          submission.status === "cancelled" ||
           submission.status === "confirmed" ||
           submission.status === "failed" ||
           (input.leaseToken !== undefined && submission.leaseToken !== input.leaseToken)
         ) {
           return false;
+        }
+        // Cancellation wins only before signature acceptance and outside an active
+        // signing/expiry lease. This transition and all releases commit together.
+        if (input.stage === "cancel") {
+          const cancelled = yield* repository.core.executionSubmission.cancelUnsigned({
+            id: submission.id,
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            now: yield* DateTime.now,
+          });
+          if (!cancelled) return false;
         }
         const operation = { type: "execution", id: input.submissionId } as const;
         const reservations = yield* repository.core.sessionKeyPolicyReservation.findForOperation(
@@ -220,6 +234,22 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           now,
         );
         yield* releaseExecutionBilling(input.organizationId, submission, input.receipt);
+        if (input.stage === "cancel") {
+          yield* audit.organization({
+            organizationId: input.organizationId,
+            actorId: input.actorId,
+            event: "execution.cancelled",
+            resourceType: "execution-submission",
+            resourceId: submission.id,
+            data: {
+              version: 1,
+              namespace: "eip155",
+              chainId: submission.data.chainId,
+              sessionKeyGrantId: submission.sessionKeyGrantId,
+            },
+          });
+          return true;
+        }
         const failed = yield* repository.core.executionSubmission.markFailed({
           id: input.submissionId,
           organizationId: input.organizationId,
@@ -322,6 +352,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
         }
         if (
           submission.status === "failed" ||
+          submission.status === "cancelled" ||
           (input.leaseToken !== undefined && submission.leaseToken !== input.leaseToken)
         ) {
           return undefined;

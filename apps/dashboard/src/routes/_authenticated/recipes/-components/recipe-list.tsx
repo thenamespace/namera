@@ -28,15 +28,15 @@ export function RecipeList() {
     <div className="grid gap-6">
       <HeadingGroup>
         <HeadingGroup.Title level={1} size="lg">
-          Recipes
+          Templates
         </HeadingGroup.Title>
         <HeadingGroup.Description>
           Create a session key from a ready-to-use policy template.
         </HeadingGroup.Description>
       </HeadingGroup>
       <Input
-        aria-label="Search recipes"
-        placeholder="Search recipes or tags"
+        aria-label="Search templates"
+        placeholder="Search templates or tags"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         className="w-80 max-w-full"
@@ -94,7 +94,7 @@ export function RecipeList() {
       </div>
       {visible.length === 0 ? (
         <Typography.Paragraph color="muted">
-          No recipes match. Try a different name or tag.
+          No templates match. Try a different name or tag.
         </Typography.Paragraph>
       ) : null}
     </div>

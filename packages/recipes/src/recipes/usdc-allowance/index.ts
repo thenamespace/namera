@@ -11,7 +11,7 @@ export const usdcAllowanceRecipe = {
   id: "usdc-lifetime-allowance",
   version: 2,
   display: {
-    name: "USDC Spend Recipe",
+    name: "USDC Spend Template",
     description:
       "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
     logo: "address-catalog/eip155/erc20/usdc.png",

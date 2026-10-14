@@ -19,6 +19,7 @@ export const WalletOperationStatus = Schema.Literals([
   "confirmed",
   "failed",
   "expired",
+  "cancelled",
 ]);
 
 export const WalletOperationData = Schema.Struct({
@@ -29,6 +30,12 @@ export const WalletOperationData = Schema.Struct({
   signed: Schema.NullOr(EvmSignedExecution),
   broadcastAttempted: Schema.optionalKey(Schema.Boolean),
   submissionBlocked: Schema.optionalKey(Schema.Boolean),
+  reconciliation: Schema.optionalKey(
+    Schema.Struct({
+      attempts: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+      consecutiveErrors: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    }),
+  ),
   owner: Schema.Struct({ signingKeyId: SigningKeyId, publicKey: Hex }),
 });
 

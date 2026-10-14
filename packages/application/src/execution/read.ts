@@ -137,10 +137,10 @@ export const makeExecutionReadApplication = Effect.gen(function* () {
           code: "EXECUTION_SUBMISSION_NOT_FOUND",
         });
       }
-      if (submission.status === "failed") {
+      if (submission.status === "failed" || submission.status === "cancelled") {
         return {
           namespace: submission.namespace,
-          status: "failed" as const,
+          status: submission.status,
           submissionId: submission.id,
         };
       }

@@ -1,14 +1,22 @@
 import { Effect } from "effect";
 
-import type { ExecutionError, BillingError } from "@namera-ai/protocol";
+import type {
+  ExecutionError,
+  BillingError,
+  ActorId,
+  OrganizationId,
+  ExecutionSubmissionId,
+} from "@namera-ai/protocol";
 import type {
   CompleteExecutionRequest,
+  CancelExecutionResponse,
   CompleteExecutionResponse,
   GrantedActorData,
   PrepareExecutionRequest,
   PrepareExecutionResponse,
 } from "@namera-ai/protocol/dto";
 
+import { makeCancelExecution } from "./cancel.js";
 import { makeCompleteLocalExecution } from "./complete-local.js";
 import { makePrepareLocalExecution } from "./prepare-local.js";
 import { makeExecutionReadApplication, type ExecutionReadApplication } from "./read.js";
@@ -30,17 +38,24 @@ export interface ExecutionApplication
     readonly request: CompleteExecutionRequest;
   }) => Effect.Effect<CompleteExecutionResponse, ExecutionError>;
   readonly reconcile: () => Effect.Effect<number>;
+  readonly cancel: (input: {
+    readonly organizationId: OrganizationId;
+    readonly actorId: ActorId;
+    readonly submissionId: ExecutionSubmissionId;
+  }) => Effect.Effect<CancelExecutionResponse, ExecutionError>;
 }
 
 export const makeExecutionApplication = Effect.gen(function* () {
   const prepare = yield* makePrepareLocalExecution;
   const complete = yield* makeCompleteLocalExecution;
+  const cancel = yield* makeCancelExecution;
   const read = yield* makeExecutionReadApplication;
   const simulation = yield* makeExecutionSimulationApplication;
   const reconciliation = yield* makeExecutionReconciliation;
   return {
     prepare,
     complete,
+    cancel,
     reconcile: reconciliation.reconcile,
     ...read,
     ...simulation,

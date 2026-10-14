@@ -115,7 +115,7 @@ export function RecipeCreationForm({
           .catch((error) =>
             showErrorToast(error, {
               title: "Couldn’t prepare session key",
-              description: "Review the recipe inputs and try again.",
+              description: "Review the template inputs and try again.",
             }),
           );
       }}
@@ -225,7 +225,7 @@ export function RecipeCreationForm({
       )}
       {metadataForm.formState.errors.onchain || metadataForm.formState.errors.policies ? (
         <Typography.Paragraph role="alert" size="sm" className="text-danger">
-          Review the selected networks and recipe inputs before creating this key.
+          Review the selected networks and template inputs before creating this key.
         </Typography.Paragraph>
       ) : null}
       {step === "details" ? (
