@@ -18,10 +18,6 @@ import { IdentityArtworkError, type ArtworkDraft, type ArtworkKind } from "./art
 export type UploadedArtwork = Partial<Record<ArtworkKind, { file: File; url: string }>>;
 export type ArtworkProgress = "Preparing…" | "Signing…" | "Uploading…" | "Saving…";
 
-const invalid = () => {
-  throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
-};
-
 export function validateArtworkApproval(
   wallet: WalletResponse,
   message: string,
@@ -38,13 +34,22 @@ export function validateArtworkApproval(
     prepared.request.type !== "message" ||
     prepared.request.message !== message ||
     DateTime.toEpochMillis(prepared.expiresAt) <= Date.now()
-  )
-    invalid();
+  ) {
+    throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
+  }
+
   if (isOneClawAccount(wallet)) {
-    if (prepared.signing.method !== "server") invalid();
+    if (prepared.signing.method !== "server") {
+      throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
+    }
+
     return;
   }
-  if (prepared.signing.method !== "passkey") return invalid();
+
+  if (prepared.signing.method !== "passkey") {
+    throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
+  }
+
   const owner = descriptor?.owner;
   const options = prepared.signing.options;
   if (
@@ -56,8 +61,9 @@ export function validateArtworkApproval(
     options.allowCredentials.length !== 1 ||
     options.allowCredentials[0]?.id !== owner.credentialId ||
     options.challenge !== ownerMessageChallenge(wallet.address, 1, message)
-  )
-    invalid();
+  ) {
+    throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
+  }
 }
 
 type UploadDependencies = {
@@ -85,23 +91,28 @@ export async function saveArtwork(
   for (const kind of ["avatar", "header"] as const) {
     const file = draft[kind];
     if (!file) continue;
+
     deps.assertActive();
     let url = uploaded[kind]?.file === file ? uploaded[kind]?.url : undefined;
+
     if (!url) {
       deps.progress("Preparing…");
       const authorization = await deps.authorize(kind);
       deps.assertActive();
+
       const prepared = await deps.prepare(authorization.message);
       deps.assertActive();
       validateArtworkApproval(wallet, authorization.message, prepared, descriptor);
       if (authorization.expiresAt <= Date.now())
         throw new IdentityArtworkError({ code: "AUTHORIZATION_EXPIRED" });
+
       deps.progress("Signing…");
       const response =
         prepared.signing.method === "passkey"
           ? await deps.authenticate(prepared.signing.options)
           : undefined;
       deps.assertActive();
+
       const signed = await deps.complete({
         namespace: "eip155",
         operationId: prepared.operationId,
@@ -119,9 +130,11 @@ export async function saveArtwork(
         throw new IdentityArtworkError({ code: "APPROVAL_INVALID" });
       if (authorization.expiresAt <= Date.now())
         throw new IdentityArtworkError({ code: "AUTHORIZATION_EXPIRED" });
+
       deps.progress("Uploading…");
       url = await deps.upload(kind, file, authorization.message, signed.signature);
       deps.assertActive();
+
       let parsed: URL;
       try {
         parsed = new URL(url);
@@ -132,6 +145,7 @@ export async function saveArtwork(
         throw new IdentityArtworkError({ code: "UPLOAD_FAILED" });
       uploaded[kind] = { file, url };
     }
+
     deps.progress("Saving…");
     await deps.save(kind, url);
     deps.assertActive();
