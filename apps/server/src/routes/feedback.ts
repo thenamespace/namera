@@ -1,11 +1,10 @@
 import { Effect } from "effect";
-import { HttpServerRequest } from "effect/http";
-import { HttpApiBuilder, HttpApiError } from "effect/http-api";
+import { HttpApiBuilder } from "effect/http-api";
 
 import { CurrentActor, CurrentAdmin, NameraApi } from "@namera-ai/api";
 import { Application, AuthConfig } from "@namera-ai/application";
 
-import { enforceActor } from "#/helpers/index";
+import { enforceActor, requireDashboardOrigin } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const FeedbackRoutes = HttpApiBuilder.group(NameraApi, "feedback", (handlers) =>
@@ -15,9 +14,7 @@ export const FeedbackRoutes = HttpApiBuilder.group(NameraApi, "feedback", (handl
     return handlers.handle("create", ({ payload }) =>
       Effect.gen(function* () {
         const actor = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
-        const request = yield* HttpServerRequest.HttpServerRequest;
-        if (request.headers.origin !== config.dashboardPublicOrigin.origin)
-          return yield* new HttpApiError.Forbidden();
+        yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
         yield* consumeRateLimit("feedback.create", actor.user.id, rateLimitPolicy.feedback.byUser);
         return yield* app.feedback.create({
           ...payload,
