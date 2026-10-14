@@ -52,10 +52,13 @@ export function usePrimaryApproval(
   >(undefined);
   const abort = useRef<AbortController | undefined>(undefined);
   const busy = useRef(false);
+
   useEffect(() => {
-    if (terminalOperationId && attempt.current?.prepared?.operationId === terminalOperationId)
+    if (terminalOperationId && attempt.current?.prepared?.operationId === terminalOperationId) {
       attempt.current = undefined;
+    }
   }, [terminalOperationId]);
+
   useEffect(
     () => () => {
       abort.current?.abort();
@@ -63,17 +66,21 @@ export function usePrimaryApproval(
     },
     [],
   );
+
   const answer = (accepted: boolean) => {
     setReviewFee(undefined);
     confirm.current?.(accepted);
     confirm.current = undefined;
   };
+
   const start = async (retryKey: string | null, sponsor = true) => {
     if (busy.current) return;
+
     busy.current = true;
     setProgress("Preparing…");
     const controller = new AbortController();
     abort.current = controller;
+
     try {
       const managed = isOneClawAccount(wallet);
       const owner = descriptor?.owner;
@@ -82,9 +89,12 @@ export function usePrimaryApproval(
         (!owner ||
           descriptor?.walletId !== wallet.id ||
           owner.signingKeyId !== wallet.owner.signingKeyId)
-      )
+      ) {
         throw new Error("Passkey owner unavailable");
+      }
+
       const current = (attempt.current ??= { key: retryKey ?? crypto.randomUUID(), sponsor });
+
       if (!current.assertion) {
         const chain = getChainDataByCaip2("eip155:1");
         if (!chain) throw new Error("Ethereum unavailable");
@@ -114,6 +124,7 @@ export function usePrimaryApproval(
           }),
         );
         if (controller.signal.aborted) return;
+
         const prepareRequest = () =>
           prepare.mutateAsync({
             params: { walletId: wallet.id },
@@ -131,6 +142,7 @@ export function usePrimaryApproval(
               sponsor: current.sponsor ?? true,
             },
           });
+
         if (!current.prepared) {
           try {
             current.prepared = await prepareRequest();
@@ -142,20 +154,24 @@ export function usePrimaryApproval(
                 error.limit === "gas-sponsorship"
               ) ||
               current.sponsor === false
-            )
+            ) {
               throw error;
+            }
+
             current.key = crypto.randomUUID();
             current.sponsor = false;
             current.prepared = await prepareRequest();
           }
         }
         if (controller.signal.aborted) return;
+
         const response = current.prepared;
         const operation = response.prepared.userOperation;
         const fee =
           (operation.callGasLimit + operation.verificationGasLimit + operation.preVerificationGas) *
           operation.maxFeePerGas;
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
+
         const accepted = await new Promise<boolean>((resolve) => {
           setProgress("Reviewing…");
           confirm.current = resolve;
@@ -169,6 +185,7 @@ export function usePrimaryApproval(
           setSponsored(response.prepared.sponsorship === "alchemy-bso");
         });
         if (controller.signal.aborted) return;
+
         if (!accepted) {
           setProgress("Cancelling…");
           await cancel.mutateAsync({
@@ -177,7 +194,9 @@ export function usePrimaryApproval(
           attempt.current = undefined;
           return;
         }
+
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
+
         if (response.signing.method === "passkey") {
           setProgress("Signing…");
           const assertion = await startAuthentication({
@@ -195,8 +214,11 @@ export function usePrimaryApproval(
             operationId: response.operationId,
             response: assertion,
           };
-        } else current.assertion = { namespace: "eip155", operationId: response.operationId };
+        } else {
+          current.assertion = { namespace: "eip155", operationId: response.operationId };
+        }
       }
+
       setProgress("Submitting…");
       await approve.mutateAsync({
         params: { walletId: wallet.id },
@@ -211,8 +233,10 @@ export function usePrimaryApproval(
           current?.prepared &&
           !current.assertion &&
           DateTime.toEpochMillis(current.prepared.expiresAt) <= Date.now()
-        )
+        ) {
           attempt.current = undefined;
+        }
+
         showErrorToast(error, {
           title: "Couldn’t set primary name",
           description: "Retry to resume your approval safely.",
@@ -226,6 +250,7 @@ export function usePrimaryApproval(
       }
     }
   };
+
   return {
     start,
     pending: progress !== null,
