@@ -84,7 +84,7 @@ layer(fixture.layer)("OAuth device lifecycle", (it) => {
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("device-own-tenant@example.com"));
       const ownerClient = yield* handledApi(NameraApi, {
-        headers: { cookie: `auth-token=${owner.cookie.value}` },
+        headers: { cookie: `auth-token=${owner.cookie.value}`, origin: "http://dashboard.test" },
       });
       yield* signIn(client, testEmail("device-other-tenant@example.com"));
       const { session: pending } = yield* registerPendingLocalSession(client, ["eip155:1"]);

@@ -21,7 +21,9 @@ layer(fixture.layer)("device authorization races", (it) => {
       const second = yield* signIn(client, testEmail("device-second@example.com"));
       // Pin each request's cookie instead of changing shared client credentials during the race.
       const users = yield* Effect.forEach([first, second], (user) =>
-        handledApi(NameraApi, { headers: { cookie: `auth-token=${user.cookie.value}` } }),
+        handledApi(NameraApi, {
+          headers: { cookie: `auth-token=${user.cookie.value}`, origin: "http://dashboard.test" },
+        }),
       );
       const app = yield* Application;
       const started = yield* app.oauth.device.start({

@@ -2,13 +2,18 @@ import { Effect } from "effect";
 import { HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
-import { Application } from "@namera-ai/application";
+import { Application, AuthConfig } from "@namera-ai/application";
 
-import { enforceActor, toOAuthAuthorizationResponse } from "#/helpers/index";
+import {
+  enforceActor,
+  requireDashboardOrigin,
+  toOAuthAuthorizationResponse,
+} from "#/helpers/index";
 
 export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application;
+    const config = yield* AuthConfig;
     return handlers
       .handle("getOAuthAuthorizationRequest", ({ params }) =>
         Effect.gen(function* () {
@@ -41,6 +46,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["mcp-authorization:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           if (data.organization.id !== payload.organizationId) {
             return yield* new HttpApiError.Forbidden();
           }
@@ -56,6 +62,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return yield* app.oauth.authorization.deny({
             requestId: payload.requestId,
             userId: data.user.id,
@@ -66,6 +73,8 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          // This lookup claims the device request; it is not a read-only GET.
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           const { authorization, client, userCode } = yield* app.oauth.device.get({
             userCode: query.userCode,
             userId: data.user.id,
@@ -98,6 +107,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["cli-authorization:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           if (data.organization.id !== payload.organizationId) {
             return yield* new HttpApiError.Forbidden();
           }
@@ -113,6 +123,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* app.oauth.device.deny({
             deviceAuthorizationId: payload.deviceAuthorizationId,
             userId: data.user.id,
@@ -154,6 +165,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["mcp-authorization:revoke"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toOAuthAuthorizationResponse(
             yield* app.oauth.authorization.revoke({
               organizationId: data.organization.id,
@@ -198,6 +210,7 @@ export const OAuthRoutes = HttpApiBuilder.group(NameraApi, "oauth", (handlers) =
             allowedActors: ["user"],
             requiredPermissions: { user: ["cli-authorization:revoke"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toOAuthAuthorizationResponse(
             yield* app.oauth.authorization.revoke({
               organizationId: data.organization.id,

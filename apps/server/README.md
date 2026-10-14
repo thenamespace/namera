@@ -267,6 +267,15 @@ Authorization codes and tokens are opaque and stored only as hashes. Consent
 approval and authorization revocation create organization audit events and
 in-app notifications, but never email jobs.
 
+OAuth dashboard consent approval, denial and authorization revocation require
+the exact `AUTH_DASHBOARD_PUBLIC_ORIGIN` Origin after human authorization.
+`GET /oauth/device-authorizations` requires it too because looking up a user code
+claims the device request. Missing, opaque and foreign origins are rejected before
+application writes, including JSON requests without Content-Type. Other management
+reads and public OAuth protocol endpoints remain unchanged; CLI/MCP registration,
+authorization, device start, token exchange and token revocation do not require
+a dashboard Origin.
+
 The same authorization server exposes the RFC 8628 device grant for the
 pre-registered `namera-cli` public client. Device approval creates a `cli` actor
 with explicit session-key grants. Generic API authorization accepts its bearer
