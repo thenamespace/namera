@@ -1,61 +1,29 @@
-# `@namera-ai/ens`
+# @namera-ai/ens
 
-Private Effect service for managing Namera ENS identities through Namespace's
-offchain manager. The package owns provider configuration and translates the
-provider's Promise API and errors into a typed Effect boundary.
-
-## Configuration
-
-| Variable             | Required | Description                                       |
-| -------------------- | -------- | ------------------------------------------------- |
-| `NAMERA_ENS_API_KEY` | Yes      | Namespace address-based offchain manager API key. |
-
-The API key is loaded as a redacted Effect configuration value and is never
-accepted by individual operations.
+Private Effect adapter for Namespace offchain names and records. `Ens` wraps
+the provider API and translates failures into typed errors. Account authorization,
+identity ownership and audit events belong to application.
 
 ## Service
 
-`Ens` exposes subname lifecycle, availability and lookup operations, plus
-address, text, and data record management. Provider request and response types,
-chain names, and validation helpers are re-exported from the package entry
-point so consumers do not need to import the provider SDK directly.
+`Ens.layer` provides subname creation, availability and lookup, plus address,
+text and data-record management. It uses Namespace mainnet and reads the redacted
+`NAMERA_ENS_API_KEY` configuration value. Individual calls never accept an API key.
 
-```ts
-import { ChainName, Ens } from "@namera-ai/ens";
-import { Effect } from "effect";
+The package exports provider request/response types, `ChainName`, coin-type and
+address-validation helpers. A missing single-name lookup returns `null`; other
+provider failures remain errors.
 
-const program = Effect.gen(function* () {
-  const ens = yield* Ens;
+`EnsTestLayer` provides owner-filtered in-memory names and records with injectable
+write failures. Adapter tests exercise the SDK against a local HTTP fixture.
 
-  yield* ens.createSubname({
-    parentName: "namera.id",
-    label: "alice",
-    owner: "0x0000000000000000000000000000000000000000",
-    addresses: [
-      {
-        chain: ChainName.Ethereum,
-        value: "0x0000000000000000000000000000000000000000",
-      },
-    ],
-  });
-});
-
-program.pipe(Effect.provide(Ens.layer));
-```
-
-`Ens.layer` uses Namespace mainnet in every runtime environment. `EnsTestLayer`
-provides an in-memory deterministic substitute with resettable owner-filtered
-names, records and injected write failures for boundary tests.
-
-Single-name lookups normalize Namespace's missing-name 404 to `null`, including
-the rejected-promise behavior in SDK 1.0.13. Other provider failures remain errors.
-Adapter regression tests exercise the real SDK against a local HTTP fixture;
-they require no API key or external network.
-
-## Commands
+## Development
 
 ```sh
-pnpm --filter @namera-ai/ens typecheck
 pnpm --filter @namera-ai/ens test
+pnpm --filter @namera-ai/ens typecheck
 pnpm --filter @namera-ai/ens build
 ```
+
+See [identities](../../architecture/wallet-system/identity.md) for account
+ownership checks, partial updates, primary names and browser uploads.

@@ -1,38 +1,32 @@
-# `@namera-ai/passkeys`
+# @namera-ai/passkeys
 
-Provider-neutral WebAuthn ceremony generation and verification for Namera.
-The package owns the SimpleWebAuthn dependency and exposes Effect services;
-application workflows own persistence and tenant binding.
+WebAuthn registration and authentication verification through an Effect service.
+This private package owns SimpleWebAuthn integration, not ceremony persistence,
+tenant authorization or wallet transaction encoding.
 
-Registration options require resident credentials, user verification, and
-ES256. Verification checks the response against the exact stored challenge,
-origin, and RP ID, then returns a normalized uncompressed P-256 public key plus
-credential metadata. It never persists data or receives private key material.
+Registration requests resident ES256 credentials with user verification. Verification
+binds responses to the expected challenge, origin and RP ID, and returns an
+uncompressed P-256 public key with credential metadata.
 
-Authentication options accept exact operation digest bytes and allow only the
-wallet owner's credential, with user verification required. Authentication
-verification binds credential ID, challenge, origin, RP ID, P-256 public key
-and counter; cross-origin ceremonies are rejected. It returns verified
-authenticator/client bytes and DER signature for namespace-owned transaction
-encoding. Application workflows must consume the operation challenge and update
-the counter atomically; this service alone provides no replay persistence.
+Authentication uses an operation digest as the challenge and allows the exact
+owner credential. Verification checks credential ID, origin, RP ID, public key,
+user presence/verification and counter, and rejects cross-origin ceremonies.
+It returns verified assertion bytes for the chain adapter.
 
-Synced passkeys may consistently use counter zero. Nonzero counters must
-increase. A challenge must still be single-use even when counters are zero.
+Application workflows consume challenges and update counters atomically. Synced
+passkeys may keep a zero counter; challenges must still be single use. Nonzero
+counters must increase.
 
-`pnpm --filter @namera-ai/passkeys test` exercises the live verifier with
-generated P-256 packed self-attestations, including challenge/origin/RP mismatch,
-missing user presence or verification, and a corrupted signature. These tests
-do not substitute for browser authenticator integration tests.
+## Development
 
-`createTestAuthenticator()` from `@namera-ai/passkeys/testing` supplies ephemeral signed assertions for package and
-HTTP integration tests. It retains the private key inside its closure. Its
-optional test layer replaces registration only to provision that public key;
-authentication still runs the live verifier. Never compose it into a server
-runtime layer.
+```sh
+pnpm --filter @namera-ai/passkeys test
+pnpm --filter @namera-ai/passkeys typecheck
+pnpm --filter @namera-ai/passkeys build
+```
 
-`createTestRegistration()` from the same testing entry produces a fresh P-256
-packed self-attestation for a supplied challenge, origin and RP ID. Both the
-package verifier tests and multi-user HTTP wallet-cap tests use it with
-`Passkeys.layer`, without replacing registration verification. It returns only
-the public key and registration response, never the private key.
+The `@namera-ai/passkeys/testing` entry supplies ephemeral signed registration and
+assertion fixtures. It is for isolated tests, never production composition. No
+environment variables are read here; callers supply expected ceremony values.
+
+See [authentication boundaries](../../architecture/identity-access/authentication.md).

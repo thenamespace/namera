@@ -1,145 +1,47 @@
 # @namera-ai/telemetry
 
-OpenTelemetry export and shared metric definitions for Namera. It uses Effect's
-OTLP tracing, logging, and metrics exporters with protobuf serialization.
+OTLP export layers, bounded metric definitions and product analytics adapters.
+Application code emits Effect spans/logs and updates shared metrics; this private
+package owns destinations and provider integration.
 
-- Development sends OTLP to the local Grafana LGTM collector.
-- Production sends each signal directly to its dedicated Axiom dataset.
-- Application code uses Effect tracing and logging directly and imports shared
-  metric definitions from this package.
+## Entry points
 
-See [Telemetry architecture](../../architecture/platform/telemetry.md) for the
-repository-wide tracing, logging, metrics, and export contract, and
-[delivery workspace architecture](../../architecture/packages/delivery.md) for
-this package's dependency role.
+| Export                 | Responsibility                                                          |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Root                   | OTLP layers, route normalization, metric definitions.                   |
+| `analytics/browser`    | Production browser initialization, typed capture and privacy filtering. |
+| `analytics/server`     | Server capture and acknowledged milestone delivery.                     |
+| `analytics/collection` | Request/worker collection eligibility.                                  |
+| `analytics/contract`   | Analytics event contract.                                               |
 
-## Structure
+Browser analytics is separate from the Node root export. Application workflows
+own milestone persistence; this package does not query the database.
 
-- `src/config.ts` — common telemetry and production Axiom configuration.
-- `src/data.ts` — code-owned service identity and exporter timing.
-- `src/export.ts` — environment-selected OTLP destinations and provider headers.
-- `src/http.ts` — bounded HTTP route templates and status-class helpers.
-- `src/layer.ts` — reusable OTLP exporter layer and the server live layer.
-- `src/metrics/auth.ts` — user-profile and session-lifecycle metrics.
-- `src/metrics/api-key.ts` — API-key creation outcomes and duration.
-- `src/metrics/billing.ts` — meter transitions, anniversary rollover,
-  reservation recovery, and projection repair counts.
-- `src/metrics/common.ts` — transport-level metrics shared by server handlers.
-- `src/metrics/email.ts` — durable email enqueue and delivery metrics.
-- `src/metrics/magic-link.ts` — magic-link workflow metrics.
-- `src/metrics/notification.ts` — occurrence, recipient, and preference metrics.
-- `src/metrics/oauth.ts` — dynamic registration, OAuth authorization/token, and MCP metrics.
-- `src/metrics/organization.ts` — organization and invitation workflow metrics.
-- `src/metrics/session-key.ts` — session-key creation and revocation outcomes and duration.
-- `src/metrics/signature.ts` — signature and verification outcomes, duration,
-  and policy decisions.
-- `src/metrics/wallet.ts` — wallet creation outcomes, duration, and metadata updates.
+## Configuration
 
-Metric files contain definitions only. Business services decide when metrics are
-updated. Metric attributes must be bounded values; never use emails, tokens,
-session IDs, user IDs, URLs, or arbitrary error messages.
+| Variable                                                              | Purpose                                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `NODE_ENV`                                                            | Selects development LGTM or production Axiom.               |
+| `TELEMETRY_SERVICE_VERSION`                                           | Release identity; defaults to `development`.                |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                                         | Development collector; defaults to `http://localhost:4318`. |
+| `AXIOM_API_TOKEN`                                                     | Required production ingestion credential.                   |
+| `AXIOM_OTLP_BASE_URL`                                                 | Optional Axiom endpoint override.                           |
+| `AXIOM_TRACES_DATASET`, `AXIOM_LOGS_DATASET`, `AXIOM_METRICS_DATASET` | Required production destinations.                           |
+| `POSTHOG_PROJECT_TOKEN`                                               | Enables production server product analytics.                |
+| `VITE_POSTHOG_KEY`                                                    | Public browser project token.                               |
 
-## Adding telemetry
+Browser OTLP uses server proxy URLs, never Axiom credentials. Private source-map
+uploads use build-time `POSTHOG_CLI_PROJECT_ID` and `POSTHOG_CLI_API_KEY`; the API
+key must not be exposed as a browser variable.
 
-Read [Telemetry architecture](../../architecture/platform/telemetry.md) before
-changing instrumentation.
+Metrics use bounded attributes. Keep credentials, arbitrary payloads and identity
+out of operational labels. Product analytics has its own typed allowlist.
 
-- Wrap workflow and dependency boundaries with spans through `Effect.fn`. Use
-  `Effect.fnUntraced` for small helpers already explained by their parent span.
-- Log concise decisions and state transitions where they occur. Do not log the
-  same payload at every layer or log secrets and unbounded objects.
-- Add shared metrics under `src/metrics/<feature>.ts`, export them through the
-  metrics barrel, and update them in the application or transport layer that
-  owns the event.
-- Prefer counters, timers, and preregistered frequency values. Labels and
-  frequency words must have bounded cardinality.
-- Keep exporter URLs, tokens, dataset selection, and environment switching in
-  this package; feature packages must remain vendor-neutral.
-
-Browser code uses `makeTelemetryLayer` with the dashboard service identity and
-the server-owned `/t/traces/v1`, `/t/logs/v1`, and `/t/metrics/v1` endpoints.
-The browser never receives Axiom credentials or the local collector address.
-The server resolves those upstream destinations with `resolveTelemetryExport`
-and attaches provider authorization only while proxying.
-
-The server emits one route-normalized span plus bounded request count and
-duration metrics for each non-telemetry request. Browser traces and logs use a
-one-second interval to reduce loss during navigation; server traces batch every
-ten seconds. Metrics use an independent 60-second interval in both runtimes.
-Counters and histograms still record every instrumented observation between
-exports; cumulative snapshots can repeat unchanged values while idle. The layer's
-`exportInterval` configures traces, and `metricsExportInterval` configures metrics.
-OTLP proxy operations and routine current-session probes are intentionally untraced.
-
-## Environment
-
-| Variable                      | Required                 | Purpose                         |
-| ----------------------------- | ------------------------ | ------------------------------- |
-| `NODE_ENV`                    | No; defaults development | Selects local LGTM or Axiom.    |
-| `TELEMETRY_SERVICE_VERSION`   | No; defaults development | Exported service version.       |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No; defaults localhost   | Local LGTM OTLP/HTTP base URL.  |
-| `AXIOM_API_TOKEN`             | Production               | Redacted Axiom ingestion token. |
-| `AXIOM_OTLP_BASE_URL`         | No; defaults Axiom Cloud | Axiom or Axiom Edge base URL.   |
-| `AXIOM_TRACES_DATASET`        | Production               | Dedicated traces dataset.       |
-| `AXIOM_LOGS_DATASET`          | Production               | Dedicated logs dataset.         |
-| `AXIOM_METRICS_DATASET`       | Production               | Dedicated metrics dataset.      |
-
-## Usage
-
-Provide the exporter layer at the server composition root:
-
-```ts
-import { TelemetryLive } from "@namera-ai/telemetry";
-
-const MainLive = ServerLive.pipe(Layer.provide(TelemetryLive));
+```sh
+pnpm --filter @namera-ai/telemetry test
+pnpm --filter @namera-ai/telemetry typecheck
+pnpm --filter @namera-ai/telemetry build
 ```
 
-Track a shared metric inside an application workflow:
-
-```ts
-import { magicLinkRequests } from "@namera-ai/telemetry";
-import { Effect, Metric } from "effect";
-
-const requestMagicLink = Effect.gen(function* () {
-  yield* Metric.update(magicLinkRequests, 1);
-  // run the workflow
-});
-```
-
-Effect logs emitted inside spans are exported with their trace and span IDs.
-
-## Product analytics
-
-The `analytics/browser` subpath owns PostHog initialization, identity, event
-filtering, web vitals, error capture, public heatmaps, and survey scheduling.
-It is separate from OTLP and does not export from the root Node entry point.
-Both browser apps use `VITE_POSTHOG_KEY`, the public project token, at build time.
-Collection requires a production build on a Namera production hostname. Local
-and preview builds do not send events. The managed proxy is `https://t.namera.ai`;
-the project UI is in the EU region.
-
-Session recording and generic autocapture are disabled. Typed events explicitly
-allow IDs and names, but exclude request bodies, credentials, form values, raw
-query strings, and exception messages. Error frames retain asset locations for
-source-map resolution. Collection starts automatically without an in-app toggle;
-Do Not Track and Global Privacy Control still disable capture. Workspace context uses ordinary event properties; the paid
-Group Analytics add-on is not activated by the code.
-
-Run `pnpm --filter @namera-ai/telemetry test` for capture-boundary regressions.
-
-The `analytics/server` subpath provides `ProductAnalytics.layer`. It requires
-`NODE_ENV=production` and `POSTHOG_PROJECT_TOKEN`; otherwise it is a no-op.
-Capture is best-effort with a bounded queue and scoped shutdown flush. HTTP
-outcomes include retries and must not be interpreted as unique committed changes.
-
-Committed milestones are queued transactionally by `application`/`database` and
-delivered by the server analytics worker using `ProductAnalytics.deliver`. Delivery
-uses stable event UUIDs and timestamps, acknowledges provider acceptance, and keeps
-retryable failures outside business requests. `AnalyticsCollection` carries the
-server-owned request/worker eligibility; its default is disabled. The adapter does
-not query the database or infer user identity from unverified inputs.
-
-Production frontend CI also requires environment variables `VITE_POSTHOG_KEY`,
-`POSTHOG_CLI_PROJECT_ID`, and the secret `POSTHOG_CLI_API_KEY` for private source
-maps. The Docker build mounts that secret only during compilation. It is not a
-runtime environment variable and must never use the `VITE_` prefix.
+See [observability](../../architecture/runtime/observability.md) for signal and
+delivery boundaries.

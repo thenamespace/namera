@@ -1,131 +1,45 @@
 # @namera-ai/ui
 
-Shared React components for Namera applications. This is a private, source-only
-package: workspace applications compile its TypeScript and TSX directly, so it
-does not have a build output or build script.
-
-See [Dashboard architecture](../../architecture/frontend/dashboard.md) for
-shared-versus-route-local component ownership and
-[delivery workspace architecture](../../architecture/packages/delivery.md) for
-the UI package boundary.
-
-## Structure
-
-- `src/index.ts` — package entry point for intentionally shared exports.
-- `src/components/*.tsx` — direct proxies for UIKit component subpaths.
-- `src/components/field.tsx` — shared `Field`, `FieldGroup`, `FieldLabel`, and
-  resolver-friendly `FieldError` form composition primitives.
-  Explicit errors render as native paragraph alerts with semantic typography tokens, independently of React Aria
-  validation context, because dashboard forms use React Hook Form with native inputs.
-  They do not inherit React Aria text slots, so explicit messages render
-  safely both inside checkboxes and inside modal dialogs with description-only slots.
-- `src/components/icon-picker/` — controlled metadata icon, emoji, and image picker.
-- `src/icons/`, `src/hooks.ts`, and `src/utils.ts` — icons and UIKit secondary entry points.
-  `BrandGithubIcon`, `BrandXIcon`, and `BrandLinkedinIcon` are React SVG marks
-  sourced from theSVG, with source URLs in each component and inherited text color.
-- `src/styles/globals.css` — UIKit styles followed by Namera theme overrides.
-  Dashboard and admin use `bg-app-canvas` for the outer shell and `bg-background`
-  for page panels. Sidebar row sizing and hover treatments are shared here.
-  Modal and alert-dialog surfaces share the same `rounded-xl` corner override.
-- `src/components/transition.tsx` — shared step transition used by dashboard and
-  admin auth pages, preserving the dashboard timing and reduced-motion behavior.
-- `src/components/metadata-display.tsx` and `status-display.tsx` — shared avatar/name
-  and icon/status presentation for dashboard and admin tables. Apps supply domain
-  labels, icons, and semantic tones; authorization and queries remain app-owned.
-- `src/components/copy-icon-button.tsx` — accessible copy buttons and menu items
-  with copied-state feedback. Apps supply toast callbacks; `writeClipboardText`
-  is also available from the utilities entry point.
-- `src/components/sign-in-code-input.tsx` — the shared eight-digit email code
-  input. Forms retain validation, submission, and authentication state.
-- `tsconfig.json` — Klarity React library TypeScript configuration.
+Private, source-only React UI shared by Namera applications. Re-exports Namespace
+UIKit and adds metadata icons, copy controls, email-code input, transitions, and
+Namera theme tokens.
 
 ## Usage
 
-Export broadly reused components from the root entry point:
+Consuming applications compile this package directly. There is no build output.
 
-```ts
+```tsx
 import { Button } from "@namera-ai/ui";
-```
-
-Components can also be imported directly by source path:
-
-```ts
-import { Button } from "@namera-ai/ui/button";
-```
-
-Import hooks, icons, utilities, and the Namera stylesheet from their dedicated
-entry points:
-
-```ts
-import { useTheme } from "@namera-ai/ui/hooks";
-import { Icon } from "@namera-ai/ui/icons";
-import { cn } from "@namera-ai/ui/utils";
 import "@namera-ai/ui/styles.css";
+
+export function SaveButton() {
+  return <Button type="submit">Save</Button>;
+}
 ```
 
-Render a protocol-typed chain icon through the shared icon entry point. The
-component forwards normal SVG props and resolves every supported chain to its
-committed logo component:
+Secondary entry points include `/icons`, `/hooks`, `/utils`, `/icon-picker`,
+and component subpaths. Check [package exports](package.json).
+Tailwind consumers must include this package's source.
 
-```tsx
-import { ChainIcon } from "@namera-ai/ui/icons";
+## Ownership
 
-<ChainIcon aria-label="Ethereum" chain="ethereum" namespace="eip155" className="size-5" />;
+Keep reusable presentation here: controls, styling, accessibility, and controlled
+inputs. Queries, authorization, domain feedback, and transaction orchestration
+stay in applications.
+
+Use semantic tokens and preserve keyboard, focus, validation, and reduced-motion
+behavior. Metadata/status components accept domain values rather than fetching them.
+
+- `src/components`: UIKit proxies and shared custom components.
+- `src/icons`: typed chain and brand icons.
+- `src/styles/globals.css`: UIKit styles and Namera overrides.
+- `src/index.ts`: supported root exports.
+
+## Checks
+
+```sh
+pnpm --filter @namera-ai/ui typecheck
+pnpm --filter @namera-ai/ui lint
 ```
 
-The icon picker uses the shared protocol value and can expose any non-empty set
-of supported tabs:
-
-```tsx
-import { IconPicker } from "@namera-ai/ui/icon-picker";
-
-<IconPicker
-  size="sm"
-  value={icon}
-  setValue={setIcon}
-  supportedTypes={["icon", "emoji"]}
-  triggerClassName="rounded-full"
-/>;
-```
-
-Render the same metadata value without the picker using the shared size variants:
-
-```tsx
-import { IconPreview } from "@namera-ai/ui/icon-picker";
-
-<IconPreview className="rounded-full" size="lg" value={icon} />;
-```
-
-Keep application-specific composition in the consuming app. This package owns
-reusable presentation components and their local styling only.
-
-## Adding shared UI
-
-1. Check Namespace UIKit first. Re-export or proxy an upstream component instead
-   of recreating it.
-2. Add a custom component here only when it is reused across applications or
-   unrelated features. Route composition belongs in the consuming app.
-3. Keep a small component in one file. Split it into a folder with an
-   `index.tsx` entry only when it has real subcomponents, data, or helpers.
-4. Use controlled values for reusable inputs, semantic UIKit tokens, and the
-   existing `cn` utility. Preserve React Aria behavior and expose accessible
-   names for icon-only controls.
-5. Export only supported entry points in `package.json` and `src/index.ts`.
-   Because this package is source-only, consuming Tailwind builds must scan its
-   source and import `@namera-ai/ui/styles.css` once.
-6. Chain icons are selected using protocol namespace and chain-name literals.
-   Add new assets as typed TSX components in `src/icons/chain/`, wire them in
-   `src/icons/chain.tsx`, and keep provider-specific network names out of UI.
-   Do not retain raw SVG files after conversion.
-
-## Upstream documentation
-
-`@namera-ai/ui` re-exports Namespace UIKit. Follow its
-[component documentation](https://namespace-uikit.vercel.app/llms.txt) and
-[complete reference](https://namespace-uikit.vercel.app/llms-full.txt), replacing
-`@thenamespace/uikit` imports in examples with `@namera-ai/ui`.
-
-Use semantic design tokens rather than hardcoded colors. Preserve the
-accessibility behavior supplied by UIKit and React Aria, including labels,
-descriptions, validation messages, focus visibility, keyboard interaction, and
-appropriate semantics.
+Check consuming apps when changing shared props or styles.

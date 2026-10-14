@@ -1,310 +1,54 @@
 # @namera-ai/application
 
-The backend use-case layer and center of Namera's business logic. It composes
-repositories and provider services into raw operations such as magic-link sign
-in, organization management, wallet and session-key creation, API-key grants,
-onchain-permission-gated execution, and signing. It is independent of HTTP and does not
-perform API authorization checks; `apps/server` owns those checks and adapts
-HTTP requests to application methods.
+Backend workflows for authentication, organizations, wallets, session keys,
+execution, signing, billing, notifications and administration. This private
+package coordinates repositories and providers behind the `Application` service.
 
-See [backend workspace architecture](../../architecture/packages/backend.md)
-for use-case ownership, transaction boundaries, and the application-to-server
-composition model.
+## Boundaries
 
-## Structure
+HTTP handlers own transport authorization, cookies, Origin checks and response
+mapping. Application workflows own business invariants and repeat authority checks
+under locks when concurrent revocation matters. Repositories own queries;
+chain adapters own encoding and verification; custody packages own provider access.
 
-Platform team workflows live in `src/auth/platform/`. They reuse verified human
-sessions, enforce owner invariants under a transaction lock, and enqueue team
-invitation emails atomically. See [admin authorization](../../architecture/auth/admin.md).
+Related state changes, audit events, notification recipients and email jobs share
+`TransactionService.run`. Remote work runs outside long database transactions.
+Managed provisioning records intent before remote mutation and repeats locked
+resource admission before committing the result.
 
-- `src/application.ts` — the single aggregate `Application` service and live layer.
-- `src/catalog/` — curated metadata discovery and atomic operator JSON imports;
-  see [address catalog](../../architecture/database/address-catalog.md).
-- `src/audit/` — internal typed audit-event writer used by application workflows.
-- `src/auth/core/` — focused user and session operations.
-- `src/auth/core/api-key.ts` — API-key creation, grant-aware reads, and atomic
-  credential/grant revocation.
-- `src/auth/magic-link/` — request and verification workflows.
-- `src/auth/oauth/` — OAuth authorization requests, browser and CLI device
-  consent, delegated authorization management, PKCE/device exchange, refresh
-  rotation, and token revocation.
-- `src/auth/organization/` — organization, member, invitation, and setup operations.
-- `src/auth/organization/helpers.ts` — shared transactional user and organization setup.
-- `src/auth/config.ts` — environment-backed authentication configuration.
-- `src/auth/data.ts` — code-owned authentication policy and defaults.
-- `src/billing/` — code-owned plan registry, anniversary periods, generic
-  transactional metering, and recovery/reconciliation orchestration.
-- `src/dashboard/` — read-only organization overview composition across
-  resource and all-time operation totals, plus daily activity aggregated into
-  daily, weekly, and monthly namespace projections and confirmed execution
-  actor-source counts.
-- `src/notification/` — notification policy, transactional creation, inbox, and preferences.
-- `src/session-key/` — separately composed creation, revocation, relation-view,
-  and organization- or actor-scoped read workflows plus canonical policy hashing.
-- `src/signature/` — shared account/grant resolution, signature-operation
-  lifecycle, and separate policy-gated signing and read-only verification
-  builders composed behind one application surface.
-- `src/execution/` — local-signature preparation/acceptance, transactional lifecycle
-  settlement/release, lease-based background reconciliation, and scoped reads.
-- `src/ens/` — Namera ENS naming policy and public availability composition.
-- `src/wallet/` — separately composed creation, passkey registration ceremony,
-  metadata update, organization- or actor-scoped reads, and EVM portfolio coordination.
+## Layout
 
-Future feature folders should add a focused operation builder to the aggregate
-service. Infrastructure capabilities remain focused `Context.Service` values
-that the aggregate can consume.
+- `src/auth/` — identity, organizations, delegation and platform membership.
+- `src/wallet/`, `src/session-key/`, `src/execution/`, `src/signature/` — wallet workflows.
+- `src/provisioning/`, `src/oneclaw/` — durable provisioning and provider coordination.
+- `src/billing/` — allowance admission, settlement, periods and recovery.
+- `src/notification/`, `src/audit/` — transactional delivery, analytics milestones and history.
+- `src/catalog/`, `src/data/`, `src/dashboard/`, `src/feedback/`, `src/ens/` — product services.
+- `src/application.ts` — aggregate composition.
 
-## Adding an operation
+## Configuration
 
-1. Put the operation in the smallest matching feature file and expose it through
-   the existing `Application` aggregate; do not create a parallel application
-   service for each entity.
-2. Yield repositories and capability services once in the feature builder. Define
-   the public operation with `Effect.fn("application.feature.operation")`.
-3. Enforce business invariants here, but leave HTTP actor permissions, cookies,
-   headers, and status codes in `apps/server`.
-4. Wrap dependent writes in `TransactionService.run`. Repository calls inside
-   it automatically use the same transaction. Enqueue required emails inside
-   that boundary through `EmailJobs`; never wait for provider delivery in an
-   HTTP workflow.
-5. Append the typed audit event inside that transaction for successful state
-   changes. Do not audit reads or failed changes. Add or update the event union
-   in `protocol` first.
-6. Add a shared metric only for useful aggregate behavior and bounded labels.
-   Emit short semantic logs at meaningful transitions; never log credentials,
-   email content, or arbitrary request payloads in shared or production layers.
-   Provider-owned local development layers may deliberately expose test data,
-   as documented by that provider package.
-7. Add the provider test layer in the owning package and exercise the operation
-   through server feature tests.
+| Variable                                   | Purpose                                       |
+| ------------------------------------------ | --------------------------------------------- |
+| `AUTH_API_PUBLIC_ORIGIN`                   | Required API origin and OAuth audience.       |
+| `AUTH_DASHBOARD_PUBLIC_ORIGIN`             | Required dashboard origin and links.          |
+| `ADMIN_CORS_ORIGIN`                        | Optional admin origin and invitation links.   |
+| `AUTH_INVITE_REQUIRED`                     | Beta admission; defaults to `true`.           |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Configure together for Google authentication. |
 
-Notification-producing workflows call the shared creator inside their business
-transaction. It writes the occurrence and recipients, maps each notification
-type to a category/topic policy, resolves organization then global email
-overrides before the policy default, and optionally enqueues a durable email
-job. In-app recipients are always created and are not controlled by user
-preferences.
+TTL and credential policies live in `src/auth/data.ts`; allowances live in
+`src/billing/data.ts`. The server supplies infrastructure layers and secrets.
 
-## Usage
+## Development
 
-```ts
-import { Effect } from "effect";
-import * as Application from "@namera-ai/application";
-
-const program = Effect.gen(function* () {
-  const app = yield* Application.Application;
-  return yield* app.organization.invitation.createInvitation(input);
-});
+```sh
+pnpm --filter @namera-ai/application typecheck
+pnpm --filter @namera-ai/application test
+pnpm --filter @namera-ai/application build
 ```
 
-`Application.layer` is the only application layer provided by the server.
-
-Organization creation initializes a providerless billing account, active Free
-v1 subscription, one-month organization-anniversary period, and one balance per
-Free meter in its existing transaction. The period begins at the organization's
-exact creation instant rather than a calendar-month boundary. Resource-limited
-workflows lock the organization billing account and use current domain-row
-counts. Metered workflows create their domain operation and generic billing
-reservation together, then atomically settle or release it through an immutable
-usage ledger. The billing worker advances anniversary periods, recovers expired
-reservations, and repairs projections. Namespace packages own their measurement
-rules; application only coordinates their results with persistence. See
-[Billing and entitlements](../../architecture/billing/README.md) for the exact
-semantics.
-
-Managed 1Claw account creation uses the focused operations in `src/oneclaw/`:
-organization setup/renewal, encrypted agent provisioning, and bound owner loading.
-It constructs factory smart accounts with a secp256k1 owner. The server enables
-1Claw only; legacy GCP/local services remain independent and disabled in runtime.
-There is no shared provider facade. See [accounts](../../architecture/wallets/accounts.md)
-for lease, credential, billing, audit and manual-recovery boundaries.
-
-Wallet creation performs a cheap quota precheck, creates the provider key and
-chain account, then repeats the locked quota check before atomically persisting
-the key, wallet, audit events, notification recipients, and durable email jobs.
-Provider key deletion is intentionally not part of the current service, so a
-failed final transaction may leave an unreferenced provider key for later
-operational reconciliation.
-
-Managed wallet and session creation now run through `src/provisioning/lifecycle.ts`.
-The provider-neutral attempt ledger binds a request hash and planned IDs to an
-organization, actor, provider, purpose and idempotency key. A 60-second fenced
-lease renews every 20 seconds. Remote intent is persisted before each mutation;
-ambiguous outcomes stop for recovery instead of allocating another agent. A
-verified signer survives a final transaction failure and is rechecked with the
-provider before reuse. Resource creation and attempt completion commit together.
-Completed retries return the existing resource. Provider clients remain explicit;
-this does not introduce a shared provider dispatcher or enable another provider.
-See the [Phase 09 recovery notes](../../research/security-audit/09-custody-crypto-and-provisioning.md).
-
-Session-key creation validates the organization wallet and its namespace before
-persisting versioned policy instances. Registry-owned cardinality rejects a
-second instance only for policy types declared singleton; repeatable types and
-the total policy array have no product-level maximum. The same registry assigns
-IDs and code-owned applicability without application policy switches. Registration
-persists a dedicated local or 1Claw-managed signer and pending onchain installations.
-Managed creation reuses organization setup, saves the encrypted agent credential
-before key creation, and repeats its separate quota and provider-binding checks in
-the final transaction. Owner passkey
-or explicit 1Claw approval records an immutable signed attempt; receipt recovery
-activates it. Managed approval signs only a stored install/remove operation under
-a fenced signing lease. Public reconstruction and routine local-session use never
-load managed root credentials. Unified execution/signature preparation resolves
-session custody from the granted signer. Completion requires a local signature
-or invokes the managed session signer under a lease; it never uses a root key.
-SDK, CLI/MCP and dashboard support both custodians. Live provider verification
-remains separate from the substituted-provider integration suite.
-Revocation immediately removes API grants, then waits for owner-approved onchain
-removal before finalizing the session and notifying members. Signed installation
-attempts remain recoverable without restoring API authority. Policy hashes are purpose-separated and
-canonical across object-key and policy-array ordering while excluding generated
-policy IDs. The session key, audit event, inbox recipients, and durable email
-jobs share one transaction.
-
-API-key creation validates all requested active session keys in the organization,
-derives a required expiration from the requested duration using the server clock,
-generates and hashes the credential, then atomically creates the API-key actor,
-credential row, grants, audit event, inbox recipients, and durable email jobs.
-Durations are limited to one year. The raw credential is returned only from
-creation; get and list return safe key details with their currently authorized
-session keys.
-
-OAuth authorization accepts active public clients created through pre-registration
-or RFC 7591 dynamic registration, exact redirect URIs, PKCE `S256`, and the
-canonical `/mcp` resource. Dynamic registration issues an opaque public client
-ID without a secret and accepts only HTTPS or loopback HTTP redirect URIs.
-Authorization-code challenges and verifiers use the strict RFC 7636 grammar,
-and refresh rotation requires the token's original resource. Browser approval
-atomically creates an `mcp` actor, its selected session-key grants, a hashed
-one-time authorization code, an organization audit event, and in-app
-notification recipients. Revocation atomically invalidates the authorization,
-all active tokens, and all grants, with matching audit and in-app notification
-records. These workflows intentionally do not enqueue emails.
-
-The first-party CLI uses the RFC 8628 device grant. Approval creates a `cli`
-actor and selected session-key grants in the same transaction as its audit event
-and in-app notification. Token polling consumes an approved request once and
-reuses the existing access/refresh token lifecycle; it never sends email.
-
-Wallet updates replace only metadata and leave the namespace, implementation,
-address, protection level, key material, and account data unchanged. No-op
-updates do not create duplicate audit events or metrics.
-
-Wallet transaction reconciliation preserves submitted operations while receipts
-are unavailable, including null status lookups and provider errors. It does not
-rebroadcast submitted operations or infer failure from their age. Reconciliation
-error logs include the operation status, chain, error category/code, and whether
-response decoding failed; raw provider causes and signed payloads are excluded.
-Pending checks back off from 15 to 120 seconds; consecutive errors back off from
-30 to 900 seconds. Both use ±20% jitter. Blocked operations and operations older
-than 24 hours poll every 15 minutes (also jittered), without automatic failure or
-reservation release. Counters and the next eligible time persist under the lease;
-healthy checks reset the error counter and a signed-to-submitted transition
-resets pending cadence. Each batch claims four operations for immediate parallel
-processing, with a 60-second attempt timeout inside a two-minute lease.
-Once a broadcast attempt is recorded, ambiguous responses and legacy unknown
-attempts permit read-only recovery, never another automatic broadcast. This can
-leave an operation unresolved if no authoritative outcome becomes available;
-manual replacement/cancellation is not implemented.
-
-Execution preparation selects an explicitly granted installed session key and
-persists its unsigned UserOperation together with billing holds. Transactions use
-onchain permissions, installation validity and adapter simulation; API policies
-are signature-only. Completion verifies the signature, rechecks authority and
-expiry under locks, and attaches the signed envelope once. The worker submits
-and reconciles that envelope. A confirmed receipt creates the execution record
-and settles billing; definitive failure releases billing holds. Pending or
-uncertain outcomes retain holds and never trigger automatic rebroadcast.
-
-Execution simulation uses the same public-only preparation for one installed
-session. It does not reserve billing usage, sign, submit, create execution records
-or emit audit events. Its result is point-in-time only.
-
-Submission status reads require the creating machine actor identity. Wallet,
-session-key, and confirmed-execution reads accept an optional actor scope. An
-omitted actor ID returns the permission-authorized organization view for users;
-an actor ID returns only wallets and session keys reachable through active
-grants and all confirmed executions performed by those active session keys,
-regardless of the original submitting actor. Revoking current grants removes
-history access. Confirmed execution list results
-retain their account, session key, and initiating actor view for transport
-mapping. Keep this distinction in one use case rather than duplicating
-machine-specific operations.
-
-Signature preparation requires an exact active granted local session, installed
-onchain signature authority, and an explicit `evm.signature` API policy. It
-reserves one monthly signature unit and returns a replay-safe EIP-712 challenge.
-Completion verifies the locally produced signature through `evm.sessionSignatures`,
-rechecks authority under locks, and atomically settles billing, operation status
-and audit. The persisted discriminated message/typed-data payload binds its
-digest, policy hash, actor and grant; signature bytes are never stored or logged.
-Abandoned preparations expire through billing reconciliation. Invalid signatures
-can be retried until expiry, and successful retries do not charge twice. The synchronous signing method has been removed. Signature workflows do not
-enqueue notifications or emails.
-
-Signature verification is a separate read-only workflow. It requires an active
-machine-actor grant to the requested wallet but does not require signature
-authority, evaluate policies, reserve billing, persist an operation, or write an
-audit event. It reconstructs the smart account and delegates deployed ERC-1271
-or counterfactual ERC-6492 verification to `evm.verifySignature`.
-
-Successful mutations append audit events in the same `TransactionService.run`
-boundary as the state change. Read-only operations are not audited. Audit data
-must remain safe historical context and must never contain credentials.
-
-Removing a member atomically revokes personal CLI/MCP authorizations approved
-by that membership, their tokens and delegated grants, with the existing OAuth
-revocation audit events and notifications. Consent approval locks the membership;
-token issuance and revocation lock the authorization. Active OAuth lookup also
-requires the original membership to remain active, including for legacy rows.
-Rejoining creates a new membership and does not revive old delegations. Shared
-API keys, session keys, and in-flight operation/reservation records are retained.
-
-Member administration uses permission dominance as a partial role hierarchy.
-An actor may manage only roles whose permissions are a strict subset of their
-own and may assign only roles whose permissions are also a strict subset. This
-means an Admin cannot assign the Admin role to another member. The system Owner
-role is never assignable through invitations or generic member administration,
-and existing owners cannot be modified or removed. A future ownership transfer
-must be a separate explicit workflow that preserves the single-owner invariant.
-
-## Environment
-
-| Variable                       | Required | Purpose                                                                |
-| ------------------------------ | -------- | ---------------------------------------------------------------------- |
-| `AUTH_API_PUBLIC_ORIGIN`       | Yes      | Public origin of `api.namera.ai`.                                      |
-| `AUTH_DASHBOARD_PUBLIC_ORIGIN` | Yes      | Public dashboard origin.                                               |
-| `GOOGLE_CLIENT_ID`             | No       | Google Web application OAuth client; enables Google with its secret.   |
-| `GOOGLE_CLIENT_SECRET`         | No       | Server-only Google secret; configure both Google variables or neither. |
-
-Register `${AUTH_API_PUBLIC_ORIGIN}/auth/google/callback` as an exact Google
-redirect URI. See [Google authentication](../../architecture/auth/core/google.md)
-for linking, beta admission, email proof and deployment verification.
-
-Editable TTLs, limits, cookie settings, and return paths live in
-`src/auth/data.ts` rather than environment variables.
-
-## Configuration and crypto
-
-```ts
-import { Effect, Layer } from "effect";
-import { NodeCrypto } from "@effect/platform-node";
-import { AuthConfig } from "@namera-ai/application";
-import { CryptoService } from "@namera-ai/crypto";
-
-const CryptoLive = CryptoService.layer.pipe(Layer.provide(NodeCrypto.layer));
-
-const program = Effect.gen(function* () {
-  const config = yield* AuthConfig;
-  const crypto = yield* CryptoService;
-  return yield* crypto.randomToken(config.magicLink.tokenBytes);
-});
-```
-
-Effect's `Crypto` service provides secure randomness and SHA digests. The
-shared crypto service adds purpose-separated HMAC and AES-GCM operations.
-`apps/server` must provide `NodeCrypto.layer`.
-
-Do not import API route definitions or read `process.env` in application use
-cases. Validate public input in protocol/API schemas and keep use cases focused
-on business behavior and atomic coordination.
+Cross-package workflows are exercised through server integration tests with real
+repositories and package-owned provider substitutes. See the
+[architecture index](../../architecture/README.md),
+[billing](../../architecture/services/billing.md), and
+[runtime](../../architecture/runtime/server.md).

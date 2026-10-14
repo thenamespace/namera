@@ -1,73 +1,37 @@
 # @namera-ai/email-templates
 
-Preview harness for the code-owned React Email templates in `@namera-ai/emails`.
-Production delivery imports and renders those same components directly; no
-Resend hosted-template publishing step exists.
+Preview and asset-generation app for React Email templates in
+`@namera-ai/emails`. Production delivery renders those same package components.
 
-See [Durable email delivery](../../architecture/notifications/email-delivery.md)
-for outbox, encryption, worker, and runtime-template architecture, and
-[delivery workspace architecture](../../architecture/packages/delivery.md) for
-the preview application's ownership boundary.
-
-## Structure
-
-- `src/emails/` — thin preview entries that re-export templates from `@namera-ai/emails`.
-- `script/generate-assets.tsx` — renders email-safe PNGs from canonical SVG
-  sources into the gitignored root `assets/email-assets/` directory.
-
-## Usage
-
-Start the React Email preview server:
+## Preview
 
 ```sh
 pnpm --filter @namera-ai/email-templates dev
 ```
 
-The preview is available at `http://localhost:4000`.
+Runs on port 4000. Entries in `src/emails` expose package templates with preview
+props. Implement templates in `packages/emails/src/templates`, not in this app.
 
-Template presentation is reviewed in the preview server. Durable email delivery
-is covered by the server integration suite.
-
-Generate the PNG assets before uploading them to the configured CDN:
+## Email assets
 
 ```sh
 pnpm --filter @namera-ai/email-templates email:assets
 ```
 
-## Template guidelines
+Converts canonical artwork to email-safe PNGs in the ignored root
+`assets/email-assets` directory. Upload those files to the paths expected by
+the package's template asset configuration. The command neither publishes
+assets nor sends email.
 
-- Implement templates, components, helpers, and themes in `packages/emails/src/templates`.
-- Type template props from the corresponding protocol email variables.
-- Use React Email components and primitives from the package template folder;
-  do not embed SVG because major email clients do not support it consistently.
-  Generate PNGs from the canonical UI icons and upload `assets/email-assets/`
-  without changing its paths.
-- Use the package-owned semantic theme and provide both light and dark styles.
-- Keep transactional copy concise. Only the magic-link sign-in email includes a
-  copyable fallback URL; other emails show the action button without a raw URL.
-- Keep job variables semantic. Presentation-only date formatting, pluralization,
-  labels, asset lookup, and truncation belong in the React component.
-- Add realistic `PreviewProps` without real credentials or personal data.
+Use React Email components and package theme primitives. Avoid embedded SVG in
+messages, keep preview data non-sensitive, and review light/dark rendering.
 
-## Templates
+## Checks
 
-- `waitlist-confirmed` — signup acknowledgement, with no access granted yet.
-- `waitlist-accepted` — invite code, expiry and a join button.
+```sh
+pnpm --filter @namera-ai/email-templates typecheck
+pnpm --filter @namera-ai/email-templates build
+```
 
-- `magic-link` — one-time sign-in link and fallback code.
-- `new-sign-in` — security alert with session details.
-- `organization-invitation` — organization invitation with a review action.
-- `wallet-created` — smart-account creation notification.
-- `session-key-created` — scoped session-key creation notification.
-- `session-key-revoked` — session-key and grant revocation summary.
-- `api-key-created` — API-key creation and authorization summary.
-- `api-key-revoked` — API-key and session-key grant revocation summary.
-
-Update CDN and footer destinations in `packages/emails/src/templates/data.ts`.
-
-The footer includes X at `https://x.com/namera_ai`. The asset generator includes
-the supplied X mark as `social/x-light.png` and `social/x-dark.png`; sync those
-files from `assets/email-assets/` to the matching CDN paths before deployment.
-
-The waitlist templates are registered for rendering and available in preview.
-Automatic sending from signup and acceptance workflows is not wired yet.
+Delivery and retry behavior are tested at the server boundary. See
+[notifications and email](../../architecture/services/notifications.md).
