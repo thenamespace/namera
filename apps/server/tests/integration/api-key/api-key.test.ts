@@ -1,9 +1,14 @@
 import { expect, layer } from "@effect/vitest";
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Duration, Effect, Layer } from "effect";
+import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
+import { HttpApiBuilder } from "effect/http-api";
 
+import { NameraApi } from "@namera-ai/api";
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
-import { Repository } from "@namera-ai/database";
+import { Database, Repository } from "@namera-ai/database";
 import { EmailJobs } from "@namera-ai/emails";
+
+import { CorsMiddleware } from "#/middlewares/cors";
 
 import {
   createMember,
@@ -16,6 +21,7 @@ import {
   testEmail,
   type TestApiClient,
 } from "../../fixtures/index.js";
+import { makeTestConfigLayer } from "../../fixtures/layers/config.js";
 import { TestEmails } from "../../fixtures/layers/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
@@ -48,6 +54,103 @@ const createSessionKey = Effect.fn("server.test.createApiKeySessionKey")(functio
 });
 
 layer(fixture.layer)("API-key routes", (it) => {
+  it.effect(
+    "requires exact dashboard Origin for create and revoke regardless of content type",
+    () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const owner = yield* signIn(client, testEmail("api-key-origin@example.com"));
+        const session = yield* createSessionKey(client, "Origin protection");
+        const payload = {
+          metadata: metadata("Origin protection"),
+          durationDays: 30,
+          sessionKeyIds: [session.id],
+        };
+        const created = yield* client.apiKey.create({ payload });
+        const repository = yield* Repository;
+        const db = yield* Database;
+        const snapshot = Effect.gen(function* () {
+          return {
+            keys: yield* db.query.apiKey.findMany(),
+            grants: yield* db.query.sessionKeyGrant.findMany(),
+            audit: yield* repository.audit.organization.findForOrganization(
+              owner.actor.organization.id,
+            ),
+            notifications: yield* client.notification.list({ query: {} }),
+            emails: yield* db.query.emailJob.findMany(),
+          };
+        });
+        const handler = yield* HttpRouter.toHttpEffect(
+          Layer.merge(
+            HttpApiBuilder.layer(NameraApi),
+            CorsMiddleware.pipe(
+              Layer.provide(makeTestConfigLayer({ SERVER_CORS_ORIGIN: "http://dashboard.test" })),
+            ),
+          ),
+        );
+        for (const origin of [
+          undefined,
+          "null",
+          "https://evil.example",
+          "http://untrusted.api.test",
+          "http://dashboard.test",
+        ]) {
+          for (const action of ["create", "revoke"] as const) {
+            for (const contentType of action === "create"
+              ? [undefined, "text/plain", "application/json"]
+              : [undefined]) {
+              const before = yield* snapshot;
+              const request = new Request(
+                `http://api.test/api-keys${action === "revoke" ? `/${created.apiKey.id}/revoke` : ""}`,
+                {
+                  method: "POST",
+                  headers: {
+                    cookie: `auth-token=${owner.cookie.value}`,
+                    "sec-fetch-site": "same-site",
+                    ...(origin === undefined ? {} : { origin }),
+                    ...(contentType === undefined ? {} : { "content-type": contentType }),
+                  },
+                  ...(action === "create"
+                    ? { body: new TextEncoder().encode(JSON.stringify(payload)) }
+                    : {}),
+                },
+              );
+              let response: HttpServerResponse.HttpServerResponse | undefined;
+              yield* HttpEffect.toHandled(handler, (_request, result) =>
+                Effect.sync(() => {
+                  response = result;
+                }),
+              ).pipe(
+                Effect.provideService(
+                  HttpServerRequest.HttpServerRequest,
+                  HttpServerRequest.fromWeb(request),
+                ),
+              );
+              if (contentType === "text/plain") {
+                expect(response?.status).toBe(415);
+                expect(yield* snapshot).toEqual(before);
+              } else if (origin === "http://dashboard.test") {
+                expect(response?.status).toBe(action === "create" ? 201 : 200);
+              } else {
+                expect(response?.status).toBe(403);
+                expect(yield* snapshot).toEqual(before);
+              }
+            }
+          }
+        }
+        expect(
+          (yield* repository.auth.apiKey.findById(created.apiKey.id, owner.actor.organization.id))
+            ?.revokedAt,
+        ).not.toBeNull();
+        expect(
+          yield* repository.core.sessionKeyGrant.findActiveForActor(
+            owner.actor.organization.id,
+            created.apiKey.actorId,
+          ),
+        ).toEqual([]);
+      }),
+  );
   it.effect("creates, lists, and reads API keys with grants and durable side effects", () =>
     Effect.gen(function* () {
       yield* resetTestState();

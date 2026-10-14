@@ -200,6 +200,12 @@ API-key creation is limited to 20 attempts per active organization per hour.
 Revocation is limited to 60 attempts per active organization per hour. Read
 operations use only the global limit.
 
+API-key creation and revocation require a human session, the corresponding
+organization permission, and the exact `AUTH_DASHBOARD_PUBLIC_ORIGIN` Origin.
+Missing, opaque (`null`) and foreign origins are rejected before rate-limit
+consumption or application writes. Unsupported request media types remain rejected
+by decoding. Machine-authenticated execution routes do not require this Origin.
+
 Managed session creation accepts the 1Claw signer variant and is limited to 20
 attempts per active organization per hour, before any provider call. It creates
 pending sessions under either passkey or 1Claw accounts, never approvals or active

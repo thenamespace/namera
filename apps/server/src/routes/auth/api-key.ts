@@ -4,12 +4,13 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toApiKeyResponse } from "#/helpers/index";
+import { enforceActor, requireDashboardOrigin, toApiKeyResponse } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const ApiKeyRoutes = HttpApiBuilder.group(NameraApi, "apiKey", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
 
     return handlers
       .handle("create", ({ payload }) =>
@@ -20,6 +21,7 @@ export const ApiKeyRoutes = HttpApiBuilder.group(NameraApi, "apiKey", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["api-key:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "api_key.create.organization",
             data.organization.id,
@@ -66,6 +68,7 @@ export const ApiKeyRoutes = HttpApiBuilder.group(NameraApi, "apiKey", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["api-key:revoke"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "api_key.revoke.organization",
             data.organization.id,
