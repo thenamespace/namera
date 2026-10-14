@@ -376,8 +376,10 @@ transaction.
 Session creation takes the billing lock before the wallet lock and checks its
 custody-specific capacity before persistence. Pending, active and revoking keys
 count once, regardless of network count; revoked keys do not. Disabled signers
-retain capacity. Expired time-window policies or all expired installation
-authorizations release capacity; missing installations retain it conservatively.
+retain capacity. Capacity is released when all installation authorizations expire;
+missing installations retain it conservatively. Signature-only time-window expiry
+does not release a transaction-capable session's slot. Tests cover local and managed
+admission after signature expiry, active sessions, and staggered multi-network expiry.
 1Claw resources are identified by custody plus provider data, not protection level.
 
 ## Immutable usage and corrections

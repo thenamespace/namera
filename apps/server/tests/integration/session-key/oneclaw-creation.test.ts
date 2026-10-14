@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Ref, Result } from "effect";
+import { DateTime, Effect, Ref, Result } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Database, Repository, credentials, signingKey } from "@namera-ai/database";
@@ -139,10 +139,27 @@ layer(Live)("1Claw session creation", (it) => {
     () =>
       Effect.gen(function* () {
         const { client, wallet, request, control } = yield* setup;
+        const now = yield* DateTime.now;
         for (let i = 0; i < 5; i++)
           yield* client.sessionKey.create({
-            payload: { ...request, idempotencyKey: crypto.randomUUID() },
+            payload: {
+              ...request,
+              idempotencyKey: crypto.randomUUID(),
+              policies: [
+                {
+                  type: "evm.time-window",
+                  version: 1,
+                  startsAt: null,
+                  expiresAt: DateTime.add(now, { minutes: 1 }),
+                },
+              ],
+            },
           });
+        yield* TestClock.adjust("2 minutes");
+        expect(
+          (yield* client.billing.get()).resources.find(({ key }) => key === "oneclaw-session-keys")
+            ?.usedAmount,
+        ).toBe(5n);
         const calls = yield* Ref.get(control.calls);
         expect(
           yield* client.sessionKey

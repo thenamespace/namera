@@ -119,6 +119,7 @@ export class BillingUsageRepository extends Context.Service<
               );
             // Count sessions, not installations: a multi-network key occupies one slot.
             // Missing installations remain occupied; disabled signers also retain their slot.
+            // Signature-only policies do not expire onchain transaction authority.
             const sessionRows = yield* db
               .select({
                 local: sql<number>`count(*) filter (where ${signingKey.custody} = 'local')`.mapWith(
@@ -136,11 +137,6 @@ export class BillingUsageRepository extends Context.Service<
                   eq(sessionKey.organizationId, organizationId),
                   ne(sessionKey.status, "revoked"),
                   ne(signingKey.status, "destroyed"),
-                  sql`not exists (
-                  select 1 from jsonb_array_elements(${sessionKey.policies}) policy
-                  where policy->>'type' = 'evm.time-window'
-                  and (policy->>'expiresAt')::timestamptz <= ${encodedNow.toISOString()}::timestamptz
-                )`,
                   sql`(
                   not exists (select 1 from ${sessionKeyInstallation} i where i.session_key_id = ${sessionKey.id})
                   or exists (select 1 from ${sessionKeyInstallation} i where i.session_key_id = ${sessionKey.id}
