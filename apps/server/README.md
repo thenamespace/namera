@@ -55,6 +55,12 @@ Alchemy BSO gas holds separately from onchain confirmation using the server-only
 execution confirmation and session activation do not wait for billing.
 HTTP requests only enqueue email work and never wait for background delivery.
 
+The owner-wallet worker waits five seconds between successful batches. Batch-level
+failures (for example database unavailability) back off from ten to sixty seconds
+with ±20% jitter, resetting after recovery. Per-operation retry schedules are
+durable and owned by the application workflow. Shutdown interruptions are not
+logged as worker failures.
+
 Execution submission status is readable only by the machine actor that created
 it. Confirmed execution detail and history use one route for users, API keys,
 CLI, and MCP actors: users require `execution:read` and see the active organization,

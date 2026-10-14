@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Duration, Effect, Logger, References, Schema } from "effect";
+import { Deferred, Duration, Effect, Fiber, Logger, References, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
@@ -13,11 +13,16 @@ import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixt
 import { createTestPasskeyWallet } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
-let lookup: "not_found" | "submitted" | "rpc_error" | "decode_error" = "not_found";
+let lookup: "not_found" | "submitted" | "rpc_error" | "decode_error" | "timeout" = "not_found";
+let lookupStarted: Deferred.Deferred<void> | undefined;
 const secret = "synthetic-secret-signed-payload";
 const fixture = makeOwnerSessionTestFixture({
   getStatus: () =>
     Effect.gen(function* () {
+      if (lookup === "timeout") {
+        if (lookupStarted) yield* Deferred.succeed(lookupStarted, undefined);
+        return yield* Effect.never;
+      }
       if (lookup === "rpc_error")
         return yield* new EvmExecutionError({
           code: "RECEIPT_LOOKUP_FAILED",
@@ -40,6 +45,7 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
     () =>
       Effect.gen(function* () {
         lookup = "not_found";
+        lookupStarted = undefined;
         yield* resetTestState();
         const author = yield* signIn(
           yield* makeTestApiClient,
@@ -86,7 +92,11 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
         const db = yield* Database;
         const initialSubmissions = yield* execution.submissionCount;
         yield* TestClock.adjust(Duration.seconds(2));
-        yield* app.wallet.transactions.reconcile();
+        const claims = yield* Effect.all(
+          [app.wallet.transactions.reconcile(), app.wallet.transactions.reconcile()],
+          { concurrency: 2 },
+        );
+        expect(claims.reduce((total, count) => total + count, 0)).toBe(1);
         expect(yield* execution.submissionCount).toBe(initialSubmissions + 1);
         const logs: Array<{ message: unknown; annotations: unknown; cause: unknown }> = [];
         const logger = Logger.make((entry) => {
@@ -101,12 +111,34 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
           "submitted",
           "rpc_error",
           "decode_error",
+          "timeout",
           "not_found",
           "submitted",
         ] as const) {
           lookup = state;
-          yield* TestClock.adjust(Duration.seconds(16));
-          yield* app.wallet.transactions.reconcile().pipe(Effect.provide(Logger.layer([logger])));
+          expect(yield* app.wallet.transactions.reconcile()).toBe(0);
+          const scheduled = (yield* db.query.walletOperation.findMany())[0];
+          if (!scheduled?.leaseExpiresAt) return yield* Effect.die("Missing durable retry time");
+          yield* TestClock.setTime(scheduled.leaseExpiresAt.getTime() + 1);
+          const run = app.wallet.transactions
+            .reconcile()
+            .pipe(Effect.provide(Logger.layer([logger])));
+          if (state === "timeout") {
+            lookupStarted = yield* Deferred.make<void>();
+            const fiber = yield* run.pipe(Effect.forkChild);
+            yield* Deferred.await(lookupStarted);
+            yield* TestClock.adjust(Duration.seconds(61));
+            yield* Fiber.join(fiber);
+          } else yield* run;
+          const updated = (yield* db.query.walletOperation.findMany())[0];
+          expect(updated?.data.reconciliation?.attempts).toBe(
+            (scheduled.data.reconciliation?.attempts ?? 0) + 1,
+          );
+          expect(updated?.data.reconciliation?.consecutiveErrors).toBe(
+            ["rpc_error", "decode_error", "timeout"].includes(state)
+              ? (scheduled.data.reconciliation?.consecutiveErrors ?? 0) + 1
+              : 0,
+          );
           expect(
             yield* client.walletTransaction.get({
               params: { ...params, operationId: prepared.operationId },
@@ -124,7 +156,7 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
         const failures = logs.filter((entry) =>
           String(entry.message).includes("wallet.operation.reconciliation_failed"),
         );
-        expect(failures).toHaveLength(2);
+        expect(failures).toHaveLength(3);
         expect(failures.map((entry) => entry.annotations)).toEqual([
           expect.objectContaining({
             operation_id: prepared.operationId,
@@ -135,6 +167,7 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
             response_decode_failed: false,
           }),
           expect.objectContaining({ response_decode_failed: true }),
+          expect.objectContaining({ error_type: "TimeoutError", response_decode_failed: false }),
         ]);
         expect(JSON.stringify(logs)).not.toContain(secret);
 
@@ -147,7 +180,7 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
           })).status,
         ).toBe("submitted");
         yield* execution.setReceiptMode("immediate");
-        yield* TestClock.adjust(Duration.minutes(6));
+        yield* TestClock.adjust(Duration.minutes(20));
         yield* app.wallet.transactions.reconcile();
         expect(
           (yield* client.walletTransaction.get({

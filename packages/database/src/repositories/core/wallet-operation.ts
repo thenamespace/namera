@@ -83,7 +83,12 @@ export interface WalletOperationRepositoryService {
     readonly leaseExpiresAt: DateTime.Utc;
     readonly limit: number;
   }) => Batch;
-  readonly releaseLease: (input: Lease & { readonly nextReconcileAt: DateTime.Utc }) => Result;
+  readonly releaseLease: (
+    input: Lease & {
+      readonly nextReconcileAt: DateTime.Utc;
+      readonly reconciliation?: NonNullable<WalletOperation["data"]["reconciliation"]>;
+    },
+  ) => Result;
   readonly expireAwaitingSignatures: (input: {
     readonly now: DateTime.Utc;
     readonly limit: number;
@@ -385,7 +390,11 @@ export class WalletOperationRepository extends Context.Service<
                   sql`${date(input.leaseExpiresAt)}::timestamptz > ${date(input.now)}::timestamptz`,
                 ),
               )
-              .orderBy(asc(table.createdAt), asc(table.id))
+              .orderBy(
+                sql`${table.leaseExpiresAt} ASC NULLS FIRST`,
+                asc(table.createdAt),
+                asc(table.id),
+              )
               .limit(input.limit)
               .for("update", { skipLocked: true });
             return decodeBatch(
@@ -403,7 +412,15 @@ export class WalletOperationRepository extends Context.Service<
           return decode(
             yield* db
               .update(table)
-              .set({ leaseToken: null, leaseExpiresAt: date(input.nextReconcileAt) })
+              .set({
+                leaseToken: null,
+                leaseExpiresAt: date(input.nextReconcileAt),
+                ...(input.reconciliation === undefined
+                  ? {}
+                  : {
+                      data: sql`jsonb_set(${table.data}, '{reconciliation}', ${JSON.stringify(input.reconciliation)}::jsonb)`,
+                    }),
+              })
               .where(and(leased(input), inArray(table.status, ["signed", "submitted"])))
               .returning(),
           );
