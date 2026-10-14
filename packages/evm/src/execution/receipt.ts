@@ -1,9 +1,11 @@
 import { Effect, Option, Schema } from "effect";
 
 import {
+  EthereumAddress,
   EvmExecutionError,
   EvmExecutionReceipt,
   EvmUserOperationStatus,
+  Hex,
   TransactionHash,
   UnsupportedChainError,
 } from "@namera-ai/protocol";
@@ -19,7 +21,11 @@ import type { ExecutionClients } from "../clients/execution.js";
 import type { GetEvmExecutionReceiptInput, WaitForEvmExecutionReceiptInput } from "./types.js";
 
 const AlchemyUserOperationLookup = Schema.NullOr(
-  Schema.Struct({ transactionHash: Schema.NullOr(TransactionHash) }),
+  Schema.Struct({
+    entryPoint: EthereumAddress,
+    userOperation: Schema.Struct({ sender: EthereumAddress, nonce: Hex }),
+    transactionHash: Schema.optionalKey(Schema.NullOr(TransactionHash)),
+  }),
 );
 
 const normalizeReceipt = Effect.fn("evm.execution.normalizeReceipt")(function* (
@@ -112,7 +118,7 @@ export const makeGetEvmUserOperationStatus = (getClients: (chain: ChainData) => 
     const normalized =
       operation === null
         ? ({ status: "not_found", transactionHash: null } as const)
-        : ({ status: "submitted", transactionHash: operation.transactionHash } as const);
+        : ({ status: "submitted", transactionHash: operation.transactionHash ?? null } as const);
 
     return yield* Schema.decodeUnknownEffect(EvmUserOperationStatus)(normalized).pipe(
       Effect.mapError((cause) => new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause })),
