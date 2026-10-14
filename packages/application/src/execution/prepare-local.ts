@@ -224,6 +224,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
         ));
       if (
         submission.status === "failed" ||
+        submission.status === "cancelled" ||
         DateTime.toEpochMillis(submission.expiresAt) <= DateTime.toEpochMillis(yield* DateTime.now)
       )
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });

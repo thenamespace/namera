@@ -17,6 +17,29 @@ export const ExecutionRoutes = HttpApiBuilder.group(NameraApi, "execution", (han
     const app = yield* Application.Application;
 
     return handlers
+      .handle("cancel", ({ params }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({
+            actor: yield* CurrentActor,
+            allowedActors: ["api-key", "cli", "mcp"],
+            requiredPermissions: {
+              "api-key": [],
+              cli: ["execution:execute"],
+              mcp: ["mcp:execute"],
+            },
+          });
+          yield* consumeRateLimit(
+            "execution.cancel.actor",
+            data.actorId,
+            rateLimitPolicy.execution.byApiKey,
+          );
+          return yield* app.execution.cancel({
+            organizationId: data.organizationId,
+            actorId: data.actorId,
+            ...params,
+          });
+        }),
+      )
       .handle("prepare", ({ headers, payload }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({

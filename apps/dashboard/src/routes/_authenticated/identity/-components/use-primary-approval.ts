@@ -17,6 +17,7 @@ import { createPublicClient, http } from "viem";
 import { env } from "@/env";
 import {
   useCompleteWalletTransaction,
+  useCancelWalletTransaction,
   usePrepareWalletTransaction,
 } from "@/hooks/wallet/transaction";
 import { isOneClawAccount } from "@/lib/session-owner";
@@ -31,8 +32,9 @@ export function usePrimaryApproval(
 ) {
   const prepare = usePrepareWalletTransaction();
   const approve = useCompleteWalletTransaction();
+  const cancel = useCancelWalletTransaction();
   const [progress, setProgress] = useState<
-    "Preparing…" | "Reviewing…" | "Signing…" | "Submitting…" | null
+    "Preparing…" | "Reviewing…" | "Signing…" | "Submitting…" | "Cancelling…" | null
   >(null);
   const [reviewFee, setReviewFee] = useState<bigint>();
   const [sponsored, setSponsored] = useState(false);
@@ -166,7 +168,15 @@ export function usePrimaryApproval(
           );
           setSponsored(response.prepared.sponsorship === "alchemy-bso");
         });
-        if (!accepted || controller.signal.aborted) return;
+        if (controller.signal.aborted) return;
+        if (!accepted) {
+          setProgress("Cancelling…");
+          await cancel.mutateAsync({
+            params: { walletId: wallet.id, operationId: response.operationId },
+          });
+          attempt.current = undefined;
+          return;
+        }
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
         if (response.signing.method === "passkey") {
           setProgress("Signing…");

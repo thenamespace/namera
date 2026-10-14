@@ -7,6 +7,7 @@ export const prepareWalletTransactionMutation = NameraClient.mutation(
   "walletTransaction",
   "prepare",
 );
+export const cancelWalletTransactionMutation = NameraClient.mutation("walletTransaction", "cancel");
 export const completeWalletTransactionMutation = NameraClient.mutation(
   "walletTransaction",
   "complete",

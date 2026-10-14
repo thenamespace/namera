@@ -26,6 +26,7 @@ export const SessionKeyOperationStatus = Schema.Literals([
   "confirmed",
   "failed",
   "expired",
+  "cancelled",
 ]);
 
 export const SessionKeyOperationData = Schema.Struct({

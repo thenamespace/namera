@@ -56,6 +56,7 @@ export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
         return { operationId: operation.id, status: operation.status };
       if (
         operation.status === "expired" ||
+        operation.status === "cancelled" ||
         DateTime.toEpochMillis(operation.expiresAt) <= DateTime.toEpochMillis(yield* DateTime.now)
       )
         return yield* new SessionKeyOperationError({ code: "APPROVAL_EXPIRED" });

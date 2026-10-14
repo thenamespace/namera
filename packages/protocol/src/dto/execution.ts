@@ -293,11 +293,21 @@ export const FailedEvmExecutionSubmissionResponse = Schema.Struct({
   status: Schema.Literal("failed"),
 }).annotate({ identifier: "FailedEvmExecutionSubmissionResponse" });
 
+export const CancelExecutionResponse = Schema.Struct({
+  ...ExecutionSubmissionResponseCommon,
+  status: Schema.Literal("cancelled"),
+}).annotate({
+  identifier: "CancelExecutionResponse",
+  description: "The unsigned preparation and its reservations have been cancelled.",
+});
+export type CancelExecutionResponse = typeof CancelExecutionResponse.Type;
+
 export const GetExecutionSubmissionResponse = Schema.Union(
   [
     PendingEvmExecutionSubmissionResponse,
     ConfirmedEvmExecutionSubmissionResponse,
     FailedEvmExecutionSubmissionResponse,
+    CancelExecutionResponse,
   ],
   { mode: "oneOf" },
 ).annotate({ identifier: "GetExecutionSubmissionResponse" });

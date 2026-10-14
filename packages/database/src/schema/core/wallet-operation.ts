@@ -54,7 +54,7 @@ export const walletOperation = coreSchema.table(
     check("wallet_operation_kind_check", sql`${table.kind} IN ('set-primary-name', 'transaction')`),
     check(
       "wallet_operation_status_check",
-      sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted', 'confirmed', 'failed', 'expired')`,
+      sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted', 'confirmed', 'failed', 'expired', 'cancelled')`,
     ),
     check(
       "wallet_operation_chain_check",
@@ -63,7 +63,7 @@ export const walletOperation = coreSchema.table(
     check(
       "wallet_operation_signature_state_check",
       sql`
-    CASE WHEN ${table.status} IN ('awaiting-signature', 'expired')
+    CASE WHEN ${table.status} IN ('awaiting-signature', 'expired', 'cancelled')
       THEN COALESCE(${table.data}->'signed' = 'null'::jsonb, false)
       ELSE COALESCE(jsonb_typeof(${table.data}->'signed') = 'object', false)
     END`,
@@ -81,7 +81,7 @@ export const walletOperation = coreSchema.table(
       sql`
     (${table.status} != 'confirmed' OR ${table.transactionHash} IS NOT NULL)
     AND (${table.transactionHash} IS NULL OR ${table.status} IN ('confirmed', 'failed'))
-    AND (${table.status} IN ('confirmed', 'failed', 'expired')) = (${table.finishedAt} IS NOT NULL)`,
+    AND (${table.status} IN ('confirmed', 'failed', 'expired', 'cancelled')) = (${table.finishedAt} IS NOT NULL)`,
     ),
     check(
       "wallet_operation_lease_check",

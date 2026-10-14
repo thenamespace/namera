@@ -12,6 +12,25 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
     const app = yield* Application.Application;
 
     return handlers
+      .handle("cancelOperation", ({ params }) =>
+        Effect.gen(function* () {
+          const data = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
+          const allowedKinds: Array<"install" | "uninstall"> = [];
+          if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
+          if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
+          yield* consumeRateLimit(
+            "session_key.operation.organization",
+            data.organization.id,
+            rateLimitPolicy.sessionKey.revokeByOrganization,
+          );
+          return yield* app.sessionKey.cancelOperation({
+            organizationId: data.organization.id,
+            actorId: data.actorId,
+            allowedKinds,
+            ...params,
+          });
+        }),
+      )
       .handle("prepareManagedOperation", ({ payload }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({

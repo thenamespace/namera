@@ -12,6 +12,7 @@ import {
   PrepareExecutionResponse,
   CompleteExecutionRequest,
   CompleteExecutionResponse,
+  CancelExecutionResponse,
   GetExecutionRequest,
   GetExecutionResponse,
   GetExecutionSubmissionRequest,
@@ -27,6 +28,14 @@ import { Authorization } from "#/middlewares/index";
 
 export class ExecutionGroup extends HttpApiGroup.make("execution")
   .add(
+    HttpApiEndpoint.post("cancel", "/submissions/:submissionId/cancel", {
+      params: GetExecutionSubmissionRequest,
+      success: CancelExecutionResponse,
+      error: [ExecutionError, ...CommonErrors],
+    }).annotate(
+      OpenApi.Summary,
+      "Cancel an unsigned submission and release policy and billing reservations",
+    ),
     HttpApiEndpoint.post("prepare", "/prepare", {
       payload: PrepareExecutionRequest,
       headers: ExecuteRequestHeaders,
