@@ -188,7 +188,7 @@ layer(fixture.layer)("Ethereum primary identity", (it) => {
         "submitted",
       );
       yield* execution.setReceiptMode("immediate");
-      yield* TestClock.adjust(Duration.seconds(16));
+      yield* TestClock.adjust(Duration.seconds(20));
       yield* app.wallet.transactions.reconcile();
       const status = yield* client.identity.primaryStatus({ params });
       expect(status.operation?.status).toBe("confirmed");

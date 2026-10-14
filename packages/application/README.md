@@ -184,6 +184,17 @@ are unavailable, including null status lookups and provider errors. It does not
 rebroadcast submitted operations or infer failure from their age. Reconciliation
 error logs include the operation status, chain, error category/code, and whether
 response decoding failed; raw provider causes and signed payloads are excluded.
+Pending checks back off from 15 to 120 seconds; consecutive errors back off from
+30 to 900 seconds. Both use ±20% jitter. Blocked operations and operations older
+than 24 hours poll every 15 minutes (also jittered), without automatic failure or
+reservation release. Counters and the next eligible time persist under the lease;
+healthy checks reset the error counter and a signed-to-submitted transition
+resets pending cadence. Each batch claims four operations for immediate parallel
+processing, with a 60-second attempt timeout inside a two-minute lease.
+Once a broadcast attempt is recorded, ambiguous responses and legacy unknown
+attempts permit read-only recovery, never another automatic broadcast. This can
+leave an operation unresolved if no authoritative outcome becomes available;
+manual replacement/cancellation is not implemented.
 
 Execution preparation selects an explicitly granted installed session key and
 persists its unsigned UserOperation together with policy and billing holds.

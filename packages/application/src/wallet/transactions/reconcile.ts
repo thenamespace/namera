@@ -1,4 +1,14 @@
-import { Cause, DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "effect";
+import {
+  Cause,
+  DateTime,
+  Duration,
+  Effect,
+  Metric,
+  Option,
+  Predicate,
+  Random,
+  Result,
+} from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
@@ -9,6 +19,8 @@ import { generateUniqueId } from "@namera-ai/utils";
 import { Audit } from "#/audit/layer";
 import { lockOrganizationBilling } from "#/billing/lock";
 import { makeBillingMetering } from "#/billing/metering";
+
+import { nextWalletReconciliation, walletReconciliationPolicy } from "./reconciliation-policy.js";
 
 export const makeReconcileWalletTransactions = Effect.gen(function* () {
   const repository = yield* Repository;
@@ -85,6 +97,17 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
         DateTime.addDuration(operation.createdAt, Duration.hours(24)),
       );
       if (operation.data.submissionBlocked || aged || operation.status === "submitted") return;
+      // A lost submission response is not permission to broadcast again, including legacy rows.
+      if (operation.data.broadcastAttempted !== false) {
+        yield* repository.core.walletOperation.blockSubmission({
+          ...scope,
+          now: yield* DateTime.now,
+        });
+        yield* Effect.logWarning("wallet.operation.submission_paused").pipe(
+          Effect.annotateLogs({ operation_id: operation.id, reason: "prior_submission_uncertain" }),
+        );
+        return;
+      }
       // The durable marker precedes RPC, so crashes and lost responses cannot be mistaken for first sends.
       const attempt = yield* repository.core.walletOperation.recordBroadcastAttempt({
         ...scope,
@@ -222,27 +245,37 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
       const operations = yield* repository.core.walletOperation.claimForReconciliation({
         now,
         leaseToken,
-        leaseExpiresAt: DateTime.addDuration(now, Duration.minutes(2)),
-        limit: 20,
+        leaseExpiresAt: DateTime.addDuration(
+          now,
+          Duration.seconds(walletReconciliationPolicy.leaseSeconds),
+        ),
+        limit: walletReconciliationPolicy.concurrency,
       });
       yield* Effect.forEach(
         operations,
         (operation) =>
           Effect.gen(function* () {
-            yield* reconcile(operation, leaseToken).pipe(
+            const failed = yield* reconcile(operation, leaseToken).pipe(
+              Effect.timeout(Duration.seconds(walletReconciliationPolicy.attemptTimeoutSeconds)),
+              Effect.as(false),
               Effect.catchCause((cause) => {
                 if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
                 const error = Option.getOrUndefined(Cause.findErrorOption(cause));
                 const errorType =
-                  ["EvmExecutionError", "DatabaseError", "UnsupportedChainError"].find((tag) =>
-                    Predicate.isTagged(error, tag),
-                  ) ?? "unknown";
+                  [
+                    "EvmExecutionError",
+                    "DatabaseError",
+                    "UnsupportedChainError",
+                    "TimeoutError",
+                  ].find((tag) => Predicate.isTagged(error, tag)) ?? "unknown";
                 // Never log raw causes: RPC errors can contain credentials and signed operations.
                 return Effect.logError("wallet.operation.reconciliation_failed").pipe(
                   Effect.annotateLogs({
                     operation_id: operation.id,
                     operation_status: operation.status,
                     chain_id: operation.chainId,
+                    reconciliation_attempt: (operation.data.reconciliation?.attempts ?? 0) + 1,
+                    consecutive_errors: (operation.data.reconciliation?.consecutiveErrors ?? 0) + 1,
                     error_type: Cause.hasDies(cause) ? "defect" : errorType,
                     error_code: Predicate.isTagged(error, "EvmExecutionError")
                       ? error.code
@@ -251,6 +284,7 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
                       Predicate.isTagged(error, "EvmExecutionError") &&
                       Predicate.isTagged(error.cause, "SchemaError"),
                   }),
+                  Effect.as(true),
                 );
               }),
             );
@@ -259,12 +293,20 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
               id: operation.id,
               organizationId: operation.organizationId,
             });
+            if (!latest || (latest.status !== "signed" && latest.status !== "submitted")) return;
             const slow =
-              latest?.data.submissionBlocked ||
+              latest.data.submissionBlocked === true ||
               DateTime.isGreaterThanOrEqualTo(
                 completedAt,
                 DateTime.addDuration(operation.createdAt, Duration.hours(24)),
               );
+            const retry = nextWalletReconciliation({
+              previous: latest.data.reconciliation,
+              failed,
+              progressed: latest.status !== operation.status,
+              slow,
+              random: yield* Random.next,
+            });
             yield* repository.core.walletOperation.releaseLease({
               id: operation.id,
               organizationId: operation.organizationId,
@@ -272,11 +314,12 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
               now: completedAt,
               nextReconcileAt: DateTime.addDuration(
                 completedAt,
-                slow ? Duration.minutes(5) : Duration.seconds(15),
+                Duration.seconds(retry.delaySeconds),
               ),
+              reconciliation: retry.reconciliation,
             });
           }),
-        { concurrency: 4, discard: true },
+        { concurrency: walletReconciliationPolicy.concurrency, discard: true },
       );
       return operations.length;
     },
