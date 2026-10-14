@@ -1,8 +1,13 @@
 import { open, unlink } from "node:fs/promises";
 
+import { OAuthDeviceAuthorizationStartResponse, OAuthTokenResponse } from "@namera-ai/protocol/dto";
+
 import { cliLockPath } from "./config.js";
 import { readCredentials, writeCredentials, type CredentialBundle } from "./credentials.js";
 import { cliFailure } from "./error-feedback.js";
+import { postOAuthForm } from "./oauth-http.js";
+
+export { OAuthRequestError } from "./oauth-http.js";
 
 const clientId = "namera-cli";
 const resourceScopes = [
@@ -14,54 +19,11 @@ const resourceScopes = [
   "offline_access",
 ] as const;
 
-interface DeviceAuthorizationResponse {
-  readonly device_code: string;
-  readonly user_code: string;
-  readonly verification_uri: string;
-  readonly verification_uri_complete: string;
-  readonly expires_in: number;
-  readonly interval: number;
-}
-
-interface TokenResponse {
-  readonly access_token: string;
-  readonly refresh_token?: string;
-  readonly expires_in: number;
-  readonly scope: string;
-}
-
-export class OAuthRequestError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-const postForm = async <A>(url: string, body: URLSearchParams): Promise<A> => {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
-  }).catch(() => {
-    throw cliFailure("UPSTREAM_UNAVAILABLE");
-  });
-  const data = (await response.json()) as Record<string, unknown>;
-  if (!response.ok) {
-    throw new OAuthRequestError(
-      typeof data.error === "string" ? data.error : "oauth_error",
-      typeof data.error_description === "string" ? data.error_description : "OAuth request failed",
-    );
-  }
-  return data as A;
-};
-
 export const startDeviceAuthorization = (
   baseUrl: string,
   metadata: { readonly deviceName: string; readonly cliVersion: string; readonly platform: string },
 ) =>
-  postForm<DeviceAuthorizationResponse>(
+  postOAuthForm(
     `${baseUrl}/oauth/device/authorize`,
     new URLSearchParams({
       client_id: clientId,
@@ -71,9 +33,10 @@ export const startDeviceAuthorization = (
       cli_version: metadata.cliVersion,
       platform: metadata.platform,
     }),
+    OAuthDeviceAuthorizationStartResponse,
   );
 
-const toCredentials = (token: TokenResponse): CredentialBundle => ({
+const toCredentials = (token: typeof OAuthTokenResponse.Type): CredentialBundle => ({
   accessToken: token.access_token,
   refreshToken: token.refresh_token ?? null,
   expiresAt: Date.now() + token.expires_in * 1_000,
@@ -81,7 +44,7 @@ const toCredentials = (token: TokenResponse): CredentialBundle => ({
 });
 
 export const pollDeviceToken = async (baseUrl: string, deviceCode: string) => {
-  const token = await postForm<TokenResponse>(
+  const token = await postOAuthForm(
     `${baseUrl}/oauth/token`,
     new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:device_code",
@@ -89,6 +52,7 @@ export const pollDeviceToken = async (baseUrl: string, deviceCode: string) => {
       client_id: clientId,
       resource: new URL(baseUrl).origin,
     }),
+    OAuthTokenResponse,
   );
   return toCredentials(token);
 };
@@ -121,7 +85,7 @@ export const getValidAccessToken = async (profile: string, baseUrl: string) => {
     if (credentials.expiresAt > Date.now() + 30_000) return credentials.accessToken;
     if (credentials.refreshToken === null) throw cliFailure("UNAUTHORIZED");
 
-    const token = await postForm<TokenResponse>(
+    const token = await postOAuthForm(
       `${baseUrl}/oauth/token`,
       new URLSearchParams({
         grant_type: "refresh_token",
@@ -129,6 +93,7 @@ export const getValidAccessToken = async (profile: string, baseUrl: string) => {
         client_id: clientId,
         resource: new URL(baseUrl).origin,
       }),
+      OAuthTokenResponse,
     );
     const refreshed = toCredentials(token);
     writeCredentials(profile, refreshed);

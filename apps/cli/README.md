@@ -52,6 +52,10 @@ Login opens browser consent to choose access. Credentials persist in the OS
 keyring, so you do not sign in for every command. The default API is
 `https://api.namera.ai`.
 
+OAuth requests reject redirects, use a 15-second timeout and accept at most 32 KiB
+of response data. Configure the final API URL; token requests are never retried
+automatically after an uncertain network result.
+
 For your first session key, complete the import and network approval below
 before logging in. Only active keys can be authorized.
 

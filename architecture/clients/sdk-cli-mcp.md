@@ -105,6 +105,11 @@ non-secret profile metadata is written atomically to the platform config
 directory. Refresh rotation uses a cross-process profile lock. `NAMERA_API_KEY`
 supports headless automation.
 
+CLI OAuth form requests reject redirects, have a 15-second timeout and a 32 KiB
+streamed response limit, and decode device/token responses with protocol schemas.
+No token exchange is automatically retried; upstream bodies and decode errors
+are not exposed in diagnostics. Transport tests use two real loopback origins.
+
 Commands cover login/logout/status, wallet and session-key reads, execution
 simulation/submit/status/history, signing, and verification. Complex operations
 accept schema-decoded inline `--params` JSON or optional individual flags with
