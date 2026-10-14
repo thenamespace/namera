@@ -18,6 +18,14 @@ import { Authorization } from "#/middlewares/index";
 const errors = [...CommonErrors, WalletTransactionError, BillingLimitExceededError];
 export class WalletTransactionGroup extends HttpApiGroup.make("walletTransaction")
   .add(
+    HttpApiEndpoint.post("cancel", "/wallets/:walletId/transactions/:operationId/cancel", {
+      params: GetWalletTransactionRequest,
+      success: GetWalletTransactionResponse,
+      error: errors,
+    }).annotate(
+      OpenApi.Summary,
+      "Cancel an unsigned owner transaction and release its reservations",
+    ),
     HttpApiEndpoint.post("prepare", "/wallets/:walletId/transactions/prepare", {
       params: WalletTransactionParams,
       headers: ExecuteRequestHeaders,

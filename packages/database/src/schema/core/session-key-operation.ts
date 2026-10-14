@@ -66,7 +66,7 @@ export const sessionKeyOperation = coreSchema.table(
     check("session_operation_kind_check", sql`${table.kind} IN ('install', 'uninstall')`),
     check(
       "session_operation_status_check",
-      sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted', 'confirmed', 'failed', 'expired')`,
+      sql`${table.status} IN ('awaiting-signature', 'signed', 'submitted', 'confirmed', 'failed', 'expired', 'cancelled')`,
     ),
     check(
       "session_operation_chain_check",
@@ -75,7 +75,7 @@ export const sessionKeyOperation = coreSchema.table(
     check(
       "session_operation_signature_state_check",
       sql`
-    CASE WHEN ${table.status} IN ('awaiting-signature', 'expired')
+    CASE WHEN ${table.status} IN ('awaiting-signature', 'expired', 'cancelled')
       THEN COALESCE(${table.data}->'signed' = 'null'::jsonb, false)
       ELSE COALESCE(jsonb_typeof(${table.data}->'signed') = 'object', false)
     END`,
@@ -92,7 +92,7 @@ export const sessionKeyOperation = coreSchema.table(
       "session_operation_receipt_check",
       sql`
     (${table.status} IN ('confirmed', 'failed')) = (${table.transactionHash} IS NOT NULL)
-    AND (${table.status} IN ('confirmed', 'failed', 'expired')) = (${table.finishedAt} IS NOT NULL)`,
+    AND (${table.status} IN ('confirmed', 'failed', 'expired', 'cancelled')) = (${table.finishedAt} IS NOT NULL)`,
     ),
     check(
       "session_operation_lease_check",

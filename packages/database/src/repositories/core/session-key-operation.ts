@@ -26,6 +26,9 @@ type Result = Effect.Effect<SessionKeyOperation | undefined, DatabaseError>;
 type Batch = Effect.Effect<ReadonlyArray<SessionKeyOperation>, DatabaseError>;
 
 export interface SessionKeyOperationRepositoryService {
+  readonly cancelUnsigned: (
+    input: Scope & { readonly actorId: ActorId; readonly now: DateTime.Utc },
+  ) => Result;
   readonly claimForSigning: (
     input: Lease & { readonly actorId: ActorId; readonly leaseExpiresAt: DateTime.Utc },
   ) => Result;
@@ -115,6 +118,29 @@ export class SessionKeyOperationRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return SessionKeyOperationRepository.of({
+        cancelUnsigned: Effect.fn("database.sessionKeyOperation.cancelUnsigned")(function* (input) {
+          const db = yield* transactionOrDatabase(database);
+          return decode(
+            yield* db
+              .update(table)
+              .set({
+                status: "cancelled",
+                finishedAt: date(input.now),
+                leaseToken: null,
+                leaseExpiresAt: null,
+              })
+              .where(
+                and(
+                  scoped(input),
+                  eq(table.actorId, input.actorId),
+                  eq(table.status, "awaiting-signature"),
+                  sql`${table.data}->'signed' = 'null'::jsonb`,
+                  or(isNull(table.leaseExpiresAt), lte(table.leaseExpiresAt, date(input.now))),
+                ),
+              )
+              .returning(),
+          );
+        }, mapRepositoryError),
         claimForSigning: Effect.fn("database.sessionKeyOperation.claimForSigning")(function* (
           input,
         ) {

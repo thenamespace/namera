@@ -324,7 +324,7 @@ without overwriting history. It contains public signatures, never private keys.
 | `kind`             | Yes      | `install` or `uninstall`.                                                                                                 |
 | `idempotency_key`  | Yes      | Client retry identity scoped to actor and organization.                                                                   |
 | `request_hash`     | Yes      | Immutable semantic request digest checked during completion.                                                              |
-| `status`           | Yes      | `awaiting-signature`, `signed`, `submitted`, `confirmed`, `failed`, `expired`.                                            |
+| `status`           | Yes      | `awaiting-signature`, `signed`, `submitted`, `confirmed`, `failed`, `expired`, `cancelled`.                               |
 | `data`             | Yes      | Version 1 prepared EVM operation plus nullable exact signed envelope. Uses a canonical JSON codec for context timestamps. |
 | `expires_at`       | Yes      | Last instant at which an unsigned owner approval may be accepted; not an onchain signature expiry.                        |
 | `lease_token`      | No       | Current request/worker ownership token.                                                                                   |
@@ -346,7 +346,7 @@ without overwriting history. It contains public signatures, never private keys.
   nonce competition; different chains remain independent. Terminal attempts
   remain historical records.
 - Closed kind/status checks; prepared JSON chain must equal `chain_id`.
-- Awaiting/expired states require a null signed envelope; other states require
+- Awaiting/expired/cancelled states require a null signed envelope; other states require
   one. The signed operation may differ only in its signature and computed hash:
   all unsigned fields, chain/EntryPoint, sponsorship and billing data must match
   the prepared JSON. Cryptographic hash/signature verification remains EVM-owned.
@@ -383,6 +383,11 @@ hash. Only a chain receipt can mark a signed attempt failed here: an RPC timeout
 or rejection does not invalidate a root signature that may still be broadcast.
 Unsigned expiry never touches signed attempts, even after `expires_at` passes.
 
+`cancelUnsigned` requires actor/tenant ownership, awaiting-signature state, a null
+signed envelope and no live signing lease. It records `finished_at` and clears
+leases. The application composes its audit in the same transaction without
+changing installation, session or grant authority.
+
 Repository tests cover JSON round trips, idempotency, constraints, rollback,
 replay, expiry and lease transitions. Application routes and the scoped server
 worker use this ledger for owner approval and recovery; see
@@ -411,6 +416,12 @@ Signed-envelope binding and the unique active wallet/chain constraint remain
 unchanged. Migration `20261013172627_wallet-operation-rejection` relaxes only the
 failed-row receipt requirement. See [owner transactions](../wallets/transactions.md) for billing,
 audit, rejection evidence and conservative legacy recovery.
+
+Migration `20261014152325_cancel-prepared-operations` adds terminal `cancelled`
+to both owner-operation tables. Cancelled rows require a null signed envelope,
+`finished_at` and no lease. Wallet cancellation uses the same unsigned/lease guard
+as session operations and releases its preparation gas hold atomically with the
+status and audit. Neither repository permits cancelling signed/submitted rows.
 
 ## `core.session_key_grant`
 
@@ -584,6 +595,12 @@ Idempotent execution attempt and orchestration state. It exists before external 
 - (`installation_id`, `organization_id`) for installation-bound operation lookup.
 
 ### Local signature acceptance
+
+`cancelUnsigned` changes only actor-owned `reserved` submissions with a null
+signed envelope, no broadcast marker and no live lease to `cancelled`. It clears
+leases without fabricating failure or receipt timestamps. The application locks
+the submission and atomically releases policy/billing holds and writes an audit.
+Cancelled rows remain idempotency tombstones and are excluded from worker claims.
 
 Managed preparation adds an optional internal `data.managedSignerBinding`
 snapshot of public signer identity. Absence denotes the legacy/local path.

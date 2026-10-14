@@ -4,7 +4,11 @@ import { ExecutionId, ExecutionSubmissionId, SessionKeyGrantId } from "#/common/
 import { SupportedEvmChainId, TransactionHash, UserOperationHash } from "#/evm/index";
 
 export const ExecutionSigningEventData = Schema.Struct({
-  event: Schema.Literals(["execution.prepared", "execution.signature_accepted"]),
+  event: Schema.Literals([
+    "execution.prepared",
+    "execution.signature_accepted",
+    "execution.cancelled",
+  ]),
   resourceType: Schema.Literal("execution-submission"),
   resourceId: ExecutionSubmissionId,
   data: Schema.Struct({
