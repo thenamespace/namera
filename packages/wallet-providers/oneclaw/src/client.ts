@@ -1,11 +1,11 @@
 import { DateTime, Effect, Redacted, Schema } from "effect";
 
 import { createClient, type OneclawResponse } from "@1claw/sdk";
-import type { OneClawError, OneClawOperation } from "@namera-ai/protocol";
+import { OneClawError, type OneClawOperation } from "@namera-ai/protocol";
 import { OneClawCustomerAuthority } from "@namera-ai/protocol/model";
 
 import { OneClawConfig } from "#/config";
-import { decodeResponse, fromOneClawException, fromOneClawResponse, oneClawError } from "#/errors";
+import { decodeResponse, fromOneClawException, fromOneClawResponse } from "#/errors";
 import { IdentityResponse } from "#/responses";
 
 export const makeClientContext = Effect.gen(function* () {
@@ -30,17 +30,18 @@ export const makeClientContext = Effect.gen(function* () {
       }).pipe(
         Effect.timeoutOrElse({
           duration: config.requestTimeout,
-          orElse: () => Effect.fail(oneClawError(operation, "TIMEOUT")),
+          orElse: () => Effect.fail(new OneClawError({ operation, code: "TIMEOUT" })),
         }),
       );
       const status = response.meta?.status;
-      if (status === undefined) return yield* oneClawError(operation, "INVALID_RESPONSE");
+      if (status === undefined)
+        return yield* new OneClawError({ operation, code: "INVALID_RESPONSE" });
       if (
         Schema.is(
           Schema.Struct({ status: Schema.Literals(["pending_approval", "approval_required"]) }),
         )(response.data)
       ) {
-        return yield* oneClawError(operation, "APPROVAL_REQUIRED");
+        return yield* new OneClawError({ operation, code: "APPROVAL_REQUIRED" });
       }
       // upsertUser deliberately returns 409 in data with error=null.
       if (response.error !== null || status < 200 || status >= 300 || status === 202) {
@@ -61,21 +62,21 @@ export const makeClientContext = Effect.gen(function* () {
     authority: OneClawCustomerAuthority,
   ) {
     yield* Schema.decodeUnknownEffect(Schema.toType(OneClawCustomerAuthority))(authority).pipe(
-      Effect.mapError(() => oneClawError(operation, "IDENTITY_MISMATCH")),
+      Effect.mapError(() => new OneClawError({ operation, code: "IDENTITY_MISMATCH" })),
     );
     if (authority.connection.providerAppId !== config.platformAppId) {
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     }
     const now = yield* DateTime.now;
     if (DateTime.toEpochMillis(authority.payload.expiresAt) <= DateTime.toEpochMillis(now)) {
-      return yield* oneClawError(operation, "AUTHORITY_EXPIRED");
+      return yield* new OneClawError({ operation, code: "AUTHORITY_EXPIRED" });
     }
     const authenticated = client(authority.payload.token);
     const identity = yield* request(operation, IdentityResponse, () =>
       authenticated.http.request("GET", "/v1/auth/me"),
     );
     if (identity.id !== authority.payload.customerId) {
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     }
     return authenticated;
   });
