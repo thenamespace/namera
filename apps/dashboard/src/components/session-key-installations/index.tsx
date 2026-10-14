@@ -47,7 +47,8 @@ function ReceiptStatus({
   const refreshBilling = useAtomRefresh(billingAtom);
   const handled = useRef(false);
   const status = operation.data?.status;
-  const terminal = status === "confirmed" || status === "failed" || status === "expired";
+  const terminal =
+    status === "confirmed" || status === "failed" || status === "expired" || status === "cancelled";
   useInterval(
     () => {
       if (!operation.isFetching) operation.refetch();
@@ -62,7 +63,7 @@ function ReceiptStatus({
       showSuccessToast({
         title: kind === "uninstall" ? "Onchain permissions removed" : "Network approval confirmed",
       });
-    else
+    else if (status !== "cancelled")
       showErrorToast(undefined, {
         title:
           kind === "uninstall"

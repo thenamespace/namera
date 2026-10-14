@@ -27,7 +27,14 @@ describe("approval recovery", () => {
   });
 
   it("never resumes signed operations or another user's approval", () => {
-    for (const status of ["signed", "submitted", "confirmed", "failed", "expired"] as const) {
+    for (const status of [
+      "signed",
+      "submitted",
+      "confirmed",
+      "failed",
+      "expired",
+      "cancelled",
+    ] as const) {
       expect(recoverSponsoredApproval(target, { ...operation, status })).toBeUndefined();
     }
     expect(recoverSponsoredApproval(target, { ...operation, retryRequest: null })).toBeUndefined();
