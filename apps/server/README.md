@@ -120,6 +120,12 @@ The passkey ceremony is consumed in the same
 transaction as the root signing key, wallet, audit, notification, and email
 writes.
 
+Registration initiation, account creation (passkey and 1Claw), and wallet metadata
+updates require the exact `AUTH_DASHBOARD_PUBLIC_ORIGIN` Origin after human
+authorization. Missing, opaque and foreign origins are rejected before ceremony
+replacement, rate-limit consumption, provider provisioning or database writes.
+Wallet reads and delegated execution routes are unchanged.
+
 API responses default to `Cache-Control: no-store`, including failures before
 authentication and unexpected errors. Successful public OAuth discovery responses
 retain their explicit five-minute cache policy; error responses always use no-store.

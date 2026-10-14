@@ -52,7 +52,10 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
             const organizationId = owner.actor.organization.id;
             const clients = [
               yield* handledApi(NameraApi, {
-                headers: { cookie: `auth-token=${owner.cookie.value}` },
+                headers: {
+                  cookie: `auth-token=${owner.cookie.value}`,
+                  origin: "http://dashboard.test",
+                },
               }),
             ];
             for (let index = 0; index < 4; index++) {
@@ -64,7 +67,10 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               );
               clients.push(
                 yield* handledApi(NameraApi, {
-                  headers: { cookie: `auth-token=${member.memberToken}` },
+                  headers: {
+                    cookie: `auth-token=${member.memberToken}`,
+                    origin: "http://dashboard.test",
+                  },
                 }),
               );
             }

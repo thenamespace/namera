@@ -5,12 +5,18 @@ import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 import { WalletCustodyUnavailableError } from "@namera-ai/protocol";
 
-import { enforceActor, toActorReadScope, toWalletResponse } from "#/helpers/index";
+import {
+  enforceActor,
+  requireDashboardOrigin,
+  toActorReadScope,
+  toWalletResponse,
+} from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
     return handlers
       .handle("createPasskeyRegistrationOptions", () =>
         Effect.gen(function* () {
@@ -20,6 +26,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["wallet:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return yield* app.wallet.createPasskeyRegistrationOptions({
             organizationId: data.organization.id,
             userId: data.user.id,
@@ -36,6 +43,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["wallet:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           // Only the 1Claw managed provider is admitted by the public API.
           if (payload.owner.type !== "passkey" && payload.owner.provider !== "1claw")
             return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
@@ -142,6 +150,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["wallet:update"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toWalletResponse(
             yield* app.wallet.update({
               organizationId: data.organization.id,
