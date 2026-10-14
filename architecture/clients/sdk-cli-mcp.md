@@ -102,7 +102,14 @@ configured fee cap and preserves independent binding validation; see
 The CLI uses OAuth device authorization for interactive profiles and the SDK for
 operations. Refresh/access tokens live in the operating-system keyring; only
 non-secret profile metadata is written atomically to the platform config
-directory. Refresh rotation uses a cross-process profile lock. `NAMERA_API_KEY`
+directory. Login, refresh and logout share an OS-released SQLite profile lock;
+config mutations also serialize across profiles. Keyring bundles carry a schema
+version, API origin, login generation and lifecycle phase. Refresh persists a
+token-free `refreshing` marker before dispatch. Lost responses, crashes or failed
+replacement writes require fresh login rather than replaying a consumed token.
+Login completion must match the current generation; logout cannot be undone by
+a pending login or refresh. Legacy unbound bundles require fresh login. Ordinary
+logout remains local-only and leaves imported signing keys untouched. `NAMERA_API_KEY`
 supports headless automation.
 
 CLI OAuth form requests reject redirects, have a 15-second timeout and a 32 KiB

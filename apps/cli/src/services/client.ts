@@ -1,7 +1,7 @@
 import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 
+import { getValidAccessToken } from "./cli-session.js";
 import { getProfile } from "./config.js";
-import { getValidAccessToken } from "./oauth.js";
 import { resolveCliSessionSigner } from "./session-keystore/index.js";
 
 export const makeCliClient = async (profile?: string, maxGasCostWei?: bigint) => {

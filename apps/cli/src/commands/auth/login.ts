@@ -8,8 +8,7 @@ import { NAMERA_API_ORIGIN, NameraClient } from "@namera-ai/sdk";
 
 import { profileFlag } from "#/commands/common";
 import { nameraCommand } from "#/commands/root";
-import { saveProfile } from "#/services/config";
-import { writeCredentials } from "#/services/credentials";
+import { beginCliLogin, completeCliLogin } from "#/services/cli-session";
 import { cliFailure } from "#/services/error-feedback";
 import { OAuthRequestError, pollDeviceToken, startDeviceAuthorization } from "#/services/oauth";
 import { printValue, runPromise } from "#/services/output";
@@ -74,6 +73,7 @@ export const loginCommand = Command.make(
   },
   Effect.fn(function* ({ profile, host, deviceName }) {
     const baseUrl = new URL(host).origin;
+    const generation = yield* Effect.tryPromise(() => beginCliLogin(profile, baseUrl));
     const request = yield* Effect.tryPromise(() =>
       startDeviceAuthorization(baseUrl, {
         deviceName,
@@ -98,7 +98,6 @@ export const loginCommand = Command.make(
     const credentials = yield* Effect.tryPromise(() =>
       waitForToken(baseUrl, request.device_code, request.expires_in, request.interval),
     );
-    writeCredentials(profile, credentials);
 
     const actor = yield* runPromise(
       new NameraClient({ accessToken: credentials.accessToken, baseUrl }).auth.currentActor(),
@@ -106,11 +105,16 @@ export const loginCommand = Command.make(
     if (actor.type !== "cli") return yield* Effect.fail(new Error("Expected a CLI actor token."));
 
     yield* Effect.tryPromise(() =>
-      saveProfile(profile, {
-        baseUrl,
-        authorizationId: actor.data.authorization.id,
-        organizationId: actor.data.organizationId,
-      }),
+      completeCliLogin(
+        profile,
+        generation,
+        {
+          baseUrl,
+          authorizationId: actor.data.authorization.id,
+          organizationId: actor.data.organizationId,
+        },
+        credentials,
+      ),
     );
     yield* printValue({ profile, status: "connected", actor }, loginView);
   }),

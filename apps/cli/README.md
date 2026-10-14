@@ -240,6 +240,10 @@ namera logout
 namera mcp logout --profile codex
 ```
 
+An interrupted or uncertain token refresh requires a fresh `namera login`; the CLI
+never retries a possibly consumed refresh token. Older saved connections without
+origin/lifecycle metadata also require a fresh login after upgrading.
+
 CLI logout removes this device's saved connection, not its imported signing keys
 or server authorization. Revoke the authorization in the dashboard to end its
 server-side access. MCP logout revokes its separate MCP authorization. macOS

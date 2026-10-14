@@ -49,6 +49,10 @@ describe("credential failure feedback", () => {
     );
     expect(() =>
       writeCredentials("test", {
+        version: 1,
+        generation: "test",
+        apiOrigin: "https://api.namera.ai",
+        phase: "ready",
         accessToken: "test",
         refreshToken: null,
         expiresAt: 0,

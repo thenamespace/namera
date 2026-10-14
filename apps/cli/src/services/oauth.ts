@@ -1,10 +1,6 @@
-import { open, unlink } from "node:fs/promises";
-
 import { OAuthDeviceAuthorizationStartResponse, OAuthTokenResponse } from "@namera-ai/protocol/dto";
 
-import { cliLockPath } from "./config.js";
-import { readCredentials, writeCredentials, type CredentialBundle } from "./credentials.js";
-import { cliFailure } from "./error-feedback.js";
+import type { CredentialBundle } from "./credentials.js";
 import { postOAuthForm } from "./oauth-http.js";
 
 export { OAuthRequestError } from "./oauth-http.js";
@@ -57,48 +53,16 @@ export const pollDeviceToken = async (baseUrl: string, deviceCode: string) => {
   return toCredentials(token);
 };
 
-const acquireRefreshLock = async (profile: string) => {
-  const path = cliLockPath(profile);
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    try {
-      // Lock acquisition must be sequential so concurrent CLI processes cannot rotate one token.
-      // oxlint-disable-next-line no-await-in-loop
-      const handle = await open(path, "wx", 0o600);
-      return async () => {
-        await handle.close();
-        await unlink(path).catch(() => undefined);
-      };
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-      // oxlint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-  throw cliFailure("AUTH_BUSY");
-};
-
-export const getValidAccessToken = async (profile: string, baseUrl: string) => {
-  const release = await acquireRefreshLock(profile);
-  try {
-    const credentials = readCredentials(profile);
-    if (credentials === undefined) throw cliFailure("UNAUTHORIZED");
-    if (credentials.expiresAt > Date.now() + 30_000) return credentials.accessToken;
-    if (credentials.refreshToken === null) throw cliFailure("UNAUTHORIZED");
-
-    const token = await postOAuthForm(
-      `${baseUrl}/oauth/token`,
-      new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: credentials.refreshToken,
-        client_id: clientId,
-        resource: new URL(baseUrl).origin,
-      }),
-      OAuthTokenResponse,
-    );
-    const refreshed = toCredentials(token);
-    writeCredentials(profile, refreshed);
-    return refreshed.accessToken;
-  } finally {
-    await release();
-  }
+export const refreshCredentials = async (baseUrl: string, refreshToken: string) => {
+  const token = await postOAuthForm(
+    `${baseUrl}/oauth/token`,
+    new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: clientId,
+      resource: new URL(baseUrl).origin,
+    }),
+    OAuthTokenResponse,
+  );
+  return toCredentials(token);
 };
