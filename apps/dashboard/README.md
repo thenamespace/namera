@@ -230,6 +230,8 @@ actor. Account and session-key Usage tabs reuse it with scoped queries.
 Execution and session-key
 tables keep columns, cells, sorting, and grouping row contracts separate from
 their query, filtering, and view state.
+Session-key account groups use wallet IDs, not display names, so same-named
+accounts remain separate and renaming an account preserves its group identity.
 Activity facet choices come from organization wallet/session-key queries and the
 supported EVM chain and actor registries, so filtering remains useful before the
 organization has a confirmed execution.

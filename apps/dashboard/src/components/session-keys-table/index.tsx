@@ -47,6 +47,7 @@ import {
   type SessionKeyGrouping,
   type SessionKeyTableRow,
 } from "./columns";
+import { groupSessionKeys } from "./grouping";
 
 const emptySessionKeys: ReadonlyArray<SessionKeyResponse> = [];
 const defaultSessionKeyStatuses: ReadonlySet<SessionKeyResponse["status"]> = new Set([
@@ -180,23 +181,7 @@ function SessionKeysTableContent({
   }, [filtered, sort]);
   const rows = useMemo<SessionKeyTableRow[]>(() => {
     if (grouping === "none") return sorted;
-    const grouped = new Map<string, SessionKeyResponse[]>();
-    for (const item of sorted) {
-      const value =
-        grouping === "account"
-          ? item.wallet.metadata.name
-          : grouping === "status"
-            ? sessionKeyDisplayStatus(item.status)
-            : String(item[grouping]);
-      grouped.set(value, [...(grouped.get(value) ?? []), item]);
-    }
-    return [...grouped.entries()].map(([label, children]) => ({
-      children,
-      grouping,
-      id: `group:${grouping}:${label}`,
-      kind: "group",
-      label,
-    }));
+    return groupSessionKeys(sorted, grouping);
   }, [grouping, sorted]);
   const displayedColumns = useMemo(() => {
     const visible = visibleColumns === "all" ? new Set(sessionKeyColumnIds) : visibleColumns;
