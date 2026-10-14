@@ -179,6 +179,12 @@ Wallet updates replace only metadata and leave the namespace, implementation,
 address, protection level, key material, and account data unchanged. No-op
 updates do not create duplicate audit events or metrics.
 
+Wallet transaction reconciliation preserves submitted operations while receipts
+are unavailable, including null status lookups and provider errors. It does not
+rebroadcast submitted operations or infer failure from their age. Reconciliation
+error logs include the operation status, chain, error category/code, and whether
+response decoding failed; raw provider causes and signed payloads are excluded.
+
 Execution preparation selects an explicitly granted installed session key and
 persists its unsigned UserOperation together with policy and billing holds.
 Completion verifies the local signature, rechecks authority and expiry under
