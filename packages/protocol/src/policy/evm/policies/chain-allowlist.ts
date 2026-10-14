@@ -13,12 +13,12 @@ const ChainAllowlistFields = {
 
 export const CreateEvmChainAllowlistPolicy = Schema.Struct(ChainAllowlistFields).annotate({
   identifier: "CreateEvmChainAllowlistPolicy",
-  description: "The EVM networks where a session key may execute or sign",
+  description: "The EVM networks where a session key may sign through Namera",
 });
 
 export const EvmChainAllowlistPolicy = Schema.Struct({
   id: PolicyId,
-  appliesTo: Schema.Literal("both"),
+  appliesTo: Schema.Literal("signature"),
   ...ChainAllowlistFields,
 }).annotate({
   identifier: "EvmChainAllowlistPolicy",

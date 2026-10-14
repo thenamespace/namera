@@ -1,12 +1,12 @@
 ---
 title: Simulate Transactions
-description: Preview calls and check session-key policies before submitting.
+description: Preview calls and check installed permissions before submitting.
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
 
 Use `executions.simulate()` to inspect a transaction without signing or
-submitting it. Simulation does not reserve spending or gas budgets.
+submitting it. Simulation does not reserve billing allowance.
 
 ## Simulate a Transfer
 
@@ -89,9 +89,8 @@ are `bigint` values in the SDK.
 ## Read the Result
 
 - `callsSucceeded` reports whether the simulated calls succeeded.
-- `allowed` reports the policy decision for the selected session key.
+- `allowed` reports point-in-time eligibility for the selected session key.
 - `simulation.calls` contains per-call results, detected asset changes, and native transfers.
-- If `allowed` is `false`, `denials` identifies the session key, policy, and denial code.
 
 If simulation itself fails, the SDK returns `success: false`; handle it as an
 [error](/docs/sdk/handling-results-and-errors).

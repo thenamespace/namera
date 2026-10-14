@@ -1,9 +1,9 @@
 ---
 title: namera execution simulate
-description: Preview calls and check session-key policies without submitting a transaction.
+description: Preview calls and check installed permissions without submitting a transaction.
 ---
 
-Preview calls and check session-key policies without submitting a transaction.
+Preview calls and check installed permissions without submitting a transaction.
 
 ## Usage
 
@@ -44,10 +44,8 @@ With `--output json`:
 
 ## Interpreting the Preview
 
-Check both `allowed` and `callsSucceeded`. A returned denial is a successful
-simulation response, not necessarily a nonzero process exit. Denied responses
-include policy denials; inspect JSON for details. Simulation does not reserve
-permission, guarantee later execution, or submit calls.
+Review the simulated call results. Authorization and simulation failures return
+errors. Successful previews do not reserve billing allowance or guarantee later execution.
 
 This command has no `--sponsor` or `--max-gas-cost-wei` flag.
 

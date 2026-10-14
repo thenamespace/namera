@@ -7,15 +7,15 @@ signer signs routine executions.
 
 ## Phases
 
-| Phase          | Owner                    | Result                                                                                                         |
-| -------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| Prepare        | Application and EVM      | Resolve selected grant/installation; reconstruct public account, estimate UserOperation and simulate calls.    |
-| Reserve        | Application transaction  | Lock authority and policy state; reserve billing and policy budgets; persist unsigned preparation with expiry. |
-| Local sign     | SDK and client signer    | Validate preparation against local binding, calls and gas consent; sign the exact operation hash.              |
-| Complete       | Application and EVM      | Verify signature/integrity, recheck authority and expiry, persist signed envelope once.                        |
-| Broadcast      | Execution worker and EVM | Persist attempt marker, submit exact operation, record observed acceptance.                                    |
-| Reconcile      | Leased execution worker  | Poll canonical status/receipt; retry uncertain outcomes with bounded concurrency.                              |
-| Settle/release | Application transaction  | Update policy and billing ledgers, terminal operation, audit and notifications.                                |
+| Phase          | Owner                    | Result                                                                                                      |
+| -------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Prepare        | Application and EVM      | Resolve selected grant/installation; reconstruct public account, estimate UserOperation and simulate calls. |
+| Reserve        | Application transaction  | Lock authority; reserve billing usage; persist unsigned preparation with expiry.                            |
+| Local sign     | SDK and client signer    | Validate preparation against local binding, calls and gas consent; sign the exact operation hash.           |
+| Complete       | Application and EVM      | Verify signature/integrity, recheck authority and expiry, persist signed envelope once.                     |
+| Broadcast      | Execution worker and EVM | Persist attempt marker, submit exact operation, record observed acceptance.                                 |
+| Reconcile      | Leased execution worker  | Poll canonical status/receipt; retry uncertain outcomes with bounded concurrency.                           |
+| Settle/release | Application transaction  | Update billing ledgers, terminal operation, audit and notifications.                                        |
 
 Completion returns the queued durable operation, not chain confirmation. Clients
 poll its submission ID. The [application sequence](../../operations/executions.md)
@@ -40,8 +40,7 @@ Sponsored mainnet cost is resolved through Alchemy BSO accounting; see
 ## Simulation-only route
 
 Simulation uses the explicitly selected installed session and the same public
-account reconstruction and policy checks. It previews reservation decisions
-against current state without inserting a submission or changing any budget.
-It returns call outcomes, asset changes, native transfers and the selected
-session's policy decision. A simulation cannot guarantee later admission because
-state and available budgets may change before preparation.
+account reconstruction and installation checks. It returns call outcomes, asset
+changes, native transfers and the selected session without inserting a submission
+or reserving billing usage. Simulation cannot guarantee later admission because
+chain state and available billing allowance may change before preparation.

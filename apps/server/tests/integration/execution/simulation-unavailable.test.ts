@@ -31,7 +31,7 @@ const fixture = makeOwnerSessionTestFixture({
 });
 
 layer(fixture.layer)("unavailable execution simulation", (it) => {
-  it.effect("rejects preview and preparation without creating policy or billing holds", () =>
+  it.effect("rejects preview and preparation without creating billing holds", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
@@ -40,13 +40,7 @@ layer(fixture.layer)("unavailable execution simulation", (it) => {
       const session = yield* client.sessionKey.create({
         payload: {
           ...(yield* localSessionRequest(wallet.id)),
-          policies: [
-            {
-              type: "evm.native-spend-limit",
-              version: 1,
-              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
-            },
-          ],
+          policies: [],
         },
       });
       yield* fixture.confirmOperation(client, session, "install");
@@ -79,15 +73,6 @@ layer(fixture.layer)("unavailable execution simulation", (it) => {
           .pipe(Effect.flip),
       ).toMatchObject({ code: "EXECUTION_FAILED" });
       const repository = yield* Repository;
-      for (const policy of session.policies) {
-        expect(
-          yield* repository.core.sessionKeyPolicyState.findForPolicy(
-            owner.actor.organization.id,
-            session.id,
-            policy.id,
-          ),
-        ).toEqual([]);
-      }
       expect(yield* (yield* Application).execution.reconcile()).toBe(0);
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);

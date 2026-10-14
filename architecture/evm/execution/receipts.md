@@ -27,7 +27,7 @@ See [Alchemy's lookup semantics](https://www.alchemy.com/docs/wallets/reference/
 
 `isReceiptForEvmExecution` additionally compares chain, sender, nonce and
 EntryPoint with a stored signed envelope. Session-key owner-operation and ordinary
-execution recovery use this guard before committing policy or billing transitions. A failed
+execution recovery use this guard before committing billing transitions. A failed
 receipt may still match the operation; success controls the resulting transition,
 not the identity check. Mismatched receipts defer recovery without releasing or
 settling reservations, even if the provider also reports rejection. The ordinary
@@ -35,13 +35,13 @@ execution HTTP suite covers both successful and failed mismatched receipts.
 
 ## Settlement transaction
 
-For a successful receipt, application settlement locks the submission first, verifies any reconciliation lease, locks policy states in deterministic order, applies handler settlement, marks reservations settled, inserts one final execution, marks submission confirmed, writes `execution.confirmed` audit, and creates permission-filtered in-app notifications—all in one transaction. Execution confirmations do not enqueue email jobs.
+For a successful receipt, application settlement locks the submission first, verifies any reconciliation lease, settles billing usage, inserts one final execution, marks submission confirmed, writes `execution.confirmed` audit, and creates permission-filtered in-app notifications—all in one transaction. Execution confirmations do not enqueue email jobs.
 
 If already confirmed, settlement returns the existing execution. If failed or lease ownership was lost, it does nothing.
 
 ## Release transaction
 
-For signing, definitive submission, or failed receipt, release locks the submission, verifies terminal/lease state, loads operation reservations, locks matching states, applies handler release, marks reservations released, marks submission failed, and writes `execution.failed` with a bounded stage.
+For signing, definitive submission, or failed receipt, release locks the submission, verifies terminal/lease state, finalizes billing holds according to receipt evidence, marks submission failed, and writes `execution.failed` with a bounded stage.
 
 ## Reconciliation worker
 
@@ -59,7 +59,7 @@ Current policy:
 ```mermaid
 flowchart TD
   Claim[Claim due prepared/submitted rows with lease] --> Data{Grant, session key, wallet, signed data available?}
-  Data -->|No recoverable data| Release[Release policies and fail]
+  Data -->|No recoverable data| Release[Finalize billing and fail]
   Data -->|Transient relation issue| Retry[Release lease; schedule retry]
   Data -->|Yes| Status{Submission status}
   Status -->|prepared| Resubmit[Retry sendUserOperation]
@@ -74,7 +74,7 @@ flowchart TD
   Receipt -->|not found/transient| Retry
 ```
 
-The submission row is locked before policy state for both settle and release. Deterministic state-scope ordering prevents deadlocks when operations touch multiple budgets.
+Submission locking serializes cancellation, settlement and release. Billing locks and ledger idempotency protect the remaining usage reservations.
 
 ## User-visible status
 

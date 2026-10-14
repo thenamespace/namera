@@ -42,7 +42,7 @@ Both are required: EntryPoint gas estimation does not provide the same asset-tra
 
 All requests prepare and estimate a regular UserOperation without an EIP-7677
 paymaster. Simulation and `sponsor: false` retain that estimated operation. The
-default sponsored execution path records the estimates for policy and billing,
+default sponsored execution path records the estimates for billing and review,
 then creates the exact BSO payload by setting `maxFeePerGas`,
 `maxPriorityFeePerGas`, and `preVerificationGas` to `0`. The BSO policy ID is not
 part of the UserOperation; submission sends it only in the
@@ -96,8 +96,8 @@ The version-1 `EvmIntentContext` includes:
 - nonce, submitted gas envelope and fee caps, plus the separate pre-BSO estimate;
 - both simulation sources and normalized results.
 
-Policies consume this context. Period windows use the simulated block timestamp rather than server wall-clock time; gas budgets use the pessimistic prepared gas/fee envelope; native-spend limits inspect exact call values.
+This context supports operation-integrity checks and billing. Transaction permission limits are enforced by the installed onchain modules, not API policy counters.
 
 ## Integrity boundary
 
-`EvmPreparedExecution` includes serialized UserOperation and redundant normalized context. The sign phase intentionally compares them before producing a signature, protecting against accidental or malicious mutation between policy evaluation and signing.
+`EvmPreparedExecution` includes serialized UserOperation and redundant normalized context. The sign phase intentionally compares them before producing a signature, protecting against accidental or malicious mutation between preparation and signing.

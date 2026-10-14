@@ -1,4 +1,10 @@
-import { ShieldUserIcon } from "@namera-ai/ui/icons";
+import {
+  ShieldUserIcon,
+  FileScriptIcon,
+  CoinsSwapIcon,
+  Coins01Icon,
+  FuelStationIcon,
+} from "@namera-ai/ui/icons";
 
 import { evmPolicyDefinitions } from "@/components/policy/evm/data";
 import type {
@@ -12,28 +18,28 @@ export const sessionPolicyCatalog = [
     name: "Contract access",
     group: "Access",
     description: "Allow contracts and actions.",
-    icon: evmPolicyDefinitions["evm.contract-access"].icon,
+    icon: FileScriptIcon,
   },
   {
     id: "erc20-token-transfer",
     name: "Token Spending (Lifetime)",
     group: "Access",
     description: "Limit transfers and approvals.",
-    icon: evmPolicyDefinitions["evm.erc20-token-transfer"].icon,
+    icon: CoinsSwapIcon,
   },
   {
     id: "native-token-transfer",
     name: "Native spending limit",
     group: "Limits",
     description: "Limit native-token spending.",
-    icon: evmPolicyDefinitions["evm.native-spend-limit"].icon,
+    icon: Coins01Icon,
   },
   {
     id: "gas-limit",
     name: "Gas budget",
     group: "Limits",
     description: "Limit total transaction fees.",
-    icon: evmPolicyDefinitions["evm.gas-budget"].icon,
+    icon: FuelStationIcon,
   },
   {
     id: "signature",

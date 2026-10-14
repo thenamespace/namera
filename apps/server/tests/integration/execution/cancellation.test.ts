@@ -27,13 +27,7 @@ const setup = Effect.gen(function* () {
   const sessionKey = yield* client.sessionKey.create({
     payload: {
       ...(yield* localSessionRequest(wallet.id)),
-      policies: [
-        {
-          type: "evm.native-spend-limit",
-          version: 1,
-          limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
-        },
-      ],
+      policies: [],
     },
   });
   yield* executionFixture.confirmOperation(client, sessionKey, "install");
@@ -78,14 +72,7 @@ const setup = Effect.gen(function* () {
     "execution-submission",
     prepared.submissionId,
   );
-  const policy = sessionKey.policies[0];
-  if (!policy) return yield* Effect.die("Missing policy");
-  const states = repository.core.sessionKeyPolicyState.findForPolicy(
-    owner.actor.organization.id,
-    sessionKey.id,
-    policy.id,
-  );
-  return { client, request, params, complete, holds, states, apiKey, otherApiKey };
+  return { client, request, params, complete, holds, apiKey, otherApiKey };
 });
 
 layer(executionFixture.layer)("execution cancellation", (it) => {
@@ -93,7 +80,6 @@ layer(executionFixture.layer)("execution cancellation", (it) => {
     Effect.gen(function* () {
       const f = yield* setup;
       expect((yield* f.holds).map((hold) => hold.status)).toEqual(["active", "active"]);
-      expect(yield* f.states).toMatchObject([{ data: { spent: "0", reserved: "5" } }]);
       yield* setApiKey(f.otherApiKey.key);
       expect(
         yield* f.client.execution.cancel({ params: f.params }).pipe(Effect.flip),
@@ -109,7 +95,6 @@ layer(executionFixture.layer)("execution cancellation", (it) => {
       );
       expect(results.map((result) => result.status)).toEqual(["cancelled", "cancelled"]);
       expect((yield* f.holds).map((hold) => hold.status)).toEqual(["released", "released"]);
-      expect(yield* f.states).toMatchObject([{ data: { spent: "0", reserved: "0" } }]);
       expect(yield* f.complete.pipe(Effect.flip)).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
       expect((yield* f.client.execution.getSubmission({ params: f.params })).status).toBe(
         "cancelled",

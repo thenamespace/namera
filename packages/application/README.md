@@ -3,7 +3,7 @@
 The backend use-case layer and center of Namera's business logic. It composes
 repositories and provider services into raw operations such as magic-link sign
 in, organization management, wallet and session-key creation, API-key grants,
-policy-gated execution, and signing. It is independent of HTTP and does not
+onchain-permission-gated execution, and signing. It is independent of HTTP and does not
 perform API authorization checks; `apps/server` owns those checks and adapts
 HTTP requests to application methods.
 
@@ -208,28 +208,17 @@ leave an operation unresolved if no authoritative outcome becomes available;
 manual replacement/cancellation is not implemented.
 
 Execution preparation selects an explicitly granted installed session key and
-persists its unsigned UserOperation together with policy and billing holds.
-Completion verifies the local signature, rechecks authority and expiry under
-locks, and attaches the signed envelope once. The worker submits and reconciles
-that envelope; routine operations never use the root signer. Execution uses only the prepare/complete workflow. A successful receipt
-settles policy state and creates the execution in the same transaction. A
-definitive failure releases policy state. Timeout or uncertain RPC outcomes
-return `submitted`; `Application.execution.reconcile` later claims a bounded
-batch with database leases and performs the same settle/release lifecycle.
-Before reservation, the EVM policy registry derives any missing state rows from
-the prepared intent context. Application code inserts those generic seeds and
-locks only the referenced policy/state keys in stable order without branching
-on policy types. Periodic allowance settlement remains attached to the exact
-window in which the execution was authorized, even when confirmation occurs in
-a later window.
+persists its unsigned UserOperation together with billing holds. Transactions use
+onchain permissions, installation validity and adapter simulation; API policies
+are signature-only. Completion verifies the signature, rechecks authority and
+expiry under locks, and attaches the signed envelope once. The worker submits
+and reconciles that envelope. A confirmed receipt creates the execution record
+and settles billing; definitive failure releases billing holds. Pending or
+uncertain outcomes retain holds and never trigger automatic rebroadcast.
 
-Execution simulation uses the same public-only preparation as local execution
-for one explicitly selected installed session. It previews that session against
-its current policy state and returns approval or its first deterministic policy
-denial. The preview does not reserve or
-settle policy state, sign or submit an operation, create execution records,
-consume billing usage, or emit audit events, so its authorization result is
-point-in-time only.
+Execution simulation uses the same public-only preparation for one installed
+session. It does not reserve billing usage, sign, submit, create execution records
+or emit audit events. Its result is point-in-time only.
 
 Submission status reads require the creating machine actor identity. Wallet,
 session-key, and confirmed-execution reads accept an optional actor scope. An

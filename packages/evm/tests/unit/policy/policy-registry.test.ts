@@ -14,40 +14,17 @@ import {
   orderEvmPolicies,
 } from "../../../src/policy/registry.js";
 
-it("declares operation applicability for every current EVM policy", () => {
-  expect(evmPolicyRegistry["evm.chain-allowlist"].applicability).toBe("both");
-  expect(evmPolicyRegistry["evm.chain-allowlist"].cardinality).toBe("singleton");
-  expect(evmPolicyRegistry["evm.chain-allowlist"].execution.kind).toBe("stateless");
-  expect(evmPolicyRegistry["evm.chain-allowlist"].signature).toMatchObject({
-    kind: "stateless",
-    grantsAccess: false,
-  });
-
-  expect(evmPolicyRegistry["evm.gas-budget"].applicability).toBe("execution");
-  expect(evmPolicyRegistry["evm.gas-budget"].cardinality).toBe("singleton");
-  expect(evmPolicyRegistry["evm.gas-budget"].execution.kind).toBe("stateful");
-  expect(evmPolicyRegistry["evm.gas-budget"].signature.kind).toBe("not-applicable");
-
-  expect(evmPolicyRegistry["evm.native-spend-limit"].applicability).toBe("execution");
-  expect(evmPolicyRegistry["evm.native-spend-limit"].cardinality).toBe("singleton");
-  expect(evmPolicyRegistry["evm.native-spend-limit"].execution.kind).toBe("stateful");
-  expect(evmPolicyRegistry["evm.native-spend-limit"].signature.kind).toBe("not-applicable");
-
-  expect(evmPolicyRegistry["evm.time-window"].applicability).toBe("both");
-  expect(evmPolicyRegistry["evm.time-window"].cardinality).toBe("singleton");
-  expect(evmPolicyRegistry["evm.time-window"].execution.kind).toBe("stateless");
-  expect(evmPolicyRegistry["evm.time-window"].signature).toMatchObject({
-    kind: "stateless",
-    grantsAccess: false,
-  });
-
-  expect(evmPolicyRegistry["evm.signature"].applicability).toBe("signature");
-  expect(evmPolicyRegistry["evm.signature"].cardinality).toBe("singleton");
-  expect(evmPolicyRegistry["evm.signature"].execution.kind).toBe("not-applicable");
-  expect(evmPolicyRegistry["evm.signature"].signature).toMatchObject({
-    kind: "stateless",
-    grantsAccess: true,
-  });
+it("exposes only signature policies", () => {
+  expect(Object.keys(evmPolicyRegistry).toSorted()).toEqual([
+    "evm.chain-allowlist",
+    "evm.signature",
+    "evm.time-window",
+  ]);
+  for (const definition of Object.values(evmPolicyRegistry)) {
+    expect(definition.applicability).toBe("signature");
+    expect(definition.cardinality).toBe("singleton");
+    expect(definition.signature.grantsAccess).toBe(definition.type === "evm.signature");
+  }
 });
 
 it("materializes code-owned policy metadata without a policy switch", () => {
@@ -59,7 +36,7 @@ it("materializes code-owned policy metadata without a policy switch", () => {
     expiresAt: DateTime.fromEpochSeconds(1),
   } satisfies CreateEvmTimeWindowPolicy;
 
-  expect(materializeEvmPolicy(input, id)).toEqual({ ...input, id, appliesTo: "both" });
+  expect(materializeEvmPolicy(input, id)).toEqual({ ...input, id, appliesTo: "signature" });
 });
 
 it("reports only repeated singleton policies", () => {
@@ -79,7 +56,7 @@ it("uses policy id as a stable tie-breaker within a priority", () => {
     id: PolicyId.make("01900000-0000-7000-8000-000000000001"),
     type: "evm.time-window",
     version: 1,
-    appliesTo: "both",
+    appliesTo: "signature",
     startsAt: DateTime.fromEpochSeconds(0),
     expiresAt: DateTime.fromEpochSeconds(1),
   } satisfies EvmTimeWindowPolicy;

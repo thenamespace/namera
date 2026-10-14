@@ -63,7 +63,7 @@ the exact stored entity and global flag in its low 40 bits. Viem's parallel nonc
 lanes occupy the upper 152 bits; the full nonce remains bound by the signature.
 Session executions cannot contain deployment factory data. Passkey
 owner completion refuses a session-selected operation. Grant/lifecycle checks,
-API policy reservations, one-time completion and persistence remain application
+billing reservations, one-time completion and persistence remain application
 responsibilities; the adapter alone is not an authorization API.
 
 ```mermaid

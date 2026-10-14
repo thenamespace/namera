@@ -203,35 +203,12 @@ integration uses the public owner descriptor and approval UI.
 factory ECDSA accounts from their public owner address and pinned derivation
 metadata. It supplies no provider credential and cannot sign or broadcast.
 
-`evm.policy` evaluates one complete decoded EVM policy set and owns its
-`reserve`, `settle`, and `release` lifecycle. `evm.time-window` is stateless and
-uses the prepared block timestamp with an inclusive start and exclusive
-expiration. `evm.chain-allowlist` is a stateless execution and signature
-constraint over a non-empty unique set of supported CAIP-2 networks; it does not
-grant signature access by itself. `evm.native-spend-limit` tracks spent and
-in-flight native value per CAIP-2 chain and fixed UTC allowance window so concurrent executions cannot
-consume the same allowance. It supports per-operation, hourly, daily, weekly,
-monthly, and lifetime limits; weekly windows begin Monday at 00:00 UTC. Window
-resets use context-derived state keys rather than a scheduled reset. An
-unconfigured chain permits zero-value calls but denies any positive native
-value. `evm.gas-budget` reserves the prepared UserOperation's maximum native gas cost
-across per-chain UTC hour/day/week or lifetime budgets. Confirmation replaces
-that pessimistic reservation with `actualGasCost`; definitive failure releases
-it. Missing chain configuration denies execution. Each handler owns the schemas
-used to decode persisted state and reservations
-plus the context-derived seeds for any missing state. Registry
-priorities define denial precedence and policy IDs provide a stable tie-breaker,
-so caller array order cannot change evaluation, reservation, settlement, or
-release behavior.
-Each registry definition also declares whether its type is singleton or
-repeatable. The registry materializes persisted policy IDs and applicability,
-so application workflows do not branch on policy names.
-
-Offchain contract, contract-function, wildcard-function and account-function
-restrictions inspect every call in a batch. The token-only policy tracks direct
-ERC-20 transfers and approvals with a per-chain lifetime reservation. It rejects
-unrelated or unsupported calls instead of assuming simulation asset discovery is
-complete. See [policy semantics](../../architecture/evm/policies/catalog.md).
+`evm.policy` evaluates signature-only time, chain and message/typed-data rules.
+It requires an explicit signature grant; every configured rule must allow signing.
+Transaction authorization uses the installed onchain permissions and adapter
+simulation. API transaction policy evaluators and their spend/gas counters have
+been removed. Billing sponsorship is separate and remains application-owned.
+See [policy semantics](../../architecture/evm/policies/catalog.md).
 
 `evm.sign` reconstructs the stored Alchemy Modular Account V2 on the requested
 supported chain and delegates either UTF-8 message signing or EIP-712 typed-data

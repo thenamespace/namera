@@ -6,15 +6,8 @@ export const EvmPolicyDenialCode = Schema.Literals([
   "TIME_WINDOW_NOT_STARTED",
   "TIME_WINDOW_EXPIRED",
   "CHAIN_NOT_ALLOWED",
-  "GAS_BUDGET_CHAIN_NOT_CONFIGURED",
-  "GAS_BUDGET_EXCEEDED",
-  "NATIVE_SPEND_CHAIN_NOT_CONFIGURED",
-  "NATIVE_SPEND_LIMIT_EXCEEDED",
   "SIGNATURE_TYPE_NOT_ALLOWED",
   "TYPED_DATA_NOT_ALLOWED",
-  "CALL_NOT_ALLOWED",
-  "TOKEN_CALL_NOT_ALLOWED",
-  "TOKEN_SPEND_LIMIT_EXCEEDED",
 ]);
 
 export const EvmPolicyAllowedDecision = Schema.Struct({ allowed: Schema.Literal(true) });

@@ -46,37 +46,44 @@ layer(sessionCustodyLayer)("managed operation admission", (it) => {
     }),
   );
 
-  it.effect("denies disallowed chains before reserving or signing", () =>
-    Effect.gen(function* () {
-      const f = yield* setupManagedOperations("passkey", {
-        allowSignatures: true,
-        policies: [
-          { type: "evm.chain-allowlist", version: 1, chainIds: ["eip155:84532"] },
-          { type: "evm.signature", version: 1, allowedTypes: ["message"] },
-        ],
-      });
-      expect(yield* f.client.execution.prepare(f.executionRequest).pipe(Effect.flip)).toMatchObject(
-        { code: "POLICY_DENIED" },
-      );
-      expect(yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip)).toMatchObject(
-        { code: "POLICY_DENIED" },
-      );
-      expect(
-        yield* f.repository.core.executionSubmission.findByActorAndIdempotencyKey(
-          f.organizationId,
-          f.apiKey.apiKey.actorId,
-          f.executionRequest.headers["idempotency-key"],
-        ),
-      ).toBeUndefined();
-      expect(
-        yield* f.repository.core.signatureOperation.findByActorAndIdempotencyKey(
-          f.organizationId,
-          f.apiKey.apiKey.actorId,
-          f.signatureRequest.headers["idempotency-key"],
-        ),
-      ).toBeUndefined();
-      expect(yield* Ref.get(f.control.calls)).toEqual([]);
-    }),
+  it.effect(
+    "uses installation chains for execution and API chain restrictions for signatures",
+    () =>
+      Effect.gen(function* () {
+        const f = yield* setupManagedOperations("passkey", {
+          allowSignatures: true,
+          policies: [
+            { type: "evm.chain-allowlist", version: 1, chainIds: ["eip155:84532"] },
+            { type: "evm.signature", version: 1, allowedTypes: ["message"] },
+          ],
+        });
+        expect(
+          yield* f.client.execution
+            .prepare({
+              ...f.executionRequest,
+              payload: { ...f.executionRequest.payload, chainId: "eip155:84532" },
+            })
+            .pipe(Effect.flip),
+        ).toMatchObject({ code: "EXECUTION_UNAVAILABLE" });
+        expect(
+          yield* f.client.signature.prepare(f.signatureRequest).pipe(Effect.flip),
+        ).toMatchObject({ code: "POLICY_DENIED" });
+        expect(
+          yield* f.repository.core.executionSubmission.findByActorAndIdempotencyKey(
+            f.organizationId,
+            f.apiKey.apiKey.actorId,
+            f.executionRequest.headers["idempotency-key"],
+          ),
+        ).toBeUndefined();
+        expect(
+          yield* f.repository.core.signatureOperation.findByActorAndIdempotencyKey(
+            f.organizationId,
+            f.apiKey.apiKey.actorId,
+            f.signatureRequest.headers["idempotency-key"],
+          ),
+        ).toBeUndefined();
+        expect(yield* Ref.get(f.control.calls)).toEqual([]);
+      }),
   );
 
   it.effect("binds prepared signatures to the original payload and active installation", () =>
