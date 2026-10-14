@@ -126,6 +126,8 @@ views, read-state mutations, mark-all-read, archive actions, and a responsive
 list-to-detail layout. Its default view is newest-first over the last seven days;
 the loaded cursor pages can additionally be filtered by status, recipient scope,
 category, and exact notification type.
+Selecting All time removes the date cutoff for loaded pages; it does not fetch
+the entire notification history automatically.
 
 Wallet list, detail, and creation atoms/hooks are available under
 `src/atoms/wallet` and `src/hooks/wallet`. They share the wallet query-key

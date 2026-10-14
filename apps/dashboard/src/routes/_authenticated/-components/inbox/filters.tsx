@@ -27,14 +27,13 @@ import {
   notificationSearchText,
   type InboxNotificationGroup,
 } from "./data";
+import { inboxDateCutoff, inboxDateRangeOptions, type InboxDateRange } from "./date-range";
 import { NotificationIcon } from "./notification-icon";
 
-type InboxDateRange = "1d" | "7d" | "30d" | "all";
 type InboxOrder = "newest" | "oldest";
 type InboxScope = "organization" | "user";
 type InboxStatus = "read" | "unread";
 
-const millisecondsPerDay = 86_400_000;
 const defaultDateRanges: ReadonlySet<string> = new Set(["7d"]);
 const defaultOrder: ReadonlySet<string> = new Set(["newest"]);
 
@@ -46,13 +45,6 @@ const statusOptions = [
 const scopeOptions = [
   { id: "organization", label: "Organization", icon: Building03Icon },
   { id: "user", label: "User", icon: UserIcon },
-] as const;
-
-const dateRangeOptions = [
-  { id: "1d", label: "Last 24 hours", days: 1 },
-  { id: "7d", label: "Last 7 days", days: 7 },
-  { id: "30d", label: "Last 30 days", days: 30 },
-  { id: "all", label: "All time", days: null },
 ] as const;
 
 const orderOptions = [
@@ -92,8 +84,7 @@ export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
   const filteredItems = useMemo(() => {
     const dateRange = dateRanges.values().next().value ?? "7d";
     const order = orders.values().next().value ?? "newest";
-    const days = dateRangeOptions.find((option) => option.id === dateRange)?.days ?? 7;
-    const cutoff = days === null ? null : now - days * millisecondsPerDay;
+    const cutoff = inboxDateCutoff(dateRange, now);
     const visible: Array<NotificationResponse> = [];
 
     for (const item of items) {
@@ -173,7 +164,7 @@ export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
         disallowEmptySelection: true,
         defaultSelectedKeys: defaultDateRanges,
         selectedKeys: dateRanges,
-        options: dateRangeOptions.map((option) => ({
+        options: inboxDateRangeOptions.map((option) => ({
           id: option.id,
           label: option.label,
           content: (
@@ -187,7 +178,7 @@ export function useInboxFilters(items: ReadonlyArray<NotificationResponse>) {
           setDateRanges(
             singleSelection(
               selection,
-              dateRangeOptions.map(({ id }) => id),
+              inboxDateRangeOptions.map(({ id }) => id),
               "7d",
             ),
           ),
