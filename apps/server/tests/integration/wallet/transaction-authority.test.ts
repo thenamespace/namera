@@ -133,6 +133,11 @@ layer(testLayer)("wallet transaction owner authority", (it) => {
           ).toMatchObject({ _tag: "Forbidden" });
           expect(
             yield* client.walletTransaction
+              .cancel({ params: { ...params, operationId: prepared.operationId } })
+              .pipe(Effect.flip),
+          ).toMatchObject({ _tag: "Forbidden" });
+          expect(
+            yield* client.walletTransaction
               .get({ params: { ...params, operationId: prepared.operationId } })
               .pipe(Effect.flip),
           ).toMatchObject({ _tag: "Forbidden" });
