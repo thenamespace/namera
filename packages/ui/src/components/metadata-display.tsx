@@ -1,7 +1,7 @@
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 import { Typography } from "@thenamespace/uikit";
 
-import { IconPreview } from "./icon-picker/index.js";
+import { IconPreview } from "./icon-picker/icon-preview.js";
 
 const fallbackIcon: MetadataIcon = { type: "emoji", value: "👤" };
 

@@ -13,25 +13,25 @@
   /* Toasts animate independently; a page snapshot would interrupt hover/cursors. */
   view-transition-name: none;
 
-  --background: #121213; /* * Final  */
-  --foreground: #f7f8f8; /* * Final  */
+  --background: #121213;
+  --foreground: #f7f8f8;
 
-  --accent: #5e6ad2; /* * Final  */
-  --accent-foreground: #f7f8f8; /* * Final  */
-  --accent-soft-foreground: var(--accent); /* * Final  */
+  --accent: #5e6ad2;
+  --accent-foreground: #f7f8f8;
+  --accent-soft-foreground: var(--accent);
 
   --default: #252628;
   --default-foreground: #f7f8f8;
 
-  --field-background: #1c1c1d; /* * Final  */
-  --field-border: transparent; /* * Final  */
-  --field-foreground: #f7f8f8; /* * Final  */
-  --field-placeholder: #939496; /* * Final  */
+  --field-background: #1c1c1d;
+  --field-border: transparent;
+  --field-foreground: #f7f8f8;
+  --field-placeholder: #939496;
 
-  --muted: #939496; /* * Final  */
+  --muted: #939496;
 
-  --overlay: #1b1b1c; /* * Final  */
-  --overlay-foreground: #f7f8f8; /* * Final  */
+  --overlay: #1b1b1c;
+  --overlay-foreground: #f7f8f8;
 
   --segment: #333434;
   --segment-foreground: #f7f8f8;
@@ -43,24 +43,24 @@
   --surface-tertiary: #18191a;
   --surface-tertiary-foreground: #f7f8f8;
 
-  --success: #27a644; /* * Final  */
-  --success-foreground: #161917; /* * Final  */
+  --success: #27a644;
+  --success-foreground: #161917;
 
-  --warning: #f0bf00; /* * Final  */
-  --warning-foreground: #1a1815; /* * Final  */
+  --warning: #f0bf00;
+  --warning-foreground: #1a1815;
 
-  --danger: #f34e52; /* * Final  */
-  --danger-foreground: #f7f8f8; /* * Final  */
+  --danger: #f34e52;
+  --danger-foreground: #f7f8f8;
 
-  --border: #23252a; /* * Final  */
-  --border-width-field: 0.5px; /* * Final  */
-  --focus: #5e69d1; /* * Final  */
+  --border: #23252a;
+  --border-width-field: 0.5px;
+  --focus: #5e69d1;
   --scrollbar: oklch(70.5% 0.0015 253.83);
 
-  --separator: #2e2c2e; /* * Final  */
+  --separator: #2e2c2e;
 
-  --radius: 0.75rem; /* * Final  */
-  --field-radius: 0.5rem; /* * Final  */
+  --radius: 0.75rem;
+  --field-radius: 0.5rem;
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);

@@ -24,13 +24,13 @@ function distanceSq(a: RGB, b: RGB) {
   return dr * dr + dg * dg + db * db;
 }
 
-function getBrightness(c: RGB) {
-  return (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
+function getBrightness(color: RGB) {
+  return (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
 }
 
-function getSaturation(c: RGB) {
-  const max = Math.max(c.r, c.g, c.b);
-  const min = Math.min(c.r, c.g, c.b);
+function getSaturation(color: RGB) {
+  const max = Math.max(color.r, color.g, color.b);
+  const min = Math.min(color.r, color.g, color.b);
 
   if (max === 0) return 0;
 
