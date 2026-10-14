@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { useBlocker } from "@tanstack/react-router";
 
+import { Schema } from "effect";
+
 import type {
   CreateEvmSessionKeyRequest,
   CreateSessionKeyResponse,
   ListWalletsResponse,
 } from "@namera-ai/protocol/dto";
+import { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
 import type { LocalEvmSessionBinding } from "@namera-ai/protocol/local";
 import {
   createLocalSessionBindings,
@@ -17,12 +20,14 @@ import {
 import { recoverSessionRegistration } from "@/components/session-key-installations/registration-recovery";
 import { useCreateSessionKey } from "@/hooks/session-key";
 import { useRecoverSessionRegistration } from "@/hooks/session-key/recover-registration";
+import { useProvisioningRequest } from "@/hooks/use-provisioning-request";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 import { validateManagedRegistration } from "./managed-registration";
 import type { CreateSessionKeyFormValues } from "./types";
 
 export function useSessionKeyCreation(wallets: ListWalletsResponse) {
+  const provisioning = useProvisioningRequest("session");
   const draft = useRef<LocalSessionKeyDraft | null>(null);
   const submitting = useRef(false);
   const reviewedWallet = useRef<ListWalletsResponse[number] | undefined>(undefined);
@@ -125,20 +130,32 @@ export function useSessionKeyCreation(wallets: ListWalletsResponse) {
         description: "Review its details and policies, then try again.",
       });
     },
-    onSuccess: (created, { payload }) => acceptRegistration(created, payload),
+    onSuccess: (created, { payload }) => {
+      provisioning.complete(payload.idempotencyKey);
+      acceptRegistration(created, payload);
+    },
   });
 
-  const submit = ({ custody, ...payload }: CreateSessionKeyFormValues) => {
+  const submit = async ({ custody, ...payload }: CreateSessionKeyFormValues) => {
     if (submitting.current || createSessionKey.isPending || registration || managedCreationFailed)
       return;
     submitting.current = true;
     reviewedWallet.current = wallets.find((wallet) => wallet.id === payload.walletId);
     if (custody === "namera-managed") {
+      const request = {
+        ...payload,
+        signer: { custody, provider: "1claw" as const, algorithm: "secp256k1" as const },
+      };
+      const idempotencyKey = await provisioning
+        .prepare(Schema.encodeSync(CreateSessionKeyRequest)(request))
+        .catch((error: unknown) => {
+          submitting.current = false;
+          showErrorToast(error, { title: "Couldn’t save creation attempt" });
+          return undefined;
+        });
+      if (!idempotencyKey || !mounted.current) return;
       createSessionKey.mutate({
-        payload: {
-          ...payload,
-          signer: { custody, provider: "1claw", algorithm: "secp256k1" },
-        },
+        payload: { ...request, idempotencyKey },
       });
       return;
     }

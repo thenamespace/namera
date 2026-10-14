@@ -180,6 +180,12 @@ to network approval without export/import. Ambiguous creation errors block blind
 resubmission. Custody appears in selectors and session details; billing capacity
 comes from the current subscription. Namera Managed remains unavailable.
 
+Managed wallet/session forms retain an idempotency key in browser storage across
+reloads, scoped by organization, user, purpose and a hash of the submitted payload.
+Only the hash and random key are stored, not form values or credentials. Success
+clears the matching key. Storage failures stop submission; unresolved attempts
+keep their key so reopening the form cannot silently repeat remote provisioning.
+
 For local custody, the form generates its secp256k1 draft through the SDK,
 submits only the public signer, validates returned installation configuration,
 and offers an encrypted CLI export. The draft is held outside form/atom state.
