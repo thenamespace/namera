@@ -18,14 +18,6 @@ export interface GcpOperations {
   readonly disableKey: (input: KeyReference) => Effect.Effect<void, GcpKeyError>;
   readonly destroyKey: (input: KeyReference) => Effect.Effect<void, GcpKeyError>;
 }
-const unavailable = Effect.fn("wallet-providers.gcp.disabled")(function* (
-  operation: GcpKeyError["operation"],
-) {
-  return yield* new GcpKeyError({
-    operation,
-    cause: new Error("Managed signing is disabled in this deployment"),
-  });
-});
 
 export class GcpService extends Context.Service<GcpService, GcpOperations>()(
   "@namera-ai/wallet-provider-gcp/GcpService",
@@ -33,10 +25,35 @@ export class GcpService extends Context.Service<GcpService, GcpOperations>()(
   static readonly layer = Layer.effect(GcpService, makeGcpService);
   static readonly testLayer = Layer.succeed(GcpService, makeTestGcp());
   static readonly disabledLayer = Layer.succeed(GcpService, {
-    createKey: () => unavailable("create"),
-    signMessage: () => unavailable("sign"),
-    signDigest: () => unavailable("sign"),
-    disableKey: () => unavailable("disable"),
-    destroyKey: () => unavailable("destroy"),
+    createKey: Effect.fn("wallet-providers.gcp.disabled")(function* () {
+      return yield* new GcpKeyError({
+        operation: "create",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    signMessage: Effect.fn("wallet-providers.gcp.disabled")(function* () {
+      return yield* new GcpKeyError({
+        operation: "sign",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    signDigest: Effect.fn("wallet-providers.gcp.disabled")(function* () {
+      return yield* new GcpKeyError({
+        operation: "sign",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    disableKey: Effect.fn("wallet-providers.gcp.disabled")(function* () {
+      return yield* new GcpKeyError({
+        operation: "disable",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    destroyKey: Effect.fn("wallet-providers.gcp.disabled")(function* () {
+      return yield* new GcpKeyError({
+        operation: "destroy",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
   });
 }
