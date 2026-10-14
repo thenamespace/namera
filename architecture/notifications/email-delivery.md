@@ -44,6 +44,13 @@ updates require the current lease token so stale workers cannot overwrite a
 newer claim. Ciphertext is cleared after sent/failed/expired/canceled terminal
 states.
 
+Abandoned claims consume the same attempt budget. A recovery claim beyond five
+is retired under its new lease before decrypting or sending; it cannot block
+healthy queued jobs. The stored attempt count includes that cleanup claim, not
+only provider sends. An active fifth lease is left alone. Retry exhaustion after
+an uncertain send means automated delivery stops, not proof that the provider
+never accepted the email. The original provider idempotency key is preserved.
+
 ## Templates and provider
 
 Runtime React Email components live in `packages/emails/src/templates` and are
