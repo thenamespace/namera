@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "effect";
+import { Cause, DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm, isReceiptForEvmExecution } from "@namera-ai/evm";
@@ -230,11 +230,29 @@ export const makeReconcileWalletTransactions = Effect.gen(function* () {
         (operation) =>
           Effect.gen(function* () {
             yield* reconcile(operation, leaseToken).pipe(
-              Effect.catchCause(() =>
-                Effect.logError("wallet.operation.reconciliation_failed").pipe(
-                  Effect.annotateLogs({ operation_id: operation.id }),
-                ),
-              ),
+              Effect.catchCause((cause) => {
+                if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
+                const error = Option.getOrUndefined(Cause.findErrorOption(cause));
+                const errorType =
+                  ["EvmExecutionError", "DatabaseError", "UnsupportedChainError"].find((tag) =>
+                    Predicate.isTagged(error, tag),
+                  ) ?? "unknown";
+                // Never log raw causes: RPC errors can contain credentials and signed operations.
+                return Effect.logError("wallet.operation.reconciliation_failed").pipe(
+                  Effect.annotateLogs({
+                    operation_id: operation.id,
+                    operation_status: operation.status,
+                    chain_id: operation.chainId,
+                    error_type: Cause.hasDies(cause) ? "defect" : errorType,
+                    error_code: Predicate.isTagged(error, "EvmExecutionError")
+                      ? error.code
+                      : "unknown",
+                    response_decode_failed:
+                      Predicate.isTagged(error, "EvmExecutionError") &&
+                      Predicate.isTagged(error.cause, "SchemaError"),
+                  }),
+                );
+              }),
             );
             const completedAt = yield* DateTime.now;
             const latest = yield* repository.core.walletOperation.findById({
