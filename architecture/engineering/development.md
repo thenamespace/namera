@@ -1,86 +1,75 @@
-# Feature development
+# Development
 
-## Boundary order
+Use the Node version in [.node-version](../../.node-version) and the pnpm version
+in [package.json](../../package.json). The repository is a TypeScript monorepo
+with pnpm workspaces and Turborepo.
 
-Implement backend features in dependency order:
+## Local setup
 
-1. Define primitives, models, DTOs, and expected tagged errors in `protocol`.
-2. Add tables, constraints, relations, migrations, and focused repositories in
-   `database` when persistence changes.
-3. Implement the use case in `application`, including the transaction boundary,
-   audit event, notification/email enqueue, and bounded telemetry where needed.
-4. Declare the transport contract in `api`.
-5. Implement server authentication, permission enforcement, rate limiting, DTO
-   mapping, and the route handler in `apps/server`.
-6. Add dashboard atoms, hooks, loader prefetching, and UI after the contract is
-   usable.
-7. Update the owning architecture document in the same change.
-
-```mermaid
-flowchart LR
-  Protocol --> Database --> Application --> API --> Server --> Frontend
+```sh
+pnpm install
+pnpm dev:services:up
+pnpm --filter @namera-ai/server dev
 ```
 
-## Effect conventions
+Copy the relevant app's `.env.example` to its local `.env` and configure providers
+before starting. Run the dashboard separately:
 
-- Read `node_modules/effect/AGENTS.md` before changing Effect code.
-- Define services with class-based `Context.Service` and implementations with
-  `Layer`.
-- Use `Effect.gen` for workflows and named `Effect.fn` boundaries for operations
-  that deserve a trace.
-- Model expected failures with `Schema.TaggedError`; unexpected defects remain
-  defects.
-- Decode untrusted transport, persistence, configuration, and provider data with
-  Effect Schema.
-- Load secrets with `Config` and `Redacted`; provide platform services such as
-  `NodeCrypto.layer` from the composition root.
-- Use `Layer.provide` to hide implementation dependencies that consumers do not
-  need to supply.
+```sh
+pnpm --filter @namera-ai/dashboard dev
+```
 
-## Transactions and side effects
+| Service                  | Local port |
+| ------------------------ | ---------- |
+| API                      | 8080       |
+| Dashboard                | 3000       |
+| Admin portal             | 3003       |
+| Website or email preview | 4000       |
+| PostgreSQL               | 5432       |
+| Local Grafana            | 3001       |
 
-- A successful state mutation and its audit event share one database
-  transaction.
-- Notification occurrences, recipients, and durable email jobs belong in that
-  transaction when they describe the same state change.
-- Repositories use the ambient transaction context exposed by
-  `TransactionService.run`; application APIs do not pass raw transaction clients.
-- Remote provider work that cannot participate in PostgreSQL transactions runs
-  before the final transaction. Recheck locked entitlements inside the final
-  transaction before persistence.
-- Do not call email or billing providers in a user transaction. Persist outbox
-  work and let a worker deliver it idempotently.
+[compose.yaml](../../compose.yaml) supplies PostgreSQL and the optional local
+telemetry stack. Its database credentials are development-only.
 
-## Security and contracts
+## Dependency direction
 
-- Persist credential digests or HMACs, never raw API keys, OAuth tokens,
-  verification tokens, or session cookies.
-- Return one-time credentials only from their creation boundary.
-- Public DTOs exclude key-provider data, credential hashes, encrypted payloads,
-  raw provider failures, and internal leases.
-- User management actions require membership permissions. Machine actors require
-  the correct intrinsic OAuth/API-key authority plus an active grant to an
-  active session key.
-- Frontend permission checks are presentation only; every handler enforces the
-  permission again.
-- Logs and metric labels contain bounded classifications, not identities,
-  arbitrary URLs, messages, calls, signatures, or provider error text.
+Protocol schemas sit below the API and application. Database, chain, crypto,
+passkey, and provider packages do not import application workflows. The server
+is the composition root. Frontends call the API rather than repositories.
 
-## Frontend workflow
+For a backend feature:
 
-- Use shared `@namera-ai/ui` components and semantic tokens.
-- Validate forms with one Effect Schema converted through
-  `Schema.toStandardSchemaV1`, React Hook Form, and the standard-schema resolver.
-- Route loaders prefetch into the router-owned Effect Atom registry; hooks read
-  the same cache.
-- Domain hooks expose mutation lifecycle callbacks. Components use `mutate` for
-  expected mutations and the shared feedback registry for concise toasts.
-- Keep route-only UI in the adjacent `-components` directory. Put a component in
-  `src/components` only when unrelated routes share it.
-- Preserve keyboard interaction, visible focus, accessible names, descriptions,
-  errors, and reduced-motion behavior.
+1. Define request/response schemas and expected failures in `protocol`.
+2. Add persistence and repository operations in `database` if needed.
+3. Implement the application workflow, transaction boundary, and audit/outbox effects.
+4. Declare the API contract, then implement actor/transport handling in the server.
+5. Add client atoms/hooks and UI after the contract exists.
+6. Update the owning architecture page and verify the affected boundaries.
 
-## Change verification
+Reuse existing actor/origin checks. A shared schema is not authorization.
+Transaction helpers must retain the current transaction context; do not expose
+raw SQL clients through application APIs.
 
-Run the narrowest package checks first, then `pnpm check` for cross-package
-changes. Commit meaningful changes with a small conventional commit message.
+## Runtime and builds
+
+Effect services use `Context.Service` and Layers. Workflows use `Effect.gen`
+and named `Effect.fn` operations. Expected failures are schema-tagged errors;
+unexpected defects are not converted into ordinary success.
+
+Workspace development resolves `namera-source`; published packages resolve
+built ESM and declarations. Preserve those export conditions and test source
+resolution. Most packages build unbundled with tsdown. UI is source-only.
+Use package-owned dependencies and explicit public exports.
+
+```sh
+pnpm check
+pnpm test
+pnpm pack:check
+```
+
+`check` runs formatting, lint, production/test typechecks, and builds.
+`test` is separate. Run tarball checks after builds, not concurrently with them.
+See [testing](testing.md) and [delivery](../runtime/delivery.md).
+
+Repository contribution rules live in [AGENTS.md](../../AGENTS.md); package
+READMEs contain local commands and entry points.

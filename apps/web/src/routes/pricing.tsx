@@ -11,7 +11,7 @@ import { PRICING_QUESTIONS as QUESTIONS } from "#/components/pricing/questions";
 import { jsonLd, seo, SITE } from "#/lib/seo";
 
 /*
- * The numbers come from `architecture/billing`; see the note at the top of
+ * The allowances are documented in `architecture/services/billing.md`; see
  * `components/pricing/plans.ts` for which file owns which figure, and for why
  * the paid tiers are shown as unavailable rather than as something to buy.
  */

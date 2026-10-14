@@ -104,7 +104,7 @@ examples against current public exports and keep them synchronized with releases
 
 Read the relevant feature document in [`architecture/`](architecture/README.md)
 before changing a cross-package flow. Read
-[`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)
+[`architecture/runtime/observability.md`](architecture/runtime/observability.md)
 before adding or changing traces, logs, metrics, or browser OTLP behavior.
 
 ## Public docs writing style
