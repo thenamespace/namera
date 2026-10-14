@@ -54,6 +54,7 @@ export type WalletImplementation = typeof WalletImplementation.Type;
 export const WalletOperationEventData = Schema.Struct({
   event: Schema.Literals([
     "wallet.operation_prepared",
+    "wallet.operation_cancelled",
     "wallet.operation_approved",
     "wallet.operation_confirmed",
     "wallet.operation_failed",

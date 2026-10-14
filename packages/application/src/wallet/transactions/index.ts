@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import { Repository } from "@namera-ai/database";
 import { WalletTransactionError, type WalletOperationId } from "@namera-ai/protocol";
 
+import { makeCancelWalletTransaction } from "./cancel.js";
 import { makeCompleteWalletTransaction, walletTransactionView } from "./complete.js";
 import { makeTransactionOwner, type WalletTransactionScope } from "./owner.js";
 import { makePrepareWalletTransaction } from "./prepare.js";
@@ -12,6 +13,7 @@ export const makeWalletTransactions = Effect.gen(function* () {
   const repository = yield* Repository;
   const owners = yield* makeTransactionOwner;
   const prepare = yield* makePrepareWalletTransaction;
+  const cancel = yield* makeCancelWalletTransaction;
   const complete = yield* makeCompleteWalletTransaction;
   const reconcile = yield* makeReconcileWalletTransactions;
   const get = Effect.fn("application.wallet.transactions.get")(
@@ -31,5 +33,5 @@ export const makeWalletTransactions = Effect.gen(function* () {
     },
     Effect.catchTag("DatabaseError", Effect.die),
   );
-  return { prepare, complete, get, reconcile };
+  return { prepare, complete, cancel, get, reconcile };
 });

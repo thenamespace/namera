@@ -19,6 +19,10 @@ keep their separate endpoints and lifecycle records.
   returns the operation ID, namespace, status and UserOperation hash.
 - `GET /wallets/:walletId/transactions/:operationId` returns public status,
   nullable UserOperation/transaction hashes, and `submissionBlocked`.
+- `POST /wallets/:walletId/transactions/:operationId/cancel` has no body and
+  returns the same public status shape. It cancels only the initiating user's
+  unsigned preparation, releases its gas hold, and records `wallet.operation_cancelled`
+  in one transaction. Repeated cancellation succeeds without another release or audit.
 
 Only authenticated user actors with the existing `wallet:update` permission in
 the active organization can invoke these routes. This is the same owner-operation
@@ -52,8 +56,17 @@ acceptance, passkey counter advancement, execution reservation and the approval
 audit are atomic. Sponsored approvals require their original active gas hold.
 
 The state vocabulary stays `awaiting-signature`, `signed`, `submitted`,
-`confirmed`, `failed`, `expired`. Unlike delegated execution's `prepared`
+`confirmed`, `failed`, `expired`, `cancelled`. Unlike delegated execution's `prepared`
 status, `signed` explicitly means authorized and queued, not onchain success.
+
+Cancellation rejects active signing leases and all signed/submitted operations,
+including uncertain submissions. An expired unsigned signing lease can be cancelled;
+conditional signature acceptance fences its late result. Cancellation never submits
+or replaces a transaction. The dashboard review's Cancel/close action awaits cancellation
+before clearing its attempt; reopening starts with a fresh idempotency key. Navigation
+and interrupted requests still rely on unsigned expiry as a fallback. A cancelled key
+cannot prepare or complete again. PostgreSQL boundary tests cover cancellation versus
+completion, duplicate requests, tenant/origin isolation, signing leases and missing receipts.
 
 ## Recovery and migration
 

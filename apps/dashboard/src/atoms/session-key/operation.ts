@@ -31,6 +31,10 @@ export const prepareSessionKeyOperationMutation = NameraClient.mutation(
   "sessionKey",
   "prepareOperation",
 );
+export const cancelSessionKeyOperationMutation = NameraClient.mutation(
+  "sessionKey",
+  "cancelOperation",
+);
 export const completeSessionKeyOperationMutation = NameraClient.mutation(
   "sessionKey",
   "completeOperation",
