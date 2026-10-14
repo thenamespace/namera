@@ -1,14 +1,20 @@
 # @namera-ai/api
 
-The typed HTTP contract for Namera, built with Effect `HttpApi`. Generate OpenAPI
-documentation and derive client types from the same endpoint schemas used by the
-server. This package defines the API; it does not start a server.
+Effect `HttpApi` contract for Namera. Generate OpenAPI documents and derive typed
+clients from the endpoint schemas used by the server. This package declares HTTP
+interfaces; it does not run a server or implement business logic.
 
-For ordinary application integration, use [@namera-ai/sdk](https://www.npmjs.com/package/@namera-ai/sdk).
+For application integrations, use the promise-based
+[@namera-ai/sdk](https://www.npmjs.com/package/@namera-ai/sdk).
+
+## Requirements
+
+Node.js 24.14+ for Node applications. Examples use Effect 4.0.1, matching the
+package's runtime dependency.
 
 ## Installation
 
-Requires Node.js 24.14+ for Node applications. Use the matching Effect 4 stable release.
+Choose your package manager:
 
 ```sh
 npm install @namera-ai/api effect@4.0.1
@@ -17,9 +23,9 @@ yarn add @namera-ai/api effect@4.0.1
 bun add @namera-ai/api effect@4.0.1
 ```
 
-Choose the command for your package manager.
+## Quick start
 
-## Generate OpenAPI documentation
+Save this as `index.ts` and run `node index.ts` to generate `openapi.json`:
 
 ```ts
 import { writeFile } from "node:fs/promises";
@@ -30,29 +36,29 @@ const document = OpenApi.fromApi(NameraApi);
 await writeFile("openapi.json", JSON.stringify(document, null, 2));
 ```
 
-The contract covers wallets, session keys, executions, signatures, curated address metadata, authorization,
-organizations, billing, and the public waitlist. Authentication is defined per
-endpoint; installing this package grants no access.
+The contract includes account, session-key, execution, signature, authentication,
+organization, billing, and identity interfaces. Internal operator endpoints carry
+OpenAPI exclusion annotations and are not part of the generated public spec.
 
 ## Derive client types
 
 ```ts
 import type { HttpApiClient } from "effect/http-api";
-import { NameraApi } from "@namera-ai/api";
+import type { NameraApi } from "@namera-ai/api";
 
-type Client = HttpApiClient.ForApi<typeof NameraApi>;
-type WalletClient = Client["wallet"];
+export type NameraHttpClient = HttpApiClient.ForApi<typeof NameraApi>;
+export type WalletHttpClient = NameraHttpClient["wallet"];
 ```
 
-Effect integrations can construct clients with `HttpApiClient.make` and supply
-the required client middleware layers. Most consumers should use the SDK, which
-handles authentication and returns promise-based results.
+`HttpApiClient.make` constructs an Effect client when supplied with an HTTP layer
+and the required client middleware. Authentication and actor permissions are
+endpoint-specific. A typed client does not grant access to owner-only or operator
+actions. Use the SDK when you do not need to compose Effect middleware yourself.
 
-## Related packages
+## Documentation
 
-- [protocol](https://www.npmjs.com/package/@namera-ai/protocol): runtime schemas and types.
-- [sdk](https://www.npmjs.com/package/@namera-ai/sdk): application client.
-- [cli](https://www.npmjs.com/package/@namera-ai/cli): terminal commands and local MCP.
+- [SDK integration](https://namera.ai/docs/sdk)
+- [Contract architecture](https://github.com/thenamespace/namera/blob/main/architecture/integrations/contracts.md)
+- [Runtime schemas](https://www.npmjs.com/package/@namera-ai/protocol)
 
-Use matching versions of the four packages starting with 1.0.0.
-[Contributor architecture](https://github.com/thenamespace/namera/blob/main/architecture/packages/contracts.md).
+Use matching versions of the API, protocol, SDK, and CLI packages.
