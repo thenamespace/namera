@@ -37,6 +37,8 @@ idempotency protects retries but does not revoke already delivered links.
 
 ```sh
 pnpm --filter @namera-ai/emails typecheck
+pnpm --filter @namera-ai/emails typecheck:test
+pnpm --filter @namera-ai/emails test
 pnpm --filter @namera-ai/emails build
 ```
 
