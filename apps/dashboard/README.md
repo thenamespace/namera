@@ -59,6 +59,9 @@ The browser lane loads the application theme but no local environment files.
 Tests reject unexpected HTTP requests and use controlled session/clipboard
 boundaries. Node tests remain in `tests/unit` and `tests/integration`; browser
 tests live in `tests/browser`. Neither lane submits real transactions.
+Browser coverage includes artwork preview cleanup and explicit confirmation,
+identity-record and feedback draft retention, and notification pagination/cache
+invalidation through the generated HTTP client.
 
 ## Deployment
 
