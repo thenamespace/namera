@@ -52,6 +52,9 @@ autosave. A request already accepted by the server cannot be cancelled by unmoun
 owning hook prepares and verifies requests, handles cancellation, signs, submits,
 and polls. The modal itself neither authorizes nor submits a transaction. Receipt
 confirmation, not an optimistic UI update, activates a session installation.
+Pending reviews expose their busy state on the dialog element and disable actions
+and dismissal. Shared copy controls use the button itself as the tooltip trigger,
+with one tab stop and keyboard activation.
 
 Local session private keys stay in creation memory until encrypted export. Managed
 creation retains an idempotency key scoped to organization, user, purpose, and payload; it does not

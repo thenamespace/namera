@@ -4,13 +4,16 @@ import { Effect, Option, Redacted } from "effect";
 import { UserOperationHash } from "@namera-ai/protocol";
 import { http } from "viem";
 import { createBundlerClient } from "viem/account-abstraction";
+import { afterEach, vi } from "vitest";
 
 import { getChainDataByCaip2 } from "../../../src/chains/helpers.js";
+import * as chainLookup from "../../../src/chains/helpers.js";
 import { makeExecutionClients } from "../../../src/clients/execution.js";
 import { makeGetEvmExecutionReceipt } from "../../../src/execution/receipt.js";
 
 const hash = UserOperationHash.make(`0x${"11".repeat(32)}`);
 const transactionHash = `0x${"22".repeat(32)}`;
+afterEach(() => vi.restoreAllMocks());
 const receipt = {
   userOpHash: hash,
   entryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
@@ -67,6 +70,21 @@ const lookup = (result: unknown, rpcError = false) => {
 it.effect("keeps a missing receipt unknown rather than declaring failure", () =>
   Effect.gen(function* () {
     expect(yield* lookup(null)).toEqual(Option.none());
+  }),
+);
+
+it.effect("recovers receipts after admission is paused without submitting an operation", () =>
+  Effect.gen(function* () {
+    const chain = getChainDataByCaip2("eip155:1");
+    if (!chain) throw new Error("Missing Ethereum chain");
+    vi.spyOn(chainLookup, "getChainDataByCaip2").mockReturnValue({
+      ...chain,
+      operationsEnabled: false,
+    });
+
+    expect(yield* lookup(null)).toEqual(Option.none());
+    const recovered = Option.getOrThrow(yield* lookup(receipt));
+    expect(recovered).toMatchObject({ userOperationHash: hash, transactionHash, success: true });
   }),
 );
 

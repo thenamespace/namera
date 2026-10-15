@@ -4,13 +4,16 @@ import { Effect, Redacted } from "effect";
 import { UserOperationHash } from "@namera-ai/protocol";
 import { http } from "viem";
 import { createBundlerClient } from "viem/account-abstraction";
+import { afterEach, vi } from "vitest";
 
 import { getChainDataByCaip2 } from "../../../src/chains/helpers.js";
+import * as chainLookup from "../../../src/chains/helpers.js";
 import { makeExecutionClients } from "../../../src/clients/execution.js";
 import { makeGetEvmUserOperationStatus } from "../../../src/execution/receipt.js";
 
 const hash = UserOperationHash.make(`0x${"11".repeat(32)}`);
 const transactionHash = `0x${"22".repeat(32)}`;
+afterEach(() => vi.restoreAllMocks());
 const pendingOperation = {
   entryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
   userOperation: { sender: `0x${"33".repeat(20)}`, nonce: "0x0" },
@@ -48,6 +51,24 @@ const lookup = (result: unknown, error = false) => {
 it.effect("treats a null Alchemy lookup as unobserved, not rejected or failed", () =>
   Effect.gen(function* () {
     expect(yield* lookup(null)).toEqual({ status: "not_found", transactionHash: null });
+  }),
+);
+
+it.effect("continues read-only observation on a paused chain without inventing rejection", () =>
+  Effect.gen(function* () {
+    const chain = getChainDataByCaip2("eip155:1");
+    if (!chain) throw new Error("Missing Ethereum chain");
+    vi.spyOn(chainLookup, "getChainDataByCaip2").mockReturnValue({
+      ...chain,
+      operationsEnabled: false,
+    });
+
+    expect(yield* lookup(null)).toEqual({ status: "not_found", transactionHash: null });
+    expect(yield* lookup(pendingOperation)).toEqual({ status: "submitted", transactionHash: null });
+    expect(yield* lookup({ ...pendingOperation, transactionHash })).toEqual({
+      status: "submitted",
+      transactionHash,
+    });
   }),
 );
 

@@ -12,6 +12,10 @@ The adapter uses `eth_getUserOperationReceipt` and
 A lookup may omit `transactionHash` or return null while pending. Neither case
 is a decoding failure or evidence that the transaction failed.
 
+Pausing a chain blocks new operation admission, not receipt or status reads.
+Adapter tests exercise pending and mined responses while admission is disabled;
+their transport accepts only the corresponding read RPC, never submission.
+
 A receipt must match the persisted signed envelope's chain, hash, sender, nonce
 and EntryPoint. Only then can its success flag establish execution outcome.
 An included revert can still incur gas charges.

@@ -95,19 +95,17 @@ export function CopyIconButton({
 
   return (
     <Tooltip delay={300} shouldCloseOnPress={false}>
-      <Tooltip.Trigger>
-        <Button
-          aria-label={isCopied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-          className={cn("relative shrink-0", className) ?? "relative shrink-0"}
-          isIconOnly
-          size="sm"
-          type="button"
-          variant="tertiary"
-          onPress={copy}
-        >
-          <CopyFeedbackIcon isCopied={isCopied} />
-        </Button>
-      </Tooltip.Trigger>
+      <Button
+        aria-label={isCopied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
+        className={cn("relative shrink-0", className) ?? "relative shrink-0"}
+        isIconOnly
+        size="sm"
+        type="button"
+        variant="tertiary"
+        onPress={copy}
+      >
+        <CopyFeedbackIcon isCopied={isCopied} />
+      </Button>
       <Tooltip.Content showArrow>
         <Tooltip.Arrow />
         {isCopied ? "Copied" : (tooltipLabel ?? `Copy ${label.toLowerCase()}`)}

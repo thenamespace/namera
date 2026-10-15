@@ -3,7 +3,33 @@ import { useState } from "react";
 import { CopyIconButton, SignInCodeInput } from "@namera-ai/ui";
 import { expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
+
+it("uses one keyboard-focusable copy trigger with an accessible tooltip", async () => {
+  const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  await render(
+    <>
+      <button type="button">Before</button>
+      <CopyIconButton label="Identity" value="example.namera.id" />
+      <button type="button">After</button>
+    </>,
+  );
+
+  expect(page.getByRole("button").elements()).toHaveLength(3);
+  await page.getByRole("button", { name: "Before", exact: true }).click();
+  await userEvent.tab();
+  await expect
+    .element(page.getByRole("button", { name: "Copy identity", exact: true }))
+    .toHaveFocus();
+  await expect.element(page.getByRole("tooltip")).toHaveTextContent("Copy identity");
+  await userEvent.keyboard("{Enter}");
+  await expect.poll(() => writeText.mock.calls.length).toBe(1);
+  await userEvent.keyboard(" ");
+  await expect.poll(() => writeText.mock.calls.length).toBe(2);
+  expect(writeText.mock.calls).toEqual([["example.namera.id"], ["example.namera.id"]]);
+  await userEvent.tab();
+  await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
+});
 
 it("copies the provided value and announces success", async () => {
   const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();

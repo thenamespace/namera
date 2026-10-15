@@ -17,6 +17,7 @@ it("shows the reviewed context and requires an explicit confirmation", async () 
   await render(<TransactionOverview {...review} onConfirm={onConfirm} onCancel={onCancel} />);
 
   await expect.element(page.getByRole("dialog")).toHaveAccessibleName("Review transaction");
+  await expect.element(page.getByRole("dialog")).toHaveAttribute("aria-busy", "false");
   await expect.element(page.getByRole("dialog")).toHaveAccessibleDescription(review.description);
   await expect.element(page.getByText("Ethereum", { exact: true })).toBeVisible();
   expect(onConfirm).not.toHaveBeenCalled();
@@ -48,6 +49,7 @@ it("disables actions and dismissal while submission is pending", async () => {
   );
 
   await expect.element(page.getByRole("button", { name: "Submitting…" })).toBeDisabled();
+  await expect.element(page.getByRole("dialog")).toHaveAttribute("aria-busy", "true");
   await expect.element(page.getByRole("button", { name: "Cancel", exact: true })).toBeDisabled();
   await userEvent.keyboard("{Escape}");
   expect(onConfirm).not.toHaveBeenCalled();
