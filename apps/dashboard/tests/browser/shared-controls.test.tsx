@@ -46,6 +46,39 @@ it("reports denied clipboard access without claiming success", async () => {
   expect(onCopySuccess).not.toHaveBeenCalled();
 });
 
+it("copies the current prop after the identity changes", async () => {
+  const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  const view = await render(<CopyIconButton label="Identity" value="first.namera.id" />);
+  await page.getByLabelText("Copy identity", { exact: true }).click();
+  await expect.element(page.getByLabelText("Identity copied", { exact: true })).toBeVisible();
+  await view.rerender(<CopyIconButton label="Identity" value="second.namera.id" />);
+  await page.getByLabelText("Identity copied", { exact: true }).click();
+  expect(writeText.mock.calls).toEqual([["first.namera.id"], ["second.namera.id"]]);
+});
+
+it("reports unavailable clipboard support without claiming success", async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+  try {
+    const onCopyError = vi.fn();
+    const onCopySuccess = vi.fn();
+    await render(
+      <CopyIconButton
+        label="Identity"
+        value="example.namera.id"
+        onCopyError={onCopyError}
+        onCopySuccess={onCopySuccess}
+      />,
+    );
+    await page.getByLabelText("Copy identity", { exact: true }).click();
+    await expect.poll(() => onCopyError.mock.calls.length).toBe(1);
+    expect(onCopySuccess).not.toHaveBeenCalled();
+  } finally {
+    if (descriptor) Object.defineProperty(navigator, "clipboard", descriptor);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+});
+
 function CodeForm() {
   const [code, setCode] = useState("");
   return <SignInCodeInput value={code} onChange={setCode} />;
@@ -59,4 +92,13 @@ it("accepts an eight-digit email code and rejects non-digit replacement", async 
   await input.fill("abcdefgh");
   await expect.element(input).toHaveValue("12345678");
   await expect.element(input).toHaveAttribute("maxlength", "8");
+});
+
+it("keeps the code field disabled while a request is pending", async () => {
+  const onChange = vi.fn();
+  await render(<SignInCodeInput isDisabled value="12345678" onChange={onChange} />);
+  const input = page.getByRole("textbox", { name: "Email sign-in code" });
+  await expect.element(input).toBeDisabled();
+  await expect.element(input).toHaveValue("12345678");
+  expect(onChange).not.toHaveBeenCalled();
 });
