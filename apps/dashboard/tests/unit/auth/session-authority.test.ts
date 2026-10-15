@@ -1,16 +1,10 @@
-import type { UserActorData } from "@namera-ai/protocol/dto";
+import { Schema } from "effect";
+
+import { UserActorData } from "@namera-ai/protocol/dto";
 import { describe, expect, it } from "vitest";
 
 import { canSaveInAuthority, sessionAuthority } from "../../../src/atoms/auth/authority";
-
-// Only fields contributing to authority are relevant to this comparison.
-const actor = {
-  user: { id: "user" },
-  session: { id: "session" },
-  organization: { id: "organization" },
-  member: { organizationMember: { id: "member" } },
-  role: { id: "role", permissions: ["wallet:read", "wallet:create"] },
-} as unknown as UserActorData;
+import { actor } from "../../fixtures/actor";
 
 describe("browser authority boundary", () => {
   it("ignores presentation and permission ordering changes", () => {
@@ -29,20 +23,21 @@ describe("browser authority boundary", () => {
   });
 
   it("changes for user, session, tenant, membership, role or permission changes", () => {
+    const otherId = "01900000-0000-7000-8000-000000000099";
     const variants = [
-      { ...actor, user: { ...actor.user, id: "other-user" } },
-      { ...actor, session: { ...actor.session, id: "other-session" } },
-      { ...actor, organization: { ...actor.organization, id: "other-org" } },
+      { ...actor, user: { ...actor.user, id: otherId } },
+      { ...actor, session: { ...actor.session, id: otherId } },
+      { ...actor, organization: { ...actor.organization, id: otherId } },
       {
         ...actor,
         member: {
           ...actor.member,
-          organizationMember: { ...actor.member.organizationMember, id: "other-member" },
+          organizationMember: { ...actor.member.organizationMember, id: otherId },
         },
       },
-      { ...actor, role: { ...actor.role, id: "other-role" } },
+      { ...actor, role: { ...actor.role, id: otherId } },
       { ...actor, role: { ...actor.role, permissions: ["wallet:read"] } },
-    ] as UserActorData[];
+    ].map((value) => Schema.decodeUnknownSync(Schema.toType(UserActorData))(value));
     for (const changed of variants) {
       expect(sessionAuthority(changed)).not.toBe(sessionAuthority(actor));
       expect(canSaveInAuthority(sessionAuthority(actor), sessionAuthority(changed))).toBe(false);

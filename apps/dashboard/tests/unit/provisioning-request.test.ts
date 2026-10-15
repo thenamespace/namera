@@ -38,6 +38,8 @@ describe("managed provisioning retry identity", () => {
     );
     expect(retry).toEqual(first);
     expect(storage.key(0)).not.toContain("Private label");
+    expect(storage.getItem(first.storageKey)).toBe(first.idempotencyKey);
+    expect(storage.length).toBe(1);
     completeProvisioningRequest(first, storage);
     expect(
       (
@@ -48,6 +50,45 @@ describe("managed provisioning retry identity", () => {
         )
       ).idempotencyKey,
     ).not.toBe(first.idempotencyKey);
+  });
+
+  it("ignores an old idempotency field but preserves array order in the request identity", async () => {
+    const storage = memoryStorage();
+    const first = await prepareProvisioningRequest(
+      "org:user:session",
+      { calls: ["first", "second"] },
+      storage,
+    );
+    const retry = await prepareProvisioningRequest(
+      "org:user:session",
+      {
+        calls: ["first", "second"],
+        idempotencyKey: "previous-attempt",
+      },
+      storage,
+    );
+    const reordered = await prepareProvisioningRequest(
+      "org:user:session",
+      { calls: ["second", "first"] },
+      storage,
+    );
+
+    expect(retry).toEqual(first);
+    expect(reordered.storageKey).not.toBe(first.storageKey);
+    expect(reordered.idempotencyKey).not.toBe(first.idempotencyKey);
+  });
+
+  it("keeps another request's retry identity when one request succeeds", async () => {
+    const storage = memoryStorage();
+    const completed = await prepareProvisioningRequest("org:user:session", { name: "A" }, storage);
+    const pending = await prepareProvisioningRequest("org:user:session", { name: "B" }, storage);
+
+    completeProvisioningRequest(completed, storage);
+
+    expect(storage.getItem(completed.storageKey)).toBeNull();
+    expect(await prepareProvisioningRequest("org:user:session", { name: "B" }, storage)).toEqual(
+      pending,
+    );
   });
   it("isolates accounts and changed requests and does not clear a newer retry key", async () => {
     const storage = memoryStorage();

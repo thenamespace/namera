@@ -1,181 +1,110 @@
-import { createMemoryHistory } from "@tanstack/react-router";
+import type { PlatformPermission } from "@namera-ai/protocol/model";
+import { describe, expect, it } from "vitest";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { adminResponse } from "../fixtures/admin";
+import { routeFixture } from "../support/router";
 
-import { getRouter } from "../../src/router";
-
-const paths = [
+const id = "01950000-0000-7000-8000-000000000001";
+const routes = [
   "/",
   "/waitlist",
   "/invites",
   "/team",
   "/catalog",
-  "/catalog/01950000-0000-7000-8000-000000000001",
+  `/catalog/${id}`,
   "/interface",
-  "/interface/01950000-0000-7000-8000-000000000003",
+  `/interface/${id}`,
+  "/feedback",
+  `/feedback/${id}`,
 ];
-const fetchMock = vi.fn<typeof fetch>();
 
-afterEach(() => vi.unstubAllGlobals());
+describe("admin route authority", () => {
+  it.each(routes)("redirects unauthenticated access to %s", async (path) => {
+    const { router, requests } = routeFixture(path, () => new Response(null, { status: 401 }));
+    await router.load();
 
-describe("admin page access", () => {
-  it.each(
-    ["owner", "operator", "viewer"].flatMap((role) =>
-      ["catalog", "interface"].map((resource) => ({ role, resource })),
-    ),
-  )("prefetches $resource for $role", async ({ role, resource }) => {
-    const endpoint = resource === "interface" ? "/internal/interfaces" : "/internal/catalog";
-    const requests: string[] = [];
-    fetchMock.mockImplementation((input) => {
-      const url = String(input instanceof Request ? input.url : input);
-      requests.push(url);
-      return Promise.resolve(
-        Response.json(
-          url.includes(endpoint)
-            ? { entries: [], nextOffset: null }
-            : {
-                member: {
-                  id: "member-1",
-                  userId: "01900000-0000-7000-8000-000000000001",
-                  role,
-                  status: "active",
-                  createdAt: "2026-10-01T00:00:00.000Z",
-                  updatedAt: "2026-10-01T00:00:00.000Z",
-                },
-                email: "team@example.com",
-                permissions: ["catalog:read"],
-              },
-        ),
-      );
+    // Node router redirects are exposed through the server result rather than navigation.
+    // oxlint-disable-next-line eslint/no-underscore-dangle
+    expect(router._serverResult).toMatchObject({
+      type: "redirect",
+      redirect: { options: { to: "/auth" } },
     });
-    vi.stubGlobal("fetch", fetchMock);
-    const router = getRouter();
-    router.update({
-      context: router.options.context,
-      history: createMemoryHistory({ initialEntries: [`/${resource}`] }),
-    });
-    try {
-      await router.load();
-      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
-      expect(requests.filter((url) => url.includes(endpoint))).toHaveLength(1);
-    } finally {
-      router.options.context.atomRegistry.dispose();
-    }
+    expect(requests.length).toBeGreaterThan(0);
+    expect(requests.every((url) => url.pathname === "/internal/me")).toBe(true);
   });
 
-  it.each(["owner", "operator", "viewer"])("prefetches the member table for %s", async (role) => {
-    const member = {
-      id: "member-1",
-      userId: "01900000-0000-7000-8000-000000000001",
-      role,
-      status: "active",
-      createdAt: "2026-10-01T00:00:00.000Z",
-      updatedAt: "2026-10-01T00:00:00.000Z",
-    };
-    const requests: string[] = [];
-    fetchMock.mockImplementation((input) => {
-      const url = String(input instanceof Request ? input.url : input);
-      requests.push(url);
-      return Promise.resolve(
-        Response.json(
-          url.endsWith("/internal/members")
-            ? [
-                {
-                  ...member,
-                  email: "owner@example.com",
-                  metadata: { version: 1, name: "Team Owner" },
-                },
-              ]
-            : {
-                member,
-                email: "owner@example.com",
-                permissions: ["team:read"],
-              },
-        ),
-      );
+  it.each(routes)("does not prefetch %s without its capability", async (path) => {
+    const { router, requests } = routeFixture(path, (url) => {
+      if (url.pathname !== "/internal/me") throw new Error(`Unexpected request: ${url.pathname}`);
+      return Response.json(adminResponse([], "owner"));
     });
-    vi.stubGlobal("fetch", fetchMock);
-    const router = getRouter();
-    router.update({
-      context: router.options.context,
-      history: createMemoryHistory({ initialEntries: ["/team"] }),
-    });
-    try {
-      await router.load();
-      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
-      expect(requests.filter((url) => url.endsWith("/internal/members"))).toHaveLength(1);
-    } finally {
-      router.options.context.atomRegistry.dispose();
-    }
+    await router.load();
+
+    expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
+    expect(requests.length).toBeGreaterThan(0);
+    expect(requests.every((url) => url.pathname === "/internal/me")).toBe(true);
   });
-  it.each(["operator", "viewer"])("does not fetch the member list for %s", async (role) => {
-    const requests: string[] = [];
-    fetchMock.mockImplementation((input) => {
-      requests.push(String(input instanceof Request ? input.url : input));
-      return Promise.resolve(
-        Response.json({
-          member: {
-            id: "member-1",
-            userId: "01900000-0000-7000-8000-000000000001",
-            role,
-            status: "active",
-            createdAt: "2026-10-01T00:00:00.000Z",
-            updatedAt: "2026-10-01T00:00:00.000Z",
-          },
-          email: "team@example.com",
-          permissions: [],
-        }),
-      );
-    });
-    vi.stubGlobal("fetch", fetchMock);
-    const router = getRouter();
-    router.update({
-      context: router.options.context,
-      history: createMemoryHistory({ initialEntries: ["/team"] }),
-    });
-    try {
-      await router.load();
-      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
-      expect(requests.some((url) => url.endsWith("/internal/me"))).toBe(true);
-      expect(requests.some((url) => url.endsWith("/internal/members"))).toBe(false);
-    } finally {
-      router.options.context.atomRegistry.dispose();
-    }
-  });
-  it.each(paths)("requires admin access at %s", async (path) => {
-    fetchMock.mockImplementation(() => Promise.resolve(new Response(null, { status: 401 })));
-    vi.stubGlobal("fetch", fetchMock);
-    const router = getRouter();
-    router.update({
-      context: router.options.context,
-      history: createMemoryHistory({ initialEntries: [path] }),
-    });
-    try {
-      await router.load();
-      // TanStack keeps Node-mode redirects here rather than in browser state.
-      // oxlint-disable-next-line eslint/no-underscore-dangle
-      expect(router._serverResult).toMatchObject({
-        type: "redirect",
-        redirect: { options: { to: "/auth" } },
+
+  it.each([
+    {
+      path: "/catalog",
+      endpoint: "/internal/catalog",
+      permission: "catalog:read",
+      response: { entries: [], nextOffset: null },
+    },
+    {
+      path: "/interface",
+      endpoint: "/internal/interfaces",
+      permission: "catalog:read",
+      response: { entries: [], nextOffset: null },
+    },
+    { path: "/team", endpoint: "/internal/members", permission: "team:read", response: [] },
+    {
+      path: "/feedback",
+      endpoint: "/internal/feedback",
+      permission: "feedback:read",
+      response: { entries: [], nextCursor: null },
+    },
+  ] satisfies readonly {
+    path: string;
+    endpoint: string;
+    permission: PlatformPermission;
+    response: unknown;
+  }[])(
+    "prefetches $path with its explicit capability even for a viewer",
+    async ({ path, endpoint, permission, response }) => {
+      const { router, requests } = routeFixture(path, (url) => {
+        if (url.pathname === "/internal/me") return Response.json(adminResponse([permission]));
+        if (url.pathname === endpoint) return Response.json(response);
+        throw new Error(`Unexpected request: ${url.pathname}`);
       });
-    } finally {
-      router.options.context.atomRegistry.dispose();
-    }
+      await router.load();
+
+      expect(router.state.matches.every((match) => match.status === "success")).toBe(true);
+      expect(requests.filter((url) => url.pathname === endpoint)).toHaveLength(1);
+    },
+  );
+
+  it("fetches authorized feedback detail and preserves a missing-record failure", async () => {
+    const endpoint = `/internal/feedback/${id}`;
+    const { router, requests } = routeFixture(`/feedback/${id}`, (url) => {
+      if (url.pathname === "/internal/me") return Response.json(adminResponse(["feedback:read"]));
+      if (url.pathname === endpoint) return new Response(null, { status: 404 });
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    await router.load();
+
+    expect(requests.filter((url) => url.pathname === endpoint)).toHaveLength(1);
+    expect(router.state.matches.some((match) => match.status === "error")).toBe(true);
   });
 
-  it("keeps connection failures on the retry boundary", async () => {
-    fetchMock.mockRejectedValue(new TypeError("Network unavailable"));
-    vi.stubGlobal("fetch", fetchMock);
-    const router = getRouter();
-    router.update({
-      context: router.options.context,
-      history: createMemoryHistory({ initialEntries: ["/waitlist"] }),
+  it("keeps connection failures on the retry boundary without fetching protected data", async () => {
+    const { router, requests } = routeFixture("/waitlist", () => {
+      throw new TypeError("Network unavailable");
     });
-    try {
-      await router.load();
-      expect(router.state.matches.some((match) => match.status === "error")).toBe(true);
-    } finally {
-      router.options.context.atomRegistry.dispose();
-    }
+    await router.load();
+
+    expect(router.state.matches.some((match) => match.status === "error")).toBe(true);
+    expect(requests.every((url) => url.pathname === "/internal/me")).toBe(true);
   });
 });

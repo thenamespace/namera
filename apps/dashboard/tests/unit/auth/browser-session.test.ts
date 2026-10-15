@@ -1,4 +1,4 @@
-import { Effect, Exit } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { HttpApiError } from "effect/http-api";
 
 import { describe, expect, it } from "vitest";
@@ -50,9 +50,9 @@ describe("browser session recovery", () => {
   });
 
   it("does not turn defects into signed-out sessions", async () => {
-    const result = await Effect.runPromiseExit(
-      recoverSignedOutSession(Effect.die("unexpected defect")),
-    );
+    const defect = new Error("unexpected defect");
+    const result = await Effect.runPromiseExit(recoverSignedOutSession(Effect.die(defect)));
     expect(Exit.isFailure(result)).toBe(true);
+    if (Exit.isFailure(result)) expect(Cause.squash(result.cause)).toBe(defect);
   });
 });
