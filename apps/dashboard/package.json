@@ -48,6 +48,7 @@
     "wagmi": "3.7.7"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@posthog/rollup-plugin": "^1.6.1",
     "@tanstack/devtools-vite": "catalog:",
     "@tanstack/router-cli": "catalog:",

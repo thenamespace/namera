@@ -1,53 +1,60 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Cause, Console, Effect, Exit, Schema } from "effect";
-
-import { describe, expect, it } from "vitest";
 
 import { reportCommandErrors, structuredErrors } from "../../../src/services/command-errors.js";
 import { cliFailure, errorFeedback, formatFailure } from "../../../src/services/error-feedback.js";
 import { unwrapResult } from "../../../src/services/output.js";
 
 describe("CLI error feedback", () => {
-  it("renders unexpected defects safely while retaining failure status", async () => {
-    const stderr: unknown[] = [];
-    const result = await Effect.runPromiseExit(
-      reportCommandErrors(Effect.die(new Error("secret-native-stack"))).pipe(
-        Effect.provideService(Console.Console, {
-          ...console,
-          error: (...values) => {
-            stderr.push(...values);
-          },
-        }),
-      ),
-    );
-    expect(Exit.isFailure(result)).toBe(true);
-    expect(stderr).toHaveLength(1);
-    expect(String(stderr[0])).toContain("Namera could not complete this command.");
-    expect(String(stderr[0])).not.toContain("secret-native-stack");
-  });
+  it.effect("renders unexpected defects safely while retaining failure status", () =>
+    Effect.gen(function* () {
+      const stderr: unknown[] = [];
+      const result = yield* Effect.exit(
+        reportCommandErrors(Effect.die(new Error("secret-native-stack"))).pipe(
+          Effect.provideService(Console.Console, {
+            ...console,
+            error: (...values) => {
+              stderr.push(...values);
+            },
+          }),
+        ),
+      );
+      expect(Exit.isFailure(result)).toBe(true);
+      expect(stderr).toHaveLength(1);
+      expect(String(stderr[0])).toContain("Namera could not complete this command.");
+      expect(String(stderr[0])).not.toContain("secret-native-stack");
+    }),
+  );
 
-  it("unwraps Effect's promise failures without leaking causes", async () => {
-    const failure = await Effect.runPromise(
-      Effect.tryPromise(async () => {
+  it.effect("unwraps Effect's promise failures without leaking causes", () =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.tryPromise(async () => {
         throw cliFailure("KEYRING_UNAVAILABLE");
-      }).pipe(Effect.flip),
-    );
-    expect(errorFeedback(failure).code).toBe("KEYRING_UNAVAILABLE");
-  });
+      }).pipe(Effect.flip);
+      expect(errorFeedback(failure).code).toBe("KEYRING_UNAVAILABLE");
+    }),
+  );
 
-  it("never renders arbitrary exceptions or schema inputs", async () => {
-    const secret = "private-key-must-not-appear";
-    const schemaError = await Effect.runPromise(
-      Schema.decodeUnknownEffect(Schema.Number)(secret).pipe(Effect.flip),
-    );
-    for (const error of [new Error(secret), schemaError, { _tag: "Unexpected", message: secret }]) {
-      expect(formatFailure(errorFeedback(error), false)).not.toContain(secret);
-      expect(formatFailure(errorFeedback(error), true)).not.toContain(secret);
-    }
-  });
+  it.effect("never renders arbitrary exceptions or schema inputs", () =>
+    Effect.gen(function* () {
+      const secret = "private-key-must-not-appear";
+      const schemaError = yield* Schema.decodeUnknownEffect(Schema.Number)(secret).pipe(
+        Effect.flip,
+      );
+      for (const error of [
+        new Error(secret),
+        schemaError,
+        { _tag: "Unexpected", message: secret },
+      ]) {
+        expect(formatFailure(errorFeedback(error), false)).not.toContain(secret);
+        expect(formatFailure(errorFeedback(error), true)).not.toContain(secret);
+      }
+    }),
+  );
 
-  it("preserves actionable SDK error codes", async () => {
-    const cause = await Effect.runPromise(
-      unwrapResult({
+  it.effect("preserves actionable SDK error codes", () =>
+    Effect.gen(function* () {
+      const cause = yield* unwrapResult({
         success: false,
         data: null,
         error: {
@@ -57,12 +64,12 @@ describe("CLI error feedback", () => {
           status: null,
           cause: null,
         },
-      }).pipe(Effect.flip),
-    );
-    expect(cause.code).toBe("PREPARED_EXECUTION_INVALID");
-    expect(cause.retryable).toBe(false);
-    expect(formatFailure(cause, true)).not.toContain("raw provider");
-  });
+      }).pipe(Effect.flip);
+      expect(cause.code).toBe("PREPARED_EXECUTION_INVALID");
+      expect(cause.retryable).toBe(false);
+      expect(formatFailure(cause, true)).not.toContain("raw provider");
+    }),
+  );
 
   it("keeps unknown defects non-retryable", () => {
     const error = errorFeedback(Cause.squash(Cause.die(new Error("secret"))));

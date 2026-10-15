@@ -1,10 +1,10 @@
+import { describe, expect, it } from "@effect/vitest";
 import { Effect, Layer, Redacted, Result } from "effect";
 import { FetchHttpClient } from "effect/http";
 
-import { describe, expect, it } from "vitest";
-
 import { McpOAuthUpstream } from "../../../src/services/mcp/oauth-contracts.js";
 import { mcpOAuthUpstreamLayer } from "../../../src/services/mcp/oauth-upstream.js";
+
 const apiOrigin = "https://api.namera.test";
 const urls = { callback: "http://127.0.0.1:3847/oauth/callback" };
 
@@ -26,7 +26,7 @@ const registration = {
 };
 
 describe("local MCP upstream OAuth adapter", () => {
-  it("uses only configured API endpoints and API resource, never the local audience", () => {
+  it.effect("uses only configured API endpoints and API resource, never the local audience", () => {
     const requests: { url: string; body: URLSearchParams | Record<string, unknown> }[] = [];
     const fetch: typeof globalThis.fetch = async (input, init) => {
       const url = String(input);
@@ -50,70 +50,72 @@ describe("local MCP upstream OAuth adapter", () => {
             },
       );
     };
-    return Effect.runPromise(
-      Effect.gen(function* () {
-        const provider = yield* McpOAuthUpstream;
-        expect(yield* provider.register("Agent")).toBe("upstream-client");
-        const tokens = yield* provider.exchange({
-          clientId: "upstream-client",
-          code: "code",
-          verifier: Redacted.make("verifier"),
-        });
-        expect(Redacted.value(tokens.accessToken)).toBe("api-access");
-        expect(JSON.stringify(tokens)).not.toContain("api-access");
-        yield* provider.refresh({
-          clientId: "upstream-client",
-          refreshToken: Redacted.make("api-refresh"),
-          scopes: ["mcp:read"],
-        });
-        yield* provider.revoke("upstream-client", Redacted.make("api-refresh"));
-        expect(requests[0]?.body).toMatchObject({
-          redirect_uris: [urls.callback],
-          client_name: "Namera local MCP: Agent",
-        });
-        for (const request of requests.filter((entry) => entry.url.endsWith("/token"))) {
-          expect((request.body as URLSearchParams).get("resource")).toBe(apiOrigin);
-          expect((request.body as URLSearchParams).get("client_id")).toBe("upstream-client");
-        }
-        const exchangeBody = requests[1]?.body;
-        const refreshBody = requests[2]?.body;
-        if (!(exchangeBody instanceof URLSearchParams) || !(refreshBody instanceof URLSearchParams))
-          throw new Error("Expected token request forms");
-        expect(exchangeBody.get("redirect_uri")).toBe(urls.callback);
-        expect(exchangeBody.get("code_verifier")).toBe("verifier");
-        expect(refreshBody.get("scope")).toBe("mcp:read");
-      }).pipe(Effect.provide(upstreamLayer(fetch))),
-    );
+    return Effect.gen(function* () {
+      const provider = yield* McpOAuthUpstream;
+      expect(yield* provider.register("Agent")).toBe("upstream-client");
+      const tokens = yield* provider.exchange({
+        clientId: "upstream-client",
+        code: "code",
+        verifier: Redacted.make("verifier"),
+      });
+      expect(Redacted.value(tokens.accessToken)).toBe("api-access");
+      expect(JSON.stringify(tokens)).not.toContain("api-access");
+      yield* provider.refresh({
+        clientId: "upstream-client",
+        refreshToken: Redacted.make("api-refresh"),
+        scopes: ["mcp:read"],
+      });
+      yield* provider.revoke("upstream-client", Redacted.make("api-refresh"));
+      expect(requests[0]?.body).toMatchObject({
+        redirect_uris: [urls.callback],
+        client_name: "Namera local MCP: Agent",
+      });
+      for (const request of requests.filter((entry) => entry.url.endsWith("/token"))) {
+        expect((request.body as URLSearchParams).get("resource")).toBe(apiOrigin);
+        expect((request.body as URLSearchParams).get("client_id")).toBe("upstream-client");
+      }
+      const exchangeBody = requests[1]?.body;
+      const refreshBody = requests[2]?.body;
+      if (!(exchangeBody instanceof URLSearchParams) || !(refreshBody instanceof URLSearchParams))
+        throw new Error("Expected token request forms");
+      expect(exchangeBody.get("redirect_uri")).toBe(urls.callback);
+      expect(exchangeBody.get("code_verifier")).toBe("verifier");
+      expect(refreshBody.get("scope")).toBe("mcp:read");
+    }).pipe(Effect.provide(upstreamLayer(fetch)));
   });
 
-  it.each([
-    () => Response.json({ access_token: "secret", token_type: "Bearer", expires_in: -1 }),
-    () => new Response("sensitive provider details", { status: 500 }),
-    () => new Response("<html>unexpected response</html>"),
-  ])("rejects malformed token responses and never exposes provider text", async (response) => {
-    const result = await Effect.runPromise(
-      Effect.gen(function* () {
-        return yield* (yield* McpOAuthUpstream)
-          .exchange({ clientId: "client", code: "code", verifier: Redacted.make("verifier") })
-          .pipe(Effect.result);
-      }).pipe(Effect.provide(upstreamLayer(async () => response()))),
-    );
-    expect(Result.isFailure(result)).toBe(true);
-    expect(JSON.stringify(result)).not.toContain("sensitive provider details");
-    expect(JSON.stringify(result)).not.toContain("secret");
-  });
+  it.effect.each([
+    {
+      name: "invalid expiry",
+      response: () =>
+        Response.json({ access_token: "secret", token_type: "Bearer", expires_in: -1 }),
+    },
+    {
+      name: "server failure",
+      response: () => new Response("sensitive provider details", { status: 500 }),
+    },
+    { name: "non-JSON response", response: () => new Response("<html>unexpected response</html>") },
+  ])("rejects $name without exposing provider text", ({ response }) =>
+    Effect.gen(function* () {
+      const result = yield* (yield* McpOAuthUpstream)
+        .exchange({ clientId: "client", code: "code", verifier: Redacted.make("verifier") })
+        .pipe(Effect.result);
+      expect(Result.isFailure(result)).toBe(true);
+      expect(JSON.stringify(result)).not.toContain("sensitive provider details");
+      expect(JSON.stringify(result)).not.toContain("secret");
+    }).pipe(Effect.provide(upstreamLayer(async () => response()))),
+  );
 
-  it("rejects a registration response that substitutes the callback", () =>
-    Effect.runPromise(
-      Effect.gen(function* () {
-        const result = yield* (yield* McpOAuthUpstream).register("Agent").pipe(Effect.result);
-        expect(Result.isFailure(result)).toBe(true);
-      }).pipe(
-        Effect.provide(
-          upstreamLayer(async () =>
-            Response.json({ ...registration, redirect_uris: ["https://evil.example/callback"] }),
-          ),
+  it.effect("rejects a registration response that substitutes the callback", () =>
+    Effect.gen(function* () {
+      const result = yield* (yield* McpOAuthUpstream).register("Agent").pipe(Effect.result);
+      expect(Result.isFailure(result)).toBe(true);
+    }).pipe(
+      Effect.provide(
+        upstreamLayer(async () =>
+          Response.json({ ...registration, redirect_uris: ["https://evil.example/callback"] }),
         ),
       ),
-    ));
+    ),
+  );
 });

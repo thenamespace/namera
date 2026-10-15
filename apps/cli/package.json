@@ -58,6 +58,7 @@
     "viem": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
