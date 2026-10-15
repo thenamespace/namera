@@ -1,6 +1,11 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
+import { filterPosts } from "../../src/lib/blog/catalog";
+import { renderBlogRss } from "../../src/lib/blog/rss";
+import { getPublishedPosts } from "../../src/lib/blog/source.server";
 import { startInstance } from "../../src/start";
+
+afterEach(() => vi.useRealTimers());
 
 async function requestContent(
   path: string,
@@ -100,4 +105,40 @@ it("serves the generated documentation index without unresolved includes", async
   const body = await response.text();
   expect(body).toContain("/docs/");
   expect(body).not.toContain("<include");
+});
+
+it("serves compiled SDK documentation with expanded snippets", async () => {
+  const { response } = await requestContent("/docs/sdk.md");
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Content-Type")).toContain("text/markdown");
+  const body = await response.text();
+  expect(body).toContain("NameraClient");
+  expect(body).toContain("https://namera.ai/docs/sdk");
+  expect(body).not.toContain("<include");
+});
+
+it("publishes compiled blog content only once its publication day arrives", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  const slug = "agents-need-permissions-not-private-keys";
+  vi.setSystemTime(new Date("2026-04-13T23:59:59Z"));
+
+  const unpublished = await getPublishedPosts();
+  expect(unpublished.some((post) => post.slug === slug)).toBe(false);
+  expect(filterPosts(unpublished, "agents")).toEqual([]);
+  expect(renderBlogRss(unpublished)).not.toContain(slug);
+  expect(await (await requestContent("/llms.txt")).response.text()).not.toContain(slug);
+  expect((await requestContent(`/blog/${slug}.md`)).response.status).toBe(404);
+
+  vi.setSystemTime(new Date("2026-04-14T00:00:00Z"));
+  const published = await getPublishedPosts();
+  expect(filterPosts(published, "agents").map((post) => post.slug)).toContain(slug);
+  expect(published.every((post) => !post.path.includes("_drafts"))).toBe(true);
+  expect(renderBlogRss(published)).toContain(slug);
+  expect(await (await requestContent("/llms.txt")).response.text()).toContain(slug);
+  const article = await requestContent(`/blog/${slug}.md`);
+  expect(article.response.status).toBe(200);
+  expect(await article.response.text()).toContain("Published 2026-04-14");
+  expect(await (await requestContent(`/blog/${slug}.md`, { method: "HEAD" })).response.text()).toBe(
+    "",
+  );
 });
