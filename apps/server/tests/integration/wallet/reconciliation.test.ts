@@ -1,4 +1,4 @@
-import { expect, layer } from "@effect/vitest";
+import { expect, it } from "@effect/vitest";
 import { Deferred, Duration, Effect, Fiber, Logger, References, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
@@ -13,39 +13,38 @@ import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixt
 import { createTestPasskeyWallet } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
-let lookup: "not_found" | "submitted" | "rpc_error" | "decode_error" | "timeout" = "not_found";
-let lookupStarted: Deferred.Deferred<void> | undefined;
-const secret = "synthetic-secret-signed-payload";
-const fixture = makeOwnerSessionTestFixture({
-  getStatus: () =>
+it.effect(
+  "retains pending operations through missing hashes, lookup errors and age without rebroadcast",
+  () =>
     Effect.gen(function* () {
-      if (lookup === "timeout") {
-        if (lookupStarted) yield* Deferred.succeed(lookupStarted, undefined);
-        return yield* Effect.never;
-      }
-      if (lookup === "rpc_error")
-        return yield* new EvmExecutionError({
-          code: "RECEIPT_LOOKUP_FAILED",
-          cause: new Error(secret),
-        });
-      if (lookup === "decode_error") {
-        const cause = yield* Schema.decodeUnknownEffect(Schema.Number)(secret).pipe(
-          Effect.flip,
-          Effect.orDie,
-        );
-        return yield* new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause });
-      }
-      return { status: lookup, transactionHash: null };
-    }),
-});
+      let lookup: "not_found" | "submitted" | "rpc_error" | "decode_error" | "timeout" =
+        "not_found";
+      let lookupStarted: Deferred.Deferred<void> | undefined;
+      const secret = "synthetic-secret-signed-payload";
+      const fixture = makeOwnerSessionTestFixture({
+        getStatus: () =>
+          Effect.gen(function* () {
+            if (lookup === "timeout") {
+              if (lookupStarted) yield* Deferred.succeed(lookupStarted, undefined);
+              return yield* Effect.never;
+            }
+            if (lookup === "rpc_error")
+              return yield* new EvmExecutionError({
+                code: "RECEIPT_LOOKUP_FAILED",
+                cause: new Error(secret),
+              });
+            if (lookup === "decode_error") {
+              const cause = yield* Schema.decodeUnknownEffect(Schema.Number)(secret).pipe(
+                Effect.flip,
+                Effect.orDie,
+              );
+              return yield* new EvmExecutionError({ code: "RECEIPT_LOOKUP_FAILED", cause });
+            }
+            return { status: lookup, transactionHash: null };
+          }),
+      });
 
-layer(fixture.layer)("wallet reconciliation recovery", (it) => {
-  it.effect(
-    "retains pending operations through missing hashes, lookup errors and age without rebroadcast",
-    () =>
-      Effect.gen(function* () {
-        lookup = "not_found";
-        lookupStarted = undefined;
+      yield* Effect.gen(function* () {
         yield* resetTestState();
         const author = yield* signIn(
           yield* makeTestApiClient,
@@ -191,6 +190,6 @@ layer(fixture.layer)("wallet reconciliation recovery", (it) => {
         const audits = yield* db.query.organizationEvent.findMany();
         expect(audits.filter((row) => row.event === "wallet.operation_failed")).toHaveLength(0);
         expect(audits.filter((row) => row.event === "wallet.operation_confirmed")).toHaveLength(1);
-      }),
-  );
-});
+      }).pipe(Effect.provide(fixture.layer));
+    }),
+);

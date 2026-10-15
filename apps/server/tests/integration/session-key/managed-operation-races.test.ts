@@ -1,4 +1,4 @@
-import { expect, layer } from "@effect/vitest";
+import { expect, it } from "@effect/vitest";
 import { DateTime, Deferred, Duration, Effect, Fiber, Ref } from "effect";
 import { TestClock } from "effect/testing";
 
@@ -8,15 +8,10 @@ import { makeSessionCustodyLayer } from "../../fixtures/session-custody.js";
 
 for (const kind of ["execution", "signature"] as const) {
   for (const mutation of ["revoke", "disable-key", "disable-connection"] as const) {
-    const started = Deferred.makeUnsafe<void>();
-    layer(
-      makeSessionCustodyLayer(
-        "10 seconds",
-        Deferred.succeed(started, undefined).pipe(Effect.asVoid),
-      ),
-    )(`managed ${kind} ${mutation} race`, (it) => {
-      it.effect(`rejects ${mutation} committed while verification is in flight`, () =>
-        Effect.gen(function* () {
+    it.effect(`managed ${kind} rejects ${mutation} committed while verification is in flight`, () =>
+      Effect.gen(function* () {
+        const started = yield* Deferred.make<void>();
+        yield* Effect.gen(function* () {
           const f = yield* setupManagedOperations("1claw");
           const completion =
             kind === "execution"
@@ -76,21 +71,23 @@ for (const kind of ["execution", "signature"] as const) {
                 ? "EXECUTION_UNAVAILABLE"
                 : "SIGNATURE_UNAVAILABLE",
           );
-        }),
-      );
-    });
+        }).pipe(
+          Effect.provide(
+            makeSessionCustodyLayer(
+              "10 seconds",
+              Deferred.succeed(started, undefined).pipe(Effect.asVoid),
+            ),
+          ),
+        );
+      }),
+    );
   }
 }
 
-const verificationStarted = Deferred.makeUnsafe<void>();
-layer(
-  makeSessionCustodyLayer(
-    "3 minutes",
-    Deferred.succeed(verificationStarted, undefined).pipe(Effect.asVoid),
-  ),
-)("managed signature signing lease", (it) => {
-  it.effect("fences a stale result after a replacement claim without persisting bytes", () =>
-    Effect.gen(function* () {
+it.effect("fences a stale result after a replacement claim without persisting bytes", () =>
+  Effect.gen(function* () {
+    const verificationStarted = yield* Deferred.make<void>();
+    yield* Effect.gen(function* () {
       const f = yield* setupManagedOperations("passkey");
       const prepared = yield* f.client.signature.prepare(f.signatureRequest);
       const fiber = yield* f.client.signature
@@ -133,6 +130,13 @@ layer(
           prepared.operationId,
         ))[0]?.status,
       ).toBe("expired");
-    }),
-  );
-});
+    }).pipe(
+      Effect.provide(
+        makeSessionCustodyLayer(
+          "3 minutes",
+          Deferred.succeed(verificationStarted, undefined).pipe(Effect.asVoid),
+        ),
+      ),
+    );
+  }),
+);

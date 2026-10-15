@@ -18,7 +18,7 @@ import type { Generator } from "effect/http/Etag";
 import type { Path } from "effect/Path";
 import type { Scope } from "effect/Scope";
 
-let testClientAddress = 0;
+import { TestClientAddresses } from "./client-address.js";
 
 /**
  * Effect's in-memory HttpApi client with the real pre-response phase enabled.
@@ -45,9 +45,9 @@ export const handledApi = Effect.fnUntraced(function* <
   | HttpPlatform.HttpPlatform
   | Path
   | Scope
+  | TestClientAddresses
 > {
-  testClientAddress += 1;
-  const remoteAddress = options?.remoteAddress ?? `192.0.2.${testClientAddress}`;
+  const remoteAddress = options?.remoteAddress ?? (yield* (yield* TestClientAddresses).next);
   const context = yield* Effect.context<HttpApiGroup.ToService<ApiId, Groups>>();
 
   const layer = HttpApiBuilder.layer(api).pipe(
