@@ -13,7 +13,6 @@ import type { ApiKeyPermission } from "@namera-ai/protocol/model";
 import {
   Button,
   Checkbox,
-  TextArea,
   Field,
   FieldError,
   FieldGroup,
@@ -23,9 +22,8 @@ import {
   Modal,
   Select,
   Typography,
-  Tooltip,
 } from "@namera-ai/ui";
-import { Add01Icon, Copy01Icon, HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
+import { Add01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
@@ -35,6 +33,8 @@ import { useCurrentUser } from "@/hooks/auth";
 import { useSessionKeys } from "@/hooks/session-key";
 import { copyTextWithFeedback, writeClipboardText } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+
+import { PasskeyOriginsField } from "./passkey-origins-field.js";
 
 type CreateApiKeyInput = typeof CreateApiKeyRequest.Encoded;
 type CreateApiKeyOutput = typeof CreateApiKeyRequest.Type;
@@ -306,8 +306,7 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                                 Workspace management permissions
                               </FieldLabel>
                               <Typography className="text-sm" color="muted">
-                                Applies to all existing and future accounts in this workspace.
-                                Creating and installing sessions can grant full control of managed
+                                Covers all workspace accounts and can grant full control of managed
                                 accounts.
                               </Typography>
                               <fieldset
@@ -373,55 +372,13 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                           control={form.control}
                           name="passkeyOrigins"
                           render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                              <div className="flex items-center gap-1.5">
-                                <FieldLabel htmlFor="api-key-passkey-origins">
-                                  Passkey application origins
-                                </FieldLabel>
-                                <Tooltip delay={200}>
-                                  <Tooltip.Trigger>
-                                    <Button
-                                      isIconOnly
-                                      aria-label="About passkey application origins"
-                                      size="sm"
-                                      variant="tertiary"
-                                      className="size-5 min-h-5 text-muted"
-                                      type="button"
-                                    >
-                                      <HugeiconsIcon
-                                        icon={InformationCircleIcon}
-                                        className="size-3.5"
-                                      />
-                                    </Button>
-                                  </Tooltip.Trigger>
-                                  <Tooltip.Content className="max-w-64" showArrow>
-                                    <Tooltip.Arrow />
-                                    Optional. Enter one exact HTTPS origin per line for SDK passkey
-                                    registration. HTTP localhost is allowed for development.
-                                  </Tooltip.Content>
-                                </Tooltip>
-                              </div>
-                              <TextArea
-                                variant="secondary"
-                                id="api-key-passkey-origins"
-                                name={field.name}
-                                ref={field.ref}
-                                value={(field.value ?? []).join("\n")}
-                                onBlur={() => {
-                                  field.onChange(
-                                    (field.value ?? [])
-                                      .map((origin) => origin.trim())
-                                      .filter(Boolean),
-                                  );
-                                  field.onBlur();
-                                }}
-                                onChange={(event) => field.onChange(event.target.value.split("\n"))}
-                                aria-invalid={fieldState.invalid}
-                              />
-                              {fieldState.invalid ? (
-                                <FieldError errors={[fieldState.error]} />
-                              ) : null}
-                            </Field>
+                            <PasskeyOriginsField
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              inputRef={field.ref}
+                              error={fieldState.error}
+                            />
                           )}
                         />
                       </div>

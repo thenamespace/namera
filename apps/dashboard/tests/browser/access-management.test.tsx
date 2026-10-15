@@ -237,8 +237,18 @@ it("creates a management-only key and disables permissions the issuer cannot del
     )
     .toBeDisabled();
   await dialog
-    .getByLabelText("Passkey application origins")
-    .fill("https://app.example.com\nhttps://other.example.com");
+    .getByLabelText("Passkey application origins", { exact: true })
+    .fill("https://app.example.com");
+  await dialog.getByRole("button", { name: "Add passkey origin" }).click();
+  await dialog
+    .getByLabelText("Passkey application origin 2", { exact: true })
+    .fill("https://remove.example.com");
+  await dialog.getByRole("button", { name: "Remove passkey origin 2" }).click();
+  await dialog.getByRole("button", { name: "Add passkey origin" }).click();
+  await dialog
+    .getByLabelText("Passkey application origin 2", { exact: true })
+    .fill("https://other.example.com");
+  await dialog.getByRole("button", { name: "Add passkey origin" }).click();
   await dialog.getByRole("button", { name: "Create API key", exact: true }).click();
   expect(boundary.create).toHaveBeenCalledWith({
     payload: {
