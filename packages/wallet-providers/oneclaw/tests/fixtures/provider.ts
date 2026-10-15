@@ -1,4 +1,4 @@
-import { ConfigProvider, Layer, Schema } from "effect";
+import { ConfigProvider, Context, Effect, Layer, Schema } from "effect";
 
 import {
   OneClawCustomerAuthority,
@@ -9,6 +9,58 @@ import { privateKeyToAccount } from "viem/accounts";
 import { vi } from "vitest";
 
 import { OneClawService } from "../../src/index.js";
+
+export class ProviderHttp extends Context.Service<
+  ProviderHttp,
+  {
+    readonly fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
+    readonly respond: (body: unknown, status?: number) => void;
+    readonly identity: () => void;
+    readonly requestAt: (index: number) => { url: string; headers: Headers; body: unknown };
+  }
+>()("test/oneclaw/ProviderHttp") {
+  static readonly layer = Layer.effect(
+    ProviderHttp,
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        // The SDK reads global fetch. Scope the override to one non-concurrent test.
+        const originalFetch = globalThis.fetch;
+        const fetchMock = vi.fn<typeof fetch>(() =>
+          Promise.reject(new Error("Unexpected provider request")),
+        );
+        const respond = (body: unknown, status = 200) => {
+          fetchMock.mockResolvedValueOnce(
+            new Response(status === 204 ? null : JSON.stringify(body), {
+              status,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        };
+        globalThis.fetch = fetchMock;
+        return {
+          originalFetch,
+          fetchMock,
+          respond,
+          identity: () => respond({ id: "customer" }),
+          requestAt: (index: number) => {
+            const call = fetchMock.mock.calls[index];
+            if (call === undefined) throw new Error("Expected SDK request was not made");
+            const [url, init] = call;
+            return {
+              url: String(url),
+              headers: new Headers(init?.headers),
+              body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+            };
+          },
+        };
+      }),
+      ({ originalFetch }) =>
+        Effect.sync(() => {
+          globalThis.fetch = originalFetch;
+        }),
+    ),
+  );
+}
 
 export const Live = OneClawService.layer.pipe(
   Layer.provide(
@@ -21,6 +73,7 @@ export const Live = OneClawService.layer.pipe(
       }),
     ),
   ),
+  Layer.provideMerge(ProviderHttp.layer),
 );
 export const orgId = "01950000-0000-7000-8000-000000000001";
 export const credentialId = "01950000-0000-7000-8000-000000000002";
@@ -120,24 +173,4 @@ export const claim = {
   connection_id: "connection",
   claim_token: "synthetic-claim",
   expires_in: 600,
-};
-
-export const fetchMock = vi.fn<typeof fetch>();
-export const respond = (body: unknown, status = 200) =>
-  fetchMock.mockResolvedValueOnce(
-    new Response(status === 204 ? null : JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/json" },
-    }),
-  );
-export const identity = () => respond({ id: "customer" });
-export const requestAt = (index: number): { url: string; headers: Headers; body: unknown } => {
-  const call = fetchMock.mock.calls[index];
-  if (call === undefined) throw new Error("Expected SDK request was not made");
-  const [url, init] = call;
-  return {
-    url: String(url),
-    headers: new Headers(init?.headers),
-    body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
-  };
 };

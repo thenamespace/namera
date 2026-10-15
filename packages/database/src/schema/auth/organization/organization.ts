@@ -1,7 +1,6 @@
 import type { OrganizationId, UserId } from "@namera-ai/protocol";
 import type { OrganizationMetadata } from "@namera-ai/protocol/model";
-import { text, jsonb } from "drizzle-orm/pg-core";
-import { index } from "drizzle-orm/pg-core";
+import { index, jsonb, text } from "drizzle-orm/pg-core";
 
 import { generateUniqueId, timestamps } from "#/schema/common";
 

@@ -29,10 +29,7 @@ export const makeCancelExecution = Effect.gen(function* () {
     if (!sessionKey) return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
     const cancelled = yield* lifecycle
       .release({ ...input, sessionKey, stage: "cancel" })
-      .pipe(
-        Effect.catchTag("DatabaseError", Effect.die),
-        Effect.catchTag("EvmPolicyError", Effect.die),
-      );
+      .pipe(Effect.catchTag("DatabaseError", Effect.die));
     if (!cancelled) return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
     return { namespace: "eip155", submissionId: submission.id, status: "cancelled" };
   });

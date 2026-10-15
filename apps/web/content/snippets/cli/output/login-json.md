@@ -43,7 +43,7 @@
             "policies": [
               {
                 "id": "0199dfe1-0000-7000-8000-000000000016",
-                "appliesTo": "both",
+                "appliesTo": "signature",
                 "type": "evm.chain-allowlist",
                 "version": 1,
                 "chainIds": ["eip155:84532"]

@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 
+import { OneClawError } from "@namera-ai/protocol";
 import {
   type OneClawCustomerAuthority,
   OneClawOwnerProvisioningRequest,
@@ -7,7 +8,6 @@ import {
 } from "@namera-ai/protocol/model";
 
 import type { ClientContext } from "#/client";
-import { oneClawError } from "#/errors";
 import { AgentCreatedResponse, AgentResponse } from "#/responses";
 
 export interface CustomerAgent {
@@ -25,7 +25,7 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
     const provisioning = input.request;
     yield* Schema.decodeUnknownEffect(Schema.toType(OneClawOwnerProvisioningRequest))(
       provisioning,
-    ).pipe(Effect.mapError(() => oneClawError(operation, "INVALID_REQUEST")));
+    ).pipe(Effect.mapError(() => new OneClawError({ operation, code: "INVALID_REQUEST" })));
     yield* customer(operation, input.authority);
     if (
       provisioning.connection.id !== input.authority.connection.id ||
@@ -37,7 +37,7 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
       input.authority.connection.status !== "ready" ||
       provisioning.connection.providerAppId !== config.platformAppId
     ) {
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     }
     const response = yield* request(operation, AgentCreatedResponse, () =>
       platform.platform.withConnection(input.authority.payload.externalConnectionId).agents.create({
@@ -64,7 +64,8 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
     const agent = yield* request(operation, AgentResponse, () =>
       authenticated.agents.get(input.agentId),
     );
-    if (agent.id !== input.agentId) return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+    if (agent.id !== input.agentId)
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     return agent;
   }),
   setRawSigningEnabled: Effect.fn("wallet-providers.oneclaw.agents.setRawSigningEnabled")(
@@ -81,15 +82,16 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
       const agent = yield* request(operation, AgentResponse, () =>
         authenticated.agents.get(input.agentId),
       );
-      if (agent.id !== input.agentId) return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      if (agent.id !== input.agentId)
+        return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
       if (input.enabled && agent.raw_signing_policy === "approve")
-        return yield* oneClawError(operation, "APPROVAL_REQUIRED");
+        return yield* new OneClawError({ operation, code: "APPROVAL_REQUIRED" });
       if (
         agent.raw_signing_enabled !== input.enabled ||
         (input.enabled &&
           (!agent.is_active || !agent.intents_api_enabled || agent.raw_signing_policy === "deny"))
       ) {
-        return yield* oneClawError(operation, "SIGNING_DISABLED");
+        return yield* new OneClawError({ operation, code: "SIGNING_DISABLED" });
       }
       return agent;
     },

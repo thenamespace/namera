@@ -2,7 +2,8 @@ import { Effect, Option, Schema } from "effect";
 
 import { EvmTypedData } from "@namera-ai/protocol";
 
-import { inputFailure, inputOrPrompt, optionalInput } from "#/commands/operation-input";
+import { inputOrPrompt, optionalInput } from "#/commands/operation-input";
+import { CliFailure } from "#/services/error-feedback";
 import { CliPrompts } from "#/services/prompts";
 
 export const signatureFlags = {
@@ -25,20 +26,24 @@ export const signatureInput = Effect.fnUntraced(function* (input: {
   );
   if (type === "message") {
     if (Option.isSome(input.typedData))
-      return yield* inputFailure(
-        "Typed data cannot be used with --type message.",
-        "Remove --typed-data, or use --type typed-data without --message.",
-      );
+      return yield* new CliFailure({
+        code: "INVALID_ARGUMENT",
+        message: "Typed data cannot be used with --type message.",
+        nextStep: "Remove --typed-data, or use --type typed-data without --message.",
+        retryable: false,
+      });
     return {
       type,
       message: yield* inputOrPrompt(input.message, "message", Schema.String, prompts.message()),
     };
   }
   if (Option.isSome(input.message))
-    return yield* inputFailure(
-      "A message cannot be used with --type typed-data.",
-      "Remove --message, or use --type message without --typed-data.",
-    );
+    return yield* new CliFailure({
+      code: "INVALID_ARGUMENT",
+      message: "A message cannot be used with --type typed-data.",
+      nextStep: "Remove --message, or use --type message without --typed-data.",
+      retryable: false,
+    });
   return {
     type,
     typedData: yield* inputOrPrompt(

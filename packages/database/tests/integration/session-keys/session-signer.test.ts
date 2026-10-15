@@ -8,10 +8,11 @@ import { eq } from "drizzle-orm";
 
 import { Database, Repository, TestDatabase, TransactionService } from "../../../src/index.js";
 import { sessionKey, signingKey } from "../../../src/schema/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { installationFixture } from "../../fixtures/session-installation.js";
 
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(TestDatabase.layer),
+  Layer.provideMerge(DatabaseTestLayer),
 );
 
 const fixture = Effect.fnUntraced(function* () {

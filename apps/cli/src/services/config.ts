@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 
 import { nameraConfigDirectory } from "@namera-ai/sdk/node";
 
+import { withCredentialLock } from "./credential-lock.js";
 import { cliFailure } from "./error-feedback.js";
 
 export interface CliProfile {
@@ -18,8 +19,6 @@ export interface CliConfig {
 }
 
 export const cliConfigPath = join(nameraConfigDirectory(), "config.json");
-export const cliLockPath = (profile: string) =>
-  join(nameraConfigDirectory(), `${profile}.refresh.lock`);
 
 export const readCliConfig = async (): Promise<CliConfig> => {
   try {
@@ -45,23 +44,25 @@ export const getProfile = async (name?: string) => {
   return { config, profile, profileName };
 };
 
-export const saveProfile = async (name: string, profile: CliProfile) => {
-  const config = await readCliConfig();
-  await writeCliConfig({
-    activeProfile: name,
-    profiles: { ...config.profiles, [name]: profile },
+export const saveProfile = (name: string, profile: CliProfile) =>
+  withCredentialLock(`${cliConfigPath}.lock.sqlite`, async () => {
+    const config = await readCliConfig();
+    await writeCliConfig({
+      activeProfile: name,
+      profiles: { ...config.profiles, [name]: profile },
+    });
   });
-};
 
-export const removeProfile = async (name: string) => {
-  const config = await readCliConfig();
-  const profiles = { ...config.profiles };
-  delete profiles[name];
-  await writeCliConfig({
-    activeProfile:
-      config.activeProfile === name
-        ? (Object.keys(profiles)[0] ?? "personal")
-        : config.activeProfile,
-    profiles,
+export const removeProfile = (name: string) =>
+  withCredentialLock(`${cliConfigPath}.lock.sqlite`, async () => {
+    const config = await readCliConfig();
+    const profiles = { ...config.profiles };
+    delete profiles[name];
+    await writeCliConfig({
+      activeProfile:
+        config.activeProfile === name
+          ? (Object.keys(profiles)[0] ?? "personal")
+          : config.activeProfile,
+      profiles,
+    });
   });
-};

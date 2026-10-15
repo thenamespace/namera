@@ -24,14 +24,14 @@ import { ensPolicy, toEnsName } from "./data.js";
 
 type AccountScope = { readonly organizationId: OrganizationId; readonly walletId: WalletId };
 type NameScope = AccountScope & { readonly label: EnsLabel };
-const unavailable = () => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" });
 
-const belongsTo = (name: SubnameDTO, address: string) =>
+const isIdentityOwnedBy = (name: SubnameDTO, address: string) =>
   name.parentName === ensPolicy.parentName &&
   name.owner?.toLowerCase() === address.toLowerCase() &&
   name.fullName === `${name.label}.${ensPolicy.parentName}` &&
   !name.label.includes(".");
-const view = (name: SubnameDTO) =>
+
+const toIdentityView = (name: SubnameDTO) =>
   Schema.decodeUnknownEffect(IdentityView)({
     fullName: name.fullName,
     label: name.label,
@@ -39,38 +39,45 @@ const view = (name: SubnameDTO) =>
     texts: name.texts,
     addresses: name.addresses,
     contenthash: name.contenthash ?? null,
-  }).pipe(Effect.mapError(unavailable));
+  }).pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
+
 export const makeIdentities = Effect.gen(function* () {
   const ens = yield* Ens;
   const repository = yield* Repository;
   const audit = yield* Audit;
   const transaction = yield* TransactionService;
 
-  const account = Effect.fnUntraced(function* (scope: AccountScope) {
+  const loadAccountAddress = Effect.fnUntraced(function* (scope: AccountScope) {
     const wallet = yield* repository.core.wallet
       .findById(scope.walletId, scope.organizationId)
       .pipe(Effect.catchTag("DatabaseError", Effect.die));
+
     if (!wallet || wallet.wallet.status !== "active" || wallet.signingKey.status !== "active")
       return yield* new WalletNotFoundError({ code: "WALLET_NOT_FOUND" });
     return wallet.wallet.data.address;
   });
-  const load = Effect.fnUntraced(function* (scope: NameScope) {
-    const address = yield* account(scope);
+
+  const loadOwnedIdentity = Effect.fnUntraced(function* (scope: NameScope) {
+    const address = yield* loadAccountAddress(scope);
     const name = yield* ens
       .getSingleSubname(toEnsName(scope.label))
-      .pipe(Effect.mapError(unavailable));
-    if (!name || !belongsTo(name, address))
+      .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
+    if (!name || !isIdentityOwnedBy(name, address))
       return yield* new IdentityError({ code: "IDENTITY_UNAVAILABLE" });
     return name;
   });
-  const get = Effect.fn("application.ens.getIdentity")(function* (scope: NameScope) {
-    const name = yield* load(scope);
-    const records = yield* ens.getDataRecords(name.fullName).pipe(Effect.mapError(unavailable));
+
+  const getIdentity = Effect.fn("application.ens.getIdentity")(function* (scope: NameScope) {
+    const name = yield* loadOwnedIdentity(scope);
+    const records = yield* ens
+      .getDataRecords(name.fullName)
+      .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
     return yield* Schema.decodeUnknownEffect(IdentityDetail)({
-      ...(yield* view(name)),
+      ...(yield* toIdentityView(name)),
       records,
-    }).pipe(Effect.mapError(unavailable));
+    }).pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
   });
+
   const recordAudit = (
     scope: NameScope & { readonly actorId: ActorId },
     action: "created" | "records_updated",
@@ -88,7 +95,7 @@ export const makeIdentities = Effect.gen(function* () {
       .pipe(Effect.catchTag("DatabaseError", Effect.die));
 
   return {
-    getIdentity: get,
+    getIdentity,
     identityNetworks: Effect.succeed(
       Object.entries(ChainName).map(([label, key]) => ({
         key,
@@ -99,7 +106,7 @@ export const makeIdentities = Effect.gen(function* () {
     listIdentities: Effect.fn("application.ens.listIdentities")(function* (
       scope: AccountScope & { readonly page?: number | undefined },
     ) {
-      const owner = yield* account(scope);
+      const owner = yield* loadAccountAddress(scope);
       const result = yield* ens
         .getFilteredSubnames({
           parentName: ensPolicy.parentName,
@@ -107,14 +114,14 @@ export const makeIdentities = Effect.gen(function* () {
           page: scope.page ?? 1,
           size: 20,
         })
-        .pipe(Effect.mapError(unavailable));
+        .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
       // Never trust an upstream filter as an authorization boundary.
       const items = yield* Effect.forEach(
-        result.items.filter((name) => belongsTo(name, owner)),
-        view,
+        result.items.filter((name) => isIdentityOwnedBy(name, owner)),
+        toIdentityView,
       );
       return yield* Schema.decodeUnknownEffect(IdentityListResponse)({ ...result, items }).pipe(
-        Effect.mapError(unavailable),
+        Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })),
       );
     }),
     createIdentity: Effect.fn("application.ens.createIdentity")(function* (
@@ -127,21 +134,24 @@ export const makeIdentities = Effect.gen(function* () {
             yield* repository.core.wallet
               .findByIdForUpdate(scope.walletId, scope.organizationId)
               .pipe(Effect.catchTag("DatabaseError", Effect.die));
-            const owner = yield* account(scope);
+            const owner = yield* loadAccountAddress(scope);
             const name = toEnsName(scope.label);
-            const existing = yield* ens.getSingleSubname(name).pipe(Effect.mapError(unavailable));
+            const existing = yield* ens
+              .getSingleSubname(name)
+              .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
             if (existing) {
-              if (belongsTo(existing, owner)) return yield* get(scope);
+              if (isIdentityOwnedBy(existing, owner)) return yield* getIdentity(scope);
               return yield* new IdentityError({ code: "NAME_UNAVAILABLE" });
             }
             for (let page = 1; ; page += 1) {
               const owned = yield* ens
                 .getFilteredSubnames({ parentName: ensPolicy.parentName, owner, page, size: 20 })
-                .pipe(Effect.mapError(unavailable));
-              if (owned.items.some((identity) => belongsTo(identity, owner)))
+                .pipe(Effect.mapError(() => new EnsUnavailableError({ code: "ENS_UNAVAILABLE" })));
+              if (owned.items.some((identity) => isIdentityOwnedBy(identity, owner)))
                 return yield* new IdentityError({ code: "ACCOUNT_IDENTITY_EXISTS" });
               if (page * owned.size >= owned.totalItems) break;
-              if (owned.size <= 0 || owned.items.length === 0) return yield* unavailable();
+              if (owned.size <= 0 || owned.items.length === 0)
+                return yield* new EnsUnavailableError({ code: "ENS_UNAVAILABLE" });
             }
             yield* ens
               .createSubname({
@@ -157,11 +167,11 @@ export const makeIdentities = Effect.gen(function* () {
                 Effect.mapError((error) =>
                   error.reason === "ALREADY_EXISTS"
                     ? new IdentityError({ code: "NAME_UNAVAILABLE" })
-                    : unavailable(),
+                    : new EnsUnavailableError({ code: "ENS_UNAVAILABLE" }),
                 ),
               );
             yield* recordAudit(scope, "created", 1);
-            return yield* get(scope);
+            return yield* getIdentity(scope);
           }),
         )
         .pipe(Effect.catchTag("DatabaseError", Effect.die));
@@ -172,8 +182,9 @@ export const makeIdentities = Effect.gen(function* () {
         readonly request: UpdateIdentityRecordsRequest;
       },
     ) {
-      const name = yield* load(scope);
+      const name = yield* loadOwnedIdentity(scope);
       const seen = new Set<string>();
+
       // Validate the entire batch before making any external changes.
       for (const change of scope.request.changes) {
         const id = `${change.type}:${change.key}`;
@@ -192,6 +203,7 @@ export const makeIdentities = Effect.gen(function* () {
         }
       }
       let applied = 0;
+
       for (const change of scope.request.changes) {
         const operation =
           change.type === "text"
@@ -212,14 +224,14 @@ export const makeIdentities = Effect.gen(function* () {
                 yield* recordAudit(scope, "records_updated", applied);
                 return yield* new IdentityError({ code: "PARTIAL_UPDATE", applied });
               }
-              return yield* unavailable();
+              return yield* new EnsUnavailableError({ code: "ENS_UNAVAILABLE" });
             }),
           ),
         );
         applied += 1;
       }
       yield* recordAudit(scope, "records_updated", applied);
-      return yield* get(scope);
+      return yield* getIdentity(scope);
     }),
   };
 });

@@ -4,9 +4,10 @@ import { DateTime, Effect, Layer } from "effect";
 import type { ExecutionSubmissionInsert } from "@namera-ai/protocol/model";
 
 import { Repository, TestDatabase } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { sessionOperationFixture } from "../../fixtures/session-operation.js";
 
-const Persistence = Repository.layer.pipe(Layer.provideMerge(TestDatabase.layer));
+const Persistence = Repository.layer.pipe(Layer.provideMerge(DatabaseTestLayer));
 
 const fixture = Effect.fn("test.executionSigning.fixture")(function* (name: string) {
   const owner = yield* sessionOperationFixture(name);
@@ -37,6 +38,7 @@ const fixture = Effect.fn("test.executionSigning.fixture")(function* (name: stri
       calls: owner.input.data.prepared.context.calls,
       prepared: owner.input.data.prepared,
       signedExecution: null,
+      broadcastAttempted: false,
     },
   };
   return { ...owner, input };
@@ -189,6 +191,7 @@ layer(Persistence)("local execution persistence", (it) => {
       expect(started?.data.broadcastAttempted).toBe(true);
       expect(started?.data.signedExecution).toEqual(owner.signed);
       expect(started?.data.prepared).toEqual(submission.data.prepared);
+      expect(yield* repository.recordBroadcastAttempt(attempt)).toBeUndefined();
     }),
   );
 

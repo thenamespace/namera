@@ -94,6 +94,7 @@ export class Passkeys extends Context.Service<Passkeys, PasskeysService>()(
           },
           catch: (cause) => new PasskeyError({ operation: "verify-registration", cause }),
         });
+
         if (!verification.verified) {
           return yield* new PasskeyError({
             operation: "verify-registration",

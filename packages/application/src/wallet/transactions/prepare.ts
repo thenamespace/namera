@@ -17,7 +17,7 @@ import { AuthConfig } from "#/auth/config";
 import { lockOrganizationBilling } from "#/billing/lock";
 import { makeBillingMetering } from "#/billing/metering";
 
-import { makeTransactionOwner, transactionFailure, type WalletTransactionScope } from "./owner.js";
+import { makeTransactionOwner, type WalletTransactionScope } from "./owner.js";
 import { makeHashWalletTransaction } from "./request.js";
 
 export const makePrepareWalletTransaction = Effect.gen(function* () {
@@ -30,6 +30,7 @@ export const makePrepareWalletTransaction = Effect.gen(function* () {
   const audit = yield* Audit;
   const owners = yield* makeTransactionOwner;
   const billing = yield* makeBillingMetering;
+
   return Effect.fn("application.wallet.transactions.prepare")(
     function* (
       scope: WalletTransactionScope & {
@@ -69,7 +70,7 @@ export const makePrepareWalletTransaction = Effect.gen(function* () {
           };
         const challenge = yield* evm.execution
           .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
-          .pipe(Effect.mapError(transactionFailure));
+          .pipe(Effect.mapError(() => new WalletTransactionError({ code: "PREPARATION_FAILED" })));
         const options = yield* passkeys
           .generateAuthenticationOptions({
             rpId: owner.credential.rpId,
@@ -83,7 +84,7 @@ export const makePrepareWalletTransaction = Effect.gen(function* () {
           })
           .pipe(
             Effect.flatMap(Schema.decodeUnknownEffect(PasskeyAuthenticationOptions)),
-            Effect.mapError(transactionFailure),
+            Effect.mapError(() => new WalletTransactionError({ code: "PREPARATION_FAILED" })),
           );
         return {
           operationId: operation.id,
@@ -105,72 +106,72 @@ export const makePrepareWalletTransaction = Effect.gen(function* () {
           calls: scope.request.calls,
           sponsorship: scope.request.sponsor === false ? "none" : "alchemy-bso",
         })
-        .pipe(Effect.mapError(transactionFailure));
+        .pipe(Effect.mapError(() => new WalletTransactionError({ code: "PREPARATION_FAILED" })));
       yield* evm.execution.checkFunding(prepared);
-      const persist = () =>
-        transaction.run(
-          Effect.gen(function* () {
-            yield* lockOrganizationBilling(repository, scope.organizationId);
-            yield* repository.core.wallet.findByIdForUpdate(scope.walletId, scope.organizationId);
-            const current = yield* owners.load(scope);
-            if (
-              current.wallet.signingKey.id !== owner.wallet.signingKey.id ||
-              current.wallet.signingKey.publicKeyHex !== owner.wallet.signingKey.publicKeyHex
-            )
-              return yield* new WalletTransactionError({ code: "OWNER_UNAVAILABLE" });
-            const existing =
-              yield* repository.core.walletOperation.findByActorAndIdempotencyKey(idempotency);
-            if (existing) return existing;
-            const chainScope = {
-              organizationId: scope.organizationId,
-              walletId: scope.walletId,
-              chainId: scope.request.chainId,
-            };
-            if (
-              (yield* repository.core.walletOperation.findActiveForWalletChain(chainScope)) ||
-              (yield* repository.core.sessionKeyOperation.findActiveForWalletChain(chainScope))
-            )
-              return yield* new WalletTransactionError({ code: "OPERATION_BUSY" });
-            const { operation } = yield* repository.core.walletOperation.insert({
-              ...idempotency,
-              walletId: scope.walletId,
-              chainId: scope.request.chainId,
-              kind: "transaction",
-              requestHash,
-              expiresAt: DateTime.addDuration(yield* DateTime.now, config.passkey.timeToLive),
-              data: {
-                version: 1,
-                prepared,
-                signed: null,
-                broadcastAttempted: false,
-                owner: {
-                  signingKeyId: owner.wallet.signingKey.id,
-                  publicKey: owner.wallet.signingKey.publicKeyHex,
-                },
+
+      const preparedOperation = yield* transaction.run(
+        Effect.gen(function* () {
+          yield* lockOrganizationBilling(repository, scope.organizationId);
+          yield* repository.core.wallet.findByIdForUpdate(scope.walletId, scope.organizationId);
+          const current = yield* owners.load(scope);
+          if (
+            current.wallet.signingKey.id !== owner.wallet.signingKey.id ||
+            current.wallet.signingKey.publicKeyHex !== owner.wallet.signingKey.publicKeyHex
+          )
+            return yield* new WalletTransactionError({ code: "OWNER_UNAVAILABLE" });
+          const existing =
+            yield* repository.core.walletOperation.findByActorAndIdempotencyKey(idempotency);
+          if (existing) return existing;
+          const chainScope = {
+            organizationId: scope.organizationId,
+            walletId: scope.walletId,
+            chainId: scope.request.chainId,
+          };
+          if (
+            (yield* repository.core.walletOperation.findActiveForWalletChain(chainScope)) ||
+            (yield* repository.core.sessionKeyOperation.findActiveForWalletChain(chainScope))
+          )
+            return yield* new WalletTransactionError({ code: "OPERATION_BUSY" });
+          const { operation } = yield* repository.core.walletOperation.insert({
+            ...idempotency,
+            walletId: scope.walletId,
+            chainId: scope.request.chainId,
+            kind: "transaction",
+            requestHash,
+            expiresAt: DateTime.addDuration(yield* DateTime.now, config.passkey.timeToLive),
+            data: {
+              version: 1,
+              prepared,
+              signed: null,
+              broadcastAttempted: false,
+              owner: {
+                signingKeyId: owner.wallet.signingKey.id,
+                publicKey: owner.wallet.signingKey.publicKeyHex,
               },
-            });
-            if (prepared.billing.sponsorship) {
-              yield* billing.reserve({
-                organizationId: scope.organizationId,
-                sourceType: "wallet-operation",
-                sourceId: operation.id,
-                expiresAt: operation.expiresAt,
-                meterKey: "gas-sponsorship",
-                amount: prepared.billing.sponsorship.reservationAmountMicroUsd,
-              });
-            }
-            yield* audit.organization({
+            },
+          });
+          if (prepared.billing.sponsorship) {
+            yield* billing.reserve({
               organizationId: scope.organizationId,
-              actorId: scope.actorId,
-              event: "wallet.operation_prepared",
-              resourceType: "wallet",
-              resourceId: scope.walletId,
-              data: { version: 1, operationId: operation.id, kind: operation.kind },
+              sourceType: "wallet-operation",
+              sourceId: operation.id,
+              expiresAt: operation.expiresAt,
+              meterKey: "gas-sponsorship",
+              amount: prepared.billing.sponsorship.reservationAmountMicroUsd,
             });
-            return operation;
-          }),
-        );
-      const preparedOperation = yield* persist();
+          }
+          yield* audit.organization({
+            organizationId: scope.organizationId,
+            actorId: scope.actorId,
+            event: "wallet.operation_prepared",
+            resourceType: "wallet",
+            resourceId: scope.walletId,
+            data: { version: 1, operationId: operation.id, kind: operation.kind },
+          });
+          return operation;
+        }),
+      );
+
       return yield* responseFor(preparedOperation);
     },
     Effect.catchTag("DatabaseError", Effect.die),

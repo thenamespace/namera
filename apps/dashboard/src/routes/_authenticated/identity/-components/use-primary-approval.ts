@@ -47,33 +47,43 @@ export function usePrimaryApproval(
         sponsor?: boolean;
         prepared?: PrepareWalletTransactionResponse;
         assertion?: CompleteWalletTransactionRequest;
+        signingStarted?: boolean;
       }
     | undefined
   >(undefined);
   const abort = useRef<AbortController | undefined>(undefined);
+  const abandon = useRef<(() => void) | undefined>(undefined);
   const busy = useRef(false);
+
   useEffect(() => {
-    if (terminalOperationId && attempt.current?.prepared?.operationId === terminalOperationId)
+    if (terminalOperationId && attempt.current?.prepared?.operationId === terminalOperationId) {
       attempt.current = undefined;
+    }
   }, [terminalOperationId]);
+
   useEffect(
     () => () => {
       abort.current?.abort();
       confirm.current?.(false);
+      abandon.current?.();
     },
     [],
   );
+
   const answer = (accepted: boolean) => {
     setReviewFee(undefined);
     confirm.current?.(accepted);
     confirm.current = undefined;
   };
+
   const start = async (retryKey: string | null, sponsor = true) => {
     if (busy.current) return;
+
     busy.current = true;
     setProgress("Preparing…");
     const controller = new AbortController();
     abort.current = controller;
+
     try {
       const managed = isOneClawAccount(wallet);
       const owner = descriptor?.owner;
@@ -82,9 +92,34 @@ export function usePrimaryApproval(
         (!owner ||
           descriptor?.walletId !== wallet.id ||
           owner.signingKeyId !== wallet.owner.signingKeyId)
-      )
+      ) {
         throw new Error("Passkey owner unavailable");
+      }
+
       const current = (attempt.current ??= { key: retryKey ?? crypto.randomUUID(), sponsor });
+      let cancellation: Promise<void> | undefined;
+      const cancelPreparation = () =>
+        (cancellation ??= (async () => {
+          if (!current.prepared || current.assertion || current.signingStarted) return;
+
+          await cancel.mutateAsync({
+            params: { walletId: wallet.id, operationId: current.prepared.operationId },
+          });
+          if (attempt.current === current) attempt.current = undefined;
+        })());
+
+      abandon.current = () => {
+        // Preparation may finish after navigation. Leave cleanup armed until it returns.
+        if (!current.prepared || current.signingStarted || current.assertion) return;
+        abandon.current = undefined;
+        void cancelPreparation().catch((error) => {
+          showErrorToast(error, {
+            title: "Couldn’t cancel preparation",
+            description: "Unused gas reservations will expire automatically.",
+          });
+        });
+      };
+
       if (!current.assertion) {
         const chain = getChainDataByCaip2("eip155:1");
         if (!chain) throw new Error("Ethereum unavailable");
@@ -114,6 +149,7 @@ export function usePrimaryApproval(
           }),
         );
         if (controller.signal.aborted) return;
+
         const prepareRequest = () =>
           prepare.mutateAsync({
             params: { walletId: wallet.id },
@@ -131,31 +167,37 @@ export function usePrimaryApproval(
               sponsor: current.sponsor ?? true,
             },
           });
+
         if (!current.prepared) {
           try {
             current.prepared = await prepareRequest();
           } catch (error) {
             if (
+              controller.signal.aborted ||
               !(
                 Predicate.isTagged(error, "BillingError") &&
                 "limit" in error &&
                 error.limit === "gas-sponsorship"
               ) ||
               current.sponsor === false
-            )
+            ) {
               throw error;
+            }
+
             current.key = crypto.randomUUID();
             current.sponsor = false;
             current.prepared = await prepareRequest();
           }
         }
         if (controller.signal.aborted) return;
+
         const response = current.prepared;
         const operation = response.prepared.userOperation;
         const fee =
           (operation.callGasLimit + operation.verificationGasLimit + operation.preVerificationGas) *
           operation.maxFeePerGas;
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
+
         const accepted = await new Promise<boolean>((resolve) => {
           setProgress("Reviewing…");
           confirm.current = resolve;
@@ -169,16 +211,17 @@ export function usePrimaryApproval(
           setSponsored(response.prepared.sponsorship === "alchemy-bso");
         });
         if (controller.signal.aborted) return;
+
         if (!accepted) {
           setProgress("Cancelling…");
-          await cancel.mutateAsync({
-            params: { walletId: wallet.id, operationId: response.operationId },
-          });
-          attempt.current = undefined;
+          await cancelPreparation();
           return;
         }
+
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
+
         if (response.signing.method === "passkey") {
+          current.signingStarted = true;
           setProgress("Signing…");
           const assertion = await startAuthentication({
             optionsJSON: {
@@ -188,6 +231,9 @@ export function usePrimaryApproval(
                 type,
               })),
             },
+          }).catch((error: unknown) => {
+            current.signingStarted = false;
+            throw error;
           });
           if (controller.signal.aborted) return;
           current.assertion = {
@@ -195,8 +241,11 @@ export function usePrimaryApproval(
             operationId: response.operationId,
             response: assertion,
           };
-        } else current.assertion = { namespace: "eip155", operationId: response.operationId };
+        } else {
+          current.assertion = { namespace: "eip155", operationId: response.operationId };
+        }
       }
+
       setProgress("Submitting…");
       await approve.mutateAsync({
         params: { walletId: wallet.id },
@@ -211,14 +260,17 @@ export function usePrimaryApproval(
           current?.prepared &&
           !current.assertion &&
           DateTime.toEpochMillis(current.prepared.expiresAt) <= Date.now()
-        )
+        ) {
           attempt.current = undefined;
+        }
+
         showErrorToast(error, {
           title: "Couldn’t set primary name",
           description: "Retry to resume your approval safely.",
         });
       }
     } finally {
+      if (controller.signal.aborted) abandon.current?.();
       busy.current = false;
       if (!controller.signal.aborted) {
         setProgress(null);
@@ -226,6 +278,7 @@ export function usePrimaryApproval(
       }
     }
   };
+
   return {
     start,
     pending: progress !== null,

@@ -92,9 +92,7 @@ export async function reviewPrimaryName(
 }
 
 export type ReviewedPrimaryName = Awaited<ReturnType<typeof reviewPrimaryName>>;
-const reject = () => {
-  throw new Error("Primary name approval does not match the reviewed transaction");
-};
+
 /** Compare the entire signable envelope to independently reconstructed account and call data. */
 export function validatePrimaryApproval(
   review: ReviewedPrimaryName,
@@ -103,7 +101,7 @@ export function validatePrimaryApproval(
   now: DateTime.Utc,
 ) {
   const { prepared } = response;
-  const op = prepared.userOperation;
+  const operation = prepared.userOperation;
   if (
     DateTime.toEpochMillis(now) >= DateTime.toEpochMillis(response.expiresAt) ||
     response.signing.method !== (review.approval === "passkey" ? "passkey" : "server") ||
@@ -111,22 +109,24 @@ export function validatePrimaryApproval(
     prepared.context.chainId !== "eip155:1" ||
     prepared.entryPointVersion !== "0.7" ||
     !isAddressEqual(prepared.entryPoint, entryPoint07Address) ||
-    !isAddressEqual(op.sender, review.address) ||
+    !isAddressEqual(operation.sender, review.address) ||
     !isAddressEqual(prepared.context.account, review.address)
   )
-    reject();
-  const hasFactory = op.factory !== undefined || op.factoryData !== undefined;
+    throw new Error("Primary name approval does not match the reviewed transaction");
+
+  const hasFactory = operation.factory !== undefined || operation.factoryData !== undefined;
   if (
-    ((op.nonce >> 64n) & ((1n << 40n) - 1n)) !== ((BigInt(review.entityId) << 8n) | 1n) ||
-    op.authorization !== undefined ||
+    ((operation.nonce >> 64n) & ((1n << 40n) - 1n)) !== ((BigInt(review.entityId) << 8n) | 1n) ||
+    operation.authorization !== undefined ||
     (hasFactory &&
-      (!op.factory ||
+      (!operation.factory ||
         !review.factory ||
-        !isAddressEqual(op.factory, review.factory) ||
+        !isAddressEqual(operation.factory, review.factory) ||
         !review.factoryData ||
-        op.factoryData?.toLowerCase() !== review.factoryData.toLowerCase()))
+        operation.factoryData?.toLowerCase() !== review.factoryData.toLowerCase()))
   )
-    reject();
+    throw new Error("Primary name approval does not match the reviewed transaction");
+
   const call = prepared.context.calls[0];
   if (
     prepared.context.calls.length !== 1 ||
@@ -134,28 +134,32 @@ export function validatePrimaryApproval(
     !isAddressEqual(call.to, review.call.to) ||
     call.value !== 0n ||
     call.data.toLowerCase() !== review.call.data.toLowerCase() ||
-    op.callData.toLowerCase() !== review.callData.toLowerCase()
+    operation.callData.toLowerCase() !== review.callData.toLowerCase()
   )
-    reject();
-  const fee = (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * op.maxFeePerGas;
+    throw new Error("Primary name approval does not match the reviewed transaction");
+
+  const fee =
+    (operation.callGasLimit + operation.verificationGasLimit + operation.preVerificationGas) *
+    operation.maxFeePerGas;
   if (
     (prepared.sponsorship === "none"
       ? prepared.billing.sponsorship !== null
       : prepared.billing.sponsorship === null ||
-        op.maxFeePerGas !== 0n ||
-        op.maxPriorityFeePerGas !== 0n ||
-        op.preVerificationGas !== 0n) ||
-    op.paymaster !== undefined ||
-    op.paymasterData !== undefined ||
-    op.paymasterVerificationGasLimit !== undefined ||
-    op.paymasterPostOpGasLimit !== undefined ||
-    op.maxPriorityFeePerGas > op.maxFeePerGas ||
+        operation.maxFeePerGas !== 0n ||
+        operation.maxPriorityFeePerGas !== 0n ||
+        operation.preVerificationGas !== 0n) ||
+    operation.paymaster !== undefined ||
+    operation.paymasterData !== undefined ||
+    operation.paymasterVerificationGasLimit !== undefined ||
+    operation.paymasterPostOpGasLimit !== undefined ||
+    operation.maxPriorityFeePerGas > operation.maxFeePerGas ||
     maxGasCostWei < 0n ||
     fee > maxGasCostWei
   )
-    reject();
+    throw new Error("Primary name approval does not match the reviewed transaction");
+
   const hash = getUserOperationHash({
-    userOperation: op,
+    userOperation: operation,
     chainId: 1,
     entryPointAddress: entryPoint07Address,
     entryPointVersion: "0.7",
@@ -171,7 +175,9 @@ export function validatePrimaryApproval(
       options.allowCredentials[0]?.id !== review.owner.credentialId ||
       options.challenge !== Base64Url.encode(hexToBytes(hashMessage({ raw: hash })))
     )
-      reject();
-  } else if (response.signing.method !== "server") reject();
+      throw new Error("Primary name approval does not match the reviewed transaction");
+  } else if (response.signing.method !== "server")
+    throw new Error("Primary name approval does not match the reviewed transaction");
+
   return hash;
 }

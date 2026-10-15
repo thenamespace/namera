@@ -18,14 +18,6 @@ export interface LocalOperations {
   readonly disableKey: (input: KeyReference) => Effect.Effect<void, LocalKeyError>;
   readonly destroyKey: (input: KeyReference) => Effect.Effect<void, LocalKeyError>;
 }
-const unavailable = Effect.fn("wallet-providers.local.disabled")(function* (
-  operation: LocalKeyError["operation"],
-) {
-  return yield* new LocalKeyError({
-    operation,
-    cause: new Error("Managed signing is disabled in this deployment"),
-  });
-});
 
 export class LocalService extends Context.Service<LocalService, LocalOperations>()(
   "@namera-ai/wallet-provider-local/LocalService",
@@ -33,10 +25,35 @@ export class LocalService extends Context.Service<LocalService, LocalOperations>
   static readonly layer = Layer.effect(LocalService, makeLocalService);
   static readonly testLayer = Layer.succeed(LocalService, makeTestLocal());
   static readonly disabledLayer = Layer.succeed(LocalService, {
-    createKey: () => unavailable("create"),
-    signMessage: () => unavailable("sign"),
-    signDigest: () => unavailable("sign"),
-    disableKey: () => unavailable("disable"),
-    destroyKey: () => unavailable("destroy"),
+    createKey: Effect.fn("wallet-providers.local.disabled")(function* () {
+      return yield* new LocalKeyError({
+        operation: "create",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    signMessage: Effect.fn("wallet-providers.local.disabled")(function* () {
+      return yield* new LocalKeyError({
+        operation: "sign",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    signDigest: Effect.fn("wallet-providers.local.disabled")(function* () {
+      return yield* new LocalKeyError({
+        operation: "sign",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    disableKey: Effect.fn("wallet-providers.local.disabled")(function* () {
+      return yield* new LocalKeyError({
+        operation: "disable",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
+    destroyKey: Effect.fn("wallet-providers.local.disabled")(function* () {
+      return yield* new LocalKeyError({
+        operation: "destroy",
+        cause: new Error("Managed signing is disabled in this deployment"),
+      });
+    }),
   });
 }

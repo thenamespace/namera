@@ -1,121 +1,57 @@
-# Namera architecture
+# Architecture
 
-This directory is the technical source of truth for Namera. It documents the
-implemented boundaries, persistence model, runtime flows, security invariants,
-and current operational constraints. Package READMEs explain how to work inside one
-workspace; these documents explain how the workspaces compose into the product.
+Technical knowledge base for Namera's current implementation. Start with the
+[system model](system.md), then follow the boundary relevant to your work.
+Executable contracts, schemas, and source remain authoritative.
 
-## System model
+## Identity and access
 
-Namera is a multi-tenant programmable-wallet service. A user manages an
-organization through a browser session. The organization creates wallets and
-immutable session keys. API keys, MCP clients, and CLI installations receive
-explicit grants to session keys. An execution or signature is allowed only when
-one active grant points to one active session key whose complete policy set
-accepts the operation.
+- [Authentication](identity-access/authentication.md): browser sessions, sign-in, admission.
+- [Organizations](identity-access/organizations.md): membership, roles, invitations.
+- [Delegated access](identity-access/delegated-access.md): API keys, OAuth, grants.
+- [Platform administration](identity-access/administration.md): operator authority.
 
-```mermaid
-flowchart LR
-  User[User session] --> Management[Management API]
-  Management --> Org[Organization]
-  Org --> Wallet[Wallet]
-  Wallet --> SessionKey[Session key + policies]
+## Wallet system
 
-  ApiKey[API-key actor] --> Grant[Session-key grant]
-  MCP[MCP OAuth actor] --> Grant
-  CLI[CLI OAuth actor] --> Grant
-  Grant --> SessionKey
+- [Accounts](wallet-system/accounts.md): smart accounts and custody providers.
+- [Session keys](wallet-system/session-keys.md): creation, installation, grants, revocation.
+- [Transactions](wallet-system/transactions.md): owner and delegated preparation/submission.
+- [Signatures](wallet-system/signatures.md): message/typed-data authorization and verification.
+- [Reconciliation](wallet-system/reconciliation.md): attempts, receipts, retries, terminal states.
+- [Policies](wallet-system/policies.md): onchain permissions and server enforcement.
+- [Identity](wallet-system/identity.md): ENS names, records, and profile images.
+- [Portfolio](wallet-system/portfolio.md): balances, pricing, caching.
 
-  SessionKey --> Policy[Policy evaluation]
-  Policy --> EVM[EVM adapter]
-  EVM --> Local[Client signs with local session key]
-  Local --> Complete[API verifies and persists signed operation]
-  Complete --> Chain[ERC-4337 network]
+## Services and persistence
 
-  Management --> Postgres[(PostgreSQL)]
-  Policy --> Postgres
-  Management --> Outbox[Email outbox]
-  Outbox --> Resend[Resend]
-  Management --> OTLP[OTLP telemetry]
-```
+- [Billing](services/billing.md): allowances, reservations, settlement.
+- [Notifications and email](services/notifications.md): recipients, preferences, durable delivery.
+- [Feedback](services/feedback.md): customer submission and operator review.
+- [Data model](data/README.md): table references, keys, constraints, and ownership.
 
-The first supported namespace is `eip155`. Namespace-discriminated protocol and
-application contracts are the extension point for future chain families.
+## Integrations and interfaces
 
-## Knowledge-base map
+- [Contracts](integrations/contracts.md): protocol schemas and HTTP API.
+- [SDK](integrations/sdk.md), [CLI](integrations/cli.md), and [MCP](integrations/mcp.md).
+- [Local keys](integrations/local-keys.md): encrypted export/import and signing boundary.
+- [Dashboard](interfaces/dashboard.md), [admin portal](interfaces/admin-portal.md),
+  and [website](interfaces/website.md).
 
-### Engineering
+## Runtime and engineering
 
-- [Repository and package boundaries](engineering/repository.md)
-- [Package-by-package ownership and extension guide](packages/README.md)
-- [Feature development](engineering/development.md)
-- [Testing](engineering/testing.md)
+- [Server](runtime/server.md): composition, request lifecycle, workers.
+- [Observability](runtime/observability.md): traces, metrics, logs, analytics.
+- [Delivery](runtime/delivery.md): application deployment and npm releases.
+- [Development](engineering/development.md): workspace boundaries and local commands.
+- [Testing](engineering/testing.md): fixtures, integration lanes, verification.
 
-### Platform
+## Keeping this useful
 
-- [Server runtime](platform/runtime.md)
-- [Database runtime](platform/database.md)
-- [Canonical database catalog](database/README.md)
-- [Address catalog, discovery and imports](database/address-catalog.md)
-- [Audit events](platform/audit.md)
-- [Telemetry](platform/telemetry.md)
-- [Deployment and operational constraints](platform/production.md)
+Describe what the code does now: ownership, contracts, state transitions,
+transaction boundaries, and limitations that affect callers. Keep historical
+changes, audit checklists, and speculative plans out of these pages.
 
-### Authentication and authorization
-
-- [Auth model](auth/README.md)
-- [Magic-link authentication](auth/core/magic-link.md)
-- [Google sign-in and account linking](auth/core/google.md)
-- [Platform administration](auth/admin.md)
-- [Waitlist admission](auth/waitlist.md)
-- [Private-beta invites](auth/core/beta-invites.md)
-- [Browser sessions](auth/core/sessions.md)
-- [Organizations, members, roles, and invitations](auth/organization/README.md)
-- [API keys](auth/core/api-keys.md)
-- [OAuth, MCP, and CLI authorization](auth/oauth/README.md)
-
-### Wallet domain
-
-- [Accounts and smart wallets](wallets/accounts.md)
-- [Account identities](wallets/identity.md)
-- [Owner wallet transactions](wallets/transactions.md)
-- [Wallet-key providers](wallets/wallet-keys.md)
-- [Session keys and grants](wallets/session-keys.md)
-- [EVM namespace adapter](evm/README.md)
-- [Supported EVM chains](evm/supported-chains.md)
-- [Alchemy portfolios and account caching](evm/portfolio.md)
-- [EVM smart accounts](evm/accounts/README.md)
-- [EVM execution pipeline](evm/execution/README.md)
-- [EVM signatures](evm/signatures.md)
-- [EVM policy engine](evm/policies/README.md)
-
-### Operations
-
-- [Executions](operations/executions.md)
-- [Signatures and verification](operations/signatures.md)
-
-### Product services and clients
-
-- [Product feedback](feedback.md)
-
-- [Billing and entitlements](billing/README.md)
-- [Billing margin model](billing/pricing.md)
-- [Notifications](notifications/README.md)
-- [Durable email delivery](notifications/email-delivery.md)
-- [SDK, CLI, and MCP tools](clients/sdk-cli-mcp.md)
-- [Local session key exports](clients/local-keystore.md)
-- [Local MCP authorization](clients/local-mcp.md)
-- [Dashboard](frontend/dashboard.md)
-- [Public website and blog](frontend/website.md)
-
-## Documentation contract
-
-- Document implemented behavior in the present tense.
-- Describe current limits beside the implemented flow; keep speculative roadmaps out of this catalog.
-- Link to source boundaries instead of duplicating implementation code.
-- Update the relevant document in the same change as a contract, table,
-  transaction boundary, authorization rule, or lifecycle change.
-- Keep every table's column, nullability, key, constraint, foreign key, and
-  index reference in `architecture/database`; feature documents link to it.
-- Drizzle schemas and migrations remain authoritative for executable database
-  behavior, and the catalog changes in the same commit.
+One page owns each topic. Link to related flows and source rather than repeating
+their implementation. Database references retain important constraints without
+duplicating every schema declaration. Package READMEs explain local usage; public
+package READMEs are written for consumers, not repository contributors.

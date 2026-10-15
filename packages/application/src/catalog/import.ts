@@ -24,12 +24,7 @@ const canonical = (value: unknown): string =>
         )
       : nested,
   );
-const conflict = (
-  collection: CatalogImportError["collection"],
-  id: string,
-  field: string,
-  message: string,
-) => new CatalogImportError({ collection, id, field, message });
+
 const unique = <A extends { readonly id: string }>(
   collection: CatalogImportError["collection"],
   records: readonly A[],
@@ -40,8 +35,14 @@ const unique = <A extends { readonly id: string }>(
     const seen = new Set<string>();
     for (const record of records) {
       const value = key(record);
-      if (seen.has(value))
-        return yield* conflict(collection, record.id, field, "Duplicate value in upload");
+      if (seen.has(value)) {
+        return yield* new CatalogImportError({
+          collection,
+          id: record.id,
+          field,
+          message: "Duplicate value in upload",
+        });
+      }
       seen.add(value);
     }
   });
@@ -51,10 +52,12 @@ export const makeCatalogImport = Effect.gen(function* () {
   const transaction = yield* TransactionService;
   const crypto = yield* CryptoService;
   const { catalog, catalogEntry, contractInterface } = repository.core;
+
   return Effect.fn("application.catalog.import")(
     function* (context: PlatformSession, input: ImportCatalogRequest, dryRun = false) {
       // Check access before expensive ABI hashing, then repeat under the team lock.
       yield* requirePlatformPermission(repository, context, "catalog:manage");
+
       const entries = input.entries.map((entry) => ({
         ...entry,
         address: Schema.decodeUnknownSync(EthereumAddress)(entry.address.toLowerCase()),
@@ -74,6 +77,7 @@ export const makeCatalogImport = Effect.gen(function* () {
         "address",
       );
       yield* unique("interfaces", input.interfaces, (record) => record.id, "id");
+
       const interfaces = yield* Effect.forEach(input.interfaces, (record) =>
         Effect.gen(function* () {
           const hash = yield* crypto.sha256(canonical(record.document));
@@ -84,11 +88,13 @@ export const makeCatalogImport = Effect.gen(function* () {
         }),
       );
       yield* unique("interfaces", interfaces, (record) => record.contentHash, "document");
+
       return yield* transaction.run(
         Effect.gen(function* () {
           // Shared with role mutations; also serializes all catalog imports across replicas.
           yield* repository.auth.platform.lockTeam();
           const actor = yield* requirePlatformPermission(repository, context, "catalog:manage");
+
           const parents = yield* catalog.getByIds([
             ...new Set([
               ...input.catalog.map((record) => record.id),
@@ -105,24 +111,25 @@ export const makeCatalogImport = Effect.gen(function* () {
                 row.id !== record.id,
             );
             if (duplicate)
-              return yield* conflict(
-                "catalog",
-                record.id,
-                "slug",
-                `Already belongs to ${duplicate.id}`,
-              );
+              return yield* new CatalogImportError({
+                collection: "catalog",
+                id: record.id,
+                field: "slug",
+                message: `Already belongs to ${duplicate.id}`,
+              });
             const previous = parentMap.get(record.id);
             if (
               previous &&
               (previous.namespace !== record.namespace || previous.data.type !== record.data.type)
             )
-              return yield* conflict(
-                "catalog",
-                record.id,
-                "data.type",
-                "Namespace and resource type are immutable; use a new ID",
-              );
+              return yield* new CatalogImportError({
+                collection: "catalog",
+                id: record.id,
+                field: "data.type",
+                message: "Namespace and resource type are immutable; use a new ID",
+              });
           }
+
           const interfaceIds = [
             ...new Set([
               ...interfaces.map((record) => record.id),
@@ -144,26 +151,27 @@ export const makeCatalogImport = Effect.gen(function* () {
                 previous.format !== record.format ||
                 previous.sourceUrl.href !== record.sourceUrl.href)
             )
-              return yield* conflict(
-                "interfaces",
-                record.id,
-                "document",
-                "Interface records are immutable; use a new ID for a new ABI",
-              );
+              return yield* new CatalogImportError({
+                collection: "interfaces",
+                id: record.id,
+                field: "document",
+                message: "Interface records are immutable; use a new ID for a new ABI",
+              });
             const duplicate = hashes.find(
               (row) => row.contentHash === record.contentHash && row.id !== record.id,
             );
             if (duplicate)
-              return yield* conflict(
-                "interfaces",
-                record.id,
-                "document",
-                `ABI already belongs to ${duplicate.id}; reference that ID`,
-              );
+              return yield* new CatalogImportError({
+                collection: "interfaces",
+                id: record.id,
+                field: "document",
+                message: `ABI already belongs to ${duplicate.id}; reference that ID`,
+              });
             if (!previous) newInterfaces.push(record);
             else if (canonical(previous.data) !== canonical(record.data))
               updatedInterfaces.push(record);
           }
+
           const storedEntries = yield* catalogEntry.getByIds(entries.map((entry) => entry.id));
           const entryMap = new Map(storedEntries.map((entry) => [entry.id, entry]));
           const addresses = yield* catalogEntry.findByAddresses(entries);
@@ -176,23 +184,23 @@ export const makeCatalogImport = Effect.gen(function* () {
               parent.namespace !== entry.namespace ||
               parent.data.type !== entry.data.type
             )
-              return yield* conflict(
-                "entries",
-                entry.id,
-                "catalogId",
-                "Parent must exist and match namespace and data type",
-              );
+              return yield* new CatalogImportError({
+                collection: "entries",
+                id: entry.id,
+                field: "catalogId",
+                message: "Parent must exist and match namespace and data type",
+              });
             if (
               entry.interfaceId &&
               !incomingInterfaces.has(entry.interfaceId) &&
               !interfaceMap.has(entry.interfaceId)
             )
-              return yield* conflict(
-                "entries",
-                entry.id,
-                "interfaceId",
-                "Interface does not exist in the database or upload",
-              );
+              return yield* new CatalogImportError({
+                collection: "entries",
+                id: entry.id,
+                field: "interfaceId",
+                message: "Interface does not exist in the database or upload",
+              });
             const duplicate = addresses.find(
               (row) =>
                 row.chainId === entry.chainId &&
@@ -200,12 +208,12 @@ export const makeCatalogImport = Effect.gen(function* () {
                 row.id !== entry.id,
             );
             if (duplicate)
-              return yield* conflict(
-                "entries",
-                entry.id,
-                "address",
-                `Address already belongs to ${duplicate.id}`,
-              );
+              return yield* new CatalogImportError({
+                collection: "entries",
+                id: entry.id,
+                field: "address",
+                message: `Address already belongs to ${duplicate.id}`,
+              });
             const previous = entryMap.get(entry.id);
             if (
               previous &&
@@ -214,25 +222,27 @@ export const makeCatalogImport = Effect.gen(function* () {
                 previous.chainId !== entry.chainId ||
                 previous.address !== entry.address)
             )
-              return yield* conflict(
-                "entries",
-                entry.id,
-                "address",
-                "Deployment identity is immutable; disable it and create a new entry",
-              );
+              return yield* new CatalogImportError({
+                collection: "entries",
+                id: entry.id,
+                field: "address",
+                message: "Deployment identity is immutable; disable it and create a new entry",
+              });
             if (
               previous &&
               previous.interfaceId !== entry.interfaceId &&
               entry.data.verification &&
               canonical(entry.data.verification) === canonical(previous.data.verification)
             )
-              return yield* conflict(
-                "entries",
-                entry.id,
-                "data.verification",
-                "Changing the interface requires renewed verification or removing old evidence",
-              );
+              return yield* new CatalogImportError({
+                collection: "entries",
+                id: entry.id,
+                field: "data.verification",
+                message:
+                  "Changing the interface requires renewed verification or removing old evidence",
+              });
           }
+
           const changedCatalog = input.catalog.filter((record) => {
             const previous = parentMap.get(record.id);
             return (
@@ -253,6 +263,7 @@ export const makeCatalogImport = Effect.gen(function* () {
             (record) => !parentMap.has(record.id),
           ).length;
           const entriesCreated = changedEntries.filter((record) => !entryMap.has(record.id)).length;
+
           if (!dryRun) {
             yield* contractInterface.insertMany(newInterfaces);
             for (const record of updatedInterfaces)
@@ -273,6 +284,7 @@ export const makeCatalogImport = Effect.gen(function* () {
                 interfaceIds: [...newInterfaces, ...updatedInterfaces].map((record) => record.id),
               });
           }
+
           return {
             dryRun,
             catalog: {

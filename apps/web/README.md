@@ -1,461 +1,69 @@
 # @namera-ai/web
 
-Namera's public website, built with TanStack Start and React. `/` is the
-marketing landing page, `/pricing` the plan comparison, and `/blog` the MDX
-publication. `/docs` is the introduction and `/docs/why-namera` explains the
-permission model. Both belong to the Dashboard group, without a `/dashboard`
-URL segment. Only `/docs/sdk`, `/docs/cli`, and `/docs/mcp` and their descendants
-select separate groups; all other docs pages belong to Dashboard. Each group
-shows only its own sidebar pages, with no globally pinned pages. Dashboard is
-first in the picker. The retired `/docs/dashboard` redirects to `/docs`.
-
-## Documentation
-
-Author documentation in `content/docs/*.mdx` and control sidebar ordering with
-`content/docs/meta.json`. `source.config.ts` defines the collection; the server
-source loader resolves pages and serializes their navigation tree. The docs
-frontmatter `icon` field resolves through the explicit Hugeicons map in
-`src/lib/docs/source.server.ts`, using the shared UIKit `Icon` component.
-Add supported icon names there before using them in a page.
-The docs
-route preloads the matching MDX module and renders Fumadocs' Spacious layout, sidebar, page body,
-code blocks, and table of contents using Namera theme tokens.
-
-The workspace aliases `fumadocs-ui` to `@fumadocs/base-ui`. Its core and UI
-versions are kept aligned.
-
-`src/styles/docs.css` owns the docs-only theme: Namera semantic tokens supply
-dark surfaces and neutral headings and links. SDK uses brand indigo, CLI uses mint,
-and MCP uses amber accents for section icons, active navigation, and focus.
-Route-scoped body tokens also reach portaled menus and search. Inter prose and
-JetBrains Mono code retain Fumadocs' native spacing and layout widths. Docs code
-blocks use 15px text. Docs use
-tighter corner radii, larger page-action buttons, and a brand-colored active
-table-of-contents highlight. The top-right GitHub action uses `SITE_LINKS.github`.
-The scoped overrides do not change
-marketing or blog colors.
-
-The `sdk/`, `cli/`, and `mcp/` content folders each declare `root: true` in
-`meta.json`, producing section-specific sidebars. A sidebar picker switches
-between Dashboard, SDK, CLI, and MCP, with an icon and description for each section.
-The Dashboard sidebar includes a Core Concepts section with Accounts, Session
-Keys, Permissions and Policies, Networks, and Organizations and Workspaces.
-These pages explain the domain without depending on unfinished UI walkthroughs.
-The SDK Introduction group contains Overview, Installation, and Getting Started.
-The Essentials group follows with Authentication, Accounts and Session Keys,
-Permissions, Supported Networks, and Handling Results and Errors. These pages
-document the current client inputs, grant-scoped access, policy boundaries,
-chain identifiers, and result handling without duplicating method reference.
-Guides contains Transactions and Signing groups under `sdk/guides/`. Transaction
-guides cover asset transfers, contract calls, batching, simulation, tracking,
-and sponsorship. Signing guides cover messages, typed data, and smart-account
-verification. Examples use Base Sepolia and illustrative IDs and response values;
-verify TypeScript against the SDK and JSON against the protocol response schemas.
-Reference follows Guides with Client, Accounts, Session Keys, Executions, and
-Signatures groups. Method pages follow Usage, Returns, and Parameters with
-two-file examples and individual parameter sections, not type tables. Shared
-Markdown in `content/snippets/sdk/` is expanded by Fumadocs `<include>` at build
-time, including in search and Markdown exports. `expand-snippets.ts` expands
-authored Markdown includes before parsing: the installed Fumadocs include
-transform renders HTML but does not register embedded source for its Markdown
-stringifier. The pre-parse hook preserves one source for every output and
-registers snippet dependencies for rebuilds. SDK metadata
-uses section separators and extracted folders so Essentials, Guides, and Reference
-share the same heading style and spacing without changing page URLs.
-The walkthrough uses current SDK exports to discover resources, execute a managed-session
-test transaction on Base Sepolia, and read its submission status. Example JSON is
-illustrative; snippets log complete result `.data`, and the response examples
-include complete API data shapes without the SDK envelope. Response examples
-use untitled Fumadocs code blocks with a fixed-height, scrollable viewport.
-CLI mirrors the Introduction, Essentials, Guides, and Reference sections. Guides
-cover Transactions, Signing, and Automation; reference pages use exact command
-names and document Usage, Output, Arguments, and Options. Shared Markdown in
-`content/snippets/cli/` holds repeated flag descriptions and full output examples.
-Output comes from CLI formatters with schema-validated fixtures; verify ordinary
-commands against a loopback API fixture, never live transactions. Shell examples
-must match the actual CLI flags, wei units, and non-interactive requirements.
-MCP contains Introduction, Essentials, and client connection guides only, without
-transaction/signing guides or tool reference. Client pages document the actual
-local stdio configuration, matching Namera login profile, a read-only first
-request, and disconnection. Shared copy lives in `content/snippets/mcp/`.
-Verify client-specific settings against upstream documentation and distinguish
-documented compatibility from end-to-end testing. URL-only clients cannot
-connect directly to the current local server.
-
-### Docs writing conventions
-
-Follow [Public docs writing style](../../AGENTS.md#public-docs-writing-style)
-for tone, page structure, examples, callouts, and response formatting.
-
-Docs have generated 1200×630 PNG share cards at `/og/docs/<page>/image.png`
-for each published documentation page. `src/lib/docs/og-image.tsx` owns
-the Namera template: section icon and accent, title, and description.
-Takumi renders server-side with bundled Geist fonts and inline brand artwork;
-it does not fetch external images or fonts. Only pages in the docs collection
-can render, and unknown paths return 404. The docs route supplies these image
-URLs to both Open Graph and Twitter metadata. Other website images are unchanged.
-Production responses cache for one hour in browsers and one day at the CDN;
-development disables caching. Keep Takumi's native optional dependencies in the
-Node deployment. Verify the generated images in the target deployment as well as locally.
-
-Search appears below the section picker and opens with Cmd/Ctrl+K. The
-`/api/docs/search` endpoint uses Fumadocs' built-in search index over the docs
-collection's structured content. Theme switching is disabled to match the site theme.
-The search dialog filters results by All, Dashboard, SDK, CLI, or MCP. Page headers use
-Fumadocs' Copy Markdown and Open controls. Appending `.md` to a docs URL serves bundled
-processed Markdown, including the page title and description, without runtime
-filesystem access. External AI options need the docs to be publicly deployed
-before those services can read them.
-Each page links to its source in `thenamespace/namera` for editing. The
-last-updated date is compiled from the file's latest Git author timestamp;
-uncommitted files and builds without Git history omit it. Use a full Git checkout
-for dated builds (`VERCEL_DEEP_CLONE=true` on Vercel). Pruned Docker builds do not
-include Git history. The footer's social row includes a mail link.
-Unknown docs paths return not found. Public docs are indexable and included in
-the sitemap.
-
-## Blog
-
-Write articles in `content/blog/<lowercase-kebab-slug>.mdx`. Fumadocs validates
-the dedicated Effect frontmatter schema in `src/lib/blog/schema.ts` at build time.
-The filename is the permalink: `/blog/<slug>`.
-
-```yaml
----
-title: "An article title"
-description: "A concise summary for the discovery page and search engines."
-date: "2026-10-05"
-tags: ["Engineering"]
-authors:
-  - name: "Author name"
-    url: "https://example.com"
-cover:
-  src: "/blog/article-cover.png"
-  alt: "Description of the cover"
-  width: 1200
-  height: 630
-seo:
-  keywords: ["agent wallets", "session keys"]
----
-```
-
-Multiple authors are supported, with optional HTTPS profile URLs and avatar
-images. Optional `updated` dates cannot precede `date`. `seo` also supports
-`title`, `description`, `image` (fallback when no cover exists), `canonical`, and
-`noindex`. Dates must be quoted ISO dates. Image paths must be root-relative
-or HTTPS; store local cover images in `public/blog/`.
-
-The discovery page has pagination and a keyboard-accessible search
-command menu (Cmd/Ctrl+K) that searches titles, descriptions, authors, tags, and article text.
-Articles render centered headings, covers, bylines, reading time and narrow
-prose. RSS is generated by `feed` at `/blog/rss.xml` and served as
-`application/rss+xml; charset=utf-8`; the sitemap includes published articles
-and real publication/update dates. Article heads include Open Graph, Twitter,
-multi-author BlogPosting JSON-LD, and breadcrumbs, using `VITE_SITE_URL`.
-
-Keep unpublished work in `content/blog/_drafts/`: this directory is excluded
-from client and server collections. Future-dated root-level posts are hidden
-until their UTC publication date, but their chunks are still deployed - this is
-scheduling, not a confidentiality boundary. MDX is trusted executable source:
-review it like code and do not accept untrusted user uploads.
-
-Use `<SequenceDiagram chart={\`sequenceDiagram ...\`} />` for the supplied
-animated sequence style. It supports participants/aliases, solid and dashed
-messages, self-calls, numbered messages/notes, notes over a single participant,
-and loops. The top-right replay icon respects reduced motion. Unsupported
-syntax shows the source rather than silently omitting steps.
-
-Use `<MermaidDiagram chart={\`flowchart LR ...\`} title="Flow description" />`or a fenced`mermaid`block for other diagram types or the full Mermaid grammar.
-Mermaid is dynamically imported, uses strict security and the landing theme.
-Both renderers expose source text as an accessible fallback. Code highlighting
-uses GitHub Dark Dimmed at build time, with self-hosted Geist Mono and 15px block text.
-Fumadocs`CodeBlock`and`Pre` provide
-copying, scrolling, and code styles, with colors mapped to the landing theme;
-ordinary Markdown uses the custom MDX components.
-
-`typecheck` generates the Fumadocs collection and router types before checking.
-Run `pnpm --filter @namera-ai/web test` for the waitlist HTTP boundary: submission,
-credential isolation, and failure handling. Blog and marketing presentation are
-checked manually in the preview.
-
-## Legal pages
-
-`/terms` and `/privacy-policy` render repository-owned MDX through Fumadocs MDX.
-Edit `src/content/legal/*.mdx` for copy and `src/components/legal` for the shared
-reading layout and semantic heading, paragraph, list, and link components.
-The pages use a single reading column without a sidebar or introductory subtitle.
-The compiler generates heading anchors at build time;
-there is no runtime Markdown fetching or documentation UI dependency.
-
-The documents are dated October 5, 2026, based on the operator's confirmed
-company details and processing practices, and are included in the sitemap.
-The contact for legal and privacy requests is `hey@namera.ai`.
-The copy describes the self-custodial flow; it does not promise private-key
-recovery, deletion of blockchain records, or purely local CLI operation.
-
-Publication is not a compliance certification. Open operational/legal items:
-
-- Verify deployed PostHog masking, event/replay retention, and collection
-  controls. No PostHog initialization was found in this checkout. The operator
-  reports collection before consent; the notice does not claim consent gating.
-  Implement appropriate controls or disable nonessential collection where
-  required; policy wording does not supply consent.
-- Confirm Resend's Tokyo sending region and provider/subprocessor transfer
-  arrangements. Review applicable safeguards and regional representative needs.
-- The operator confirmed 30-day retention for Axiom, PostHog events/replays,
-  and manual backups, plus deletion of eligible account data within 30 days of
-  an emailed request, subject to verification and legal exceptions. These are
-  operational commitments, not deletion automation implemented by these pages.
-  Independently verify provider settings and backup/deletion procedures,
-  including reapplying deletions after a restore; do not infer them from plans.
-- Obtain counsel review, including applicable law, consumer rights, and data
-  processing roles. The operator selected BVI law and courts, with mandatory
-  consumer-rights exceptions. There is no contractual monetary liability cap
-  or mandatory arbitration.
-
-Adding these pages does not implement contractual acceptance tracking, a
-consent system, or automated data deletion. Update the notice whenever the
-actual practices change, including before introducing paid plans.
+Namera's public website and documentation, built with TanStack Start, React,
+Fumadocs MDX, and Nitro. Serves the landing page, pricing, docs, blog, and legal pages.
 
 ## Development
 
+Copy [.env.example](.env.example) to `.env`, then run from the repository root:
+
 ```sh
 pnpm --filter @namera-ai/web dev
+```
+
+Development and preview use port 4000. The email preview uses the same port;
+run them separately.
+
+| Variable           | Purpose                                                   |
+| ------------------ | --------------------------------------------------------- |
+| `VITE_API_URL`     | Public API origin for the waitlist                        |
+| `VITE_SITE_URL`    | Canonical website origin; defaults to `https://namera.ai` |
+| `VITE_POSTHOG_KEY` | Public analytics project key when configured              |
+
+Values are embedded at build time. Configure the API's `WAITLIST_CORS_ORIGIN`
+to the exact website origin. Never put credentials in browser configuration.
+
+## Content
+
+- `src/components/marketing` and `src/lib/seo.ts` own positioning and landing copy.
+- `content/docs` contains docs; `meta.json` files define navigation.
+- `content/snippets` holds shared Markdown expanded before MDX compilation.
+- `content/blog/*.mdx` contains articles. Put drafts in `_drafts`.
+- `src/content/legal` contains legal text.
+- `src/lib/site-links.ts` owns public destinations.
+
+Follow the [public documentation conventions](../../AGENTS.md#public-docs-writing-style).
+MDX is executable trusted source. Future-dated posts are hidden from publication
+lists, not protected from access to deployed assets.
+
+HTML, search, Markdown, and LLM indexes derive from the same documentation source.
+See [website architecture](../../architecture/interfaces/website.md).
+
+## Checks
+
+```sh
+pnpm --filter @namera-ai/web test
+pnpm --filter @namera-ai/web test:browser
 pnpm --filter @namera-ai/web typecheck
 pnpm --filter @namera-ai/web lint
 pnpm --filter @namera-ai/web build
 pnpm --filter @namera-ai/web preview
 ```
 
-Development and preview use port 4000. Copy `.env.example` to `.env` and set
-`VITE_API_URL` to the backend origin (defaults to `https://api.namera.ai`). It is
-public configuration embedded at build time; rebuild after changing it.
+Typechecking generates the MDX collection and route tree. The production build
+generates the complete TanStack Start registration.
+Browser tests require Playwright Chromium and cover waitlist submission and retry.
+Node integration tests exercise compiled documentation and date-gated blog output.
 
-Set `VITE_SITE_URL` to the public website URL. It defaults to `https://namera.ai`
-and controls canonical URLs, Open Graph/Twitter images, structured data,
-the sitemap, and the sitemap link in `robots.txt`. Trailing slashes are normalized.
-For the current Vercel deployment, set
-`VITE_SITE_URL=https://namera-landing.vercel.app` in Vercel's environment settings
-and redeploy. This is a build-time setting for both Node and Vercel.
-
-The CTA sends email to `POST /waitlist` without cookies or tokens. For local
-testing use `VITE_API_URL=http://localhost:8080` and set the server's
-`WAITLIST_CORS_ORIGIN=http://localhost:4000`. In production, use the exact public
-website origin for that server setting. Never put `ADMIN_TOKEN` in this app.
-
-The form validates with the shared email schema, disables duplicate submissions,
-and shows success only after an accepted API response. Rate limits, network
-failures and unexpected responses leave the form available for retry.
-Run `pnpm --filter @namera-ai/web test` for transport and validation tests.
-
-## Node container deployment
-
-The primary infra deployment uses Nitro's `node-server` preset on Node.js 24.
-Build from the repository root:
+## Deployment
 
 ```sh
 docker build -f apps/web/Dockerfile -t namera-web .
 docker run --rm -p 4000:8080 namera-web
 ```
 
-The non-root runtime serves the standalone `.output` bundle on port 8080,
-including SSR, static assets, and `/sitemap.xml`. No workspace source or pnpm
-installation is needed at runtime. `NITRO_HOST` and `NITRO_PORT` control binding.
+Build from the repository root. The Node.js 24 image runs Nitro's standalone
+output. Retain Takumi's traced native dependencies for documentation share images.
+Vercel uses the package's `build:vercel` command with access to workspace sources.
 
-Takumi is externalized and traced into the server output, with Nitro's `unwasm`
-condition disabled so Node uses native bindings. This preserves package-relative
-assets instead of relocating the WASM fallback loader. See
-[Takumi's Nitro guidance](https://takumi.kane.tw/docs/integration/nitro).
-
-The public API defaults to `https://api.namera.ai`. To change it, build with
-`--build-arg DOTENV='VITE_API_URL=https://your-api.example'`. This is browser
-configuration, not a secret; changing the runtime environment cannot update it.
-Set the API's `WAITLIST_CORS_ORIGIN` to the exact deployed website origin.
-
-Run **Deploy - Namera Website** manually in GitHub Actions with the ref,
-environment, API URL, and public site URL. It builds/pushes through the existing GCP workflow
-and dispatches the `namera-web` image tag to `thenamespace/infra`. Infra must
-provide that application, port 8080 routing, and HTTPS termination. The workflow
-uses the server workflow's GCP identity and `REPOSITORY_DISPATCH_PAT`; it does
-not provision infra resources.
-
-## Temporary Vercel deployment
-
-Import this repository into Vercel with **Root Directory `apps/web`** and enable
-**Include source files outside of the Root Directory** so the shared workspace
-packages are available. Use Node.js **24.x** and the **TanStack Start** framework
-preset. `vercel.json` supplies the install and build commands; leave the Output
-Directory override disabled.
-
-The Nitro Vite plugin packages SSR and server routes as Vercel functions and
-static assets in `.vercel/output`. Do not deploy `dist/client` as a plain SPA or
-add a catch-all rewrite to `index.html`; `/sitemap.xml` is a server route.
-Both Vite and Nitro resolve workspace packages through `namera-source`, so clean
-deployments do not require prebuilt `packages/protocol/dist` artifacts.
-
-Set `VITE_API_URL=https://api.namera.ai` in the Vercel project's environment
-variables before building. Configure the API server's `WAITLIST_CORS_ORIGIN`
-to the exact production website origin. Preview domains need a separately
-configured test backend/origin to submit the waitlist; do not allow arbitrary
-preview origins on the production API. No backend secrets belong in Vercel.
-
-Verify the deployment output locally without publishing:
-
-```sh
-pnpm --filter @namera-ai/web build:vercel
-```
-
-Ordinary `pnpm --filter @namera-ai/web build` uses Nitro's local Node target.
-See the [official Vercel setup](https://vercel.com/docs/frameworks/full-stack/tanstack-start).
-
-## Structure
-
-- `src/routes` , the root document and one file per page.
-- `src/routes/blog/` , the blog layout, index, articles, and RSS endpoint.
-- `src/routes/(legal)/` , legal pages grouped without adding a URL segment.
-- `src/routes/(seo)/` , robots and sitemap endpoints, with unchanged public URLs.
-- `src/routes/docs/` , documentation routes.
-- `src/components/marketing` , landing-page sections. These are page
-  composition, not shared UI; anything reused across applications belongs in
-  `@namera-ai/ui`.
-- `src/components/pricing` , the plan columns, the comparison table, and the
-  plan data.
-- `src/lib/seo.ts` , every page's head.
-- `src/lib/site-links.ts` , every destination the page can link to.
-- `src/styles/` , website styles, with `index.css` as the entry point and
-  separate marketing, blog code, and documentation stylesheets.
-- `public/` , icons, the manifest, `robots.txt` and the Open Graph card.
-
-## Links
-
-`src/lib/site-links.ts` is the single source of truth for outbound
-destinations. A link renders only when its entry is a string; entries left
-`null` are destinations nobody has confirmed, and the corresponding nav item,
-footer link, or button does not render at all. Fill one in and it appears. Do
-not replace a `null` with a guess: a link that 404s costs more trust than a
-missing one.
-
-## SEO
-
-Every route calls `seo()` from `src/lib/seo.ts`, which returns the title, the
-description, the canonical, the Open Graph and Twitter cards, and a robots
-directive together, so a page cannot ship with one and not the others. Titles
-use the supplied page title without a brand suffix; the home page leads with
-the name and a dash.
-
-Structured data is JSON-LD in each route's `scripts`. `Organization` and
-`WebSite` come from the root route; page entities reference their stable IDs.
-The landing page adds `SoftwareApplication` and a `FAQPage` generated from
-visible questions, without an offer while the CTA is a waitlist. Pricing adds
-`BreadcrumbList`, `Product` and its own `FAQPage`, without purchasable offers
-while admission is waitlisted and paid plans are unavailable. Blog discovery emits `CollectionPage`, `Blog` and a visible-page
-`ItemList`; each pagination URL has its own canonical and empty later pages
-are noindex. Articles retain their authored SEO overrides and `BlogPosting`.
-
-`SITE` in `src/lib/seo.ts` owns the site positioning and hero description.
-The website and dashboard share the OG image and padded icons in root
-`assets/seo/`, served from `https://cdn.namera.ai/seo/`. The entire `assets/`
-directory is Git-ignored; these are operator-managed CDN source files.
-Sync those assets before deploying; do not duplicate them in app public folders.
-The app-specific install manifest remains local and references the CDN icons. Blog social
-previews use each article's cover URL directly, without generated images;
-coverless posts use `seo.image` or the static site image as a fallback.
-
-Public pages, including docs, allow indexing in metadata and `robots.txt`.
-The sitemap derives docs URLs and real Git modification dates from the Fumadocs
-collection, and blog URLs from the published catalog. Missing Git history does
-not produce a fabricated date. Docs emit `TechArticle` and breadcrumb JSON-LD,
-`Page title | Namera Docs` titles, and generated social cards. Blog and legal content use
-semantic articles, headings, and dates. The blog is indexable; noindex posts are excluded from RSS and
-the sitemap, and externally canonicalized posts are excluded from the sitemap.
-
-`src/start.ts` provides `/llms.txt`, `/llms-full.txt`, docs `.md` URLs, and
-Markdown content negotiation through Fumadocs. Send `Accept: text/markdown` to
-a docs, article, legal, or pricing URL to receive Markdown; both representations vary on `Accept`.
-Pricing Markdown is generated from the same plans and FAQ data as the page.
-Legal Markdown uses the bundled legal source; articles use the published blog
-catalog. The homepage and blog listing remain server-rendered HTML, so a
-site-wide documentation audit reports partial Markdown support and index coverage.
-The legacy `/api/docs/markdown/$` endpoint remains available. Markdown responses
-have canonical links and `X-Robots-Tag: noindex, follow` to avoid duplicate search
-results, without blocking agent access. Unknown pages return 404.
-HTML advertises the LLM index, RSS, sitemap, and page-specific Markdown alternate.
-Text exports cache for five minutes; HTML revalidates rather than using a shared
-public cache. Development discovery URLs use the request origin; production uses
-`SITE.origin`. RSS dates derive from published content, not the request time.
-Shared Markdown headers and portable links live in `src/lib/markdown/response.ts`,
-independently of the docs collection, so other exports need not load docs content.
-The manifest includes CDN icons and docs/blog shortcuts; it does not imply offline support.
-
-These access paths help agents retrieve authored content, but do not guarantee
-search rankings or AI citations. Deploy before checking production crawlability,
-social previews, and Search Console sitemap submission.
-
-## Motion
-
-The hero uses a one-time CSS entrance from first paint: title lines stagger
-through an upward blur/fade, supporting copy starts at 250ms, the CTA at 550ms, and the static
-dashboard preview follows at 1050ms. The full entrance settles at 2350ms.
-Reduced-motion users see the final state immediately. Server HTML remains
-available without JavaScript, and the hero does not use the scroll-reveal classes.
-Focusing the waitlist form or dashboard preview finishes its wrapper's entrance
-without removing the CSS animation, so clicking or tabbing out cannot replay it.
-Animations inside the interactive preview are unaffected.
-
-The hero stage uses `/hero-bg-poster.jpg`, a static smoke frame masked around
-the dashboard. It does not download or play a video and needs no playback
-controls. The original video remains locally staged at
-`assets/web/videos/hero-bg.mp4` for archival/upload use; `assets/` is Git-ignored.
-
-The session key anatomy demo calculates its expiry three calendar months from
-the visitor's current UTC date on mount, clamping to month end when necessary.
-Its server-rendered fallback says "In 3 months" to avoid stale or mismatched dates.
-
-Scroll reveals are a scroll-driven CSS animation (`animation-timeline: view()`)
-behind an `@supports` guard, not JavaScript. Where the feature is unsupported
-the content is simply visible and does not animate. This matters more than the
-animation does: the failure mode of a reveal has to be "it did not move", never
-"the page is blank". An earlier observer-driven version failed the other way
-whenever the observer did not run, which includes hidden tabs, prerenders, and
-offscreen captures. Nothing in the server HTML is hidden.
-
-`motion` also handles state transitions inside components (the FAQ, the
-mobile nav, the hero visual's run), where a script is already required for the
-interaction itself.
-
-The closing section renders Paper Design's `NeuroNoise` shader, masked so it
-fades before the section's edges and scrimmed in the middle so body copy keeps
-its contrast ratio. It draws a static frame under `prefers-reduced-motion`.
-
-## Accessibility
-
-Contrast is verified against the rendered page, not against tokens.
-The homepage's `.landing-home` scope in `src/styles/marketing.css` uses Linear-inspired
-cool neutrals: `#f7f8f8` primary text, `#d0d6e0` surface text, and `#8a8f98`
-supporting text on a `#08090a` canvas, with `#0f1011`, `#141516`, and `#191a1b`
-panel steps and `#5e6ad2` brand actions. All public routes share the `#08090a`
-canvas through the website's root token; the shared UIKit theme and other
-routes' panel colors remain unchanged. Avoid Linear's
-lower-contrast `#62666d` for readable text on this canvas.
-Keep `--accent` as a fill/border color and use `--color-accent-text` for accent text.
-
-Touch targets use the `tap-target` utility, which lifts the hit box to 44px
-under `@media (pointer: coarse)` at any viewport width. A width breakpoint gets
-tablets wrong in both directions. `tap-halo` does the same for controls whose
-drawn size is the design.
-
-## Conventions
-
-The workspace default catalog supplies shared React, Tailwind, and TypeScript
-versions. The `web` catalog isolates current Vite and Router tooling from the
-dashboard. Routes are generated by Start during development and build, and by
-`generate-routes` before typechecking. Commit `src/routeTree.gen.ts` when
-routes change.
-
-`resolve.dedupe` in `vite.config.ts` pins React and React DOM to one copy.
-Without it a pre-bundled dependency resolves its own peer React out of
-`.vite/deps` and every hook it calls throws "Invalid hook call".
-
-Use `@namera-ai/ui` for shared UI components. Its stylesheet supplies Tailwind
-CSS and scans shared components. The shared Namera theme is dark, so the
-document uses that theme without a separate theme switcher.
+Full Git history supplies documentation update dates; source archives omit them.

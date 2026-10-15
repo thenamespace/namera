@@ -41,6 +41,18 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Test with bounded package and worker concurrency
         run: pnpm exec turbo run test ${{ matrix.filters }} --concurrency=2
+  browser:
+    name: Browser components
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Install Chromium and system dependencies
+        run: pnpm --filter @namera-ai/dashboard exec playwright install --with-deps chromium
+      - run: pnpm --filter @namera-ai/dashboard test:browser
+      - run: pnpm --filter @namera-ai/admin-portal test:browser
+      - run: pnpm --filter @namera-ai/web test:browser
   postgres:
     name: PostgreSQL integration
     runs-on: ubuntu-latest
@@ -62,5 +74,9 @@ jobs:
       - run: pnpm --filter @namera-ai/server... build
       - name: Test PostgreSQL with reproducible shuffled order
         run: pnpm --filter @namera-ai/server test --sequence.shuffle --sequence.seed=${{ github.run_number }}
+        env:
+          NAMERA_TEST_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+      - name: Test repositories on PostgreSQL
+        run: pnpm --filter @namera-ai/database test --sequence.shuffle --sequence.seed=${{ github.run_number }}
         env:
           NAMERA_TEST_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}

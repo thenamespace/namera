@@ -1,9 +1,9 @@
 import { DateTime, Effect, Redacted, Schema } from "effect";
 
+import { OneClawError } from "@namera-ai/protocol";
 import type { OneClawCustomerAuthority } from "@namera-ai/protocol/model";
 
 import type { ClientContext } from "#/client";
-import { oneClawError } from "#/errors";
 import { IdentityResponse, RedeemResponse } from "#/responses";
 
 export interface Claim {
@@ -26,19 +26,19 @@ export const makeCustomers = ({
     const operation = "customers.redeemClaim";
     const startedAt = yield* DateTime.now;
     if (DateTime.toEpochMillis(input.claim.expiresAt) <= DateTime.toEpochMillis(startedAt)) {
-      return yield* oneClawError(operation, "AUTHORITY_EXPIRED");
+      return yield* new OneClawError({ operation, code: "AUTHORITY_EXPIRED" });
     }
     const response = yield* request(operation, RedeemResponse, () =>
       anonymous.platform.claimRedeem(Redacted.value(input.claim.token)),
     );
     if (response.connection_id !== input.claim.connectionId)
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     const authenticated = client(response.auth_token);
     const identity = yield* request(operation, IdentityResponse, () =>
       authenticated.http.request("GET", "/v1/auth/me"),
     );
     if (identity.id !== input.expectedCustomerId)
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     return {
       connectionId: response.connection_id,
       customerId: identity.id,

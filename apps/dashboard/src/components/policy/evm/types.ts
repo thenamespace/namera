@@ -7,12 +7,7 @@ export type ChainAllowlistPolicyInput = Extract<
   { readonly type: "evm.chain-allowlist" }
 >;
 export type TimeWindowPolicyInput = Extract<EvmPolicyInput, { readonly type: "evm.time-window" }>;
-export type NativeSpendLimitPolicyInput = Extract<
-  EvmPolicyInput,
-  { readonly type: "evm.native-spend-limit" }
->;
 export type SignaturePolicyInput = Extract<EvmPolicyInput, { readonly type: "evm.signature" }>;
-export type GasBudgetPolicyInput = Extract<EvmPolicyInput, { readonly type: "evm.gas-budget" }>;
 
 export type EvmPolicyEditorProps = {
   formId: string;

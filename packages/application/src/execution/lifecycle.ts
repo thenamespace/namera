@@ -1,22 +1,17 @@
 import { DateTime, Duration, Effect } from "effect";
 
 import { Repository, TransactionService, type WalletView } from "@namera-ai/database";
-import { Evm } from "@namera-ai/evm";
 import type {
   ActorId,
   EvmExecutionReceipt,
   ExecutionSubmissionId,
-  EvmIntentContext,
   OrganizationId,
-  PolicyId,
   SuccessfulEvmExecutionReceipt,
 } from "@namera-ai/protocol";
 import type {
   EvmSessionKey,
   ExecutionSubmission,
   SessionKeyGrant,
-  SessionKeyPolicyReservation,
-  SessionKeyPolicyState,
 } from "@namera-ai/protocol/model";
 
 import { Audit } from "#/audit/layer";
@@ -25,7 +20,6 @@ import { makeCreateNotification } from "#/notification/create";
 
 export const makeExecutionLifecycle = Effect.gen(function* () {
   const audit = yield* Audit;
-  const evm = yield* Evm;
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const createNotification = yield* makeCreateNotification;
@@ -97,83 +91,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     }
   });
 
-  const applyStateChanges = Effect.fnUntraced(function* (
-    organizationId: OrganizationId,
-    states: ReadonlyArray<SessionKeyPolicyState>,
-    changes: ReadonlyArray<{
-      readonly policyId: SessionKeyPolicyState["policyId"];
-      readonly stateKey: string;
-      readonly stateVersion: number;
-      readonly data: SessionKeyPolicyState["data"];
-    }>,
-  ) {
-    for (const change of changes) {
-      const state = states.find(
-        (item) => item.policyId === change.policyId && item.stateKey === change.stateKey,
-      );
-      if (state === undefined) return yield* Effect.die("Policy state is missing");
-      const updated = yield* repository.core.sessionKeyPolicyState.update({
-        id: state.id,
-        organizationId,
-        expectedRevision: state.revision,
-        stateVersion: change.stateVersion,
-        data: change.data,
-      });
-      if (updated === undefined) return yield* Effect.die("Concurrent policy-state update failed");
-    }
-  });
-
-  const lockPolicyStateScopes = Effect.fnUntraced(function* (
-    organizationId: OrganizationId,
-    sessionKey: EvmSessionKey,
-    scopes: ReadonlyArray<{ readonly policyId: PolicyId; readonly stateKey: string }>,
-  ) {
-    const orderedScopes = [
-      ...new Map(
-        scopes.map((scope) => [`${scope.policyId}:${scope.stateKey}`, scope] as const),
-      ).values(),
-    ].toSorted((left, right) =>
-      left.policyId === right.policyId
-        ? left.stateKey.localeCompare(right.stateKey)
-        : left.policyId.localeCompare(right.policyId),
-    );
-    return yield* repository.core.sessionKeyPolicyState.findForScopesForUpdate(
-      organizationId,
-      sessionKey.id,
-      orderedScopes,
-    );
-  });
-
-  const initializeAndLockStates = Effect.fnUntraced(function* (
-    organizationId: OrganizationId,
-    sessionKey: EvmSessionKey,
-    context: EvmIntentContext,
-  ) {
-    const seeds = yield* evm.policy.getStateSeeds({ policies: sessionKey.policies, context });
-    yield* repository.core.sessionKeyPolicyState.insertManyIfMissing(
-      seeds.map((seed) => ({
-        organizationId,
-        sessionKeyId: sessionKey.id,
-        policyId: seed.policyId,
-        stateKey: seed.stateKey,
-        stateVersion: seed.stateVersion,
-        data: seed.data,
-      })),
-    );
-    return yield* lockPolicyStateScopes(organizationId, sessionKey, seeds);
-  });
-
-  const lockReservationStates = Effect.fnUntraced(function* (
-    organizationId: OrganizationId,
-    sessionKey: EvmSessionKey,
-    reservations: ReadonlyArray<SessionKeyPolicyReservation>,
-  ) {
-    return yield* lockPolicyStateScopes(organizationId, sessionKey, reservations);
-  });
-
-  // Release and settle lock the submission before touching policy state. This
-  // makes receipt reconciliation safe to retry and prevents the HTTP request
-  // and background worker from finalizing the same reservation twice.
+  // Submission locks serialize finalization with cancellation and reconciliation.
   const release = Effect.fn("application.execution.release")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -211,28 +129,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           });
           if (!cancelled) return false;
         }
-        const operation = { type: "execution", id: input.submissionId } as const;
-        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForOperation(
-          input.organizationId,
-          operation,
-        );
-        const states = yield* lockReservationStates(
-          input.organizationId,
-          input.sessionKey,
-          reservations,
-        );
-        const changes = yield* evm.policy.release({
-          policies: input.sessionKey.policies,
-          states,
-          reservations,
-        });
-        yield* applyStateChanges(input.organizationId, states, changes);
         const now = yield* DateTime.now;
-        yield* repository.core.sessionKeyPolicyReservation.markReleased(
-          input.organizationId,
-          operation,
-          now,
-        );
         yield* releaseExecutionBilling(input.organizationId, submission, input.receipt);
         if (input.stage === "cancel") {
           yield* audit.organization({
@@ -300,11 +197,6 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           ...(input.leaseToken === undefined ? {} : { leaseToken: input.leaseToken }),
         });
         if (updated === undefined) return false;
-        yield* repository.core.sessionKeyPolicyReservation.markSubmittedForExecution(
-          input.organizationId,
-          input.submissionId,
-          now,
-        );
         yield* audit.organization({
           organizationId: input.organizationId,
           actorId: input.actorId,
@@ -324,7 +216,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     );
   });
 
-  // A confirmed execution, its policy settlement, audit row, billing usage,
+  // A confirmed execution, its audit row, billing usage,
   // and notification records share this transaction. Partial confirmation is
   // therefore never visible to subsequent authorization decisions.
   const settle = Effect.fn("application.execution.settle")(function* (input: {
@@ -358,29 +250,7 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
           return undefined;
         }
 
-        const operation = { type: "execution", id: input.submissionId } as const;
-        const reservations = yield* repository.core.sessionKeyPolicyReservation.findForOperation(
-          input.organizationId,
-          operation,
-        );
-        const states = yield* lockReservationStates(
-          input.organizationId,
-          input.sessionKey,
-          reservations,
-        );
-        const changes = yield* evm.policy.settle({
-          policies: input.sessionKey.policies,
-          states,
-          reservations,
-          result: input.receipt,
-        });
-        yield* applyStateChanges(input.organizationId, states, changes);
         const now = yield* DateTime.now;
-        yield* repository.core.sessionKeyPolicyReservation.markSettled(
-          input.organizationId,
-          operation,
-          now,
-        );
         yield* settleExecutionBilling(input.organizationId, submission, input.receipt);
         const created = yield* repository.core.execution.insert({
           executionSubmissionId: input.submissionId,
@@ -449,5 +319,5 @@ export const makeExecutionLifecycle = Effect.gen(function* () {
     );
   });
 
-  return { initializeAndLockStates, applyStateChanges, markSubmitted, release, settle } as const;
+  return { markSubmitted, release, settle } as const;
 });

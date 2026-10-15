@@ -1,30 +1,38 @@
 # @namera-ai/crypto
 
-Shared cryptographic operations for Namera. It builds domain-separated hashing,
-HMAC, authenticated encryption, and random credential generation on Effect's
-platform `Crypto` service.
+Shared credential cryptography: secure randomness, purpose-separated SHA-256 and
+HMAC, and versioned AES-GCM encryption. Wallet signing remains in custody and chain
+packages; this package does not store wallet keys.
 
-See [chain and custody workspace architecture](../../architecture/packages/chain-custody.md)
-for cryptographic ownership, credential-storage rules, and the boundary with
-wallet-key providers.
+## Configuration
 
-## Structure
+| Variable                | Purpose                         |
+| ----------------------- | ------------------------------- |
+| `CRYPTO_HMAC_KEY`       | Required base64url HMAC secret. |
+| `CRYPTO_ENCRYPTION_KEY` | Required base64url AES-GCM key. |
 
-- `src/config.ts` — redacted HMAC and encryption key configuration.
-- `src/data.ts` — stable domain-separation purposes.
-- `src/layer.ts` — `CryptoService` implementation.
-- `src/index.ts` — public exports.
+`CryptoService.layer` needs Effect's platform `Crypto` service. The server provides
+`NodeCrypto.layer`. Secrets are loaded with `Config.Redacted`.
 
-## Environment
+Callers select a stable domain from `cryptoPurpose` for credential hashing, HMAC
+and encryption. Length-prefixed purpose separation prevents credentials from being
+interchangeable across protocols. AES-GCM authenticates ciphertext and its purpose.
+Versioned ciphertext is an encoding contract, not automatic key rotation.
 
-| Variable                | Required | Purpose                           |
-| ----------------------- | -------- | --------------------------------- |
-| `CRYPTO_HMAC_KEY`       | Yes      | Base64url HMAC key.               |
-| `CRYPTO_ENCRYPTION_KEY` | Yes      | Base64url AES-GCM encryption key. |
+Keep raw credentials, keys, plaintext and ciphertext out of logs and public DTOs.
+Persist hashes for lookup credentials and encrypted payloads only when the original
+value must be recovered.
 
-The server provides `NodeCrypto.layer` to `CryptoService.layer`. Consumers must
-use a stable purpose from `cryptoPurpose`; do not encrypt, hash, or authenticate
-values without domain separation. Ciphertext includes a version for future key
-or format migration.
+## Development
 
-Do not log keys, plaintext credentials, decrypted payloads, HMACs, or ciphertext.
+```sh
+pnpm --filter @namera-ai/crypto test
+pnpm --filter @namera-ai/crypto typecheck:test
+pnpm --filter @namera-ai/crypto typecheck
+pnpm --filter @namera-ai/crypto build
+```
+
+Implementation lives in `src/layer.ts`; purposes in `src/data.ts`.
+Tests use scoped NodeCrypto layers and synthetic keys, with independent hash/MAC
+vectors and AES-GCM decryption to verify purpose binding and tamper rejection.
+See [authentication](../../architecture/identity-access/authentication.md).

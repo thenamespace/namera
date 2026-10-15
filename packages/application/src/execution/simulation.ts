@@ -1,22 +1,14 @@
 import { Effect, Metric } from "effect";
 
-import { Repository } from "@namera-ai/database";
-import { Evm } from "@namera-ai/evm";
-import { ExecutionError, type PolicyId } from "@namera-ai/protocol";
+import type { ExecutionError } from "@namera-ai/protocol";
 import type {
   GrantedActorData,
   SimulateExecutionRequest,
   SimulateExecutionResponse,
 } from "@namera-ai/protocol/dto";
-import {
-  executionDuration,
-  executionResults,
-  executionPolicyDecisions,
-} from "@namera-ai/telemetry";
+import { executionDuration, executionResults } from "@namera-ai/telemetry";
 
 import { makePrepareExecution } from "./preparation.js";
-
-const stateScopeKey = (policyId: PolicyId, stateKey: string) => `${policyId}:${stateKey}`;
 
 export interface ExecutionSimulationApplication {
   readonly simulate: (input: {
@@ -26,8 +18,6 @@ export interface ExecutionSimulationApplication {
 }
 
 export const makeExecutionSimulationApplication = Effect.gen(function* () {
-  const evm = yield* Evm;
-  const repository = yield* Repository;
   const prepareExecution = yield* makePrepareExecution;
 
   const simulate = Effect.fn("application.execution.simulate")(
@@ -40,38 +30,6 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
         request: { ...input.request, sponsor: false },
         custody: "either",
       });
-      const sessionKey = authority.sessionKey;
-      const seeds = yield* evm.policy.getStateSeeds({
-        policies: sessionKey.policies,
-        context: prepared.context,
-      });
-      const policyIds = [...new Set(seeds.map((seed) => seed.policyId))];
-      const persistedStates = (yield* Effect.forEach(policyIds, (policyId) =>
-        repository.core.sessionKeyPolicyState.findForPolicy(
-          input.actor.organizationId,
-          sessionKey.id,
-          policyId,
-        ),
-      )).flat();
-      const persistedByScope = new Map(
-        persistedStates.map((state) => [stateScopeKey(state.policyId, state.stateKey), state]),
-      );
-      const states = seeds.map(
-        (seed) => persistedByScope.get(stateScopeKey(seed.policyId, seed.stateKey)) ?? seed,
-      );
-      // Reservation planning is pure: do not persist seeds, changes or holds for a preview.
-      const preview = yield* evm.policy.reserve({
-        policies: sessionKey.policies,
-        context: prepared.context,
-        states,
-      });
-      yield* Metric.update(
-        Metric.withAttributes(executionPolicyDecisions, {
-          stage: "simulate",
-          result: preview.decision.allowed ? "allowed" : "denied",
-        }),
-        1,
-      );
       const response = {
         namespace: "eip155" as const,
         walletId: input.request.walletId,
@@ -82,16 +40,9 @@ export const makeExecutionSimulationApplication = Effect.gen(function* () {
         ),
         simulation: prepared.context.simulation,
       };
-      return preview.decision.allowed
-        ? { ...response, allowed: true as const, sessionKeyId: sessionKey.id }
-        : {
-            ...response,
-            allowed: false as const,
-            denials: [{ sessionKeyId: sessionKey.id, ...preview.decision }],
-          };
+      return { ...response, allowed: true as const, sessionKeyId: authority.sessionKey.id };
     },
     Effect.catchTag("DatabaseError", Effect.die),
-    Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
     Effect.tap((result) =>
       Metric.update(
         Metric.withAttributes(executionResults, {

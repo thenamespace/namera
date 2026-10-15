@@ -2,7 +2,7 @@ import { DateTime, Duration, Effect, Metric, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm } from "@namera-ai/evm";
-import { ExecutionError, Hex, type DatabaseError, type EvmPolicyError } from "@namera-ai/protocol";
+import { ExecutionError, Hex, type DatabaseError } from "@namera-ai/protocol";
 import type {
   CompleteExecutionRequest,
   CompleteExecutionResponse,
@@ -27,10 +27,7 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
     function* (input: {
       readonly actor: GrantedActorData;
       readonly request: CompleteExecutionRequest;
-    }): Effect.fn.Return<
-      CompleteExecutionResponse,
-      ExecutionError | DatabaseError | EvmPolicyError
-    > {
+    }): Effect.fn.Return<CompleteExecutionResponse, ExecutionError | DatabaseError> {
       const submission = yield* repository.core.executionSubmission.findByIdForActor(
         input.request.submissionId,
         input.actor.organizationId,
@@ -77,16 +74,6 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
         (managed && sessionSignerBinding(authority.signer) !== submission.data.managedSignerBinding)
       )
         return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-      const initialDecision = yield* evm.policy.evaluate({
-        policies: authority.sessionKey.policies,
-        context: submission.data.prepared.context,
-      });
-      if (!initialDecision.allowed)
-        return yield* new ExecutionError({
-          code: "POLICY_DENIED",
-          policyId: initialDecision.policyId,
-          policyCode: initialDecision.code,
-        });
       const leaseToken = generateUniqueId();
       const signature = yield* Effect.gen(function* () {
         if (!managed) {
@@ -167,17 +154,6 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
               sessionSignerBinding(current.signer) !== submission.data.managedSignerBinding)
           )
             return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
-          // Check stateless policies again; the attempt already owns its stateful reservation.
-          const decision = yield* evm.policy.evaluate({
-            policies: current.sessionKey.policies,
-            context: submission.data.prepared.context,
-          });
-          if (!decision.allowed)
-            return yield* new ExecutionError({
-              code: "POLICY_DENIED",
-              policyId: decision.policyId,
-              policyCode: decision.code,
-            });
           const now = yield* DateTime.now;
           const updated = yield* repository.core.executionSubmission.acceptSignature({
             id: submission.id,
@@ -221,7 +197,6 @@ export const makeCompleteLocalExecution = Effect.gen(function* () {
       };
     },
     Effect.catchTag("DatabaseError", Effect.die),
-    Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
     Effect.tap(() =>
       Metric.update(
         Metric.withAttributes(executionResults, { stage: "complete", result: "success" }),

@@ -4,8 +4,7 @@ import type {
   SystemRoleKey,
   SystemRoleMetadata,
 } from "@namera-ai/protocol/model";
-import { text, jsonb } from "drizzle-orm/pg-core";
-import { uniqueIndex } from "drizzle-orm/pg-core";
+import { jsonb, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { generateUniqueId, timestamps } from "#/schema/common";
 

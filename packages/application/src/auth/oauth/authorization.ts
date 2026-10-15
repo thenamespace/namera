@@ -138,6 +138,14 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
       });
       const authorization = yield* transaction.run(
         Effect.gen(function* () {
+          // Serialize consent with offboarding before creating a delegated actor.
+          const member = yield* repository.auth.member.lockByActorId(
+            input.organizationId,
+            input.actorId,
+          );
+          if (!member || member.removedAt !== null || member.userId !== input.userId) {
+            return yield* new OAuthAuthorizationRequestError({ code: "REQUEST_NOT_FOUND" });
+          }
           const approved = yield* repository.auth.oauth.authorizationRequest.approve({
             id: pending.id,
             userId: input.userId,
@@ -305,11 +313,11 @@ export const makeOAuthAuthorizationApplication = Effect.gen(function* () {
       const now = yield* DateTime.now;
       const result = yield* transaction.run(
         Effect.gen(function* () {
-          const existing = yield* repository.auth.oauth.authorization.findById(
+          const existing = yield* repository.auth.oauth.authorization.lockById(
             input.authorizationId,
             input.organizationId,
           );
-          if (existing === undefined) {
+          if (existing === undefined || existing.organizationId !== input.organizationId) {
             return yield* new OAuthAuthorizationError({ code: "AUTHORIZATION_NOT_FOUND" });
           }
           if (input.type !== undefined && existing.type !== input.type) {

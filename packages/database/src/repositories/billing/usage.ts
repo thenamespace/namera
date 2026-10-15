@@ -1,7 +1,7 @@
 import { Context, Effect, Layer, Schema, type DateTime } from "effect";
 
 import type { DatabaseError, OrganizationId } from "@namera-ai/protocol";
-import { and, count, eq, gt, isNull, ne, sql } from "drizzle-orm";
+import { and, count, eq, isNull, ne, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
 import { transactionOrDatabase } from "#/core/transaction";
@@ -47,23 +47,23 @@ export class BillingUsageRepository extends Context.Service<
             const db = yield* transactionOrDatabase(database);
             const encodedNow = Schema.encodeSync(Schema.DateTimeUtcFromDate)(now);
 
-            const memberRows = yield* db
-              .select({ value: count() })
+            // Acceptance moves a seat between these tables; both counts must
+            // use one statement snapshot, including unlocked billing reads.
+            const seatRows = yield* db
+              .select({
+                members: count(),
+                pendingInvitations: sql<number>`(select count(*) from ${invitation}
+                  where ${invitation.organizationId} = ${organizationId}
+                    and ${invitation.status} = 'pending'
+                    and ${invitation.expiresAt} > ${encodedNow.toISOString()}::timestamptz)`.mapWith(
+                  Number,
+                ),
+              })
               .from(organizationMember)
               .where(
                 and(
                   eq(organizationMember.organizationId, organizationId),
                   isNull(organizationMember.removedAt),
-                ),
-              );
-            const invitationRows = yield* db
-              .select({ value: count() })
-              .from(invitation)
-              .where(
-                and(
-                  eq(invitation.organizationId, organizationId),
-                  eq(invitation.status, "pending"),
-                  gt(invitation.expiresAt, encodedNow),
                 ),
               );
             const softwareWalletRows = yield* db
@@ -119,6 +119,7 @@ export class BillingUsageRepository extends Context.Service<
               );
             // Count sessions, not installations: a multi-network key occupies one slot.
             // Missing installations remain occupied; disabled signers also retain their slot.
+            // Signature-only policies do not expire onchain transaction authority.
             const sessionRows = yield* db
               .select({
                 local: sql<number>`count(*) filter (where ${signingKey.custody} = 'local')`.mapWith(
@@ -136,11 +137,6 @@ export class BillingUsageRepository extends Context.Service<
                   eq(sessionKey.organizationId, organizationId),
                   ne(sessionKey.status, "revoked"),
                   ne(signingKey.status, "destroyed"),
-                  sql`not exists (
-                  select 1 from jsonb_array_elements(${sessionKey.policies}) policy
-                  where policy->>'type' = 'evm.time-window'
-                  and (policy->>'expiresAt')::timestamptz <= ${encodedNow.toISOString()}::timestamptz
-                )`,
                   sql`(
                   not exists (select 1 from ${sessionKeyInstallation} i where i.session_key_id = ${sessionKey.id})
                   or exists (select 1 from ${sessionKeyInstallation} i where i.session_key_id = ${sessionKey.id}
@@ -149,8 +145,8 @@ export class BillingUsageRepository extends Context.Service<
                 ),
               );
             return {
-              members: memberRows[0]?.value ?? 0,
-              pendingInvitations: invitationRows[0]?.value ?? 0,
+              members: seatRows[0]?.members ?? 0,
+              pendingInvitations: seatRows[0]?.pendingInvitations ?? 0,
               softwareWallets: softwareWalletRows[0]?.value ?? 0,
               hsmWallets: hsmWalletRows[0]?.value ?? 0,
               localWallets: localWalletRows[0]?.value ?? 0,

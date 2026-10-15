@@ -14,6 +14,7 @@ import { OneClawTestControl, oneClawAccountTestLayer } from "@namera-ai/wallet-p
 import { Audit } from "../../src/audit/layer.js";
 import { makeLoadOneClawOwner } from "../../src/oneclaw/owner.js";
 import { makeProvisionOneClawSigner } from "../../src/oneclaw/provision.js";
+import { makeSignerProvisioning } from "../../src/provisioning/lifecycle.js";
 
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
   Layer.provideMerge(TestDatabase.layer),
@@ -68,10 +69,16 @@ const fixture = Effect.gen(function* () {
   });
   const actor = yield* repository.auth.actor.insert({ organizationId: org.id, type: "user" });
   const provision = yield* makeProvisionOneClawSigner;
-  const prepared = yield* provision({
+  const runProvisioning = yield* makeSignerProvisioning;
+  const prepared = yield* runProvisioning({
     organizationId: org.id,
     actorId: actor.id,
+    provider: "1claw",
     purpose: "wallet-root",
+    request: {},
+    create: (attempt) =>
+      provision({ organizationId: org.id, actorId: actor.id, purpose: "wallet-root", attempt }),
+    completed: () => Effect.die("Fixture must provision a new signer"),
   });
   const signingKey = yield* repository.core.signingKey.insert(prepared.signingKey);
   const data = yield* (yield* Evm).createAccount({
@@ -123,8 +130,10 @@ layer(Live)("1Claw owner signing", (it) => {
     Effect.gen(function* () {
       const { view, load, control, repository, prepared } = yield* fixture;
       const owner = yield* load(view);
+      if (!prepared.signingKey.providerConnectionId)
+        return yield* Effect.die("Missing provider connection");
       yield* repository.core.providerConnections.disable({
-        id: prepared.connection.id,
+        id: prepared.signingKey.providerConnectionId,
         organizationId: view.wallet.organizationId,
       });
       expect(yield* Effect.tryPromise(() => owner.sign({ hash })).pipe(Effect.isFailure)).toBe(

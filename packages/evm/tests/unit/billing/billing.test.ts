@@ -68,6 +68,20 @@ it.effect("classifies execution meters and only prices mainnet sponsorship", () 
       return yield* Effect.die("Expected supported EVM chains");
     }
 
+    for (const invalid of [
+      { operation, quote: { ...quote, nativePriceMicroUsd: 0n } },
+      { operation: { ...operation, maxFeePerGas: 0n }, quote },
+    ]) {
+      expect(
+        yield* makeEvmExecutionBilling({
+          chain: mainnet,
+          sponsorship: "alchemy-bso",
+          estimatedUserOperation: invalid.operation,
+          getGasPrice: () => Effect.succeed(invalid.quote),
+        }).pipe(Effect.flip),
+      ).toMatchObject({ code: "PREPARATION_FAILED" });
+    }
+
     expect(
       yield* makeEvmExecutionBilling({
         chain: mainnet,

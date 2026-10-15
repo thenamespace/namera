@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Ref, Result } from "effect";
+import { DateTime, Effect, Ref, Result } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Database, Repository, credentials, signingKey } from "@namera-ai/database";
@@ -139,10 +139,32 @@ layer(Live)("1Claw session creation", (it) => {
     () =>
       Effect.gen(function* () {
         const { client, wallet, request, control } = yield* setup;
-        for (let i = 0; i < 5; i++) yield* client.sessionKey.create({ payload: request });
+        const now = yield* DateTime.now;
+        for (let i = 0; i < 5; i++)
+          yield* client.sessionKey.create({
+            payload: {
+              ...request,
+              idempotencyKey: crypto.randomUUID(),
+              policies: [
+                {
+                  type: "evm.time-window",
+                  version: 1,
+                  startsAt: null,
+                  expiresAt: DateTime.add(now, { minutes: 1 }),
+                },
+              ],
+            },
+          });
+        yield* TestClock.adjust("2 minutes");
+        expect(
+          (yield* client.billing.get()).resources.find(({ key }) => key === "oneclaw-session-keys")
+            ?.usedAmount,
+        ).toBe(5n);
         const calls = yield* Ref.get(control.calls);
         expect(
-          yield* client.sessionKey.create({ payload: request }).pipe(Effect.flip),
+          yield* client.sessionKey
+            .create({ payload: { ...request, idempotencyKey: crypto.randomUUID() } })
+            .pipe(Effect.flip),
         ).toMatchObject({ _tag: "BillingError", limit: "oneClawSessionKeys" });
         expect(yield* Ref.get(control.calls)).toEqual(calls);
         yield* client.sessionKey.create({ payload: yield* localSessionRequest(wallet.id) });
@@ -223,6 +245,11 @@ layer(Live)("1Claw session creation", (it) => {
         expect(
           (yield* Ref.get(control.calls)).filter((op) => op === "signingKeys.create"),
         ).toHaveLength(1);
+        const calls = yield* Ref.get(control.calls);
+        expect(
+          yield* client.sessionKey.create({ payload: request }).pipe(Effect.flip),
+        ).toMatchObject({ code: "PROVIDER_RECOVERY_REQUIRED" });
+        expect(yield* Ref.get(control.calls)).toEqual(calls);
       }),
   );
 
@@ -262,6 +289,17 @@ layer(Live)("1Claw session creation", (it) => {
               .pipe(Effect.orDie),
           ),
         );
+        const calls = yield* Ref.get(control.calls);
+        const recovered = yield* client.sessionKey.create({ payload: request });
+        expect((yield* client.sessionKey.create({ payload: request })).id).toBe(recovered.id);
+        expect(
+          (yield* Ref.get(control.calls)).filter(
+            (call) => call === "agents.create" || call === "signingKeys.create",
+          ),
+        ).toEqual(
+          calls.filter((call) => call === "agents.create" || call === "signingKeys.create"),
+        );
+        expect(yield* client.sessionKey.listForOrganization()).toHaveLength(1);
       }),
   );
 
@@ -269,10 +307,15 @@ layer(Live)("1Claw session creation", (it) => {
     it.effect("admits only one concurrent request at the last managed-session slot", () =>
       Effect.gen(function* () {
         const { client, request } = yield* setup;
-        for (let i = 0; i < 4; i++) yield* client.sessionKey.create({ payload: request });
+        for (let i = 0; i < 4; i++)
+          yield* client.sessionKey.create({
+            payload: { ...request, idempotencyKey: crypto.randomUUID() },
+          });
         const results = yield* Effect.all(
           Array.from({ length: 5 }, () =>
-            client.sessionKey.create({ payload: request }).pipe(Effect.result),
+            client.sessionKey
+              .create({ payload: { ...request, idempotencyKey: crypto.randomUUID() } })
+              .pipe(Effect.result),
           ),
           { concurrency: "unbounded" },
         );

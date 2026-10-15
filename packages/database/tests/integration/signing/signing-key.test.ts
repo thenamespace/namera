@@ -4,8 +4,9 @@ import { Effect, Layer, Schema } from "effect";
 import { Email, OrganizationId, SigningKeyId } from "@namera-ai/protocol";
 
 import { Repository, TestDatabase } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
-const PersistenceLayer = Repository.layer.pipe(Layer.provideMerge(TestDatabase.layer));
+const PersistenceLayer = Repository.layer.pipe(Layer.provideMerge(DatabaseTestLayer));
 
 layer(PersistenceLayer)("signing key repository", (it) => {
   it.effect("persists, resolves, and terminally destroys a local passkey", () =>

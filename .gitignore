@@ -74,6 +74,7 @@ lerna-debug.log
 
 # Testing & Coverage
 coverage/
+.vitest/
 test-results/
 *.log
 .jest/
@@ -198,7 +199,7 @@ gas-report.*
 broadcast/**/31337
 
 # Research
-research
+/research/
 
 # Local catalog authoring data and generated uploads
 /catalog/

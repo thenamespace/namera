@@ -1,36 +1,24 @@
 # @namera-ai/utils
 
-Small shared helpers used across Namera. Put a helper here only when it is useful
-to multiple packages and does not depend on an Effect service or application
-state.
-
-See [supporting workspace architecture](../../architecture/packages/supporting.md)
-for the dependency rule that keeps this package free of Effect services and
-application state.
-
-## Structure
-
-- `src/index.ts` — public exports, including `Base64`.
-- `src/id.ts` — shared UUIDv7 generation for application and persistence IDs.
-- `src/text.ts` — shared UTF-8 encoding, decoding, and byte-length helpers.
-
-## Usage
+Private dependency-light helpers shared across Namera: UUIDv7 generation,
+UTF-8 encoding/decoding and byte lengths, and `Base64` from `js-base64`.
 
 ```ts
-import { Base64, encodeUtf8, generateUniqueId } from "@namera-ai/utils";
+import { encodeUtf8, generateUniqueId } from "@namera-ai/utils";
+
+const id = generateUniqueId();
+const bytes = encodeUtf8("Namera");
 ```
 
-Keep this package dependency-light. Effect services, configuration, business
-rules, database logic, and provider adapters belong in their owning packages.
+Keep helpers independent of Effect services, configuration, application state,
+and providers. Stateful workflows belong in their owning package.
 
-## Adding a helper
+## Development
 
-- Add a helper only when at least two packages need the same dependency-light
-  behavior.
-- Keep inputs and outputs explicit and deterministic when possible. A helper
-  that requires configuration, resources, retries, logging, or substitution in
-  tests should be an Effect service in its owning package instead.
-- Use platform cryptography for security-sensitive randomness; do not add
-  `Math.random` helpers.
-- Export the helper from `src/index.ts` and keep provider-specific or domain
-  policy code out of this package.
+```sh
+pnpm --filter @namera-ai/utils typecheck
+pnpm --filter @namera-ai/utils lint
+pnpm --filter @namera-ai/utils build
+```
+
+Exports are defined in [src/index.ts](src/index.ts).

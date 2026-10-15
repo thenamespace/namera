@@ -91,7 +91,11 @@ export const sessionKeyOperation = coreSchema.table(
     check(
       "session_operation_receipt_check",
       sql`
-    (${table.status} IN ('confirmed', 'failed')) = (${table.transactionHash} IS NOT NULL)
+    CASE WHEN ${table.status} = 'failed' AND ${table.transactionHash} IS NULL
+      THEN COALESCE(${table.data}->'submissionRejected' = 'true'::jsonb
+        AND ${table.data}->'broadcastAttempted' = 'true'::jsonb, false)
+      ELSE (${table.status} IN ('confirmed', 'failed')) = (${table.transactionHash} IS NOT NULL)
+    END
     AND (${table.status} IN ('confirmed', 'failed', 'expired', 'cancelled')) = (${table.finishedAt} IS NOT NULL)`,
     ),
     check(

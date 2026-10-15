@@ -1,6 +1,7 @@
 export * from "./execution.js";
 export * from "./credential.js";
 export * from "./provider-connection.js";
+export * from "./signer-provisioning.js";
 export * from "./one-claw.js";
 export * from "./one-claw-provisioning.js";
 export * from "./execution-submission.js";

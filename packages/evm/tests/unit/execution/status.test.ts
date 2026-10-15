@@ -1,16 +1,19 @@
 import { expect, it } from "@effect/vitest";
-import { Effect, Redacted, Result } from "effect";
+import { Effect, Redacted } from "effect";
 
 import { UserOperationHash } from "@namera-ai/protocol";
 import { http } from "viem";
 import { createBundlerClient } from "viem/account-abstraction";
+import { afterEach, vi } from "vitest";
 
 import { getChainDataByCaip2 } from "../../../src/chains/helpers.js";
+import * as chainLookup from "../../../src/chains/helpers.js";
 import { makeExecutionClients } from "../../../src/clients/execution.js";
 import { makeGetEvmUserOperationStatus } from "../../../src/execution/receipt.js";
 
 const hash = UserOperationHash.make(`0x${"11".repeat(32)}`);
 const transactionHash = `0x${"22".repeat(32)}`;
+afterEach(() => vi.restoreAllMocks());
 const pendingOperation = {
   entryPoint: "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
   userOperation: { sender: `0x${"33".repeat(20)}`, nonce: "0x0" },
@@ -51,36 +54,63 @@ it.effect("treats a null Alchemy lookup as unobserved, not rejected or failed", 
   }),
 );
 
-it.effect("keeps observed operations pending receipt verification", () =>
+it.effect("continues read-only observation on a paused chain without inventing rejection", () =>
   Effect.gen(function* () {
-    for (const tx of [undefined, null, transactionHash]) {
-      expect(
-        yield* lookup({
-          ...pendingOperation,
-          ...(tx === undefined ? {} : { transactionHash: tx }),
-        }),
-      ).toEqual({
-        status: "submitted",
-        transactionHash: tx ?? null,
-      });
-    }
+    const chain = getChainDataByCaip2("eip155:1");
+    if (!chain) throw new Error("Missing Ethereum chain");
+    vi.spyOn(chainLookup, "getChainDataByCaip2").mockReturnValue({
+      ...chain,
+      operationsEnabled: false,
+    });
+
+    expect(yield* lookup(null)).toEqual({ status: "not_found", transactionHash: null });
+    expect(yield* lookup(pendingOperation)).toEqual({ status: "submitted", transactionHash: null });
+    expect(yield* lookup({ ...pendingOperation, transactionHash })).toEqual({
+      status: "submitted",
+      transactionHash,
+    });
   }),
 );
 
-it.effect("does not turn RPC failures or malformed responses into absence or rejection", () =>
+it.effect.each([
+  { name: "absent transaction hash", transactionHash: undefined },
+  { name: "null transaction hash", transactionHash: null },
+  { name: "observed transaction hash", transactionHash },
+])("keeps $name pending receipt verification", ({ transactionHash: tx }) =>
   Effect.gen(function* () {
-    for (const effect of [
-      lookup({ code: -32601, message: "Method not found" }, true),
-      lookup({ code: -32000, message: "Provider unavailable" }, true),
-      lookup({ ...pendingOperation, transactionHash: "invalid" }),
-      lookup({ ...pendingOperation, userOperation: null }),
-      lookup({ ...pendingOperation, entryPoint: "invalid" }),
-      lookup({}),
-    ]) {
-      const result = yield* effect.pipe(Effect.result);
-      expect(Result.isFailure(result)).toBe(true);
-      if (Result.isFailure(result))
-        expect(result.failure).toMatchObject({ code: "RECEIPT_LOOKUP_FAILED" });
-    }
+    expect(
+      yield* lookup({
+        ...pendingOperation,
+        ...(tx === undefined ? {} : { transactionHash: tx }),
+      }),
+    ).toEqual({
+      status: "submitted",
+      transactionHash: tx ?? null,
+    });
+  }),
+);
+
+it.effect.each([
+  {
+    name: "unsupported RPC method",
+    response: { code: -32601, message: "Method not found" },
+    rpcError: true,
+  },
+  {
+    name: "provider outage",
+    response: { code: -32000, message: "Provider unavailable" },
+    rpcError: true,
+  },
+  {
+    name: "invalid transaction hash",
+    response: { ...pendingOperation, transactionHash: "invalid" },
+  },
+  { name: "missing operation", response: { ...pendingOperation, userOperation: null } },
+  { name: "invalid EntryPoint", response: { ...pendingOperation, entryPoint: "invalid" } },
+  { name: "empty response", response: {} },
+])("does not interpret $name as absence or rejection", ({ response, rpcError }) =>
+  Effect.gen(function* () {
+    const error = yield* lookup(response, rpcError).pipe(Effect.flip);
+    expect(error).toMatchObject({ _tag: "EvmExecutionError", code: "RECEIPT_LOOKUP_FAILED" });
   }),
 );

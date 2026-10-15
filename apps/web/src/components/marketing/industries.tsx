@@ -13,20 +13,6 @@ import { cn } from "@namera-ai/ui/utils";
 
 import { Container, Reveal, Section } from "#/components/marketing/primitives";
 
-/* -------------------------------------------------------------------------
- * Where this gets used.
- *
- * Two earlier versions of this section argued in prose — a tab per vertical
- * over a panel of capability bullets. Both were a page of reading for a point
- * that is better shown: the same key, issued five different ways.
- *
- * So the section shows the keys. Ten of them drift past, each one a real grant
- * with a name, a meter against its cap, the networks it may touch and the day
- * it dies. The verticals are named once, in a line at the bottom. Nothing here
- * is a live figure and nothing pretends to be — these are samples, the way a
- * product shot is a sample.
- * ---------------------------------------------------------------------- */
-
 type Chain = ChainIconProps["chain"];
 
 type KeyCard = {

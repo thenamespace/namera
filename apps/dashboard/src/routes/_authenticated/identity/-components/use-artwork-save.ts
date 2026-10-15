@@ -35,6 +35,7 @@ export function useArtworkSave(
   const complete = useCompleteWalletSignature();
   const update = useUpdateIdentityRecords();
   const descriptor = useWalletPasskeyOwner(wallet.id);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -42,21 +43,26 @@ export function useArtworkSave(
       abort.current?.abort();
     };
   }, []);
+
   const active = () =>
     mounted.current &&
     canSaveInAuthority(
       authority.current,
       sessionAuthority(queryData(registry.get(currentUserAtom))),
     );
+
   const assertActive = () => {
     if (!active()) throw new DOMException("Editing context changed", "AbortError");
   };
+
   const run = async (draft: ArtworkDraft) => {
     if (busy.current || !active()) return false;
+
     busy.current = true;
     const controller = new AbortController();
     abort.current = controller;
     setProgress("Preparing…");
+
     try {
       assertActive();
       await saveArtwork(draft, uploaded.current, wallet, descriptor.data, {
@@ -95,20 +101,24 @@ export function useArtworkSave(
           }),
         saved,
       });
+
       showSuccessToast({ title: "Profile images saved" });
       return true;
     } catch (error) {
-      if (active())
+      if (active()) {
         showErrorToast(error, {
           title: "Couldn’t save profile images",
           description: "Your changes are kept here. Try again when you’re ready.",
         });
+      }
+
       return false;
     } finally {
       busy.current = false;
       if (active()) setProgress(null);
     }
   };
+
   return {
     run,
     progress,

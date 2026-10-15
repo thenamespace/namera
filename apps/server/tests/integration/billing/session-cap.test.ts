@@ -14,8 +14,46 @@ import {
 } from "../../fixtures/index.js";
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
 import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const TestServerLayer = makeTestServerLayer({ sessions: makeTestEvmSessionService() });
+const activeFixture = makeOwnerSessionTestFixture();
+
+layer(activeFixture.layer)("Active session capacity", (it) => {
+  it.effect("retains installed transaction authority after a signature policy expires", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      yield* signIn(client, testEmail("active-session-expiry@example.com"));
+      const wallet = yield* createTestPasskeyWallet(client);
+      const request = yield* localSessionRequest(wallet.id);
+      const session = yield* client.sessionKey.create({
+        payload: {
+          ...request,
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.add(yield* DateTime.now, { minutes: 1 }),
+            },
+          ],
+        },
+      });
+      expect((yield* activeFixture.confirmOperation(client, session, "install")).status).toBe(
+        "active",
+      );
+      yield* TestClock.adjust("2 minutes");
+      expect(
+        (yield* client.billing.get()).resources.find(({ key }) => key === "local-session-keys")
+          ?.usedAmount,
+      ).toBe(1n);
+      expect((yield* client.sessionKey.get({ params: { sessionKeyId: session.id } })).status).toBe(
+        "active",
+      );
+    }),
+  );
+});
 
 layer(TestServerLayer)("Free v2 session capacity", (it) => {
   it.effect(
@@ -26,11 +64,34 @@ layer(TestServerLayer)("Free v2 session capacity", (it) => {
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail("v2-session-cap@example.com"));
         const wallet = yield* createTestPasskeyWallet(client);
+        const now = yield* DateTime.now;
         for (let index = 0; index < 100; index++) {
+          const request = yield* localSessionRequest(wallet.id, ["eip155:1", "eip155:8453"]);
           yield* client.sessionKey.create({
-            payload: yield* localSessionRequest(wallet.id, ["eip155:1", "eip155:8453"]),
+            payload: {
+              ...request,
+              onchain: {
+                installations: Array.from(
+                  request.onchain.installations,
+                  (installation, network) => ({
+                    ...installation,
+                    validUntil: installation.validUntil + network * 3600,
+                  }),
+                ),
+              },
+              policies: [
+                {
+                  type: "evm.time-window",
+                  version: 1,
+                  startsAt: null,
+                  expiresAt: DateTime.add(now, { minutes: 1 }),
+                },
+              ],
+            },
           });
         }
+        // Signature expiry and expiry on one network must not free transaction capacity.
+        yield* TestClock.setTime(DateTime.toEpochMillis(DateTime.add(now, { minutes: 61 })));
         const resource = (yield* client.billing.get()).resources.find(
           ({ key }) => key === "local-session-keys",
         );
@@ -40,7 +101,7 @@ layer(TestServerLayer)("Free v2 session capacity", (it) => {
           .pipe(Effect.flip);
         expect(denied).toMatchObject({ code: "LIMIT_EXCEEDED", limit: "localSessionKeys" });
         const repository = yield* Repository;
-        const later = DateTime.add(yield* DateTime.now, { hours: 2 });
+        const later = DateTime.add(now, { hours: 3 });
         expect(
           (yield* repository.billing.usage.getForOrganization(owner.actor.organization.id, later))
             .localSessionKeys,

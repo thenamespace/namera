@@ -11,10 +11,10 @@ import { eq, sql } from "drizzle-orm";
 
 import { Database, Repository, TestDatabase, TransactionService } from "../../../src/index.js";
 import { credentials, providerConnections, signingKey } from "../../../src/schema/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
-const port = process.env.NAMERA_TEST_POSTGRES_PORT;
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(port ? TestDatabase.postgresLayer(Number(port)) : TestDatabase.layer),
+  Layer.provideMerge(DatabaseTestLayer),
 );
 const id = Schema.decodeSync(ProviderConnectionId)("01900000-0000-7000-8000-000000000040");
 const credentialId = Schema.decodeSync(CredentialId)("01900000-0000-7000-8000-000000000041");

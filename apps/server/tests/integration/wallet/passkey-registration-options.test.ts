@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
 import { DateTime, Effect } from "effect";
+import { TestClock } from "effect/testing";
 
 import { Repository } from "@namera-ai/database";
 
@@ -27,6 +28,51 @@ const passkeyResponse = (id: string) => ({
 });
 
 layer(TestServerLayer)("passkey registration options route", (it) => {
+  for (const invalidation of ["expiry", "attempts"] as const) {
+    it.effect(`does not persist a wallet after registration ${invalidation}`, () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const owner = yield* signIn(client, testEmail(`registration-${invalidation}@example.com`));
+        const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+        const create = (credentialId: string) =>
+          client.wallet.create({
+            payload: {
+              namespace: "eip155",
+              owner: {
+                type: "passkey",
+                verificationId: registration.verificationId,
+                response: passkeyResponse(credentialId),
+              },
+              metadata: { version: 1, name: "Rejected registration" },
+            },
+          });
+        if (invalidation === "expiry") {
+          yield* TestClock.adjust(300_000);
+        } else {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            expect(yield* create("invalid-passkey").pipe(Effect.flip)).toMatchObject({
+              code: "REGISTRATION_INVALID",
+            });
+          }
+        }
+        expect(yield* create("test-passkey").pipe(Effect.flip)).toMatchObject({
+          _tag: "PasskeyVerificationError",
+        });
+        expect(yield* client.wallet.list()).toEqual([]);
+        const repository = yield* Repository;
+        expect(
+          (yield* repository.auth.verification.findById(registration.verificationId))?.consumedAt,
+        ).toBeNull();
+        expect(
+          (yield* repository.audit.organization.findForOrganization(
+            owner.actor.organization.id,
+          )).filter(({ event }) => event === "wallet.created" || event === "signing_key.created"),
+        ).toEqual([]);
+      }),
+    );
+  }
+
   it.effect("creates tenant-bound P-256 registration options and replaces the prior ceremony", () =>
     Effect.gen(function* () {
       yield* resetTestState();

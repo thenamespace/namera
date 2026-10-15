@@ -16,7 +16,6 @@ Before executing, check that:
 - The key is active and its installation is confirmed on the target network.
 - The installation is within its validity period and allows the recipient,
   contract calls, and amounts you want to use.
-- Every applicable API policy allows the operation.
 
 Configure these in the [Namera dashboard](https://dashboard.namera.ai).
 For a **0.001 ETH** transfer, allow the recipient and a native-token allowance
@@ -28,7 +27,7 @@ that covers the transfer, then approve the installation on that network.
 account's contracts. They define transaction authority, including allowed
 targets, functions, spending allowances, and validity periods.
 
-**API policies** add restrictions to operations made through Namera, such as
+\***\*API policies\*\*** add restrictions to operations made through Namera, such as
 allowed networks, daily spending limits, and gas budgets. All applicable
 policies must pass; one policy cannot override another denial.
 
@@ -91,9 +90,8 @@ console.log(simulation.data);
 ```
 
 Replace the recipient with the address allowed by your key. Simulation does not
-submit a transaction. Check `simulation.data.allowed` for the policy decision;
-`success: true` alone does not mean the call is allowed. Balances and available
-budgets can change before execution.
+submit a transaction or reserve billing allowance. Review the call results;
+balances, installed permissions and available allowance can change before execution.
 
 ## Message and Typed Data Signing
 

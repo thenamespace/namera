@@ -2,9 +2,15 @@
 import type { ComponentProps } from "react";
 
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
-import { HugeiconsIcon, ShieldUserIcon } from "@namera-ai/ui/icons";
+import {
+  HugeiconsIcon,
+  ShieldUserIcon,
+  FileScriptIcon,
+  CoinsSwapIcon,
+  Coins01Icon,
+  FuelStationIcon,
+} from "@namera-ai/ui/icons";
 
-import { evmPolicyDefinitions } from "../data";
 import { NetworksSummary } from "../networks-summary";
 import { SessionPolicyCard } from "../session-policy-card";
 import { onchainPermissionCatalog, type OnchainPermissionInput } from "./catalog";
@@ -27,14 +33,14 @@ export function OnchainPolicyCard({
 }: Props) {
   const icon =
     permission.type === "erc20-token-transfer"
-      ? evmPolicyDefinitions["evm.erc20-token-transfer"].icon
+      ? CoinsSwapIcon
       : permission.type === "native-token-transfer"
-        ? evmPolicyDefinitions["evm.native-spend-limit"].icon
+        ? Coins01Icon
         : permission.type === "gas-limit"
-          ? evmPolicyDefinitions["evm.gas-budget"].icon
+          ? FuelStationIcon
           : permission.type === "root"
             ? ShieldUserIcon
-            : evmPolicyDefinitions["evm.contract-access"].icon;
+            : FileScriptIcon;
   return (
     <SessionPolicyCard
       name={onchainPermissionCatalog[permission.type].name}

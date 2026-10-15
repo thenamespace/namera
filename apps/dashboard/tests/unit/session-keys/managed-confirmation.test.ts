@@ -1,18 +1,38 @@
+import { Schema } from "effect";
+
 import { SessionKeyOperationId } from "@namera-ai/protocol";
-import type { PrepareManagedSessionKeyOperationResponse } from "@namera-ai/protocol/dto";
+import { PrepareManagedSessionKeyOperationResponse } from "@namera-ai/protocol/dto";
 import type { ReviewedManagedOwnerOperation } from "@namera-ai/sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { confirmManagedApproval } from "../../../src/components/session-key-installations/confirm-managed-approval";
+import { managedWallet, preparedWalletTransaction } from "../../fixtures/wallet-transaction";
 
 // SDK tests exercise real envelope validation; this boundary checks user consent sequencing.
 const { validate } = vi.hoisted(() => ({ validate: vi.fn() }));
 vi.mock("@namera-ai/sdk", () => ({ validateManagedOwnerApproval: validate }));
 const operationId = SessionKeyOperationId.make("01950000-0000-7000-8000-000000000001");
+const reviewed: ReviewedManagedOwnerOperation = {
+  chainId: "eip155:1",
+  walletAddress: managedWallet.address,
+  ownerEntityId: 0,
+  callData: "0x12345678",
+  factory: managedWallet.address,
+  factoryData: "0x",
+  sponsor: true,
+};
+const response = Schema.decodeUnknownSync(Schema.toType(PrepareManagedSessionKeyOperationResponse))(
+  {
+    operationId,
+    namespace: "eip155",
+    approval: "1claw",
+    prepared: preparedWalletTransaction.prepared,
+    expiresAt: preparedWalletTransaction.expiresAt,
+  },
+);
 const fixture = () => ({
-  kind: "uninstall" as const,
-  reviewed: {} as ReviewedManagedOwnerOperation,
-  response: { operationId } as PrepareManagedSessionKeyOperationResponse,
+  reviewed,
+  response,
   signal: new AbortController().signal,
   requestConfirmation: vi.fn(async () => true),
   approve: vi.fn(async () => undefined),
@@ -20,8 +40,8 @@ const fixture = () => ({
 
 describe("managed-owner approval consent", () => {
   beforeEach(() => validate.mockReset());
-  it("waits for installation confirmation before approving", async () => {
-    const input = { ...fixture(), kind: "install" as const };
+  it("waits for confirmation before approving the reviewed operation", async () => {
+    const input = fixture();
     let answer!: (confirmed: boolean) => void;
     input.requestConfirmation.mockImplementation(
       () =>
@@ -41,21 +61,14 @@ describe("managed-owner approval consent", () => {
       Number(input.approve.mock.invocationCallOrder[0]),
     );
   });
-  it("does not approve an invalid installation", async () => {
-    const input = { ...fixture(), kind: "install" as const };
-    validate.mockImplementationOnce(() => {
-      throw new Error("Invalid");
-    });
-    await expect(confirmManagedApproval(input)).rejects.toThrow("Invalid");
-    expect(input.requestConfirmation).not.toHaveBeenCalled();
-    expect(input.approve).not.toHaveBeenCalled();
-  });
-  it("does not approve installation after navigation cancels it", async () => {
+  it("does not request confirmation after navigation cancels it", async () => {
     const controller = new AbortController();
     controller.abort();
-    const input = { ...fixture(), kind: "install" as const, signal: controller.signal };
+    const input = { ...fixture(), signal: controller.signal };
     await expect(confirmManagedApproval(input)).resolves.toBe(false);
     expect(input.approve).not.toHaveBeenCalled();
+    expect(input.requestConfirmation).not.toHaveBeenCalled();
+    expect(validate).not.toHaveBeenCalled();
   });
   it("sends only the reviewed operation ID after confirmation and a second validation", async () => {
     const input = fixture();
@@ -72,15 +85,12 @@ describe("managed-owner approval consent", () => {
       Number(input.approve.mock.invocationCallOrder[0]),
     );
   });
-  it.each(["install", "uninstall"] as const)(
-    "does not sign %s when the user cancels",
-    async (kind) => {
-      const input = { ...fixture(), kind };
-      input.requestConfirmation.mockResolvedValue(false);
-      await expect(confirmManagedApproval(input)).resolves.toBe(false);
-      expect(input.approve).not.toHaveBeenCalled();
-    },
-  );
+  it("does not sign when the user cancels", async () => {
+    const input = fixture();
+    input.requestConfirmation.mockResolvedValue(false);
+    await expect(confirmManagedApproval(input)).resolves.toBe(false);
+    expect(input.approve).not.toHaveBeenCalled();
+  });
   it("does not sign after navigating away during confirmation", async () => {
     const input = fixture();
     const controller = new AbortController();

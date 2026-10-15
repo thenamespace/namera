@@ -2,6 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { VFile } from "vfile";
 import { afterEach, expect, test } from "vitest";
 
 import { expandDocSnippets } from "../../src/lib/docs/expand-snippets";
@@ -15,14 +16,11 @@ afterEach(async () => {
 });
 
 function markdownFile(path: string, value: string, dependencies: string[]) {
-  return {
+  return new VFile({
     path,
     value,
     data: { _compiler: { addDependency: (dependency: string) => dependencies.push(dependency) } },
-    toString() {
-      return this.value;
-    },
-  } as Parameters<typeof expandDocSnippets>[0];
+  });
 }
 
 test("expands repeated and nested snippets into the source consumed by every output", async () => {

@@ -2,6 +2,7 @@ import { fumadocsMdx } from "fumadocs-mdx/vite";
 import defineConfig from "klarity/vitest/node";
 
 export default defineConfig({
+  envDir: false,
   plugins: [
     fumadocsMdx({
       index: { target: "vite" },
@@ -9,7 +10,7 @@ export default defineConfig({
       globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
     }),
   ],
-  resolve: { conditions: ["namera-source"] },
+  resolve: { conditions: ["namera-source"], tsconfigPaths: true },
   ssr: {
     noExternal: [/^@namera-ai\//],
     resolve: {
@@ -18,6 +19,7 @@ export default defineConfig({
     },
   },
   test: {
+    include: ["tests/**/*.test.ts"],
     maxWorkers: 2,
     server: { deps: { inline: [/^@namera-ai\//] } },
   },

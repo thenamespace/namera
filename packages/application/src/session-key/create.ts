@@ -12,6 +12,7 @@ import {
 import {
   PolicyId,
   SigningKeyId,
+  SessionKeyId,
   Bytes32,
   SessionKeyCreationError,
   WalletNotFoundError,
@@ -19,7 +20,7 @@ import {
   type OrganizationId,
   type EthereumAddress,
 } from "@namera-ai/protocol";
-import type { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
+import { CreateSessionKeyRequest } from "@namera-ai/protocol/dto";
 import {
   EvmSessionInstallationData,
   type EvmSessionKeyPolicies,
@@ -39,6 +40,7 @@ import { makeCreateNotification } from "#/notification/create";
 import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
 import { makeProvisionOneClawSigner } from "#/oneclaw/provision";
+import { makeSignerProvisioning, type ProvisioningAttempt } from "#/provisioning/lifecycle";
 import { makeLoadPublicSessionOwner } from "#/wallet/public-owner";
 
 import { hashSessionKeyPolicies } from "./hash.js";
@@ -56,12 +58,14 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   const loadViews = yield* makeLoadSessionKeyViews;
   const loadOwner = yield* makeLoadPublicSessionOwner;
   const provisionOneClaw = yield* makeProvisionOneClawSigner;
+  const provisioning = yield* makeSignerProvisioning;
 
-  return Effect.fn("application.sessionKey.create")(
+  const create = Effect.fn("application.sessionKey.create")(
     function* (input: {
       readonly organizationId: OrganizationId;
       readonly actorId: ActorId;
       readonly request: CreateSessionKeyRequest;
+      readonly attempt?: ProvisioningAttempt;
     }) {
       const requestedSigner = input.request.signer;
       const custody = requestedSigner.custody;
@@ -212,6 +216,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               organizationId: input.organizationId,
               actorId: input.actorId,
               purpose: "session",
+              attempt: input.attempt ?? (yield* Effect.die("Managed provisioning attempt missing")),
             }).pipe(
               Effect.catchTags({
                 WalletCustodyUnavailableError: () =>
@@ -294,7 +299,9 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               if (
                 preparedSigner.purpose !== "session" ||
                 !("credentialId" in preparedSigner) ||
-                !("providerConnectionId" in preparedSigner)
+                !("providerConnectionId" in preparedSigner) ||
+                !preparedSigner.credentialId ||
+                !preparedSigner.providerConnectionId
               )
                 return yield* Effect.die("Invalid managed session signer binding");
               const credential = yield* repository.core.credentials.findById(
@@ -424,6 +431,11 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                   },
                 })),
             });
+            if (
+              input.attempt &&
+              !(yield* repository.core.signerProvisioning.complete(input.attempt.lease, created.id))
+            )
+              return yield* new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" });
             return created;
           }),
         )
@@ -446,4 +458,38 @@ export const makeCreateSessionKey = Effect.gen(function* () {
     Effect.trackDuration(sessionKeyCreationDuration),
     Effect.catchTag("DatabaseError", Effect.die),
   );
+
+  return Effect.fn("application.sessionKey.createIdempotent")(function* (
+    input: Omit<Parameters<typeof create>[0], "attempt">,
+  ) {
+    if (input.request.signer.custody === "local") return yield* create(input);
+    const { idempotencyKey, ...request } = Schema.encodeSync(CreateSessionKeyRequest)(
+      input.request,
+    );
+    return yield* provisioning({
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      provider: "1claw",
+      purpose: "session",
+      ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      request,
+      create: (attempt) => create({ ...input, attempt }),
+      completed: (id) =>
+        Effect.gen(function* () {
+          const existing = yield* repository.core.sessionKey
+            .findById(SessionKeyId.make(id), input.organizationId)
+            .pipe(Effect.orDie);
+          if (!existing)
+            return yield* new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" });
+          const [view] = yield* loadViews(input.organizationId, [existing]).pipe(Effect.orDie);
+          if (!view)
+            return yield* new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" });
+          return view;
+        }),
+    }).pipe(
+      Effect.catchTag("SignerProvisioningError", () =>
+        Effect.fail(new SessionKeyCreationError({ code: "PROVIDER_RECOVERY_REQUIRED" })),
+      ),
+    );
+  });
 });

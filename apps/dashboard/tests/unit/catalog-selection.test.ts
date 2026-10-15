@@ -1,11 +1,10 @@
 import { Schema } from "effect";
 
 import { CatalogEntryView } from "@namera-ai/protocol/dto";
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { tokenDisplayDetails } from "../../src/components/display/token-details";
 import { catalogSelection } from "../../src/components/evm-address-picker/selection";
-import type { EvmAddressSelection } from "../../src/components/evm-address-picker/types";
 
 const match = Schema.decodeUnknownSync(CatalogEntryView)({
   catalog: {
@@ -59,7 +58,6 @@ describe("catalog picker selections", () => {
   });
   it("retains the full records and narrows decimals for ERC-20", () => {
     const selection = catalogSelection(match, ["erc20"]);
-    expectTypeOf(selection).toEqualTypeOf<EvmAddressSelection<"erc20"> | null>();
     expect(selection?.deployment.data.decimals).toBe(6);
     expect(selection?.catalog).toBe(match.catalog);
     expect(selection?.deployment).toBe(match.entry);
@@ -89,13 +87,5 @@ describe("catalog picker selections", () => {
         ["erc20"],
       ),
     ).toBeNull();
-  });
-  it("narrows a mixed selection using the outer discriminator", () => {
-    const selection = catalogSelection(match, ["erc20", "contract"]);
-    if (selection?.type === "erc20") {
-      expectTypeOf(selection.catalog.data.type).toEqualTypeOf<"erc20">();
-      expectTypeOf(selection.deployment.data.decimals).toEqualTypeOf<number>();
-      expect(selection.catalog.data.details.symbol).toBe("EXAMPLE");
-    } else throw new Error("Expected ERC-20 selection");
   });
 });

@@ -56,7 +56,7 @@ export function TransactionOverview({
           <Modal.Dialog
             className="w-full sm:max-w-xl"
             {...(description ? { "aria-describedby": descriptionId } : {})}
-            aria-busy={isPending}
+            render={(props) => <section {...props} aria-busy={isPending} />}
           >
             {!isPending ? <Modal.CloseTrigger /> : null}
             <Modal.Header>

@@ -14,7 +14,7 @@ import {
 import { makeExecutionLifecycle } from "#/execution/lifecycle";
 
 const reconciliationPolicy = {
-  batchSize: 20,
+  batchSize: 5,
   concurrency: 5,
   leaseDuration: Duration.minutes(2),
   retryDelay: Duration.seconds(15),
@@ -95,7 +95,11 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
       yield* DateTime.now,
       DateTime.addDuration(submission.createdAt, reconciliationPolicy.broadcastLifetime),
     );
-    if (submission.status === "prepared" && !broadcastExpired) {
+    if (
+      submission.status === "prepared" &&
+      submission.data.broadcastAttempted === false &&
+      !broadcastExpired
+    ) {
       // Persist before RPC: a crash or lost response must survive lease takeover.
       const attempt = yield* repository.core.executionSubmission.recordBroadcastAttempt({
         id: submission.id,
@@ -118,7 +122,6 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
       }
 
       const definitivelyRejected =
-        submission.data.broadcastAttempted !== true &&
         Predicate.isTagged(submitted.failure, "EvmExecutionError") &&
         submitted.failure.code === "SUBMISSION_REJECTED";
 
@@ -146,20 +149,11 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
         });
         return;
       }
-      if (status.success.status === "rejected") {
-        yield* lifecycle.release({
-          organizationId: submission.organizationId,
-          actorId: submission.actorId,
-          submissionId: submission.id,
-          sessionKey,
-          stage: "submit",
-          leaseToken,
-        });
-        return;
-      }
       if (
         definitivelyRejected &&
-        (status.success.status === "not_found" || status.success.status === "not_submitted")
+        (status.success.status === "not_found" ||
+          status.success.status === "not_submitted" ||
+          status.success.status === "rejected")
       ) {
         yield* lifecycle.release({
           organizationId: submission.organizationId,
@@ -248,24 +242,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
     const status = yield* evm.execution
       .getStatus({ chainId: signed.chainId, userOperationHash: signed.userOperationHash })
       .pipe(Effect.result);
-    if (Result.isSuccess(status) && status.success.status === "rejected") {
-      yield* lifecycle.release({
-        organizationId: submission.organizationId,
-        actorId: submission.actorId,
-        submissionId: submission.id,
-        sessionKey,
-        stage: "receipt",
-        leaseToken,
-      });
-      yield* Metric.update(
-        Metric.withAttributes(executionReconciliations, {
-          namespace: submission.namespace,
-          result: "failed",
-        }),
-        1,
-      );
-      return;
-    }
+    // A later rejection or absent lookup cannot disprove an earlier accepted send.
     yield* retry(
       submission,
       leaseToken,
@@ -300,6 +277,7 @@ export const makeExecutionReconciliation = Effect.gen(function* () {
         submissions,
         (submission) =>
           reconcileOne(submission, leaseToken).pipe(
+            Effect.timeout(Duration.seconds(60)),
             Effect.catch(() =>
               // Provider/database causes can contain signed envelopes or credentials.
               Effect.logError("execution.reconciliation.failed").pipe(

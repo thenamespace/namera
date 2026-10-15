@@ -8,21 +8,13 @@ import { Database, Repository } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 
 import { handledApi } from "../../fixtures/http-api-test.js";
-import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
-import { createTestPasskeyWallet } from "../../fixtures/local-session.js";
+import { makeTestApiClient, signIn, testEmail } from "../../fixtures/index.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+import { setupPasskeyWalletOwner } from "../../fixtures/passkey-wallet-owner.js";
 
 const fixture = makeOwnerSessionTestFixture();
 const setup = Effect.gen(function* () {
-  yield* resetTestState();
-  const owner = yield* signIn(
-    yield* makeTestApiClient,
-    testEmail(`${crypto.randomUUID()}@example.com`),
-  );
-  const client = yield* handledApi(NameraApi, {
-    headers: { cookie: `auth-token=${owner.cookie.value}`, origin: "http://dashboard.test" },
-  });
-  const wallet = yield* createTestPasskeyWallet(client);
+  const { client, author: owner, wallet } = yield* setupPasskeyWalletOwner("cancellation");
   const request = {
     params: { walletId: wallet.id },
     headers: { "idempotency-key": "cancel-wallet" },

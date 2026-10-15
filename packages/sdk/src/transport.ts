@@ -19,6 +19,7 @@ import { NAMERA_API_ORIGIN } from "./defaults.js";
 
 type NameraClientBaseConfig = {
   readonly baseUrl?: string;
+  /** Trusted Fetch implementation; must honor the SDK's manual redirect policy. */
   readonly fetch?: NameraFetch;
   readonly resolveSessionSigner?: ResolveSessionSigner;
   /** Disable automatic Node key-store access. Explicit resolvers still take precedence. */
@@ -122,9 +123,10 @@ const isTransientRequestError = (error: unknown): boolean => {
   if (Predicate.isTagged(error, "InternalServerError")) return true;
   if (!HttpClientError.isHttpClientError(error)) return false;
   if (error.reason instanceof HttpClientError.TransportError) return true;
-  if (!(error.reason instanceof HttpClientError.StatusCodeError)) return false;
-
-  return error.reason.response.status === 408 || error.reason.response.status >= 500;
+  // Undeclared gateway responses can fail decoding rather than status validation.
+  // Use the received status, never the decoding failure alone, to allow a retry.
+  const status = error.response?.status;
+  return status !== undefined && (status === 408 || (status >= 500 && status <= 599));
 };
 
 const transientRetrySchedule = Schedule.exponential("100 millis");
@@ -162,21 +164,28 @@ export class NameraTransport {
     // Effect failures remain fully typed until this boundary. Declared HttpApi
     // errors are preserved as `cause`; only transport and decoding failures are
     // normalized into SDK infrastructure errors.
-    const handled = Effect.matchCause(effect, {
-      onFailure: (cause) =>
-        failure<A, NameraEndpointError<E>>(
-          Option.match(Cause.findErrorOption(cause), {
-            onNone: (): NameraSdkError<NameraEndpointError<E>> => ({
-              kind: "unexpected",
-              message: "The SDK encountered an unexpected failure.",
-              status: null,
-              cause: Cause.squash(cause),
+    // Manual redirects return a non-success status instead of a retryable network
+    // error, without forwarding credentials or replaying a mutation at Location.
+    const handled = Effect.matchCause(
+      Effect.provideService(effect, FetchHttpClient.RequestInit, {
+        redirect: "manual",
+      }),
+      {
+        onFailure: (cause) =>
+          failure<A, NameraEndpointError<E>>(
+            Option.match(Cause.findErrorOption(cause), {
+              onNone: (): NameraSdkError<NameraEndpointError<E>> => ({
+                kind: "unexpected",
+                message: "The SDK encountered an unexpected failure.",
+                status: null,
+                cause: Cause.squash(cause),
+              }),
+              onSome: (error) => toSdkError<E>(error),
             }),
-            onSome: (error) => toSdkError<E>(error),
-          }),
-        ),
-      onSuccess: (value) => success<A, NameraEndpointError<E>>(value),
-    });
+          ),
+        onSuccess: (value) => success<A, NameraEndpointError<E>>(value),
+      },
+    );
 
     return Effect.runPromise(
       this.#fetch === undefined

@@ -14,23 +14,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { Container, Reveal, Section, SectionIntro } from "#/components/marketing/primitives";
 
-/* -------------------------------------------------------------------------
- * The playground.
- *
- * A swap on the left, the key that is allowed to make it on the right, and
- * the decision underneath the policy rather than under the swap — because the
- * decision belongs to the policy, not to the request.
- *
- * One pair, two networks, and different limits on each: the same swap that
- * goes through on Base is refused on Ethereum, which is the fastest way to
- * show that the limits are real and per-network.
- *
- * Run evaluates in order and stops at the first failure, the way the real
- * checker does. Rules after a refusal are marked not reached rather than
- * passing — a demo that fakes that is lying about the one thing this page is
- * trying to prove.
- * ---------------------------------------------------------------------- */
-
 type TokenId = "ETH" | "USDC";
 type NetworkId = "ethereum" | "base";
 

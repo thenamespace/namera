@@ -21,7 +21,7 @@ const metadata = (name: string) => ({ version: 1 as const, name });
 
 layer(executionFixture.layer)("execution routes", (it) => {
   it.effect(
-    "simulates calls and policy eligibility without consuming limits or billing usage",
+    "keeps simulation read-only and ignores signature-only restrictions for execution",
     () =>
       Effect.gen(function* () {
         yield* resetTestState();
@@ -33,24 +33,16 @@ layer(executionFixture.layer)("execution routes", (it) => {
             ...(yield* localSessionRequest(wallet.id)),
             metadata: metadata("Simulation agent"),
             policies: [
+              { type: "evm.chain-allowlist", version: 1, chainIds: ["eip155:10"] },
               {
                 type: "evm.time-window",
                 version: 1,
-                startsAt: null,
+                startsAt: DateTime.addDuration(yield* DateTime.now, Duration.hours(1)),
                 expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
-              },
-              {
-                type: "evm.native-spend-limit",
-                version: 1,
-                limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 1n }],
               },
             ],
           },
         });
-        const spendPolicy = sessionKey.policies.find(
-          (policy) => policy.type === "evm.native-spend-limit",
-        );
-        if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
         expect(
           (yield* executionFixture.confirmOperation(client, sessionKey, "install")).status,
         ).toBe("active");
@@ -85,185 +77,156 @@ layer(executionFixture.layer)("execution routes", (it) => {
           callsSucceeded: true,
           allowed: true,
         });
-        const denied = yield* simulate(2n);
-        expect(denied).toMatchObject({
-          callsSucceeded: true,
-          allowed: false,
-          denials: [
-            {
-              sessionKeyId: sessionKey.id,
-              policyId: spendPolicy.id,
-              code: "NATIVE_SPEND_LIMIT_EXCEEDED",
-            },
-          ],
-        });
-
-        const repository = yield* Repository;
-        expect(
-          yield* repository.core.sessionKeyPolicyState.findForPolicy(
-            owner.actor.organization.id,
-            sessionKey.id,
-            spendPolicy.id,
-          ),
-        ).toEqual([]);
+        expect(yield* simulate(2n)).toMatchObject({ callsSucceeded: true, allowed: true });
         yield* setApiKey();
         yield* setAuthToken(owner.cookie.value);
         expect(
           (yield* client.billing.get()).meters.find(({ key }) => key === "execution.mainnet")
             ?.consumedAmount,
         ).toBe(1n);
-      }),
-  );
-
-  it.effect(
-    "authenticates an API key, settles policy state, and returns an idempotent receipt",
-    () =>
-      Effect.gen(function* () {
-        yield* resetTestState();
-        const client = yield* makeTestApiClient;
-        const owner = yield* signIn(client, testEmail("execution-owner@example.com"));
-        // Execution confirmations remain in-app only, even with an email preference.
-        yield* client.notification.updatePreference({
-          payload: {
-            organizationId: owner.actor.organization.id,
-            category: "organization",
-            topic: "executions",
-            channel: "email",
-            enabled: true,
-          },
-        });
-        const wallet = yield* createTestPasskeyWallet(client, "Treasury");
-        const sessionKey = yield* client.sessionKey.create({
-          payload: {
-            ...(yield* localSessionRequest(wallet.id)),
-            metadata: metadata("Treasury automation"),
-            policies: [
-              {
-                type: "evm.time-window",
-                version: 1,
-                startsAt: null,
-                expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
-              },
-              {
-                type: "evm.native-spend-limit",
-                version: 1,
-                limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
-              },
-            ],
-          },
-        });
-        expect(
-          (yield* executionFixture.confirmOperation(client, sessionKey, "install")).status,
-        ).toBe("active");
-        const apiKey = yield* client.apiKey.create({
-          payload: {
-            metadata: metadata("Execution agent"),
-            durationDays: 7,
-            sessionKeyIds: [sessionKey.id],
-          },
-        });
         yield* setAuthToken();
         yield* setApiKey(apiKey.key);
-
-        const request = {
-          headers: { "idempotency-key": "execution-1" },
+        const submitted = yield* executeRequest(client, {
+          headers: { "idempotency-key": "signature-policy-independent-execution" },
           payload: {
-            namespace: "eip155" as const,
+            namespace: "eip155",
             walletId: wallet.id,
             sessionKeyId: sessionKey.id,
-            chainId: "eip155:1" as const,
-            calls: [
-              {
-                to: wallet.address,
-                value: 4n,
-                data: "0x" as const,
-              },
-            ],
-          },
-        };
-        const result = yield* executeRequest(client, request);
-        expect(result.status).toBe("confirmed");
-        if (result.status !== "confirmed") return yield* Effect.die("Expected a receipt");
-        expect(result.receipt.success).toBe(true);
-        const replay = yield* executeRequest(client, request);
-        if (replay.status !== "confirmed") return yield* Effect.die("Expected a receipt");
-        expect(replay.executionId).toBe(result.executionId);
-        const explicitSponsoredReplay = yield* executeRequest(client, {
-          ...request,
-          payload: { ...request.payload, sponsor: true },
-        });
-        if (explicitSponsoredReplay.status !== "confirmed") {
-          return yield* Effect.die("Expected a receipt");
-        }
-        expect(explicitSponsoredReplay.executionId).toBe(result.executionId);
-
-        const unsponsored = yield* executeRequest(client, {
-          headers: { "idempotency-key": "execution-unsponsored" },
-          payload: {
-            ...request.payload,
-            sponsor: false,
-            calls: [{ to: wallet.address, value: 0n, data: "0x" }],
+            chainId: "eip155:1",
+            calls: [{ to: wallet.address, value: 1n, data: "0x" }],
           },
         });
-        expect(unsponsored.status).toBe("confirmed");
-
-        const repository = yield* Repository;
-        expect(
-          yield* repository.core.execution.findById(
-            result.executionId,
-            owner.actor.organization.id,
-          ),
-        ).toMatchObject({
-          executionSubmissionId: result.submissionId,
-        });
-        const nativeSpendLimit = sessionKey.policies.find(
-          (policy) => policy.type === "evm.native-spend-limit",
-        );
-        if (nativeSpendLimit === undefined) {
-          return yield* Effect.die("Expected a native spend limit policy");
-        }
-        const states = yield* repository.core.sessionKeyPolicyState.findForPolicy(
-          owner.actor.organization.id,
-          sessionKey.id,
-          nativeSpendLimit.id,
-        );
-        expect(states[0]?.data).toEqual({ version: 1, spent: "4", reserved: "0" });
-        yield* setApiKey();
-        yield* setAuthToken(owner.cookie.value);
-        yield* (yield* Application).billing.reconcile();
-        const billing = yield* client.billing.get();
-        expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
-          3n,
-        );
-        expect(billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount).toBe(
-          32_400n,
-        );
-        expect(
-          (yield* repository.audit.organization.findForOrganization(
-            owner.actor.organization.id,
-          )).some(({ event }) => event === "execution.confirmed"),
-        ).toBe(true);
-
-        const notifications = yield* repository.notification.inbox.listForUser({
-          userId: owner.actor.user.id,
-          limit: 30,
-          now: yield* DateTime.now,
-        });
-        const confirmation = notifications.find(
-          ({ notification }) =>
-            notification.type === "execution.confirmed" &&
-            notification.resourceId === result.executionId,
-        );
-        expect(confirmation).toBeDefined();
-        expect(confirmation?.recipient.emailJobId).toBeNull();
-        expect(confirmation?.notification.data).toMatchObject({
-          chainId: "eip155:1",
-          transactionHash: result.receipt.transactionHash,
-        });
+        expect(submitted.status).toBe("confirmed");
       }),
   );
 
-  it.effect("rejects missing grants, denied policies, and conflicting idempotency requests", () =>
+  it.effect("authenticates an API key, settles billing, and returns an idempotent receipt", () =>
+    Effect.gen(function* () {
+      yield* resetTestState();
+      const client = yield* makeTestApiClient;
+      const owner = yield* signIn(client, testEmail("execution-owner@example.com"));
+      // Execution confirmations remain in-app only, even with an email preference.
+      yield* client.notification.updatePreference({
+        payload: {
+          organizationId: owner.actor.organization.id,
+          category: "organization",
+          topic: "executions",
+          channel: "email",
+          enabled: true,
+        },
+      });
+      const wallet = yield* createTestPasskeyWallet(client, "Treasury");
+      const sessionKey = yield* client.sessionKey.create({
+        payload: {
+          ...(yield* localSessionRequest(wallet.id)),
+          metadata: metadata("Treasury automation"),
+          policies: [
+            {
+              type: "evm.time-window",
+              version: 1,
+              startsAt: null,
+              expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
+            },
+          ],
+        },
+      });
+      expect((yield* executionFixture.confirmOperation(client, sessionKey, "install")).status).toBe(
+        "active",
+      );
+      const apiKey = yield* client.apiKey.create({
+        payload: {
+          metadata: metadata("Execution agent"),
+          durationDays: 7,
+          sessionKeyIds: [sessionKey.id],
+        },
+      });
+      yield* setAuthToken();
+      yield* setApiKey(apiKey.key);
+
+      const request = {
+        headers: { "idempotency-key": "execution-1" },
+        payload: {
+          namespace: "eip155" as const,
+          walletId: wallet.id,
+          sessionKeyId: sessionKey.id,
+          chainId: "eip155:1" as const,
+          calls: [
+            {
+              to: wallet.address,
+              value: 4n,
+              data: "0x" as const,
+            },
+          ],
+        },
+      };
+      const result = yield* executeRequest(client, request);
+      expect(result.status).toBe("confirmed");
+      if (result.status !== "confirmed") return yield* Effect.die("Expected a receipt");
+      expect(result.receipt.success).toBe(true);
+      const replay = yield* executeRequest(client, request);
+      if (replay.status !== "confirmed") return yield* Effect.die("Expected a receipt");
+      expect(replay.executionId).toBe(result.executionId);
+      const explicitSponsoredReplay = yield* executeRequest(client, {
+        ...request,
+        payload: { ...request.payload, sponsor: true },
+      });
+      if (explicitSponsoredReplay.status !== "confirmed") {
+        return yield* Effect.die("Expected a receipt");
+      }
+      expect(explicitSponsoredReplay.executionId).toBe(result.executionId);
+
+      const unsponsored = yield* executeRequest(client, {
+        headers: { "idempotency-key": "execution-unsponsored" },
+        payload: {
+          ...request.payload,
+          sponsor: false,
+          calls: [{ to: wallet.address, value: 0n, data: "0x" }],
+        },
+      });
+      expect(unsponsored.status).toBe("confirmed");
+
+      const repository = yield* Repository;
+      expect(
+        yield* repository.core.execution.findById(result.executionId, owner.actor.organization.id),
+      ).toMatchObject({
+        executionSubmissionId: result.submissionId,
+      });
+      yield* setApiKey();
+      yield* setAuthToken(owner.cookie.value);
+      yield* (yield* Application).billing.reconcile();
+      const billing = yield* client.billing.get();
+      expect(billing.meters.find(({ key }) => key === "execution.mainnet")?.consumedAmount).toBe(
+        3n,
+      );
+      expect(billing.meters.find(({ key }) => key === "gas-sponsorship")?.consumedAmount).toBe(
+        32_400n,
+      );
+      expect(
+        (yield* repository.audit.organization.findForOrganization(
+          owner.actor.organization.id,
+        )).some(({ event }) => event === "execution.confirmed"),
+      ).toBe(true);
+
+      const notifications = yield* repository.notification.inbox.listForUser({
+        userId: owner.actor.user.id,
+        limit: 30,
+        now: yield* DateTime.now,
+      });
+      const confirmation = notifications.find(
+        ({ notification }) =>
+          notification.type === "execution.confirmed" &&
+          notification.resourceId === result.executionId,
+      );
+      expect(confirmation).toBeDefined();
+      expect(confirmation?.recipient.emailJobId).toBeNull();
+      expect(confirmation?.notification.data).toMatchObject({
+        chainId: "eip155:1",
+        transactionHash: result.receipt.transactionHash,
+      });
+    }),
+  );
+
+  it.effect("rejects conflicting idempotency requests", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
@@ -279,11 +242,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
               version: 1,
               startsAt: null,
               expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
-            },
-            {
-              type: "evm.native-spend-limit",
-              version: 1,
-              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 1n }],
             },
           ],
         },
@@ -312,11 +270,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
           },
         });
 
-      expect(yield* execute(2n, "denied").pipe(Effect.flip)).toMatchObject({
-        _tag: "ExecutionError",
-        code: "POLICY_DENIED",
-        policyCode: "NATIVE_SPEND_LIMIT_EXCEEDED",
-      });
       yield* execute(1n, "same-key");
       expect(yield* execute(0n, "same-key").pipe(Effect.flip)).toMatchObject({
         _tag: "ExecutionError",
@@ -343,11 +296,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
               version: 1,
               startsAt: null,
               expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
-            },
-            {
-              type: "evm.native-spend-limit",
-              version: 1,
-              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
             },
           ],
         },
@@ -430,17 +378,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
         owner.actor.organization.id,
       );
       expect(events.filter(({ event }) => event === "execution.confirmed")).toHaveLength(2);
-      const spendPolicy = sessionKey.policies.find(
-        (policy) => policy.type === "evm.native-spend-limit",
-      );
-      if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
-      expect(
-        yield* repository.core.sessionKeyPolicyState.findForPolicy(
-          owner.actor.organization.id,
-          sessionKey.id,
-          spendPolicy.id,
-        ),
-      ).toMatchObject([{ data: { version: 1, spent: "4", reserved: "0" } }]);
       yield* setApiKey();
       yield* setAuthToken(owner.cookie.value);
       const billing = yield* client.billing.get();
@@ -456,7 +393,7 @@ layer(executionFixture.layer)("execution routes", (it) => {
     }),
   );
 
-  it.effect("releases policy reservations after a definitive receipt failure", () =>
+  it.effect("releases billing reservations after a definitive receipt failure", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const testExecution = yield* TestEvmExecution;
@@ -474,11 +411,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
               version: 1,
               startsAt: null,
               expiresAt: DateTime.addDuration(yield* DateTime.now, Duration.days(1)),
-            },
-            {
-              type: "evm.native-spend-limit",
-              version: 1,
-              limits: [{ chainId: "eip155:1", period: "lifetime", maxAmount: 10n }],
             },
           ],
         },
@@ -530,17 +462,6 @@ layer(executionFixture.layer)("execution routes", (it) => {
           params: { submissionId: submitted.submissionId },
         }),
       ).toMatchObject({ status: "failed", submissionId: submitted.submissionId });
-      const spendPolicy = sessionKey.policies.find(
-        (policy) => policy.type === "evm.native-spend-limit",
-      );
-      if (spendPolicy === undefined) return yield* Effect.die("Expected spend policy");
-      expect(
-        yield* repository.core.sessionKeyPolicyState.findForPolicy(
-          owner.actor.organization.id,
-          sessionKey.id,
-          spendPolicy.id,
-        ),
-      ).toMatchObject([{ data: { version: 1, spent: "0", reserved: "0" } }]);
       yield* (yield* Application).billing.reconcile();
       const period = yield* repository.billing.period.findOpen(owner.actor.organization.id);
       if (period === undefined) return yield* Effect.die("Expected billing period");

@@ -5,7 +5,7 @@ import { cn } from "@thenamespace/uikit";
 import { HugeiconsIcon } from "@thenamespace/uikit/icons";
 
 import { iconMap } from "./data.js";
-import { getEmojiBackgroundColor } from "./helpers.js";
+import { getEmojiBackgroundColor } from "./emoji-colors.js";
 
 export type IconPreviewSize = "xs" | "sm" | "md" | "lg";
 
@@ -39,6 +39,8 @@ export function IconPreview({ value, size = "md", className }: IconPreviewProps)
 
   useEffect(() => {
     if (value.type === "emoji") {
+      // Canvas sampling depends on the browser's emoji font, so it runs after mount.
+      // oxlint-disable-next-line react/set-state-in-effect
       setEmojiBackground(getEmojiBackgroundColor(value.value, 0.16));
     }
   }, [value]);

@@ -82,6 +82,20 @@ export function enforceActor(
   return enforceActorEffect(props);
 }
 
+export const enforceWalletOwner = Effect.fnUntraced(function* (actor: CurrentActorResponse) {
+  const user = yield* enforceActor({
+    actor,
+    allowedActors: ["user"],
+    requiredPermissions: { user: ["wallet:update"] },
+  });
+
+  if (user.role.type !== "system" || user.role.key !== "owner") {
+    return yield* new HttpApiError.Forbidden();
+  }
+
+  return user;
+});
+
 export const toActorReadScope = (
   data: ActorData<"user" | "api-key" | "cli" | "mcp">,
 ): ActorReadScope =>

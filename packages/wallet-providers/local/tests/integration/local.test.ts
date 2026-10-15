@@ -1,10 +1,9 @@
 import { createHash, createPublicKey, verify } from "node:crypto";
-import { access, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { access, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { expect, it } from "@effect/vitest";
-import { ConfigProvider, Effect, Layer, Schema } from "effect";
+import { ConfigProvider, Effect, Schema } from "effect";
 
 import { SigningKeyId } from "@namera-ai/protocol";
 import { p256 } from "@noble/curves/nist.js";
@@ -13,8 +12,9 @@ import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { LocalConfig } from "../../src/config.js";
 import { LocalService } from "../../src/index.js";
 import { CreateKeyInput } from "../../src/schemas.js";
+import { localLayer, withLocalService, readPrivateKey } from "../fixtures/filesystem.js";
 
-it.effect("preserves the pre-split default key directory", () =>
+it.effect("defaults to the repository wallet-key directory", () =>
   Effect.gen(function* () {
     const config = yield* LocalConfig;
     expect(config.directory).toBe(
@@ -42,21 +42,11 @@ it.effect("reopens persisted keys without overwriting them", () =>
       });
       expect(yield* Effect.promise(() => readFile(path, "utf8"))).toBe(original);
 
-      const message = new TextEncoder().encode("existing key after provider split");
+      const message = new TextEncoder().encode("existing key after reopening the provider");
       const signature = yield* Effect.gen(function* () {
         const reopened = yield* LocalService;
         return yield* reopened.signMessage({ algorithm: "p256", data: key.data, message });
-      }).pipe(
-        Effect.provide(
-          LocalService.layer.pipe(
-            Layer.provide(
-              ConfigProvider.layer(
-                ConfigProvider.fromUnknown({ WALLET_KEYS_LOCAL_DIRECTORY: directory }),
-              ),
-            ),
-          ),
-        ),
-      );
+      }).pipe(Effect.provide(localLayer(directory)));
       expect(
         verify("sha256", message, createPublicKey(JSON.parse(original).privateKeyPem), signature),
       ).toBe(true);
@@ -81,42 +71,6 @@ const signingKeyIds = {
   disabled: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000004"),
   destroyed: Schema.decodeSync(SigningKeyId)("0198a6f0-0000-7000-8000-000000000005"),
 } as const;
-
-const withLocalService = <A, E>(
-  makeEffect: (directory: string) => Effect.Effect<A, E, LocalService>,
-) =>
-  Effect.acquireUseRelease(
-    Effect.promise(() => mkdtemp(join(tmpdir(), "namera-wallet-keys-"))),
-    (directory) =>
-      makeEffect(directory).pipe(
-        Effect.provide(
-          LocalService.layer.pipe(
-            Layer.provide(
-              ConfigProvider.layer(
-                ConfigProvider.fromUnknown({ WALLET_KEYS_LOCAL_DIRECTORY: directory }),
-              ),
-            ),
-          ),
-        ),
-      ),
-    (directory) => Effect.promise(() => rm(directory, { recursive: true, force: true })),
-  );
-
-const createLocalKey = Effect.fn("wallet-providers.local.test.createLocalKey")(function* (
-  input: CreateKeyInput,
-) {
-  const local = yield* LocalService;
-  const key = yield* local.createKey(input);
-  return key;
-});
-
-const readPrivateKey = Effect.fn("wallet-providers.local.test.readPrivateKey")(function* (
-  directory: string,
-  fileName: string,
-) {
-  const encoded = yield* Effect.promise(() => readFile(join(directory, fileName), "utf8"));
-  return (JSON.parse(encoded) as { readonly privateKeyPem: string }).privateKeyPem;
-});
 
 it.effect("rejects 1Claw creation without creating local key material", () =>
   withLocalService((directory) =>
@@ -149,7 +103,7 @@ it.effect("creates keys and signs messages with each supported algorithm", () =>
       ] as const;
 
       for (const input of inputs) {
-        const key = yield* createLocalKey(Schema.decodeUnknownSync(CreateKeyInput)(input));
+        const key = yield* local.createKey(Schema.decodeUnknownSync(CreateKeyInput)(input));
         const signature = yield* local.signMessage({
           algorithm: input.algorithm,
           data: key.data,
@@ -187,7 +141,7 @@ it.effect("signs caller-provided hashes without hashing them again", () =>
       ] as const;
 
       for (const input of inputs) {
-        const key = yield* createLocalKey(Schema.decodeUnknownSync(CreateKeyInput)(input));
+        const key = yield* local.createKey(Schema.decodeUnknownSync(CreateKeyInput)(input));
         const signature = yield* local.signDigest({
           algorithm: input.algorithm,
           data: key.data,
@@ -210,7 +164,7 @@ it.effect("rejects signing after a local key is disabled", () =>
   withLocalService(() =>
     Effect.gen(function* () {
       const local = yield* LocalService;
-      const key = yield* createLocalKey({
+      const key = yield* local.createKey({
         id: signingKeyIds.disabled,
         algorithm: "p256",
         protectionLevel: "software",
@@ -234,7 +188,7 @@ it.effect("destroys local key material", () =>
   withLocalService((directory) =>
     Effect.gen(function* () {
       const local = yield* LocalService;
-      const key = yield* createLocalKey({
+      const key = yield* local.createKey({
         id: signingKeyIds.destroyed,
         algorithm: "ed25519",
         protectionLevel: "software",
@@ -250,6 +204,53 @@ it.effect("destroys local key material", () =>
       );
 
       expect(exists).toBe(false);
+      expect(
+        yield* local
+          .signMessage({ algorithm: "ed25519", data: key.data, message: new Uint8Array([1]) })
+          .pipe(Effect.flip),
+      ).toMatchObject({ operation: "sign" });
+      yield* local.destroyKey({ data: key.data });
+    }),
+  ),
+);
+
+it.effect.each([
+  { name: "truncated JSON", contents: '{"version":' },
+  {
+    name: "unsupported file version",
+    contents: JSON.stringify({
+      version: 2,
+      algorithm: "p256",
+      status: "active",
+      privateKeyPem: "invalid",
+    }),
+  },
+  {
+    name: "invalid private material",
+    contents: JSON.stringify({
+      version: 1,
+      algorithm: "p256",
+      status: "active",
+      privateKeyPem: "invalid",
+    }),
+  },
+] as const)("rejects signing from $name without rewriting the key file", ({ contents }) =>
+  withLocalService((directory) =>
+    Effect.gen(function* () {
+      const local = yield* LocalService;
+      const key = yield* local.createKey({
+        id: signingKeyIds.p256,
+        algorithm: "p256",
+        protectionLevel: "software",
+      });
+      const path = join(directory, key.data.fileName);
+      yield* Effect.promise(() => writeFile(path, contents, "utf8"));
+      expect(
+        yield* local
+          .signMessage({ algorithm: "p256", data: key.data, message: new Uint8Array([1]) })
+          .pipe(Effect.flip),
+      ).toMatchObject({ _tag: "LocalKeyError", operation: "sign" });
+      expect(yield* Effect.promise(() => readFile(path, "utf8"))).toBe(contents);
     }),
   ),
 );

@@ -23,18 +23,18 @@ export const CreateEvmTimeWindowPolicy = Schema.Struct(TimeWindowFields)
   .check(validTimeWindow)
   .annotate({
     identifier: "CreateEvmTimeWindowPolicy",
-    description: "A stateless time window for an EVM session key",
+    description: "A signing time window for an EVM session key",
   });
 
 export const EvmTimeWindowPolicy = Schema.Struct({
   id: PolicyId,
-  appliesTo: Schema.Literal("both"),
+  appliesTo: Schema.Literal("signature"),
   ...TimeWindowFields,
 })
   .check(validTimeWindow)
   .annotate({
     identifier: "EvmTimeWindowPolicy",
-    description: "A persisted stateless time window for an EVM session key",
+    description: "A persisted signing time window for an EVM session key",
   });
 
 export type CreateEvmTimeWindowPolicy = typeof CreateEvmTimeWindowPolicy.Type;

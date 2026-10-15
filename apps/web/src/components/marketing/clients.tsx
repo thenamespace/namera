@@ -3,18 +3,6 @@ import { cn } from "@namera-ai/ui/utils";
 
 import { Container, Reveal, Section, SectionIntro } from "#/components/marketing/primitives";
 
-/* -------------------------------------------------------------------------
- * Every client gets its own grant.
- *
- * Commands come from apps/cli/README.md, not from imagination. The MCP is a
- * local stdio server the client launches — `namera mcp serve` — so there is no
- * hosted URL to paste and no `--transport http` anywhere on this page.
- *
- * The three cards carry the partner's own colour, which is the only saturated
- * colour on the site. The mark is a slot: drop the real SVG into
- * `packages/ui/src/icons/brand/` and swap the placeholder in MARKS below.
- * ---------------------------------------------------------------------- */
-
 /*
  * The code block is cut off by the card rather than wrapped inside it: it bleeds
  * past the right padding and fades out, which is what makes a card read as a

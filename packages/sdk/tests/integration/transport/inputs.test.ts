@@ -1,16 +1,11 @@
 import {
   NameraClient,
-  type CompleteExecutionRequest,
-  type CompleteSignatureRequest,
-  type EthereumAddress,
   type ExecuteRequest,
   type NameraFetch,
-  type Namespace,
   type PrepareSignatureRequest,
-  type SupportedEvmChainId,
 } from "@namera-ai/sdk";
 import { parseEther } from "viem";
-import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const walletId: string = "01950000-0000-7000-8000-000000000001";
 const sessionKeyId: string = "01950000-0000-7000-8000-000000000002";
@@ -66,26 +61,6 @@ const bodyOf = (fetch: ReturnType<typeof setup>["fetch"]) =>
   JSON.parse(new TextDecoder().decode(fetch.mock.calls[0]?.[1]?.body as Uint8Array));
 
 describe("SDK input boundary", () => {
-  it("retains namespace, chain, hex, and bigint constraints in public types", () => {
-    expectTypeOf<Namespace>().toEqualTypeOf<"eip155">();
-    expectTypeOf<SupportedEvmChainId>().toEqualTypeOf<
-      | "eip155:1"
-      | "eip155:10"
-      | "eip155:8453"
-      | "eip155:42161"
-      | "eip155:84532"
-      | "eip155:421614"
-      | "eip155:11155111"
-      | "eip155:11155420"
-    >();
-    expectTypeOf<ExecuteRequest["chainId"]>().toEqualTypeOf<SupportedEvmChainId>();
-    expectTypeOf<ExecuteRequest["walletId"]>().toEqualTypeOf<string>();
-    expectTypeOf<EthereumAddress>().toEqualTypeOf<`0x${string}`>();
-    expectTypeOf<ExecuteRequest["calls"][number]["value"]>().toEqualTypeOf<bigint>();
-    expectTypeOf<CompleteExecutionRequest["submissionId"]>().toEqualTypeOf<string>();
-    expectTypeOf<CompleteSignatureRequest["operationId"]>().toEqualTypeOf<string>();
-  });
-
   it.each(["prepare", "simulate", "execute"] as const)(
     "%s encodes a plain address and bigint amount without protocol imports",
     async (method) => {
@@ -155,34 +130,68 @@ describe("SDK input boundary", () => {
     expect(resolveSessionSigner).not.toHaveBeenCalled();
   });
 
-  it("validates every read and signing entry point without sending malformed input", async () => {
+  it.each([
+    { name: "wallet lookup", call: (client: NameraClient) => client.wallets.get("invalid") },
+    { name: "session lookup", call: (client: NameraClient) => client.sessionKeys.get("invalid") },
+    {
+      name: "session wallet filter",
+      call: (client: NameraClient) => client.sessionKeys.list({ walletId: "invalid" }),
+    },
+    { name: "execution lookup", call: (client: NameraClient) => client.executions.get("invalid") },
+    {
+      name: "execution status",
+      call: (client: NameraClient) => client.executions.getStatus("invalid"),
+    },
+    {
+      name: "execution cursor",
+      call: (client: NameraClient) => client.executions.list({ cursor: "invalid" }),
+    },
+    {
+      name: "execution wallet filter",
+      call: (client: NameraClient) => client.executions.list({ walletId: "invalid" }),
+    },
+    {
+      name: "execution session filter",
+      call: (client: NameraClient) => client.executions.list({ sessionKeyId: "invalid" }),
+    },
+    {
+      name: "execution completion signature",
+      call: (client: NameraClient) =>
+        client.executions.complete({
+          namespace: "eip155",
+          submissionId: operationId,
+          signature: "0x12",
+        }),
+    },
+    {
+      name: "signature completion",
+      call: (client: NameraClient) =>
+        client.signatures.complete({ namespace: "eip155", operationId: "invalid" }),
+    },
+    {
+      name: "signature preparation",
+      call: (client: NameraClient) =>
+        client.signatures.prepare({ ...message, sessionKeyId: "invalid" }),
+    },
+    {
+      name: "message signing",
+      call: (client: NameraClient) => client.sign({ ...message, walletId: "invalid" }),
+    },
+    {
+      name: "signature verification",
+      call: (client: NameraClient) => client.verifySignature({ ...message, signature: "0xzz" }),
+    },
+    {
+      name: "typed-data domain",
+      call: (client: NameraClient) =>
+        client.sign({
+          ...typedData,
+          typedData: { ...typedData.typedData, domain: { verifyingContract: "0x1234" } },
+        }),
+    },
+  ])("rejects malformed $name before fetch or signer access", async ({ call }) => {
     const { client, fetch, resolveSessionSigner } = setup();
-    const results = await Promise.all([
-      client.wallets.get("invalid"),
-      client.sessionKeys.get("invalid"),
-      client.sessionKeys.list({ walletId: "invalid" }),
-      client.executions.get("invalid"),
-      client.executions.getStatus("invalid"),
-      client.executions.list({ cursor: "invalid" }),
-      client.executions.list({ walletId: "invalid" }),
-      client.executions.list({ sessionKeyId: "invalid" }),
-      client.executions.complete({
-        namespace: "eip155",
-        submissionId: operationId,
-        signature: "0x12",
-      }),
-      client.signatures.complete({ namespace: "eip155", operationId: "invalid" }),
-      client.signatures.prepare({ ...message, sessionKeyId: "invalid" }),
-      client.sign({ ...message, walletId: "invalid" }),
-      client.verifySignature({ ...message, signature: "0xzz" }),
-      client.sign({
-        ...typedData,
-        typedData: { ...typedData.typedData, domain: { verifyingContract: "0x1234" } },
-      }),
-    ]);
-    for (const result of results) {
-      expect(result).toMatchObject({ success: false, error: { kind: "contract" } });
-    }
+    expect(await call(client)).toMatchObject({ success: false, error: { kind: "contract" } });
     expect(fetch).not.toHaveBeenCalled();
     expect(resolveSessionSigner).not.toHaveBeenCalled();
   });

@@ -149,7 +149,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
                 eq(executionSubmission.actorId, input.actorId),
                 eq(executionSubmission.status, "reserved"),
                 sql`${executionSubmission.data}->'signedExecution' = 'null'::jsonb`,
-                sql`${executionSubmission.data}->>'broadcastAttempted' IS NULL`,
+                sql`(${executionSubmission.data}->>'broadcastAttempted') IS DISTINCT FROM 'true'`,
                 or(
                   isNull(executionSubmission.leaseExpiresAt),
                   lte(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
@@ -222,6 +222,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
                   eq(executionSubmission.status, "prepared"),
                   eq(executionSubmission.leaseToken, input.leaseToken),
                   gt(executionSubmission.leaseExpiresAt, encodeDate(input.now)),
+                  sql`${executionSubmission.data}->'broadcastAttempted' = 'false'::jsonb`,
                   sql`${executionSubmission.data}->'signedExecution' != 'null'::jsonb`,
                 ),
               )
@@ -241,7 +242,7 @@ export class ExecutionSubmissionRepository extends Context.Service<
             .update(executionSubmission)
             .set({
               status: "prepared",
-              data: sql`jsonb_set(${executionSubmission.data}, '{signedExecution}', ${JSON.stringify(signed)}::jsonb)`,
+              data: sql`jsonb_set(jsonb_set(${executionSubmission.data}, '{signedExecution}', ${JSON.stringify(signed)}::jsonb), '{broadcastAttempted}', 'false'::jsonb)`,
               leaseToken: null,
               leaseExpiresAt: encodeDate(input.nextReconcileAt),
             })

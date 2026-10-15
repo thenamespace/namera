@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
-import { IconPreview, Typography } from "@namera-ai/ui";
+import { CopyIconButton, IconPreview, Typography } from "@namera-ai/ui";
 
-import { CopyIconButton } from "@/components/copy-icon-button";
+import { DetailProperty } from "@/components/detail-property";
 import {
   DateDisplay,
   EvmAddressDisplay,
@@ -16,22 +16,6 @@ import {
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const fallbackAccountIcon: MetadataIcon = { type: "emoji", value: "👛" };
-
-type PropertyProps = {
-  label: string;
-  children: ReactNode;
-};
-
-function Property({ label, children }: PropertyProps) {
-  return (
-    <div className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 sm:grid-cols-[11rem_minmax(0,1fr)]">
-      <Typography className="text-sm!" color="muted" weight="normal">
-        {label}
-      </Typography>
-      <div className="min-w-0 text-sm">{children}</div>
-    </div>
-  );
-}
 
 function TechnicalValue({ children }: { children: ReactNode }) {
   return <span className="break-all font-mono text-xs text-foreground">{children}</span>;
@@ -77,17 +61,17 @@ export function AccountOverview({ account, variant = "full" }: AccountOverviewPr
         </Typography.Heading>
         <div className="grid gap-2">
           {variant === "full" ? (
-            <Property label="Status">
+            <DetailProperty label="Status">
               <WalletStatusDisplay status={account.status} />
-            </Property>
+            </DetailProperty>
           ) : null}
-          <Property label="Namespace">
+          <DetailProperty label="Namespace">
             <NamespaceDisplay namespace={account.namespace} />
-          </Property>
-          <Property label="Implementation">
+          </DetailProperty>
+          <DetailProperty label="Implementation">
             <WalletImplementationDisplay implementation={account.implementation} />
-          </Property>
-          <Property label="Ownership">
+          </DetailProperty>
+          <DetailProperty label="Ownership">
             <WalletOwnerDisplay
               custody={account.owner.custody}
               provider={
@@ -99,13 +83,13 @@ export function AccountOverview({ account, variant = "full" }: AccountOverviewPr
                   : undefined
               }
             />
-          </Property>
-          <Property label="Address">
+          </DetailProperty>
+          <DetailProperty label="Address">
             <EvmAddressDisplay address={account.address} />
-          </Property>
+          </DetailProperty>
           {variant === "full" ? (
             <>
-              <Property label="Account ID">
+              <DetailProperty label="Account ID">
                 <div className="flex min-w-0 items-center gap-2">
                   <TechnicalValue>{account.id}</TechnicalValue>
                   <CopyIconButton
@@ -116,10 +100,10 @@ export function AccountOverview({ account, variant = "full" }: AccountOverviewPr
                     onCopySuccess={showAccountIdCopySuccess}
                   />
                 </div>
-              </Property>
-              <Property label="Created">
+              </DetailProperty>
+              <DetailProperty label="Created">
                 <DateDisplay label="Created" value={account.createdAt} />
-              </Property>
+              </DetailProperty>
             </>
           ) : null}
         </div>

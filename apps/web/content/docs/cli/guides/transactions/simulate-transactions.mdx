@@ -42,9 +42,8 @@ namera --output json execution simulate \
 
 <include>../../../../snippets/cli/output/simulate-json.md</include>
 
-Check both `allowed` and `callsSucceeded`. A denied policy or reverted call
-can be returned in a successful CLI response; process exit code alone is not a
-readiness check.
+Review the simulated call results. Authorization and simulation failures return
+errors. Successful previews do not reserve billing allowance or guarantee later execution.
 
 For batch simulation, supply the simulation request through `--params` with a
 `calls` array. Do not include execution-only `sponsor` or gas-ceiling flags.

@@ -25,19 +25,20 @@ type KnownDatabaseError = SqlError.SqlError | KnownDrizzleError;
 const isKnownDatabaseError = (error: unknown): error is KnownDatabaseError =>
   SqlError.isSqlError(error) || isKnownDrizzleError(error);
 
-const toDatabaseError = (error: KnownDatabaseError) =>
-  new DatabaseError({
-    cause: error.cause,
-    message: error.message,
-  });
-
 export type MapDatabaseError<E> = Exclude<E, Extract<E, KnownDatabaseError>> | DatabaseError;
 
 export const mapToDatabaseError = <A, E, R>(effect: Effect.Effect<A, E, R>) => {
   const isMappedError = (error: E): error is Extract<E, KnownDatabaseError> =>
     isKnownDatabaseError(error);
 
-  return Effect.catchIf(effect, isMappedError, (error) => Effect.fail(toDatabaseError(error)));
+  return Effect.catchIf(effect, isMappedError, (error) =>
+    Effect.fail(
+      new DatabaseError({
+        cause: error.cause,
+        message: error.message,
+      }),
+    ),
+  );
 };
 
 export const mapRepositoryError = <A, E, R>(effect: Effect.Effect<A, E, R>) =>

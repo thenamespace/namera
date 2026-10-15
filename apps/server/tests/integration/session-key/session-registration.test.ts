@@ -106,49 +106,47 @@ layer(makeTestServerLayer({ sessions: makeTestEvmSessionService() }))(
         ).toEqual(request.signer);
       }),
     );
-    it.effect(
-      "round trips offchain call and token rules through registration, storage and audit",
-      () =>
-        Effect.gen(function* () {
-          yield* resetTestState();
-          const client = yield* makeTestApiClient;
-          const owner = yield* signIn(client, testEmail("local-session-policies@namera.test"));
-          const wallet = yield* createTestPasskeyWallet(client);
-          const request = yield* localSessionRequest(wallet.id);
-          const address = EthereumAddress.make("0x2222222222222222222222222222222222222222");
-          const policy = { version: 1 as const, type: "evm.contract-access" as const, address };
-          const created = yield* client.sessionKey.create({
-            payload: {
-              ...request,
-              policies: [
-                policy,
-                { version: 1, type: "evm.erc20-token-transfer", address, allowance: 10n },
-              ],
-            },
-          });
-          expect(created.policies).toMatchObject([
-            { type: "evm.contract-access", address, appliesTo: "execution" },
-            { type: "evm.erc20-token-transfer", address, allowance: 10n, appliesTo: "execution" },
-          ]);
-          expect((yield* client.sessionKey.listForOrganization())[0]?.policies).toEqual(
-            created.policies,
-          );
-          const repository = yield* Repository;
-          const audit = (yield* repository.audit.organization.findForOrganization(
-            owner.actor.organization.id,
-          )).find(
-            (event) => event.event === "session_key.created" && event.resourceId === created.id,
-          );
-          expect(audit?.data).toMatchObject({
-            policyTypes: ["evm.contract-access", "evm.erc20-token-transfer"],
-          });
-          const duplicateRequest = yield* localSessionRequest(wallet.id);
-          expect(
-            yield* client.sessionKey
-              .create({ payload: { ...duplicateRequest, policies: [policy, policy] } })
-              .pipe(Effect.flip),
-          ).toMatchObject({ code: "POLICY_CARDINALITY_EXCEEDED" });
-        }),
+    it.effect("round trips signature rules through registration, storage and audit", () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const client = yield* makeTestApiClient;
+        const owner = yield* signIn(client, testEmail("local-session-policies@namera.test"));
+        const wallet = yield* createTestPasskeyWallet(client);
+        const request = yield* localSessionRequest(wallet.id);
+        const policy = {
+          version: 1 as const,
+          type: "evm.signature" as const,
+          allowedTypes: ["message" as const],
+        };
+        const created = yield* client.sessionKey.create({
+          payload: {
+            ...request,
+            policies: [policy, { version: 1, type: "evm.chain-allowlist", chainIds: ["eip155:1"] }],
+          },
+        });
+        expect(created.policies).toMatchObject([
+          { type: "evm.signature", allowedTypes: ["message"], appliesTo: "signature" },
+          { type: "evm.chain-allowlist", chainIds: ["eip155:1"], appliesTo: "signature" },
+        ]);
+        expect((yield* client.sessionKey.listForOrganization())[0]?.policies).toEqual(
+          created.policies,
+        );
+        const repository = yield* Repository;
+        const audit = (yield* repository.audit.organization.findForOrganization(
+          owner.actor.organization.id,
+        )).find(
+          (event) => event.event === "session_key.created" && event.resourceId === created.id,
+        );
+        expect(audit?.data).toMatchObject({
+          policyTypes: ["evm.signature", "evm.chain-allowlist"],
+        });
+        const duplicateRequest = yield* localSessionRequest(wallet.id);
+        expect(
+          yield* client.sessionKey
+            .create({ payload: { ...duplicateRequest, policies: [policy, policy] } })
+            .pipe(Effect.flip),
+        ).toMatchObject({ code: "POLICY_CARDINALITY_EXCEEDED" });
+      }),
     );
     it.effect(
       "persists a local signer and pending installations without granting execution authority",

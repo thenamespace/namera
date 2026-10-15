@@ -6,8 +6,7 @@ import type {
   UserId,
 } from "@namera-ai/protocol";
 import { sql } from "drizzle-orm";
-import { text } from "drizzle-orm/pg-core";
-import { foreignKey, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { foreignKey, index, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { createTimestampField, generateUniqueId, timestamps } from "#/schema/common";
 

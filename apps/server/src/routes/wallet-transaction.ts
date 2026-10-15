@@ -1,11 +1,10 @@
 import { Effect } from "effect";
-import { HttpServerRequest } from "effect/http";
-import { HttpApiBuilder, HttpApiError } from "effect/http-api";
+import { HttpApiBuilder } from "effect/http-api";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import { Application, AuthConfig } from "@namera-ai/application";
 
-import { enforceActor } from "#/helpers/index";
+import { enforceWalletOwner, requireDashboardOrigin } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const WalletTransactionRoutes = HttpApiBuilder.group(
@@ -16,17 +15,12 @@ export const WalletTransactionRoutes = HttpApiBuilder.group(
       const app = yield* Application;
       const config = yield* AuthConfig;
       const authorize = Effect.fnUntraced(function* (write: boolean) {
-        const actor = yield* enforceActor({
-          actor: yield* CurrentActor,
-          allowedActors: ["user"],
-          requiredPermissions: { user: ["wallet:update"] },
-        });
-        if (
-          write &&
-          (yield* HttpServerRequest.HttpServerRequest).headers.origin !==
-            config.dashboardPublicOrigin.origin
-        )
-          return yield* new HttpApiError.Forbidden();
+        const actor = yield* enforceWalletOwner(yield* CurrentActor);
+
+        if (write) {
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+        }
+
         yield* consumeRateLimit(
           `wallet.transaction.${write ? "write" : "read"}`,
           actor.user.id,

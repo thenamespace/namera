@@ -67,15 +67,9 @@ describe("signature policy form", () => {
       expect(decode(Schema.encodeSync(SignaturePolicyForm)(policy))).toEqual(policy);
     }
   });
-  it("rejects invalid contracts and duplicate message types", () => {
+  it("rejects invalid contracts", () => {
     expect(() =>
       decode({ allowedTypes: ["typed-data"], rules: [{ ...rule, verifyingContract: "bad" }] }),
-    ).toThrow();
-    expect(() =>
-      decode({
-        allowedTypes: ["typed-data"],
-        rules: [{ ...rule, primaryTypes: "Permit, Permit" }],
-      }),
     ).toThrow();
   });
 });

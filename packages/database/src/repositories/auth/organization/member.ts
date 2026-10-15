@@ -30,6 +30,11 @@ import {
 } from "#/schema/index";
 
 export interface OrganizationMemberRepositoryService {
+  /** Hold in the consent transaction to serialize it with membership removal. */
+  lockByActorId: (
+    organizationId: OrganizationId,
+    actorId: ActorId,
+  ) => Effect.Effect<OrganizationMember | undefined, DatabaseError>;
   insert: (data: OrganizationMemberInsert) => Effect.Effect<OrganizationMember, DatabaseError>;
   findOrganizationMembersForOrg: (orgId: OrganizationId) => Effect.Effect<
     ReadonlyArray<{
@@ -108,6 +113,23 @@ export class OrganizationMemberRepository extends Context.Service<
       const database = yield* Database;
 
       return OrganizationMemberRepository.of({
+        lockByActorId: Effect.fn("database.lockOrganizationMemberByActorId")(function* (
+          organizationId,
+          actorId,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .select()
+            .from(organizationMember)
+            .where(
+              and(
+                eq(organizationMember.organizationId, organizationId),
+                eq(organizationMember.actorId, actorId),
+              ),
+            )
+            .for("update");
+          return rows[0] ? Schema.decodeSync(OrganizationMember)(rows[0]) : undefined;
+        }, mapRepositoryError),
         insert: Effect.fn("database.insertOrganizationMember")(function* (data) {
           const db = yield* transactionOrDatabase(database);
           const parsed = Schema.encodeSync(OrganizationMemberInsert)(data);

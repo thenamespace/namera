@@ -51,6 +51,7 @@ describe("CLI OAuth client", () => {
           new Response(
             JSON.stringify({
               access_token: "access-token",
+              token_type: "Bearer",
               refresh_token: "refresh-token",
               expires_in: 3600,
               scope: "wallet:read session-key:read offline_access",
@@ -88,7 +89,7 @@ describe("CLI OAuth client", () => {
 
     await expect(pollDeviceToken("https://api.namera.ai", "device-code")).rejects.toMatchObject({
       code: "authorization_pending",
-      message: "Authorization is still pending",
+      message: "OAuth request failed",
     });
   });
 });

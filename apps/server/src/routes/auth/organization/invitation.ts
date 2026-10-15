@@ -4,12 +4,13 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toInvitationResponse } from "#/helpers/index";
+import { enforceActor, requireDashboardOrigin, toInvitationResponse } from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
     const invitations = app.organization.invitation;
 
     return handlers
@@ -52,6 +53,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
             allowedActors: ["user"],
             requiredPermissions: { user: ["invitation:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "invitation.create.organization",
             data.organization.id,
@@ -77,6 +79,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* invitations.acceptInvitation({
             invitationId: payload.invitationId,
             email: data.user.email,
@@ -89,6 +92,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* invitations.rejectInvitation(payload.invitationId, data.user.email, data.user.id);
         }),
       )
@@ -100,6 +104,7 @@ export const InvitationRoutes = HttpApiBuilder.group(NameraApi, "invitation", (h
             allowedActors: ["user"],
             requiredPermissions: { user: ["invitation:cancel"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* invitations.cancelInvitation(
             payload.invitationId,
             data.organization.id,

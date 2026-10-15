@@ -1,11 +1,10 @@
 import { useState, type Key } from "react";
 
 import type { OAuthAuthorizationResponse } from "@namera-ai/protocol/dto";
-import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
+import { AlertDialog, Button, CopyDropdownItem, Dropdown, Label } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { getOAuthClientName } from "@/components/display/oauth-client-name";
 import { useRevokeMcpAuthorization } from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";

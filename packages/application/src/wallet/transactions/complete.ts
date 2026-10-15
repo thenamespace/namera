@@ -16,7 +16,7 @@ import { lockOrganizationBilling } from "#/billing/lock";
 import { makeBillingMetering } from "#/billing/metering";
 import { makeLoadOneClawOwner } from "#/oneclaw/owner";
 
-import { makeTransactionOwner, transactionFailure, type WalletTransactionScope } from "./owner.js";
+import { makeTransactionOwner, type WalletTransactionScope } from "./owner.js";
 import { makeHashWalletTransaction } from "./request.js";
 
 export const walletTransactionView = (operation: WalletOperation) => ({
@@ -126,14 +126,17 @@ export const makeCompleteWalletTransaction = Effect.gen(function* () {
               },
               prepared: operation.data.prepared,
             })
-            .pipe(Effect.timeout(Duration.seconds(90)), Effect.mapError(transactionFailure));
+            .pipe(
+              Effect.timeout(Duration.seconds(90)),
+              Effect.mapError(() => new WalletTransactionError({ code: "PREPARATION_FAILED" })),
+            );
           return { signed, assertion: undefined };
         }
         if (!scope.request.response)
           return yield* new WalletTransactionError({ code: "APPROVAL_INVALID" });
         const challenge = yield* evm.execution
           .ownerApprovalChallenge({ account: owner.account, prepared: operation.data.prepared })
-          .pipe(Effect.mapError(transactionFailure));
+          .pipe(Effect.mapError(() => new WalletTransactionError({ code: "PREPARATION_FAILED" })));
         const assertion = yield* passkeys
           .verifyAuthentication({
             response: scope.request.response,

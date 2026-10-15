@@ -1,7 +1,6 @@
-import { Effect, Exit } from "effect";
+import { describe, expect, it } from "@effect/vitest";
+import { Cause, Effect, Exit } from "effect";
 import { HttpApiError } from "effect/http-api";
-
-import { describe, expect, it } from "vitest";
 
 import {
   recoverSignedOutSession,
@@ -24,35 +23,37 @@ describe("browser session recovery", () => {
     }
     expect(refreshes).toBe(2);
   });
-  it("treats only Unauthorized as signed out", async () => {
-    expect(
-      await Effect.runPromise(
-        recoverSignedOutSession(Effect.fail(new HttpApiError.Unauthorized())),
-      ),
-    ).toBeNull();
-    expect(
-      await Effect.runPromise(recoverSignedOutSession(Effect.succeed({ authenticated: true }))),
-    ).toEqual({ authenticated: true });
-  });
+  it.effect("treats only Unauthorized as signed out", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* recoverSignedOutSession(Effect.fail(new HttpApiError.Unauthorized())),
+      ).toBeNull();
+      expect(yield* recoverSignedOutSession(Effect.succeed({ authenticated: true }))).toEqual({
+        authenticated: true,
+      });
+    }),
+  );
 
-  it("preserves server, permission and transport failures", async () => {
-    const errors = [
-      new HttpApiError.InternalServerError(),
-      new HttpApiError.Forbidden(),
-      new Error("offline"),
-    ];
-    const failures = await Effect.runPromise(
-      Effect.all(
+  it.effect("preserves server, permission and transport failures", () =>
+    Effect.gen(function* () {
+      const errors = [
+        new HttpApiError.InternalServerError(),
+        new HttpApiError.Forbidden(),
+        new Error("offline"),
+      ];
+      const failures = yield* Effect.all(
         errors.map((error) => recoverSignedOutSession(Effect.fail(error)).pipe(Effect.flip)),
-      ),
-    );
-    failures.forEach((failure, index) => expect(failure).toBe(errors[index]));
-  });
+      );
+      failures.forEach((failure, index) => expect(failure).toBe(errors[index]));
+    }),
+  );
 
-  it("does not turn defects into signed-out sessions", async () => {
-    const result = await Effect.runPromiseExit(
-      recoverSignedOutSession(Effect.die("unexpected defect")),
-    );
-    expect(Exit.isFailure(result)).toBe(true);
-  });
+  it.effect("does not turn defects into signed-out sessions", () =>
+    Effect.gen(function* () {
+      const defect = new Error("unexpected defect");
+      const result = yield* Effect.exit(recoverSignedOutSession(Effect.die(defect)));
+      expect(Exit.isFailure(result)).toBe(true);
+      if (Exit.isFailure(result)) expect(Cause.squash(result.cause)).toBe(defect);
+    }),
+  );
 });

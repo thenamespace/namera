@@ -8,22 +8,16 @@ import {
   ExecutionError,
   type BillingError,
   type DatabaseError,
-  type EvmPolicyError,
 } from "@namera-ai/protocol";
 import {
   PrepareExecutionRequest,
   type GrantedActorData,
   type PrepareExecutionResponse,
 } from "@namera-ai/protocol/dto";
-import {
-  executionDuration,
-  executionResults,
-  executionPolicyDecisions,
-} from "@namera-ai/telemetry";
+import { executionDuration, executionResults } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
 import { makeBillingMetering } from "#/billing/index";
-import { makeExecutionLifecycle } from "#/execution/lifecycle";
 import { sessionSignerBinding } from "#/oneclaw/session-signer";
 
 import { makeLoadExecutionAuthority } from "./authority.js";
@@ -36,7 +30,6 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
   const evm = yield* Evm;
   const billing = yield* makeBillingMetering;
   const audit = yield* Audit;
-  const lifecycle = yield* makeExecutionLifecycle;
   const loadAuthority = yield* makeLoadExecutionAuthority;
   const prepareExecution = yield* makePrepareExecution;
 
@@ -45,10 +38,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
       readonly actor: GrantedActorData;
       readonly idempotencyKey: string;
       readonly request: PrepareExecutionRequest;
-    }): Effect.fn.Return<
-      PrepareExecutionResponse,
-      ExecutionError | DatabaseError | BillingError | EvmPolicyError
-    > {
+    }): Effect.fn.Return<PrepareExecutionResponse, ExecutionError | DatabaseError | BillingError> {
       const request = { ...input.request, sponsor: input.request.sponsor ?? true };
       const selected = yield* loadAuthority({ ...request, actor: input.actor, custody: "either" });
       const custody = selected.signer.custody;
@@ -105,29 +95,6 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 return yield* new ExecutionError({ code: "IDEMPOTENCY_CONFLICT" });
               return existing;
             }
-            const states = yield* lifecycle.initializeAndLockStates(
-              input.actor.organizationId,
-              current.sessionKey,
-              prepared.context,
-            );
-            const plan = yield* evm.policy.reserve({
-              policies: current.sessionKey.policies,
-              context: prepared.context,
-              states,
-            });
-            yield* Metric.update(
-              Metric.withAttributes(executionPolicyDecisions, {
-                stage: "prepare",
-                result: plan.decision.allowed ? "allowed" : "denied",
-              }),
-              1,
-            );
-            if (!plan.decision.allowed)
-              return yield* new ExecutionError({
-                code: "POLICY_DENIED",
-                policyId: plan.decision.policyId,
-                policyCode: plan.decision.code,
-              });
             const now = yield* DateTime.now;
             const latest = DateTime.makeUnsafe(
               Math.min(
@@ -135,10 +102,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 current.installation.data.authorization.validUntil * 1000,
               ),
             );
-            const expiresAt = evm.policy.authorizationDeadline({
-              policies: current.sessionKey.policies,
-              latest,
-            });
+            const expiresAt = latest;
             if (DateTime.toEpochMillis(expiresAt) <= DateTime.toEpochMillis(now))
               return yield* new ExecutionError({ code: "EXECUTION_UNAVAILABLE" });
             const inserted = yield* repository.core.executionSubmission.insert({
@@ -158,6 +122,7 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 calls: request.calls,
                 prepared,
                 signedExecution: null,
+                broadcastAttempted: false,
                 ...(custody === "namera-managed"
                   ? { managedSignerBinding: sessionSignerBinding(current.signer) }
                   : {}),
@@ -168,24 +133,6 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
                 return yield* new ExecutionError({ code: "IDEMPOTENCY_CONFLICT" });
               return inserted.submission;
             }
-            yield* lifecycle.applyStateChanges(
-              input.actor.organizationId,
-              states,
-              plan.stateChanges,
-            );
-            yield* repository.core.sessionKeyPolicyReservation.insertMany(
-              plan.reservations.map((reservation) => ({
-                organizationId: input.actor.organizationId,
-                sessionKeyId: current.sessionKey.id,
-                policyId: reservation.policyId,
-                executionSubmissionId: inserted.submission.id,
-                signatureOperationId: null,
-                stateKey: reservation.stateKey,
-                reservationVersion: reservation.reservationVersion,
-                data: reservation.data,
-                expiresAt,
-              })),
-            );
             const source = {
               organizationId: input.actor.organizationId,
               sourceType: "execution-submission" as const,
@@ -260,7 +207,6 @@ export const makePrepareLocalExecution = Effect.gen(function* () {
       };
     },
     Effect.catchTag("DatabaseError", Effect.die),
-    Effect.catchTag("EvmPolicyError", () => new ExecutionError({ code: "EXECUTION_UNAVAILABLE" })),
     Effect.tap(() =>
       Metric.update(
         Metric.withAttributes(executionResults, { stage: "prepare", result: "success" }),

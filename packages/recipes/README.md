@@ -1,46 +1,38 @@
 # @namera-ai/recipes
 
-Private, browser-safe session policy recipes. This package owns code-defined
-display metadata, tags, Effect input schemas, declarative form fields and pure
-builders. It depends on protocol, not React, the catalog, custody or API clients.
+Private, browser-safe session policy templates. The dashboard presents these as
+Templates. This package owns metadata, Effect input schemas, declarative fields
+and deterministic builders, without React, API clients or custody dependencies.
 
-`recipes` lists available definitions; `getRecipe(id)` looks one up. Each recipe
-has a stable `id`, a definition `version`, `display`, `inputSchema`, `defaults`,
-`fields` and `build(input, { now })`. Times are Unix seconds. Builders return the
-decoded `onchain` and `policies` portion of the current creation request; amounts
-are bigint base units. `metadata` supplies optional session-key name, description
-and logo defaults, separately from the recipe's `display` identity. The dashboard
-lets the user edit those defaults and supplies account and public signer,
-and the normal creation schema encodes the final request.
+## Definitions
 
-## USDC lifetime allowance
+`recipes` lists definitions and `getRecipe(id)` resolves one. Each definition has
+an ID, version, display metadata, input schema, defaults, fields and
+`build(input, { now })`. Builders return the `onchain` and `policies` portion of a
+session creation request. Amounts use bigint base units and times use Unix seconds.
+The dashboard adds the account, signer and editable session metadata.
 
-Inputs are networks, a decimal-string allowance, and `expiresAt`, a UTC ISO timestamp
-in the future. The dashboard date picker selects local midnight at the start of
-the chosen date. Each network receives the full allowance independently.
-There is no periodic reset or shared cross-chain budget. Only Circle-issued native
-USDC is selected; bridged USDC.e is excluded. Mainnet and testnet deployments are
-code-owned and sourced in `deployments.ts`. No catalog lookup is required.
+The USDC allowance template grants a lifetime allowance independently on each
+selected network, using native Circle USDC rather than bridged USDC.e. It validates
+six-decimal amounts, uint256 limits and a future UTC expiry. It does not grant
+signature authority, reset periodically or share a cross-chain budget.
 
-The builder validates inputs, preserves exact six-decimal amounts and rejects
-uint256 overflow. It creates only ERC-20 spending authority, with signatures off.
-Owner installation approval remains mandatory. Recipe versions are not persisted;
-the generated immutable session configuration is the authoritative record.
+## Adding a template
 
-## Adding a recipe
+Add a focused directory under `src/recipes`, define its schema and fields, then
+register it in `src/index.ts`. Verify the generated authority and invalid inputs.
+Increment the version when input or authority semantics change. Generated session
+configuration is persisted; recipe versions are not stored as runtime references.
 
-Add a focused folder under `src/recipes`, define its schema and typed field list,
-test the generated authority and unsafe inputs, then register it in `src/index.ts`.
-Increment a recipe version when changing inputs or generated authority. Add field
-kinds only when needed by a recipe; the dashboard owns their accessible rendering.
-`display.logo` and optional `display.banner` contain CDN-relative asset slugs,
-never URLs. The dashboard resolves them against `https://cdn.namera.ai/`.
-Recipe headers are authored under the gitignored `assets/recipes/<id>/header.png`
-and must be synced to the matching CDN prefix before deployment.
+Display images are CDN-relative slugs, resolved by the dashboard against
+`https://cdn.namera.ai/`. Keep image generation and upload outside the package.
+
+## Development
 
 ```sh
 pnpm --filter @namera-ai/recipes test
 pnpm --filter @namera-ai/recipes typecheck
-pnpm --filter @namera-ai/recipes typecheck:test
 pnpm --filter @namera-ai/recipes build
 ```
+
+See [policies and templates](../../architecture/wallet-system/policies.md).

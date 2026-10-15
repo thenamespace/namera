@@ -30,6 +30,7 @@ import {
   DashboardCardRow,
 } from "@/components/dashboard-card";
 import { WalletOwnerDisplay } from "@/components/display/wallet-owner-display";
+import { useProvisioningRequest } from "@/hooks/use-provisioning-request";
 import { useCreatePasskeyRegistrationOptions, useCreateWallet } from "@/hooks/wallet";
 import { showErrorToast } from "@/lib/toasts";
 
@@ -43,6 +44,7 @@ import {
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 
 export function CreateAccountForm() {
+  const provisioning = useProvisioningRequest("wallet-root");
   const [managedCreationFailed, setManagedCreationFailed] = useState(false);
   const navigate = useNavigate();
   const registrationOptions = useCreatePasskeyRegistrationOptions({
@@ -63,7 +65,8 @@ export function CreateAccountForm() {
             : "Review the account details and try again.",
       });
     },
-    onSuccess: (account) => {
+    onSuccess: (account, { payload }) => {
+      provisioning.complete(payload.idempotencyKey);
       void navigate({
         to: "/accounts/created/$accountId",
         params: { accountId: account.id },
@@ -80,12 +83,18 @@ export function CreateAccountForm() {
   const handleSubmit = form.handleSubmit(async (values) => {
     if (values.ownership === "1claw") {
       if (managedCreationFailed) return;
+      const payload = {
+        namespace: "eip155" as const,
+        owner: { type: "namera-managed" as const, provider: "1claw" as const },
+        metadata: values.metadata,
+      };
+      const idempotencyKey = await provisioning.prepare(payload).catch((error: unknown) => {
+        showErrorToast(error, { title: "Couldn’t save creation attempt" });
+        return undefined;
+      });
+      if (!idempotencyKey) return;
       createWallet.mutate({
-        payload: {
-          namespace: "eip155",
-          owner: { type: "namera-managed", provider: "1claw" },
-          metadata: values.metadata,
-        },
+        payload: { ...payload, idempotencyKey },
       });
       return;
     }

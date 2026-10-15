@@ -7,16 +7,20 @@ import { AsyncResult, Atom } from "effect/reactivity";
 import { currentAdminAtom } from "@/atoms/auth";
 import { isAccessRejection } from "@/lib/access-rejection";
 
-export function toQuery<A, E>(getAtom: () => Atom.Atom<AsyncResult.AsyncResult<A, E>>) {
-  return function useQuery() {
-    const atom = getAtom();
+export function toQuery<Args extends readonly unknown[], A, E>(
+  getAtom: (...args: Args) => Atom.Atom<AsyncResult.AsyncResult<A, E>>,
+) {
+  return function useQuery(...args: Args) {
+    const atom = getAtom(...args);
     const result = useAtomValue(atom);
     const refetch = useAtomRefresh(atom);
     const refreshSession = useAtomRefresh(currentAdminAtom);
     const error = Option.getOrNull(AsyncResult.error(result));
+
     useEffect(() => {
       if (atom !== currentAdminAtom && isAccessRejection(error)) refreshSession();
     }, [atom, error, refreshSession]);
+
     return {
       data: isAccessRejection(error) ? undefined : Option.getOrUndefined(AsyncResult.value(result)),
       error,
@@ -45,6 +49,7 @@ export function toMutation<Input, A, E>(
     const refreshSession = useAtomRefresh(currentAdminAtom);
     const callbacksRef = useRef(callbacks);
     callbacksRef.current = callbacks;
+
     const mutate = useCallback(
       (input: Omit<Input, "reactivityKeys">) => {
         void run({
@@ -67,6 +72,7 @@ export function toMutation<Input, A, E>(
       [run, refreshSession],
     );
     const reset = useCallback(() => set(Atom.Reset), [set]);
+
     return {
       mutate,
       reset,

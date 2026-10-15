@@ -9,6 +9,7 @@ import {
   AuthCookieConfig,
   clearAuthCookie,
   enforceActor,
+  requireDashboardOrigin,
   toSessionResponse,
 } from "#/helpers/index";
 
@@ -17,6 +18,8 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
     const app = yield* Application.Application;
     const repository = yield* Repository;
     const cookieConfig = yield* AuthCookieConfig;
+    const config = yield* Application.AuthConfig;
+
     return handlers
       .handle("currentActor", () =>
         Effect.gen(function* () {
@@ -49,6 +52,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* app.session.logout(data.session.id, data.user.id);
           yield* clearAuthCookie(cookieConfig.secure);
         }),
@@ -57,6 +61,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return yield* app.session.revokeOthers(data.session.id, data.user.id);
         }),
       )
@@ -64,6 +69,7 @@ export const SessionRoutes = HttpApiBuilder.group(NameraApi, "session", (handler
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           const revoked = yield* app.session.revoke({
             sessionId: params.sessionId,
             currentSessionId: data.session.id,

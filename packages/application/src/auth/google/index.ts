@@ -15,6 +15,7 @@ import { googleAuthDuration, googleAuthResults, betaInviteTransitions } from "@n
 import { makeCompleteSignIn } from "#/auth/complete-sign-in";
 import { AuthConfig } from "#/auth/config";
 import { makeRequestMagicLinkApplication } from "#/auth/magic-link/request";
+import { normalizeAuthReturnTo } from "#/auth/return-to";
 
 import {
   googleFlowLifetime,
@@ -67,17 +68,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
       );
       if (!state || !nonce || !browserToken || !verifier)
         return yield* Effect.die("Missing generated OAuth credential");
-      const candidate = new URL(
-        input.returnTo ?? config.returnTo.defaultPath,
-        config.dashboardPublicOrigin,
-      );
-      const returnTo =
-        candidate.origin === config.dashboardPublicOrigin.origin &&
-        config.returnTo.allowedPrefixes.some(
-          (prefix) => candidate.pathname === prefix || candidate.pathname.startsWith(`${prefix}/`),
-        )
-          ? `${candidate.pathname}${candidate.search}${candidate.hash}`
-          : config.returnTo.defaultPath;
+      const returnTo = normalizeAuthReturnTo(input.returnTo, config);
       const verification = yield* repository.auth.verification
         .create({
           purpose: "google-auth",
@@ -178,6 +169,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
         )
           return yield* new GoogleAuthError({ code: "GOOGLE_FLOW_INVALID" });
         const identity = verified.identity;
+        const returnTo = normalizeAuthReturnTo(flow.data.returnTo, config);
 
         if (flow.data.intent === "link") {
           const { userId, sessionId } = flow.data;
@@ -212,7 +204,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
             {
               email: identity.email,
               ...(flow.data.surface ? { surface: flow.data.surface } : {}),
-              returnTo: flow.data.returnTo,
+              returnTo,
               ...(flow.data.inviteCode ? { inviteCode: flow.data.inviteCode } : {}),
             },
             identity,
@@ -262,7 +254,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
               const pending = yield* repository.auth.verification.create({
                 purpose: "beta-admission",
                 identifier: identity.email,
-                data: { googleIdentity: identity, returnTo: flow.data.returnTo },
+                data: { googleIdentity: identity, returnTo },
                 tokenHash: yield* crypto.hash({
                   purpose: cryptoPurpose.betaAdmissionToken,
                   value: token,
@@ -292,7 +284,7 @@ export const makeGoogleApplication = Effect.gen(function* () {
             yield* repository.auth.account.touchGoogle(identity.subject, identity.email);
             return {
               sessionToken: completed.sessionToken,
-              returnTo: flow.data.returnTo,
+              returnTo,
               linked: completed.linked,
               inviteRedeemed: usableInvite !== undefined,
             };

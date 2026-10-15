@@ -1,4 +1,4 @@
-import { chains } from "@namera-ai/evm/chains";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { CatalogAddress } from "@namera-ai/protocol/dto";
 import { Avatar, Button, Skeleton, Tooltip } from "@namera-ai/ui";
 import { ChainIcon, Coins01Icon, HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
@@ -14,7 +14,7 @@ export function TokenDisplay({
 }: CatalogAddress & { readonly amount?: string; readonly size?: "sm" | "md" }) {
   const query = useCatalogAddress(address);
   const token = tokenDisplayDetails(query.data, amount);
-  const network = Object.values(chains).find((chain) => chain.chainId === address.chainId);
+  const network = getChainDataByCaip2(address.chainId);
   const shortAddress = `${address.address.slice(0, 6)}…${address.address.slice(-4)}`;
 
   if (query.isPending)

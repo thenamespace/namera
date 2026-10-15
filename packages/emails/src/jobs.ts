@@ -39,13 +39,9 @@ export class EmailJobs extends Context.Service<
         const plaintext = yield* crypto
           .decrypt({ purpose: cryptoPurpose.emailOutbox, value: encryptedPayload })
           .pipe(Effect.mapError(() => "DECRYPT_FAILED" as const));
-        const parsed = yield* Effect.try({
-          try: () => JSON.parse(plaintext) as unknown,
-          catch: () => "INVALID_PAYLOAD" as const,
-        });
-        return yield* Schema.decodeUnknownEffect(EmailJobPayload)(parsed).pipe(
-          Effect.mapError(() => "INVALID_PAYLOAD" as const),
-        );
+        return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(EmailJobPayload))(
+          plaintext,
+        ).pipe(Effect.mapError(() => "INVALID_PAYLOAD" as const));
       });
 
       const markTerminal = Effect.fnUntraced(function* (
@@ -92,6 +88,13 @@ export class EmailJobs extends Context.Service<
         job: EmailJob,
         leaseToken: string,
       ) {
+        // Claims count attempts before delivery. A recovered fifth attempt must
+        // not dispatch again, even if its provider outcome was never persisted.
+        if (job.attempts > emailPolicy.maximumAttempts) {
+          yield* markTerminal(job, leaseToken, "failed", job.lastErrorCode, "failed");
+          return 1;
+        }
+
         const decoded = yield* Effect.result(decodePayload(job.encryptedPayload));
         if (Result.isFailure(decoded)) {
           yield* markTerminal(job, leaseToken, "failed", decoded.failure, "invalid");

@@ -92,8 +92,13 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
 const setup = Effect.gen(function* () {
   yield* resetTestState();
   const owner = yield* platformIdentity();
-  const client = yield* makeTestApiClient;
-  yield* signIn(client, testEmail(`catalog-reader-${owner.user.id}@example.com`));
+  const reader = yield* signIn(
+    yield* makeTestApiClient,
+    testEmail(`catalog-reader-${owner.user.id}@example.com`),
+  );
+  const client = yield* handledApi(NameraApi, {
+    headers: { cookie: `auth-token=${reader.cookie.value}`, origin: "http://dashboard.test" },
+  });
   return { owner, client, repository: yield* Repository, db: yield* Database };
 });
 
@@ -218,19 +223,19 @@ layer(TestServerLayer)("catalog API", (it) => {
         );
         expect(
           yield* admin.client.adminCatalog.listInterfaces({ query: {} }).pipe(Effect.flip),
-        ).toBeDefined();
+        ).toMatchObject({ _tag: "Forbidden" });
         expect(
           yield* admin.client.adminCatalog
             .getInterface({ params: { interfaceId: secondId } })
             .pipe(Effect.flip),
-        ).toBeDefined();
+        ).toMatchObject({ _tag: "Forbidden" });
       }
       expect(
         yield* client.adminCatalog.listInterfaces({ query: {} }).pipe(Effect.flip),
-      ).toBeDefined();
+      ).toMatchObject({ _tag: "Forbidden" });
       expect(
         yield* client.adminCatalog.getInterface({ params: { interfaceId } }).pipe(Effect.flip),
-      ).toBeDefined();
+      ).toMatchObject({ _tag: "Forbidden" });
       expect(
         yield* client.catalog.getInterface({ params: { interfaceId } }).pipe(Effect.flip),
       ).toMatchObject({ _tag: "CatalogNotFoundError" });
@@ -589,7 +594,7 @@ layer(TestServerLayer)("catalog API", (it) => {
       });
       expect(
         yield* untrustedOrigin.adminCatalog.import({ payload, query: {} }).pipe(Effect.flip),
-      ).toBeDefined();
+      ).toMatchObject({ _tag: "Forbidden" });
       expect(yield* owner.client.adminCatalog.import({ payload, query: {} })).toMatchObject({
         catalog: { created: 1 },
       });
@@ -667,12 +672,12 @@ layer(TestServerLayer)("catalog API", (it) => {
           yield* admin.client.adminCatalog
             .get({ params: { catalogId: record.id } })
             .pipe(Effect.flip),
-        ).toBeDefined();
+        ).toMatchObject({ _tag: "Forbidden" });
         expect(
           yield* admin.client.adminCatalog
             .list({ query: { namespace: "eip155" } })
             .pipe(Effect.flip),
-        ).toBeDefined();
+        ).toMatchObject({ _tag: "Forbidden" });
       }
       expect(
         (yield* owner.client.adminCatalog.list({
@@ -684,7 +689,7 @@ layer(TestServerLayer)("catalog API", (it) => {
       ).toHaveLength(0);
       expect(
         yield* client.adminCatalog.list({ query: { namespace: "eip155" } }).pipe(Effect.flip),
-      ).toBeDefined();
+      ).toMatchObject({ _tag: "Forbidden" });
     }),
   );
 });

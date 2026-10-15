@@ -51,6 +51,7 @@ import { WalletSignatureRoutes } from "#/routes/wallet-signature";
 import { WalletTransactionRoutes } from "#/routes/wallet-transaction";
 import { SessionKeyRoutes, WalletRoutes } from "#/routes/wallet/index";
 
+import { TestClientAddresses } from "../client-address.js";
 import { TestAuthToken, TestAuthorizationClientLayer } from "./auth.js";
 import { TestConfigLayer } from "./config.js";
 
@@ -162,6 +163,7 @@ export const makeTestServerLayer = (
     RateLimiterLive,
     TestServicesLayer,
     TestAuthTokenStateLayer,
+    TestClientAddresses.layer,
     TestAuthorizationClientLayer.pipe(Layer.provide(TestAuthTokenStateLayer)),
     HttpServer.layerServices,
   ).pipe(Layer.provide(configLayer));

@@ -2,7 +2,7 @@ import { expect, it } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
 
 import {
-  type EvmChainAllowlistPolicy,
+  EvmChainAllowlistPolicy,
   EthereumAddress,
   PolicyId,
   SupportedEvmChainId,
@@ -22,7 +22,7 @@ const timeWindow = {
   id: timeWindowId,
   type: "evm.time-window",
   version: 1,
-  appliesTo: "both",
+  appliesTo: "signature",
   startsAt: null,
   expiresAt: DateTime.fromEpochSeconds(10),
 } satisfies EvmTimeWindowPolicy;
@@ -37,7 +37,7 @@ const chainAllowlistPolicy = {
   id: chainAllowlistPolicyId,
   type: "evm.chain-allowlist",
   version: 1,
-  appliesTo: "both",
+  appliesTo: "signature",
   chainIds: [chainId],
 } satisfies EvmChainAllowlistPolicy;
 const context = {
@@ -120,3 +120,34 @@ it.effect("applies the chain allowlist to signatures without granting signature 
     });
   }).pipe(Effect.provide(Evm.testLayer)),
 );
+
+it.effect("caps signature approval at the time window and enforces its inclusive start", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const window = { ...timeWindow, startsAt: DateTime.fromEpochSeconds(1) };
+    expect(
+      yield* evm.policy.evaluateSignature({
+        policies: [signaturePolicy, window],
+        context: { ...context, timestamp: DateTime.fromEpochSeconds(0) },
+      }),
+    ).toEqual({ allowed: false, policyId: timeWindowId, code: "TIME_WINDOW_NOT_STARTED" });
+    expect(
+      yield* evm.policy.evaluateSignature({
+        policies: [signaturePolicy, window],
+        context,
+      }),
+    ).toEqual({ allowed: true });
+    const latest = DateTime.fromEpochSeconds(300);
+    expect(evm.policy.authorizationDeadline({ policies: [window], latest })).toEqual(
+      window.expiresAt,
+    );
+    expect(evm.policy.authorizationDeadline({ policies: [], latest })).toEqual(latest);
+  }).pipe(Effect.provide(Evm.testLayer)),
+);
+
+it("requires a non-empty unique signature chain allowlist", () => {
+  expect(Schema.is(EvmChainAllowlistPolicy)({ ...chainAllowlistPolicy, chainIds: [] })).toBe(false);
+  expect(
+    Schema.is(EvmChainAllowlistPolicy)({ ...chainAllowlistPolicy, chainIds: [chainId, chainId] }),
+  ).toBe(false);
+});

@@ -1,5 +1,6 @@
 import { expect, layer } from "@effect/vitest";
 import { DateTime, Effect, Schema } from "effect";
+import { TestClock } from "effect/testing";
 
 import { NameraApi } from "@namera-ai/api";
 import { Repository } from "@namera-ai/database";
@@ -396,45 +397,72 @@ layer(TestServerLayer)("magic-link routes", (it) => {
     }),
   );
 
-  it.effect("locks code verification after the maximum failed attempts", () =>
+  it.effect("locks both credentials after five wrong codes and returns the attempt limit", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       const email = testEmail("attempts@example.com");
-      yield* requestMagicLink(client, email);
-      const wrongCode = Schema.decodeSync(MagicLinkCode)("00000000");
+      const link = yield* requestMagicLink(client, email);
+      const wrongCode = Schema.decodeSync(MagicLinkCode)(
+        link.code === "00000000" ? "11111111" : "00000000",
+      );
 
       for (let attempt = 1; attempt <= 5; attempt += 1) {
-        const error = yield* client.magicLink
-          .verify({ payload: { type: "code", email, code: wrongCode } })
-          .pipe(Effect.flip);
-        expect(error).toMatchObject({
+        const response = yield* client.magicLink.verify({
+          payload: { type: "code", email, code: wrongCode },
+          responseMode: "response-only",
+        });
+        expect(response.status).toBe(attempt === 5 ? 429 : 400);
+        expect(yield* response.json).toMatchObject({
           _tag: "MagicLinkError",
           code: attempt === 5 ? "TOO_MANY_ATTEMPTS" : "INVALID_OR_EXPIRED_LINK",
         });
       }
+      for (const payload of [
+        { type: "token" as const, id: link.id, token: link.token },
+        { type: "code" as const, email, code: Schema.decodeSync(MagicLinkCode)(link.code) },
+      ]) {
+        const response = yield* client.magicLink.verify(
+          payload.type === "token"
+            ? { payload, responseMode: "response-only" }
+            : { payload, responseMode: "response-only" },
+        );
+        expect(response.status).toBe(400);
+        expect(response.cookies.cookies["auth-token"]).toBeUndefined();
+      }
+      const repository = yield* Repository;
+      expect((yield* repository.auth.verification.findById(link.id))?.attempts).toBe(5);
+      expect(yield* repository.auth.user.findByEmail(email)).toBeUndefined();
     }),
   );
 
-  it.effect("returns a rate-limit status when code attempts are exhausted", () =>
+  it.effect.each(["token", "code"] as const)("rejects %s at the exact expiry boundary", (type) =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
-      const email = testEmail("attempt-status@example.com");
-      yield* requestMagicLink(client, email);
-      const wrongCode = Schema.decodeSync(MagicLinkCode)("00000000");
+      const email = testEmail(`expired-${type}@example.com`);
+      const link = yield* requestMagicLink(client, email);
+      const repository = yield* Repository;
+      const verification = yield* repository.auth.verification.findById(link.id);
+      if (!verification) return yield* Effect.die("Expected magic-link challenge");
 
-      for (let attempt = 1; attempt < 5; attempt += 1) {
-        yield* client.magicLink.verify({
-          payload: { type: "code", email, code: wrongCode },
-          responseMode: "response-only",
-        });
-      }
-      const response = yield* client.magicLink.verify({
-        payload: { type: "code", email, code: wrongCode },
-        responseMode: "response-only",
-      });
-      expect(response.status).toBe(429);
+      yield* TestClock.setTime(DateTime.toEpochMillis(verification.expiresAt));
+      const response = yield* client.magicLink.verify(
+        type === "token"
+          ? {
+              payload: { type, id: link.id, token: link.token },
+              responseMode: "response-only",
+            }
+          : {
+              payload: { type, email, code: Schema.decodeSync(MagicLinkCode)(link.code) },
+              responseMode: "response-only",
+            },
+      );
+      expect(response.status).toBe(400);
+      expect(yield* response.json).toMatchObject({ code: "INVALID_OR_EXPIRED_LINK" });
+      expect(response.cookies.cookies["auth-token"]).toBeUndefined();
+      expect((yield* repository.auth.verification.findById(link.id))?.consumedAt).toBeNull();
+      expect(yield* repository.auth.user.findByEmail(email)).toBeUndefined();
     }),
   );
 });

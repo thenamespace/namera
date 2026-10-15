@@ -7,7 +7,7 @@ import { crc32c } from "@aws-crypto/crc32c";
 import { SigningKeyId } from "@namera-ai/protocol";
 import { beforeEach, vi } from "vitest";
 
-import { GcpService } from "../../src/index.js";
+import { GcpService, GcpKeyError } from "../../src/index.js";
 
 const sdk = vi.hoisted(() => ({
   createCryptoKey: vi.fn(),
@@ -126,44 +126,88 @@ it.effect("sends exact digests and hashes ECDSA messages only once", () =>
   }).pipe(Effect.provide(Live)),
 );
 
-it.effect("rejects corrupted public keys, signing integrity and mismatched algorithms", () =>
+it.effect.each([
+  { name: "wrong key version", change: { name: "different" } },
+  { name: "corrupt checksum", change: { pemCrc32c: { value: 0 } } },
+  { name: "missing checksum", change: { pemCrc32c: undefined } },
+  { name: "missing public material", change: { pem: undefined } },
+])("rejects a public key response with $name", ({ change }) =>
   Effect.gen(function* () {
     const gcp = yield* GcpService;
-    for (const response of [
-      { ...publicResponse(), name: "different" },
-      { ...publicResponse(), pemCrc32c: { value: 0 } },
-    ]) {
-      sdk.getPublicKey.mockResolvedValueOnce([response]);
-      expect(
-        yield* gcp
-          .createKey({ id, algorithm: "p256", protectionLevel: "software" })
-          .pipe(Effect.isFailure),
-      ).toBe(true);
-    }
-    for (const response of [
-      { ...signatureResponse(), name: "different" },
-      { ...signatureResponse(), verifiedDigestCrc32c: false },
-      { ...signatureResponse(), signatureCrc32c: { value: 0 } },
-      { ...signatureResponse(), signature: undefined },
-    ]) {
-      sdk.asymmetricSign.mockResolvedValueOnce([response]);
-      expect(
-        yield* gcp
-          .signDigest({ algorithm: "p256", data, hash: new Uint8Array(32) })
-          .pipe(Effect.isFailure),
-      ).toBe(true);
-    }
-    sdk.asymmetricSign.mockClear();
-    expect(
-      yield* gcp
-        .signDigest({ algorithm: "secp256k1", data, hash: new Uint8Array(32) })
-        .pipe(Effect.isFailure),
-    ).toBe(true);
-    expect(
-      yield* gcp
-        .signDigest({ algorithm: "p256", data, hash: new Uint8Array(31) })
-        .pipe(Effect.isFailure),
-    ).toBe(true);
+    sdk.getPublicKey.mockResolvedValueOnce([{ ...publicResponse(), ...change }]);
+    const error = yield* gcp
+      .createKey({ id, algorithm: "p256", protectionLevel: "software" })
+      .pipe(Effect.flip);
+    expect(error).toBeInstanceOf(GcpKeyError);
+    expect(error.operation).toBe("create");
+    expect(sdk.createCryptoKey).toHaveBeenCalledTimes(1);
+    expect(sdk.getPublicKey).toHaveBeenCalledTimes(1);
+  }).pipe(Effect.provide(Live)),
+);
+
+it.effect.each([
+  { name: "wrong key version", change: { name: "different" } },
+  { name: "unverified digest", change: { verifiedDigestCrc32c: false } },
+  { name: "corrupt checksum", change: { signatureCrc32c: { value: 0 } } },
+  { name: "missing checksum", change: { signatureCrc32c: undefined } },
+  { name: "missing signature", change: { signature: undefined } },
+])("rejects a signing response with $name", ({ change }) =>
+  Effect.gen(function* () {
+    const gcp = yield* GcpService;
+    sdk.asymmetricSign.mockResolvedValueOnce([{ ...signatureResponse(), ...change }]);
+    const error = yield* gcp
+      .signDigest({ algorithm: "p256", data, hash: new Uint8Array(32) })
+      .pipe(Effect.flip);
+    expect(error).toBeInstanceOf(GcpKeyError);
+    expect(error.operation).toBe("sign");
+    expect(sdk.asymmetricSign).toHaveBeenCalledTimes(1);
+  }).pipe(Effect.provide(Live)),
+);
+
+it.effect.each([
+  { name: "mismatched algorithm", algorithm: "secp256k1", hash: new Uint8Array(32) },
+  { name: "invalid digest length", algorithm: "p256", hash: new Uint8Array(31) },
+] as const)("rejects $name before contacting KMS", ({ algorithm, hash }) =>
+  Effect.gen(function* () {
+    const gcp = yield* GcpService;
+    const error = yield* gcp.signDigest({ algorithm, data, hash }).pipe(Effect.flip);
+    expect(error).toBeInstanceOf(GcpKeyError);
+    expect(error.operation).toBe("sign");
     expect(sdk.asymmetricSign).not.toHaveBeenCalled();
   }).pipe(Effect.provide(Live)),
+);
+
+it.effect("requires raw-data integrity confirmation for Ed25519", () =>
+  Effect.gen(function* () {
+    const gcp = yield* GcpService;
+    sdk.asymmetricSign.mockResolvedValueOnce([
+      { ...signatureResponse(), verifiedDataCrc32c: false },
+    ]);
+    const error = yield* gcp
+      .signMessage({
+        algorithm: "ed25519",
+        data: { ...data, providerAlgorithm: "EC_SIGN_ED25519" },
+        message: new Uint8Array([1]),
+      })
+      .pipe(Effect.flip);
+    expect(error).toBeInstanceOf(GcpKeyError);
+    expect(error.operation).toBe("sign");
+  }).pipe(Effect.provide(Live)),
+);
+
+it.effect("closes the client after a failed request without retrying key creation", () =>
+  Effect.gen(function* () {
+    sdk.createCryptoKey.mockRejectedValueOnce(new Error("KMS unavailable"));
+    const error = yield* Effect.gen(function* () {
+      return yield* (yield* GcpService).createKey({
+        id,
+        algorithm: "p256",
+        protectionLevel: "software",
+      });
+    }).pipe(Effect.provide(Live), Effect.flip);
+    expect(error).toBeInstanceOf(GcpKeyError);
+    expect(sdk.createCryptoKey).toHaveBeenCalledTimes(1);
+    expect(sdk.getPublicKey).not.toHaveBeenCalled();
+    expect(sdk.close).toHaveBeenCalledTimes(1);
+  }),
 );

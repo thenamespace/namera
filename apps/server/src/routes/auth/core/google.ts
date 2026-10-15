@@ -96,7 +96,10 @@ export const GoogleRoutes = HttpApiBuilder.group(NameraApi, "google", (handlers)
             : config.dashboardPublicOrigin;
           const returnTo =
             isAdmin && result.returnTo === "/auth/invite" ? "/auth?denied=true" : result.returnTo;
-          return HttpServerResponse.redirect(new URL(returnTo, origin).toString()).pipe(
+          const destination = new URL(returnTo, origin);
+          return HttpServerResponse.redirect(
+            (destination.origin === origin.origin ? destination : new URL("/", origin)).toString(),
+          ).pipe(
             HttpServerResponse.setHeader("cache-control", "no-store"),
             HttpServerResponse.setHeader("referrer-policy", "no-referrer"),
           );

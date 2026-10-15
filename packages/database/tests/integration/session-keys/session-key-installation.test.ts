@@ -5,9 +5,10 @@ import { TransactionHash, UserOperationHash } from "@namera-ai/protocol";
 import type { SessionKeyInstallationInsert } from "@namera-ai/protocol/model";
 
 import { Repository, TestDatabase } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { installationFixture as fixture } from "../../fixtures/session-installation.js";
 
-const Persistence = Repository.layer.pipe(Layer.provideMerge(TestDatabase.layer));
+const Persistence = Repository.layer.pipe(Layer.provideMerge(DatabaseTestLayer));
 const hash = Schema.decodeSync(UserOperationHash)(`0x${"11".repeat(32)}`);
 const otherHash = Schema.decodeSync(UserOperationHash)(`0x${"22".repeat(32)}`);
 const transactionHash = Schema.decodeSync(TransactionHash)(`0x${"33".repeat(32)}`);

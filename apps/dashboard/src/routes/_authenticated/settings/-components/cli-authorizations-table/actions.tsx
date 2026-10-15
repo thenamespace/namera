@@ -1,11 +1,10 @@
 import { useState, type Key } from "react";
 
 import type { OAuthAuthorizationResponse } from "@namera-ai/protocol/dto";
-import { AlertDialog, Button, Dropdown, Label } from "@namera-ai/ui";
+import { AlertDialog, Button, CopyDropdownItem, Dropdown, Label } from "@namera-ai/ui";
 import { HugeiconsIcon, MoreHorizontalIcon } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { useRevokeCliAuthorization } from "@/hooks/auth";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
@@ -24,6 +23,10 @@ export function CliAuthorizationActions({
   canRevoke,
 }: CliAuthorizationActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const deviceName =
+    authorization.metadata.type === "cli"
+      ? authorization.metadata.deviceName
+      : authorization.client.clientName;
   const revoke = useRevokeCliAuthorization({
     onError: (error) =>
       showErrorToast(error, {
@@ -33,7 +36,7 @@ export function CliAuthorizationActions({
     onSuccess: () => {
       showSuccessToast({
         title: "CLI access revoked",
-        description: `${authorization.metadata.type === "cli" ? authorization.metadata.deviceName : authorization.client.clientName} can no longer access Namera.`,
+        description: `${deviceName} can no longer access Namera.`,
       });
       setIsOpen(false);
     },
@@ -44,10 +47,6 @@ export function CliAuthorizationActions({
   const handleRevoke = useEventCallback(() => {
     revoke.mutate({ payload: { authorizationId: authorization.id } });
   });
-  const deviceName =
-    authorization.metadata.type === "cli"
-      ? authorization.metadata.deviceName
-      : authorization.client.clientName;
 
   return (
     <>

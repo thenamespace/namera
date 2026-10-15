@@ -9,6 +9,7 @@ export default defineNodeVitestConfig({
     resolve: { conditions: ["namera-source"], externalConditions: ["namera-source", "node"] },
   },
   test: {
+    include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     maxWorkers: 2,
     server: { deps: { inline: [/^@namera-ai\//] } },
   },

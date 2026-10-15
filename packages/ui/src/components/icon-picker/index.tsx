@@ -93,7 +93,7 @@ export function IconPicker({
 
       <Modal.Backdrop>
         <Modal.Container size="md">
-          <Modal.Dialog className="px-2 py-2">
+          <Modal.Dialog aria-label={ariaLabel} className="px-2 py-2">
             <Modal.CloseTrigger />
             <Modal.Body className="min-h-136 max-h-128">
               <Tabs

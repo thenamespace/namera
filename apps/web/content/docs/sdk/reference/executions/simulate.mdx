@@ -1,6 +1,6 @@
 ---
 title: Simulate
-description: Simulate calls and evaluate the selected session key’s API policies.
+description: Simulate calls and check the selected session’s installed authority.
 ---
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -57,9 +57,9 @@ console.log(simulation.data);
 - **`account`** (`` `0x${string}` ``): Smart-account address.
 - **`callsSucceeded`** (`boolean`): Whether the simulated calls succeeded.
 - **`simulation`** (`EvmIntentSimulation`): userOperation gas estimates and calls results, assetChanges, and transfers.
-- **`allowed`** (`boolean`): Point-in-time policy decision; not a guarantee of later execution.
+- **`allowed`** (`boolean`): Point-in-time eligibility; not a guarantee of later execution.
 - **`sessionKeyId`** (`string`): Present when allowed is true.
-- **`denials`** (`readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]`): Nonempty when allowed is false; absent when allowed is true.
+- **`denials`** (`readonly { sessionKeyId: string; policyId: string; code: EvmPolicyDenialCode }[]`): Legacy response variant retained for client compatibility; current servers return errors for failed authorization or simulation, not policy denials.
 
 ### Example Response
 

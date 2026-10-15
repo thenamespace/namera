@@ -281,6 +281,9 @@ export const makeInvitationApplication = Effect.gen(function* () {
           if (found.organizationRole.type === "system" && found.organizationRole.key === "owner") {
             return yield* new OrganizationPermissionError({ code: "INSUFFICIENT_PERMISSIONS" });
           }
+          // Convert the reserved seat under the same lock as invitation admission.
+          // Acquire it before locking the invitation or creating membership rows.
+          yield* lockOrganizationBilling(repository, found.invitation.organizationId);
           const member = yield* repository.auth.member.findActiveMembership(
             input.userId,
             found.invitation.organizationId,

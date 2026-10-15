@@ -10,6 +10,7 @@ import {
   addressCatalogEntry,
   contractInterface,
 } from "../../../src/schema/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
 const fixture = Effect.fnUntraced(function* () {
   yield* (yield* TestDatabase).reset;
@@ -51,7 +52,7 @@ const fixture = Effect.fnUntraced(function* () {
   return { db, catalog, artifact, input };
 });
 
-layer(TestDatabase.layer)("catalog schema persistence", (it) => {
+layer(DatabaseTestLayer)("catalog schema persistence", (it) => {
   it.effect("persists contract metadata and its JSON ABI independently", () =>
     Effect.gen(function* () {
       const { db, catalog, artifact, input } = yield* fixture();
@@ -142,13 +143,13 @@ layer(TestDatabase.layer)("catalog schema persistence", (it) => {
       expect(
         yield* db
           .insert(addressCatalog)
-          .values({ ...catalog, id: sql`'other'` })
+          .values({ ...catalog, id: sql`'00000000-0000-4000-8000-000000000001'::uuid` })
           .pipe(Effect.isFailure),
       ).toBe(true);
       expect(
         yield* db
           .insert(contractInterface)
-          .values({ ...artifact, id: sql`'other'` })
+          .values({ ...artifact, id: sql`'00000000-0000-4000-8000-000000000002'::uuid` })
           .pipe(Effect.isFailure),
       ).toBe(true);
       expect(
@@ -157,7 +158,7 @@ layer(TestDatabase.layer)("catalog schema persistence", (it) => {
           .values({
             ...input,
             address: "0x3333333333333333333333333333333333333333",
-            catalogId: sql`'missing'`,
+            catalogId: sql`'00000000-0000-4000-8000-000000000003'::uuid`,
           })
           .pipe(Effect.isFailure),
       ).toBe(true);
@@ -167,7 +168,7 @@ layer(TestDatabase.layer)("catalog schema persistence", (it) => {
           .values({
             ...input,
             address: "0x3333333333333333333333333333333333333333",
-            interfaceId: sql`'missing'`,
+            interfaceId: sql`'00000000-0000-4000-8000-000000000004'::uuid`,
           })
           .pipe(Effect.isFailure),
       ).toBe(true);

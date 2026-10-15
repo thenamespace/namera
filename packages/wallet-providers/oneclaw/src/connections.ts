@@ -1,9 +1,9 @@
 import { DateTime, Effect, Option, Redacted, Schema } from "effect";
 
+import { OneClawError } from "@namera-ai/protocol";
 import { OneClawOrganizationSetupRequest } from "@namera-ai/protocol/model";
 
 import type { ClientContext } from "#/client";
-import { oneClawError } from "#/errors";
 import {
   BootstrapResponse,
   ClaimResponse,
@@ -36,7 +36,10 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
     );
     const matches = result.users.filter((user) => user.external_subject === subject);
     if (matches.length > 1)
-      return yield* oneClawError("connections.findBySubject", "RECOVERY_AMBIGUOUS");
+      return yield* new OneClawError({
+        operation: "connections.findBySubject",
+        code: "RECOVERY_AMBIGUOUS",
+      });
     return Option.fromUndefinedOr(matches[0]).pipe(
       Option.map((match) => ({
         connectionId: match.connection_id,
@@ -50,7 +53,7 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
       platform.platform.getConnection(connectionId),
     );
     if (response.connection_id !== connectionId)
-      return yield* oneClawError("connections.get", "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation: "connections.get", code: "IDENTITY_MISMATCH" });
     return { connectionId, customerId: response.user_id, status: response.status };
   }),
   bootstrapEmpty: Effect.fn("wallet-providers.oneclaw.connections.bootstrapEmpty")(function* (
@@ -58,11 +61,11 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
   ) {
     const operation = "connections.bootstrapEmpty";
     yield* Schema.decodeUnknownEffect(Schema.toType(OneClawOrganizationSetupRequest))(input).pipe(
-      Effect.mapError(() => oneClawError(operation, "INVALID_REQUEST")),
+      Effect.mapError(() => new OneClawError({ operation, code: "INVALID_REQUEST" })),
     );
     const connectionId = input.connection.externalConnectionId;
     if (connectionId === null || input.connection.providerAppId !== config.platformAppId) {
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     }
     const template = yield* request(operation, TemplateResponse, () =>
       platform.platform.getTemplate(config.platformAppId, config.emptyTemplateId),
@@ -74,7 +77,7 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
       !template.is_active ||
       Object.keys(template.spec).length !== 0
     ) {
-      return yield* oneClawError(operation, "TEMPLATE_MISMATCH");
+      return yield* new OneClawError({ operation, code: "TEMPLATE_MISMATCH" });
     }
     const connection = yield* request(operation, ConnectionResponse, () =>
       platform.platform.getConnection(connectionId),
@@ -83,21 +86,21 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
       connection.connection_id !== connectionId ||
       connection.user_id !== input.connection.data.customerId
     ) {
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     }
     const startedAt = yield* DateTime.now;
     const response = yield* request(operation, BootstrapResponse, () =>
       platform.platform.bootstrapUser(connectionId, { template_id: config.emptyTemplateId }),
     );
     if (response.connection_id !== connectionId)
-      return yield* oneClawError(operation, "IDENTITY_MISMATCH");
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
     // Fail closed on new/unrecognized resource fields, not just agent_id.
     if (
       Object.values(response.summary).some(
         (value) => value !== null && !(Array.isArray(value) && value.length === 0),
       )
     ) {
-      return yield* oneClawError(operation, "UNEXPECTED_RESOURCES");
+      return yield* new OneClawError({ operation, code: "UNEXPECTED_RESOURCES" });
     }
     return {
       connectionId,
@@ -113,7 +116,10 @@ export const makeConnections = ({ config, platform, request }: ClientContext) =>
       platform.platform.reissueClaim(connectionId),
     );
     if (response.connection_id !== connectionId)
-      return yield* oneClawError("connections.reissueClaim", "IDENTITY_MISMATCH");
+      return yield* new OneClawError({
+        operation: "connections.reissueClaim",
+        code: "IDENTITY_MISMATCH",
+      });
     return {
       connectionId,
       token: response.claim_token,

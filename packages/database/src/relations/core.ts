@@ -3,6 +3,14 @@ import { defineRelationsPart } from "drizzle-orm";
 import * as schema from "#/schema/index";
 
 export const coreRelations = defineRelationsPart(schema, (r) => ({
+  signerProvisioning: {
+    // Attempts remain attributed to the initiating actor in the same tenant.
+    actor: r.one.actor({
+      from: [r.signerProvisioning.actorId, r.signerProvisioning.organizationId],
+      to: [r.actor.id, r.actor.organizationId],
+      optional: false,
+    }),
+  },
   providerConnections: {
     // A provider tenant is owned by one Namera organization.
     organization: r.one.organization({

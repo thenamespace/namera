@@ -4,14 +4,84 @@ import { DateTime, Effect, Layer } from "effect";
 import { Hex, TransactionHash, UserOperationHash } from "@namera-ai/protocol";
 
 import { Repository, TestDatabase, TransactionService } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { sessionOperationFixture } from "../../fixtures/session-operation.js";
 
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(TestDatabase.layer),
+  Layer.provideMerge(DatabaseTestLayer),
 );
 const time = DateTime.fromEpochSeconds;
 
 layer(Persistence)("durable session owner operations", (it) => {
+  for (const legacy of [false, true]) {
+    it.effect(`fences first-send evidence and stale rejection; legacy=${legacy}`, () =>
+      Effect.gen(function* () {
+        yield* (yield* TestDatabase).reset;
+        const repository = (yield* Repository).core.sessionKeyOperation;
+        const fixture = yield* sessionOperationFixture("broadcast-evidence");
+        const { operation } = yield* repository.insert({
+          ...fixture.input,
+          ...(legacy
+            ? {
+                status: "signed" as const,
+                data: { ...fixture.input.data, signed: fixture.signed },
+              }
+            : { data: { ...fixture.input.data, broadcastAttempted: false } }),
+        });
+        const scope = { id: operation.id, organizationId: operation.organizationId };
+        yield* repository.acceptSignature({
+          ...scope,
+          actorId: fixture.actor.id,
+          requestHash: operation.requestHash,
+          signed: fixture.signed,
+          now: time(1),
+          leaseToken: "approval",
+          leaseExpiresAt: time(2),
+        });
+        yield* repository.claimForReconciliation({
+          now: time(2),
+          leaseToken: "first",
+          leaseExpiresAt: time(20),
+          limit: 1,
+        });
+        const attempt = { ...scope, now: time(3), leaseToken: "first" };
+        expect(
+          yield* repository.recordBroadcastAttempt({ ...attempt, leaseToken: "stale" }),
+        ).toBeUndefined();
+        expect(
+          yield* repository.recordBroadcastAttempt({ ...attempt, now: time(20) }),
+        ).toBeUndefined();
+        const started = yield* repository.recordBroadcastAttempt(attempt);
+        expect(started?.data.broadcastAttempted).toBe(legacy ? undefined : true);
+        expect(yield* repository.recordBroadcastAttempt(attempt)).toBeUndefined();
+        yield* repository.claimForReconciliation({
+          now: time(20),
+          leaseToken: "replacement",
+          leaseExpiresAt: time(40),
+          limit: 1,
+        });
+        expect(yield* repository.rejectSubmission({ ...attempt, now: time(21) })).toBeUndefined();
+        expect(
+          yield* repository.recordBroadcastAttempt({
+            ...attempt,
+            now: time(21),
+            leaseToken: "replacement",
+          }),
+        ).toBeUndefined();
+        const receipt = {
+          ...scope,
+          now: time(21),
+          leaseToken: "replacement",
+          userOperationHash: fixture.signed.userOperationHash,
+          transactionHash: TransactionHash.make(`0x${"33".repeat(32)}`),
+          success: true,
+        };
+        expect((yield* repository.finishReceipt(receipt))?.status).toBe("confirmed");
+        expect(yield* repository.rejectSubmission(receipt)).toBeUndefined();
+        expect(yield* repository.finishReceipt(receipt)).toBeUndefined();
+      }),
+    );
+  }
   it.effect("fences unsigned signing leases, stale acceptance and expiry", () =>
     Effect.gen(function* () {
       yield* (yield* TestDatabase).reset;

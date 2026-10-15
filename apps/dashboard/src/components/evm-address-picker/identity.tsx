@@ -1,4 +1,4 @@
-import { chains } from "@namera-ai/evm/chains";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { CatalogEntryView } from "@namera-ai/protocol/dto";
 import { Avatar, Tooltip } from "@namera-ai/ui";
 import {
@@ -24,7 +24,7 @@ export function AddressIdentity({
   compact?: boolean;
 }) {
   const address = value.source === "catalog" ? value.deployment : value.value;
-  const network = Object.values(chains).find((chain) => chain.chainId === address.chainId);
+  const network = getChainDataByCaip2(address.chainId);
   const metadata = value.source === "catalog" ? value.catalog.data : null;
   return (
     <span className="flex min-w-0 flex-1 items-center gap-3 text-left">

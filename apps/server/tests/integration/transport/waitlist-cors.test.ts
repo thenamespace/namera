@@ -23,6 +23,7 @@ const routes = Layer.mergeAll(
   HttpRouter.add("POST", "/auth/google/start", HttpServerResponse.empty()),
   HttpRouter.add("POST", "/auth/magic-link/request", HttpServerResponse.empty()),
   HttpRouter.add("POST", "/auth/magic-link/verify", HttpServerResponse.empty()),
+  HttpRouter.add("DELETE", "/auth/platform/logout", HttpServerResponse.empty()),
   CorsMiddleware.pipe(
     Layer.provide(
       makeTestConfigLayer({
@@ -35,6 +36,55 @@ const routes = Layer.mergeAll(
 );
 
 layer(HttpServer.layerServices)("waitlist CORS and telemetry", (it) => {
+  it.effect("allows credentialed platform logout from product origins only", () =>
+    Effect.gen(function* () {
+      const handler = yield* HttpRouter.toHttpEffect(routes);
+      for (const origin of [
+        "https://admin.example.com",
+        "https://app.example.com",
+        "https://evil.example.com",
+      ]) {
+        for (const method of ["OPTIONS", "DELETE"]) {
+          let response: HttpServerResponse.HttpServerResponse | undefined;
+          yield* HttpEffect.toHandled(handler, (_request, result) =>
+            Effect.sync(() => {
+              response = result;
+            }),
+          ).pipe(
+            Effect.provideService(
+              HttpServerRequest.HttpServerRequest,
+              HttpServerRequest.fromWeb(
+                new Request("https://api.example.com/auth/platform/logout", {
+                  method,
+                  headers: {
+                    origin,
+                    "access-control-request-method": "DELETE",
+                    "access-control-request-headers": "content-type,traceparent",
+                  },
+                }),
+              ),
+            ),
+          );
+          if (origin === "https://evil.example.com") {
+            expect(response?.headers["access-control-allow-origin"]).not.toBe(origin);
+            continue;
+          }
+          expect(response?.headers["access-control-allow-origin"]).toBe(origin);
+          expect(response?.headers["access-control-allow-credentials"]).toBe("true");
+          if (method === "OPTIONS") {
+            expect(response?.status).toBe(204);
+            expect(response?.headers["access-control-allow-methods"]?.split(/,\s*/)).toContain(
+              "DELETE",
+            );
+            expect(
+              response?.headers["access-control-allow-headers"]?.toLowerCase().split(/,\s*/),
+            ).toEqual(expect.arrayContaining(["content-type", "traceparent"]));
+          }
+        }
+      }
+    }),
+  );
+
   it.effect("allows only public submissions from the landing-page origin", () =>
     Effect.gen(function* () {
       const handler = yield* HttpRouter.toHttpEffect(routes);

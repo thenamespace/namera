@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-object-as-prop
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
@@ -15,6 +15,7 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
+import { DetailProperty } from "@/components/detail-property";
 import {
   ChainDisplay,
   MetadataDisplay,
@@ -76,28 +77,6 @@ function ActionContent({
         icon={ArrowRight01Icon}
       />
     </>
-  );
-}
-
-function Property({
-  label,
-  children,
-  align = "center",
-}: {
-  label: string;
-  children: ReactNode;
-  align?: "center" | "start";
-}) {
-  return (
-    <div
-      className="grid min-h-9 grid-cols-[minmax(7rem,0.42fr)_minmax(0,1fr)] items-center gap-5 data-[align=start]:items-start sm:grid-cols-[11rem_minmax(0,1fr)]"
-      data-align={align}
-    >
-      <Typography className="text-sm!" color="muted" weight="normal">
-        {label}
-      </Typography>
-      <div className="min-w-0 text-sm">{children}</div>
-    </div>
   );
 }
 
@@ -164,28 +143,28 @@ export function SessionKeyCreated({
               Properties
             </Typography.Heading>
             <div className="grid gap-2">
-              <Property label="Status">
+              <DetailProperty label="Status">
                 <SessionKeyStatusDisplay status={sessionKey.status} />
-              </Property>
-              <Property label="Account">
+              </DetailProperty>
+              <DetailProperty label="Account">
                 <MetadataDisplay
                   fallbackName="Unnamed account"
                   metadata={sessionKey.wallet.metadata}
                 />
-              </Property>
-              <Property label="Custody">
+              </DetailProperty>
+              <DetailProperty label="Custody">
                 <SessionKeyCustodyDisplay custody={sessionKey.signer.custody} />
-              </Property>
-              <Property label="Namespace">
+              </DetailProperty>
+              <DetailProperty label="Namespace">
                 <NamespaceDisplay namespace={sessionKey.namespace} />
-              </Property>
-              <Property label="Networks" align="start">
+              </DetailProperty>
+              <DetailProperty label="Networks" align="start">
                 <div className="grid gap-2">
                   {sessionKey.installations.map((network) => (
                     <ChainDisplay key={network.chainId} chainId={network.chainId} />
                   ))}
                 </div>
-              </Property>
+              </DetailProperty>
             </div>
           </section>
         </div>

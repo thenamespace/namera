@@ -4,6 +4,45 @@ Namera is a programmable wallet backend. Agents can execute onchain operations
 within permissions defined by users and organizations. This repository is a
 pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
 
+## Working sequence
+
+1. Inspect the branch, working tree, and recent commits. Preserve existing work
+   and keep unrelated changes in separate commits.
+2. Read the owning package README and relevant architecture document, then trace
+   the implementation and its callers. When documentation disagrees with code,
+   verify the behavior in source and tests before making a change.
+3. Make one coherent change at a time. Preserve public contracts and security
+   boundaries unless the request explicitly changes them.
+4. Run focused checks and existing regression tests. Run `pnpm check` for
+   cross-package changes; report skipped checks and existing failures accurately.
+5. Inspect the diff, including generated files, then commit with a short
+   Conventional Commit message. Do not include local research or temporary files.
+
+Do not send live transactions, rotate credentials, change production data, or
+rewrite Git history as a side effect of a refactor.
+
+## Readability and module design
+
+- Keep each module responsible for one domain or workflow. Split substantial
+  screens into rendering, state, and domain sections when those boundaries are
+  useful; do not split files just to meet a line count. Roughly 300–500 lines is
+  a review prompt, not a hard limit. Schemas and declarative data can be larger.
+- Reuse a helper when it has multiple callers, represents a domain invariant,
+  or makes a workflow materially clearer. Keep simple one-off logic inline.
+- Construct expected errors where the failure is detected. Avoid tiny `fail`
+  wrappers that only hide an error constructor. Keep real error translation at
+  provider and transport boundaries, and preserve public result APIs.
+- Use names that explain the domain. Avoid catch-all `helpers.ts`, `common.ts`,
+  or new utility layers when a focused module name describes the responsibility.
+- Separate setup, validation, external calls, transactions, and result mapping
+  with logical blank lines. Comments explain constraints and reasoning, not syntax.
+- Preserve explicit authority checks around external operations. Sharing a
+  credential loader must not cache credentials or remove fresh revocation checks.
+- Remove obsolete runtime jobs and their callers after retirement is confirmed.
+  Do not delete historical database migrations just because they already ran.
+- Keep dependencies in the package that imports them. Prefer existing platform
+  APIs and dependencies over adding another library for a small abstraction.
+
 ## Package map
 
 - [`apps/server`](apps/server/README.md) — Node HTTP runtime, transport
@@ -31,7 +70,7 @@ pnpm/Turborepo TypeScript monorepo targeting Node.js 24 and using Effect v4.
   background delivery, and the Resend provider adapter.
 - [`packages/wallet-providers/gcp`](packages/wallet-providers/gcp/README.md) — Google Cloud KMS lifecycle and signing through `GcpService`.
 - [`packages/wallet-providers/local`](packages/wallet-providers/local/README.md) — development filesystem keys through `LocalService`.
-- [`packages/wallet-providers/oneclaw`](packages/wallet-providers/oneclaw/README.md) — SDK-backed Platform/customer/agent operations through `OneClawService`, plus org OIDC issuance; not yet wired into public custody.
+- [`packages/wallet-providers/oneclaw`](packages/wallet-providers/oneclaw/README.md) — SDK-backed Platform/customer/agent operations through `OneClawService`, plus org OIDC issuance. Application workflows coordinate managed wallet and session signing.
 - [`packages/ens`](packages/ens/README.md) — Namespace-backed offchain ENS
   subname and record management.
 - [`packages/passkeys`](packages/passkeys/README.md) — provider-neutral
@@ -65,7 +104,7 @@ examples against current public exports and keep them synchronized with releases
 
 Read the relevant feature document in [`architecture/`](architecture/README.md)
 before changing a cross-package flow. Read
-[`architecture/platform/telemetry.md`](architecture/platform/telemetry.md)
+[`architecture/runtime/observability.md`](architecture/runtime/observability.md)
 before adding or changing traces, logs, metrics, or browser OTLP behavior.
 
 ## Public docs writing style
@@ -267,6 +306,22 @@ Additional rules:
   and `OpenApi.Exclude`, so it stays out of the published spec and the Scalar
   reference. `tests/integration/transport/openapi-internal.test.ts` enforces it.
 
+## Adding namespaces and custody providers
+
+- Add namespace-discriminated contracts in `protocol`, then implement the chain
+  adapter and application flow. Keep chain-specific encoding, policies, and
+  signing semantics out of HTTP handlers and shared UI.
+- Give each custody provider its own package and explicit service. Reuse domain
+  checks within that provider's application workflows; do not introduce a generic
+  dispatcher that hides provider-specific approval or credential requirements.
+- Pass signing callbacks to chain adapters. Never move provider credentials or
+  private key material into adapters, public responses, or browser code.
+- Trace preparation, approval, submission, reconciliation, and cancellation
+  separately. Preserve reservations and uncertainty handling; a missing receipt
+  is not proof of failure and must not trigger an automatic rebroadcast.
+- Extend supported exports and capabilities deliberately. A schema variant alone
+  does not make a namespace, signing method, or policy available.
+
 ## Effect v4
 
 Before writing Effect code, read `node_modules/effect/AGENTS.md` completely and
@@ -326,6 +381,11 @@ follow its linked local documentation when relevant. Search
 
 ### Frontend UI
 
+- Put presentation reused by dashboard and admin in `@namera-ai/ui`. Keep router
+  links, query hooks, permissions, mutation state, and toast wording in the app.
+  Reuse shared metadata/status displays, copy controls, and sign-in code input
+  rather than maintaining app-specific copies. Share styling without merging
+  workflows that have different authorization or lifecycle rules.
 - Treat the existing frontend file and folder structure as intentional. Follow
   the nearest established pattern and do not move, rename, flatten, or
   reorganize existing code unless the user explicitly requests it. For example,
@@ -380,6 +440,16 @@ Read [`architecture/engineering/testing.md`](architecture/engineering/testing.md
 before adding tests. Keep provider substitutes in the package that owns the
 service, and compose them into boundary tests in `apps/server/tests` instead of
 mocking application internals.
+
+Use Effect Vitest for Effect workflows and ordinary Vitest for pure or public
+Promise APIs. Keep fixtures typed, clocks deterministic, and cleanup scoped to
+resource acquisition. Assert the intended error and durable side effects; a
+generic failure can hide an invalid fixture or missing authentication.
+
+Run dashboard rendered-control and hook tests through `test:browser`. Run server
+and repository PostgreSQL suites sequentially against a disposable test database.
+Keep compile-only public API assertions in the test typecheck lane. Do not remove
+distinct authority, custody, race, or uncertainty cases merely to reduce test count.
 
 ## Common commands
 

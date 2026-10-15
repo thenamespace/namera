@@ -2,19 +2,12 @@ import { NodeHttpClient, NodeHttpServer } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { HttpMiddleware, HttpRouter } from "effect/http";
 
+import { DatabaseMigration } from "@namera-ai/database";
 import { httpRouteTemplate, TelemetryLive } from "@namera-ai/telemetry";
 
 import { ServerConfig } from "#/config";
-import {
-  ApplicationLive,
-  AnalyticsWorkerLive,
-  BillingWorkerLive,
-  EmailWorkerLive,
-  ExecutionWorkerLive,
-  SessionKeyWorkerLive,
-  WalletOperationWorkerLive,
-  ServicesLive,
-} from "#/layers/services";
+import { ApplicationLive, ServicesLive } from "#/layers/services";
+import { WorkersLive } from "#/layers/workers";
 import { AnalyticsMiddleware } from "#/middlewares/analytics";
 import {
   CorsMiddleware,
@@ -36,13 +29,12 @@ import {
 import { OneClawDiscoveryRoutes } from "#/routes/oneclaw";
 
 import { bootstrapConfiguredAdminOwner } from "./admin-bootstrap.js";
-import { BillingStartupUpgrade } from "./billing-upgrade.js";
 import { createHttpServer } from "./http-server.js";
 
 const NodeServerLive = Layer.unwrap(
   Effect.gen(function* () {
-    // Finish migrations, billing upgrade and optional owner bootstrap before traffic.
-    yield* BillingStartupUpgrade;
+    // Finish migrations and optional owner bootstrap before accepting traffic.
+    yield* DatabaseMigration;
     yield* bootstrapConfiguredAdminOwner();
     const config = yield* ServerConfig;
 
@@ -51,7 +43,7 @@ const NodeServerLive = Layer.unwrap(
       port: config.port,
     });
   }),
-).pipe(Layer.provide(BillingStartupUpgrade.layer), Layer.provide(ServicesLive));
+).pipe(Layer.provide(DatabaseMigration.layer), Layer.provide(ServicesLive));
 
 const Routes = Layer.mergeAll(
   OneClawDiscoveryRoutes,
@@ -73,12 +65,7 @@ const Routes = Layer.mergeAll(
       ),
     ),
   ),
-  EmailWorkerLive,
-  BillingWorkerLive,
-  ExecutionWorkerLive,
-  SessionKeyWorkerLive,
-  WalletOperationWorkerLive,
-  AnalyticsWorkerLive,
+  WorkersLive,
 );
 
 // ServerLive is the transport composition root. Middleware order is intentional:

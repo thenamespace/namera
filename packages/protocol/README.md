@@ -1,13 +1,17 @@
 # @namera-ai/protocol
 
-Runtime schemas and TypeScript types for Namera wallets, session keys,
-transactions, signatures, and API messages. Validate input and encode wire data
-using the same Effect schemas as the backend, without importing server code.
+Runtime schemas and TypeScript types for Namera accounts, session keys,
+transactions, signatures, and API messages. Decode and encode data with the same
+Effect schemas used by the backend, without importing its runtime.
+
+## Requirements
+
+Node.js 24.14+ for Node applications, or a modern browser bundler. Examples use
+Effect 4.0.1, matching the package's runtime dependency.
 
 ## Installation
 
-Requires Node.js 24.14+ for Node applications, or a modern browser bundler.
-Examples use the matching Effect 4 stable release.
+Choose your package manager:
 
 ```sh
 npm install @namera-ai/protocol effect@4.0.1
@@ -16,20 +20,20 @@ yarn add @namera-ai/protocol effect@4.0.1
 bun add @namera-ai/protocol effect@4.0.1
 ```
 
-Choose one command.
+## Quick start
 
-## Validate and normalize input
+Save this as `index.ts` and run `node index.ts`:
 
 ```ts
 import { Schema } from "effect";
 import { Email } from "@namera-ai/protocol";
 
 const email = Schema.decodeUnknownSync(Email)(" Person@Example.com ");
-console.log(email); // person@example.com
+console.log(email);
 ```
 
-Invalid input throws a schema error. Use `Schema.decodeUnknownEffect` when
-validation belongs in an Effect workflow.
+The result is `person@example.com`. Invalid input throws a schema error. Use
+`Schema.decodeUnknownEffect` when validation belongs in an Effect workflow.
 
 ## Encode an API request
 
@@ -37,37 +41,40 @@ validation belongs in an Effect workflow.
 import { Schema } from "effect";
 import { JoinWaitlistRequest } from "@namera-ai/protocol/dto";
 
-type Input = typeof JoinWaitlistRequest.Encoded;
 type Request = typeof JoinWaitlistRequest.Type;
+type WireRequest = typeof JoinWaitlistRequest.Encoded;
 
-const input: Input = { email: "person@example.com" };
+const input: WireRequest = { email: "person@example.com" };
 const request: Request = Schema.decodeUnknownSync(JoinWaitlistRequest)(input);
-const json = JSON.stringify(Schema.encodeSync(JoinWaitlistRequest)(request));
+console.log(JSON.stringify(Schema.encodeSync(JoinWaitlistRequest)(request)));
 ```
 
-Use `.Encoded` for wire shapes and `.Type` for decoded values. Schemas can
-transform dates and amounts, so use schema encoding before serializing.
+`.Type` describes decoded values; `.Encoded` describes their transport form.
+Some schemas transform dates or integer strings. Encode with the owning schema
+instead of serializing decoded values directly.
 
-## Import paths
+## Exports
 
-| Import                      | Contents                                                 |
-| --------------------------- | -------------------------------------------------------- |
-| `@namera-ai/protocol`       | Shared primitives, branded identities, typed errors      |
-| `@namera-ai/protocol/dto`   | API request and response schemas                         |
-| `@namera-ai/protocol/evm`   | Chain identifiers, EVM calls, permissions and signatures |
-| `@namera-ai/protocol/model` | Domain and persistence models                            |
-| `@namera-ai/protocol/local` | Local signer bindings and encrypted key exports          |
+| Import                      | Purpose                                             |
+| --------------------------- | --------------------------------------------------- |
+| `@namera-ai/protocol`       | Primitives, identifiers, policies, and typed errors |
+| `@namera-ai/protocol/dto`   | HTTP request and response schemas                   |
+| `@namera-ai/protocol/evm`   | EVM chains, calls, permissions, and signing types   |
+| `@namera-ai/protocol/model` | Domain and persistence models                       |
+| `@namera-ai/protocol/local` | Local signer bindings and encrypted export formats  |
 
-Prefer DTOs for HTTP payloads: persistence models may contain sensitive fields.
-Local key-material schemas belong only in trusted client code, never in logs,
-analytics, or server payloads.
+Use DTOs for public payloads. Persistence models can contain sensitive fields,
+and local key-material schemas belong only in trusted client code. Never log
+decrypted exports or passphrases.
 
-Schemas validate structure, not authorization, installation, or signature validity.
-Full session responses include a public `signer` descriptor independent of account
-ownership. Creation accepts `namera-managed` custody with provider `1claw` and
-algorithm `secp256k1`, without caller-supplied keys or provider identifiers.
-This provisions a pending session; execution/signing requires installed authority.
-The unified prepare/complete APIs and SDK support both session custodians.
-Use the [SDK](https://www.npmjs.com/package/@namera-ai/sdk) for API operations.
-API, protocol, SDK and CLI share a version starting with 1.0.0.
-[Contributor architecture](https://github.com/thenamespace/namera/blob/main/architecture/packages/contracts.md).
+Schemas establish structure, not authorization or cryptographic validity.
+An accepted namespace or custody variant does not itself prove that a particular
+operation is supported. The server enforces grants, policies, and account state.
+
+## Documentation
+
+- [SDK integration](https://namera.ai/docs/sdk)
+- [Contract architecture](https://github.com/thenamespace/namera/blob/main/architecture/integrations/contracts.md)
+- [HTTP contract](https://www.npmjs.com/package/@namera-ai/api)
+
+Use matching versions of the protocol, API, SDK, and CLI packages.

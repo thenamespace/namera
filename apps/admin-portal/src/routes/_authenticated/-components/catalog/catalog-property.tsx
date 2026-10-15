@@ -1,10 +1,8 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
 import type { ReactNode } from "react";
 
-import { Button } from "@namera-ai/ui";
-import { LinkSquare02Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
-
-import { copyCatalogValue } from "./catalog-actions";
+import { CopyIconButton, toast } from "@namera-ai/ui";
+import { LinkSquare02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 export function CatalogProperty({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -27,18 +25,17 @@ export function CatalogCopyValue({
   return (
     <div className="flex min-w-0 items-center gap-2">
       <code className="break-all text-xs">{value}</code>
-      <Button
-        size="sm"
+      <CopyIconButton
         className="size-7 shrink-0"
-        variant="ghost"
-        isIconOnly
-        aria-label={`Copy ${label}`}
-        onPress={() => {
-          void copyCatalogValue(value, label);
-        }}
-      >
-        <HugeiconsIcon icon={Copy01Icon} />
-      </Button>
+        label={label}
+        value={value}
+        onCopySuccess={() => toast.success(`${label} copied`)}
+        onCopyError={() =>
+          toast.danger(`Couldn’t copy ${label.toLowerCase()}`, {
+            description: "Select and copy the value manually.",
+          })
+        }
+      />
       {explorerUrl ? (
         <a
           href={explorerUrl}

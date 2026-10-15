@@ -1,6 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-new-array-as-prop
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Button, Field, FieldError, InputOTP, REGEXP_ONLY_DIGITS, Typography } from "@namera-ai/ui";
+import { Button, Field, FieldError, SignInCodeInput, Typography } from "@namera-ai/ui";
 import { Controller, useForm } from "react-hook-form";
 
 import { useVerifyMagicLink } from "@/hooks/auth";
@@ -38,34 +38,16 @@ export function EmailConfirmation({ email, onBack }: { email: string; onBack: ()
           name="code"
           render={({ field, fieldState }) => (
             <Field className="justify-items-center">
-              <InputOTP
+              <SignInCodeInput
                 {...field}
-                aria-label="Email sign-in code"
                 aria-describedby={fieldState.error ? "admin-code-error" : undefined}
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                maxLength={8}
-                pattern={REGEXP_ONLY_DIGITS}
-                variant="secondary"
                 isInvalid={fieldState.invalid}
                 isDisabled={verify.isPending}
                 onChange={(value) => {
                   field.onChange(value);
                   verify.reset();
                 }}
-              >
-                <InputOTP.Group className="gap-1">
-                  {[0, 1, 2, 3].map((index) => (
-                    <InputOTP.Slot key={index} index={index} className="h-10 w-6 min-[380px]:w-8" />
-                  ))}
-                </InputOTP.Group>
-                <InputOTP.Separator />
-                <InputOTP.Group className="gap-1">
-                  {[4, 5, 6, 7].map((index) => (
-                    <InputOTP.Slot key={index} index={index} className="h-10 w-6 min-[380px]:w-8" />
-                  ))}
-                </InputOTP.Group>
-              </InputOTP>
+              />
               <FieldError id="admin-code-error" errors={[fieldState.error]} />
             </Field>
           )}

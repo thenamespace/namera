@@ -30,8 +30,8 @@ const wallet = Schema.decodeUnknownSync(WalletResponse)({
     salt: "0",
     entityId: 0,
   },
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: new Date("2026-10-01T00:00:00Z"),
+  updatedAt: new Date("2026-10-01T00:00:00Z"),
 });
 const installation = Schema.decodeUnknownSync(SessionKeyInstallationResponse)({
   id: "01950000-0000-7000-8000-000000000004",

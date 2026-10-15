@@ -4,16 +4,23 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toMemberResponse, toOrganizationResponse } from "#/helpers/index";
+import {
+  enforceActor,
+  requireDashboardOrigin,
+  toMemberResponse,
+  toOrganizationResponse,
+} from "#/helpers/index";
 
 export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
     return handlers
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toOrganizationResponse(
             yield* app.organization.create(data.user.id, data.session.id, payload.metadata),
           );
@@ -33,6 +40,7 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* app.organization.setActive(data.user.id, data.session.id, payload.organizationId);
         }),
       )
@@ -57,6 +65,7 @@ export const OrganizationRoutes = HttpApiBuilder.group(NameraApi, "organization"
             allowedActors: ["user"],
             requiredPermissions: { user: ["organization:update"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toOrganizationResponse(
             yield* app.organization.update(data.actorId, data.organization.id, payload.metadata),
           );

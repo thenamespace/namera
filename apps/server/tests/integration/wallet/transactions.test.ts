@@ -5,22 +5,25 @@ import { TestClock } from "effect/testing";
 import { NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 import { Database } from "@namera-ai/database";
+import { TestEvmExecution } from "@namera-ai/evm";
 import { EthereumAddress, Hex } from "@namera-ai/protocol";
 
 import { handledApi } from "../../fixtures/http-api-test.js";
 import {
   createMember,
   makeTestApiClient,
-  resetTestState,
   setAuthToken,
   setApiKey,
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { localSessionRequest } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+import { setupPasskeyWalletOwner } from "../../fixtures/passkey-wallet-owner.js";
 
-const fixture = makeOwnerSessionTestFixture();
+const fixture = makeOwnerSessionTestFixture({
+  getStatus: () => Effect.succeed({ status: "not_found", transactionHash: null }),
+});
 const request = {
   namespace: "eip155" as const,
   chainId: "eip155:8453" as const,
@@ -38,23 +41,14 @@ const request = {
     },
   ],
 };
-const setup = Effect.gen(function* () {
-  yield* resetTestState();
-  const author = yield* signIn(
-    yield* makeTestApiClient,
-    testEmail("owner-transaction@example.com"),
-  );
-  const client = yield* handledApi(NameraApi, {
-    headers: { cookie: `auth-token=${author.cookie.value}`, origin: "http://dashboard.test" },
-  });
-  const wallet = yield* createTestPasskeyWallet(client);
-  return { client, author, wallet, params: { walletId: wallet.id } };
-});
+const setup = setupPasskeyWalletOwner("transactions");
 
 layer(fixture.layer)("owner wallet transactions", (it) => {
   it.effect("executes a non-ENS batch on the requested chain and exposes durable status", () =>
     Effect.gen(function* () {
       const { client, params, wallet } = yield* setup;
+      const execution = yield* TestEvmExecution;
+      const sendsBefore = yield* execution.submissionCount;
       const input = { params, headers: { "idempotency-key": "batch" }, payload: request };
       const prepared = yield* client.walletTransaction.prepare(input);
       expect(prepared.signingKeyId).toBe(wallet.owner.signingKeyId);
@@ -77,6 +71,7 @@ layer(fixture.layer)("owner wallet transactions", (it) => {
         userOperationHash: null,
         transactionHash: null,
       });
+      expect(yield* execution.submissionCount).toBe(sendsBefore);
       if (prepared.signing.method !== "passkey") return yield* Effect.die("Expected passkey");
       const payload = {
         namespace: "eip155" as const,
@@ -91,7 +86,16 @@ layer(fixture.layer)("owner wallet transactions", (it) => {
       const signed = yield* client.walletTransaction.complete({ params, payload });
       expect(signed.status).toBe("signed");
       expect(yield* client.walletTransaction.complete({ params, payload })).toEqual(signed);
+      expect(yield* execution.submissionCount).toBe(sendsBefore);
+      yield* execution.setReceiptMode("missing");
       yield* TestClock.adjust(Duration.seconds(2));
+      yield* (yield* Application).wallet.transactions.reconcile();
+      expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
+        status: "submitted",
+        transactionHash: null,
+      });
+      yield* execution.setReceiptMode("immediate");
+      yield* TestClock.adjust(Duration.seconds(20));
       yield* (yield* Application).wallet.transactions.reconcile();
       expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
         status: "confirmed",
@@ -102,6 +106,10 @@ layer(fixture.layer)("owner wallet transactions", (it) => {
       expect(operations).toHaveLength(1);
       expect(operations[0]?.kind).toBe("transaction");
       expect(operations[0]?.data.name).toBeUndefined();
+      expect(yield* execution.submissionCount).toBe(sendsBefore + 1);
+      const events = yield* db.query.organizationEvent.findMany();
+      expect(events.filter((event) => event.event === "wallet.operation_prepared")).toHaveLength(1);
+      expect(events.filter((event) => event.event === "wallet.operation_approved")).toHaveLength(1);
     }),
   );
 
@@ -187,18 +195,23 @@ layer(fixture.layer)("owner wallet transactions", (it) => {
             },
           });
           const error = yield* other.walletTransaction.complete(completion).pipe(Effect.flip);
-          expect(error).toMatchObject(
-            role === "admin" ? { code: "OPERATION_UNAVAILABLE" } : { _tag: "Forbidden" },
-          );
+          expect(error).toMatchObject({ _tag: "Forbidden" });
+          expect(
+            yield* other.walletTransaction
+              .prepare({
+                params,
+                headers: { "idempotency-key": `blocked-${role}` },
+                payload: request,
+              })
+              .pipe(Effect.flip),
+          ).toMatchObject({ _tag: "Forbidden" });
           expect(
             yield* other.walletTransaction
               .get({
                 params: { ...params, operationId: prepared.operationId },
               })
               .pipe(Effect.flip),
-          ).toMatchObject(
-            role === "admin" ? { code: "OPERATION_UNAVAILABLE" } : { _tag: "Forbidden" },
-          );
+          ).toMatchObject({ _tag: "Forbidden" });
         }
         expect((yield* client.walletTransaction.complete(completion)).status).toBe("signed");
       }),

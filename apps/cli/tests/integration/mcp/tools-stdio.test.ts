@@ -293,72 +293,75 @@ describe.each(["2026-07-28", "2025-11-25", "2025-06-18"])(
         await server.runtime.dispose();
       }
     });
-    it("signs through the imported encrypted keystore and refuses an unavailable unlock secret", async () => {
-      const privateKey = generatePrivateKey();
-      const fixture = mcpSignatureFixture(privateKey);
-      const directory = await mkdtemp(join(tmpdir(), "namera-stdio-key-"));
-      const secrets = new Map<string, string>();
-      let unlocked = false;
-      const store = createSessionKeystore(directory, {
-        get: (key) => (unlocked ? (secrets.get(key) ?? null) : null),
-        set: (key, value) => {
-          secrets.set(key, value);
-        },
-        delete: (key) => {
-          secrets.delete(key);
-        },
-      });
-      const apiOrigin = "https://api.namera.test";
-      const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
-        version: 1,
-        namespace: "eip155",
-        apiOrigin,
-        privateKey,
-        bindings: [Schema.encodeSync(LocalEvmSessionBinding)(fixture.binding)],
-      });
-      const password = Redacted.make("test-only export passphrase");
-      let server: Awaited<ReturnType<typeof harness>> | undefined;
-      try {
-        await store.importKey(await sealLocalSessionKey(material, password), password, apiOrigin);
-        let completions = 0;
-        server = await harness(protocolVersion, {
-          fixture,
-          signer: makeSessionSignerResolver(store, apiOrigin),
-          fetch: async (input, init) => {
-            if (String(input).endsWith("/signatures/prepare"))
-              return Response.json(Schema.encodeSync(PrepareSignatureResponse)(fixture.response));
-            expect(String(input)).toContain("/signatures/complete");
-            const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
-              signature: `0x${string}`;
-            };
-            expect(
-              await verifyTypedData({
-                ...fixture.response.signing.typedData,
-                address: fixture.account.address,
-                signature: payload.signature,
-              }),
-            ).toBe(true);
-            completions += 1;
-            return Response.json(fixture.complete(payload.signature));
+    // Protocol compatibility is covered above and by process.test; storage has one shared path.
+    if (protocolVersion === "2026-07-28") {
+      it("signs through the imported encrypted keystore and refuses an unavailable unlock secret", async () => {
+        const privateKey = generatePrivateKey();
+        const fixture = mcpSignatureFixture(privateKey);
+        const directory = await mkdtemp(join(tmpdir(), "namera-stdio-key-"));
+        const secrets = new Map<string, string>();
+        let unlocked = false;
+        const store = createSessionKeystore(directory, {
+          get: (key) => (unlocked ? (secrets.get(key) ?? null) : null),
+          set: (key, value) => {
+            secrets.set(key, value);
+          },
+          delete: (key) => {
+            secrets.delete(key);
           },
         });
-        await server.initialize();
-        const params = { name: "sign", arguments: { request: fixture.request } };
-        expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
-          error: { code: "LOCAL_SIGNER_UNAVAILABLE" },
+        const apiOrigin = "https://api.namera.test";
+        const material = Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
+          version: 1,
+          namespace: "eip155",
+          apiOrigin,
+          privateKey,
+          bindings: [Schema.encodeSync(LocalEvmSessionBinding)(fixture.binding)],
         });
-        expect(completions).toBe(0);
-        unlocked = true;
-        expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
-          signature: { walletId: fixture.binding.walletId, type: "message" },
-        });
-        expect(completions).toBe(1);
-      } finally {
-        await server?.runtime.dispose();
-        secrets.clear();
-        await rm(directory, { recursive: true, force: true });
-      }
-    });
+        const password = Redacted.make("test-only export passphrase");
+        let server: Awaited<ReturnType<typeof harness>> | undefined;
+        try {
+          await store.importKey(await sealLocalSessionKey(material, password), password, apiOrigin);
+          let completions = 0;
+          server = await harness(protocolVersion, {
+            fixture,
+            signer: makeSessionSignerResolver(store, apiOrigin),
+            fetch: async (input, init) => {
+              if (String(input).endsWith("/signatures/prepare"))
+                return Response.json(Schema.encodeSync(PrepareSignatureResponse)(fixture.response));
+              expect(String(input)).toContain("/signatures/complete");
+              const payload = JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)) as {
+                signature: `0x${string}`;
+              };
+              expect(
+                await verifyTypedData({
+                  ...fixture.response.signing.typedData,
+                  address: fixture.account.address,
+                  signature: payload.signature,
+                }),
+              ).toBe(true);
+              completions += 1;
+              return Response.json(fixture.complete(payload.signature));
+            },
+          });
+          await server.initialize();
+          const params = { name: "sign", arguments: { request: fixture.request } };
+          expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
+            error: { code: "LOCAL_SIGNER_UNAVAILABLE" },
+          });
+          expect(completions).toBe(0);
+          unlocked = true;
+          expect((await server.rpc("tools/call", params)).structuredContent).toMatchObject({
+            signature: { walletId: fixture.binding.walletId, type: "message" },
+          });
+          expect(completions).toBe(1);
+        } finally {
+          await server?.runtime.dispose();
+          secrets.clear();
+          await rm(directory, { recursive: true, force: true });
+        }
+      });
+    }
     it("accepts an internal actor client UUID distinct from the public OAuth ID and rechecks live authority", async () => {
       const server = await harness(protocolVersion);
       try {

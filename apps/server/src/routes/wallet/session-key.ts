@@ -4,17 +4,24 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toActorReadScope, toSessionKeyResponse } from "#/helpers/index";
+import {
+  enforceActor,
+  requireDashboardOrigin,
+  toActorReadScope,
+  toSessionKeyResponse,
+} from "#/helpers/index";
 import { consumeRateLimit, rateLimitPolicy } from "#/rate-limit";
 
 export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
 
     return handlers
       .handle("cancelOperation", ({ params }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           const allowedKinds: Array<"install" | "uninstall"> = [];
           if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
           if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
@@ -40,6 +47,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
               user: [payload.kind === "install" ? "session-key:create" : "session-key:revoke"],
             },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
             data.organization.id,
@@ -55,6 +63,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
       .handle("approveManagedOperation", ({ payload }) =>
         Effect.gen(function* () {
           const data = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           const allowedKinds: Array<"install" | "uninstall"> = [];
           if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
           if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
@@ -103,6 +112,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
           const data = yield* enforceActor({ actor, allowedActors: ["user"] });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           const allowedKinds: Array<"install" | "uninstall"> = [];
           if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
           if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
@@ -129,6 +139,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
               user: [payload.kind === "install" ? "session-key:create" : "session-key:revoke"],
             },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
             data.organization.id,
@@ -149,6 +160,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
             allowedActors: ["user"],
             requiredPermissions: { user: ["session-key:create"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           if (payload.signer.custody === "namera-managed") {
             yield* consumeRateLimit(
               "session_key.create_managed.organization",
@@ -231,6 +243,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
             allowedActors: ["user"],
             requiredPermissions: { user: ["session-key:revoke"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.revoke.organization",
             data.organization.id,

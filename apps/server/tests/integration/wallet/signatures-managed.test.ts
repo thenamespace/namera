@@ -23,29 +23,36 @@ const testLayer = makeTestServerLayer(
   oneClawAccountTestLayer(),
 );
 
+const setup = Effect.gen(function* () {
+  yield* resetTestState();
+  yield* TestClock.setTime(Date.now());
+  const author = yield* signIn(
+    yield* makeTestApiClient,
+    testEmail("managed-signature@example.com"),
+  );
+  const client = yield* handledApi(NameraApi, {
+    headers: { cookie: `auth-token=${author.cookie.value}`, origin: "http://dashboard.test" },
+  });
+  const wallet = yield* client.wallet.create({
+    payload: {
+      namespace: "eip155",
+      owner: { type: "namera-managed", provider: "1claw" },
+      metadata: { version: 1, name: "Treasury" },
+    },
+  });
+  const control = yield* OneClawTestControl;
+  yield* Ref.set(control.calls, []);
+
+  yield* Ref.set(control.failNext, undefined);
+  return { client, author, wallet, control };
+});
+
 layer(testLayer)("managed wallet signatures", (it) => {
   it.effect(
     "prepares without signing, signs once on completion and denies replay after key disable",
     () =>
       Effect.gen(function* () {
-        yield* resetTestState();
-        yield* TestClock.setTime(Date.now());
-        const author = yield* signIn(
-          yield* makeTestApiClient,
-          testEmail("managed-signature@example.com"),
-        );
-        const client = yield* handledApi(NameraApi, {
-          headers: { cookie: `auth-token=${author.cookie.value}`, origin: "http://dashboard.test" },
-        });
-        const wallet = yield* client.wallet.create({
-          payload: {
-            namespace: "eip155",
-            owner: { type: "namera-managed", provider: "1claw" },
-            metadata: { version: 1, name: "Treasury" },
-          },
-        });
-        const control = yield* OneClawTestControl;
-        yield* Ref.set(control.calls, []);
+        const { client, author, wallet, control } = yield* setup;
         const params = { walletId: wallet.id };
         const prepared = yield* client.walletSignature.prepare({
           params,
@@ -77,5 +84,51 @@ layer(testLayer)("managed wallet signatures", (it) => {
           code: "OWNER_UNAVAILABLE",
         });
       }),
+  );
+  it.effect("releases a failed signing lease and retries without caching a partial result", () =>
+    Effect.gen(function* () {
+      const { client, wallet, control } = yield* setup;
+      const params = { walletId: wallet.id };
+      const prepared = yield* client.walletSignature.prepare({
+        params,
+        headers: { "idempotency-key": "managed-sign-retry" },
+        payload: {
+          namespace: "eip155",
+          chainId: "eip155:8453",
+          type: "message",
+          message: "Authorize upload",
+        },
+      });
+      const input = {
+        params,
+        payload: { namespace: "eip155" as const, operationId: prepared.operationId },
+      };
+      yield* Ref.set(control.failNext, "signing.signDigest");
+      expect(yield* client.walletSignature.complete(input).pipe(Effect.flip)).toMatchObject({
+        code: "SIGNING_FAILED",
+      });
+      const db = yield* Database;
+      const failed = yield* db.query.walletSignatureOperation.findMany();
+      expect(failed).toHaveLength(1);
+      expect(failed[0]).toMatchObject({
+        status: "prepared",
+        leaseToken: null,
+        encryptedResult: null,
+      });
+      expect(
+        (yield* db.query.organizationEvent.findMany()).filter(
+          (event) => event.event === "wallet.signature_created",
+        ),
+      ).toHaveLength(0);
+
+      const result = yield* client.walletSignature.complete(input);
+      expect(yield* client.walletSignature.complete(input)).toEqual(result);
+      expect(yield* Ref.get(control.calls)).toEqual(["signing.signDigest", "signing.signDigest"]);
+      expect(
+        (yield* db.query.organizationEvent.findMany()).filter(
+          (event) => event.event === "wallet.signature_created",
+        ),
+      ).toHaveLength(1);
+    }),
   );
 });

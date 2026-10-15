@@ -38,6 +38,8 @@
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
@@ -52,11 +54,13 @@
     "resend": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "klarity": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

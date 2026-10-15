@@ -52,17 +52,6 @@ layer(fixture.layer)("session-key routes", (it) => {
             version: 1 as const,
             chainIds: ["eip155:1" as const, "eip155:8453" as const],
           },
-          {
-            type: "evm.gas-budget" as const,
-            version: 1 as const,
-            budgets: [
-              {
-                chainId: "eip155:1" as const,
-                period: "day" as const,
-                maxCost: 10_000_000_000_000_000n,
-              },
-            ],
-          },
         ],
       };
 
@@ -106,17 +95,6 @@ layer(fixture.layer)("session-key routes", (it) => {
             type: "evm.chain-allowlist",
             version: 1,
             chainIds: ["eip155:1", "eip155:8453"],
-          },
-          {
-            type: "evm.gas-budget",
-            version: 1,
-            budgets: [
-              {
-                chainId: "eip155:1",
-                period: "day",
-                maxCost: 10_000_000_000_000_000n,
-              },
-            ],
           },
         ],
       });

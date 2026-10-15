@@ -122,34 +122,25 @@ export const SigningKey = Schema.Union([
   OneClawEd25519SigningKeyInsert.mapFields(Struct.assign(TimestampFields)),
 ]);
 
-const SigningKeyInsertFields = {
-  id: SigningKeyId,
-  organizationId: OrganizationId,
-  publicKeyHex: Hex,
-  status: SigningKeyStatus,
-  credentialId: Schema.optionalKey(Schema.Null),
-  providerConnectionId: Schema.optionalKey(Schema.Null),
-};
-
 export const SigningKeyInsert = Schema.Union([
   OneClawSecp256k1SigningKeyInsert,
   OneClawEd25519SigningKeyInsert,
   Schema.Struct({
-    ...SigningKeyInsertFields,
+    ...SigningKeyFields,
     purpose: Schema.Literal("wallet-root"),
     custody: Schema.Literal("local"),
     algorithm: Schema.Literal("p256"),
     data: PasskeySigningKeyData,
   }),
   Schema.Struct({
-    ...SigningKeyInsertFields,
+    ...SigningKeyFields,
     purpose: SigningKeyPurpose,
     custody: Schema.Literal("local"),
     algorithm: SigningKeyAlgorithm,
     data: LocalSigningKeyData,
   }),
   Schema.Struct({
-    ...SigningKeyInsertFields,
+    ...SigningKeyFields,
     purpose: SigningKeyPurpose,
     custody: Schema.Literal("namera-managed"),
     algorithm: SigningKeyAlgorithm,

@@ -5,11 +5,10 @@ import { Schema } from "effect";
 import { FeedbackId } from "@namera-ai/protocol/model";
 import { Button } from "@namera-ai/ui";
 
-import { currentAdminAtom } from "@/atoms/auth";
 import { feedbackDetailAtom } from "@/atoms/feedback";
-import { prefetchQuery } from "@/atoms/prefetch";
+import { prefetchAuthorizedQuery } from "@/atoms/prefetch";
 import { AdminPage } from "@/components/page";
-import { hasPermissions, PermissionGuard, readFeedbackPermission } from "@/components/permission";
+import { PermissionGuard, readFeedbackPermission } from "@/components/permission";
 import { useFeedbackDetail } from "@/hooks/feedback";
 
 import { FeedbackDetails } from "./-components/feedback/details";
@@ -21,21 +20,12 @@ export const Route = createFileRoute("/_authenticated/feedback_/$feedbackId")({
     parse: (params) => ({ feedbackId: Schema.decodeUnknownSync(FeedbackId)(params.feedbackId) }),
   },
   loader: async ({ context, params, abortController }) => {
-    const access = await prefetchQuery(
+    await prefetchAuthorizedQuery(
       context.atomRegistry,
-      currentAdminAtom,
+      readFeedbackPermission,
+      () => feedbackDetailAtom(params.feedbackId),
       abortController.signal,
     );
-    if (
-      access.status === "authorized" &&
-      hasPermissions(access.admin.permissions, readFeedbackPermission)
-    ) {
-      await prefetchQuery(
-        context.atomRegistry,
-        feedbackDetailAtom(params.feedbackId),
-        abortController.signal,
-      );
-    }
   },
   errorComponent: ({ reset }) => (
     <AdminPage title="Feedback">

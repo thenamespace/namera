@@ -1,7 +1,6 @@
 import type { GetInvitationResponse } from "@namera-ai/protocol/dto";
+import { StatusDisplay, type StatusTone } from "@namera-ai/ui";
 import { CancelCircleIcon, CheckmarkCircle02Icon, Clock01Icon } from "@namera-ai/ui/icons";
-
-import { StatusDisplay, type StatusTone } from "./status-display";
 
 type InvitationStatus = GetInvitationResponse["invitation"]["status"];
 

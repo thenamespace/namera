@@ -1,4 +1,4 @@
-import { DateTime, Duration, Effect, Metric, Option } from "effect";
+import { Cause, DateTime, Duration, Effect, Metric, Option, Predicate, Result } from "effect";
 
 import { CryptoService } from "@namera-ai/crypto";
 import { Repository } from "@namera-ai/database";
@@ -7,9 +7,10 @@ import type { SessionKeyOperation } from "@namera-ai/protocol/model";
 import { sessionKeyOperationResults, workerBacklog, workerOldestAge } from "@namera-ai/telemetry";
 
 import { makeSettleSessionKeyOperation } from "./operation-receipt.js";
+import { makeRejectSessionKeySubmission } from "./reject-submission.js";
 
 const reconciliation = {
-  batchSize: 20,
+  batchSize: 4,
   concurrency: 4,
   lease: Duration.minutes(2),
   retry: Duration.seconds(15),
@@ -20,6 +21,7 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
   const crypto = yield* CryptoService;
   const evm = yield* Evm;
   const settle = yield* makeSettleSessionKeyOperation;
+  const reject = yield* makeRejectSessionKeySubmission;
 
   const defer = Effect.fn("application.sessionKey.deferOperation")(function* (
     operation: SessionKeyOperation,
@@ -31,7 +33,15 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
       organizationId: operation.organizationId,
       leaseToken,
       now,
-      nextReconcileAt: DateTime.addDuration(now, reconciliation.retry),
+      nextReconcileAt: DateTime.addDuration(
+        now,
+        DateTime.isGreaterThanOrEqualTo(
+          now,
+          DateTime.addDuration(operation.createdAt, Duration.hours(24)),
+        )
+          ? Duration.minutes(5)
+          : reconciliation.retry,
+      ),
     });
   });
 
@@ -49,15 +59,48 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
       yield* settle(operation, leaseToken, receipt.value);
       return;
     }
-    // Resubmit exactly the persisted bytes, including after an ambiguous response
-    // or bundler eviction. Never create a replacement or expire a signed approval.
-    yield* evm.execution.submit({ signed });
-    yield* repository.core.sessionKeyOperation.markSubmitted({
-      id: operation.id,
-      organizationId: operation.organizationId,
-      leaseToken,
+    // Signed/unknown legacy operations may already be pending. Never resend them.
+    const aged = DateTime.isGreaterThanOrEqualTo(
+      yield* DateTime.now,
+      DateTime.addDuration(operation.createdAt, Duration.hours(24)),
+    );
+    if (operation.status !== "signed" || operation.data.broadcastAttempted !== false || aged) {
+      yield* defer(operation, leaseToken);
+      return;
+    }
+    const scope = { id: operation.id, organizationId: operation.organizationId, leaseToken };
+    const attempt = yield* repository.core.sessionKeyOperation.recordBroadcastAttempt({
+      ...scope,
       now: yield* DateTime.now,
     });
+    if (!attempt) return;
+    const submitted = yield* evm.execution.submit({ signed }).pipe(Effect.result);
+    if (Result.isSuccess(submitted)) {
+      yield* repository.core.sessionKeyOperation.markSubmitted({
+        ...scope,
+        now: yield* DateTime.now,
+      });
+    } else if (
+      Predicate.isTagged(submitted.failure, "EvmExecutionError") &&
+      submitted.failure.code === "SUBMISSION_REJECTED"
+    ) {
+      const observed = yield* evm.execution.getStatus({
+        chainId: signed.chainId,
+        userOperationHash: signed.userOperationHash,
+      });
+      if (
+        observed.status === "not_found" ||
+        observed.status === "not_submitted" ||
+        observed.status === "rejected"
+      ) {
+        yield* reject(operation, leaseToken);
+        return;
+      }
+      yield* repository.core.sessionKeyOperation.markSubmitted({
+        ...scope,
+        now: yield* DateTime.now,
+      });
+    }
     yield* defer(operation, leaseToken);
   });
 
@@ -100,22 +143,25 @@ export const makeReconcileSessionKeyOperations = Effect.gen(function* () {
         operations,
         (operation) =>
           reconcileOne(operation, leaseToken).pipe(
-            Effect.catchCause(() =>
-              Effect.gen(function* () {
-                // Provider errors may embed request URLs or signature payloads. Do not
-                // serialize them into logs; retain the operation for a later retry.
-                yield* Effect.logError("session_key.operation.reconciliation_failed").pipe(
-                  Effect.annotateLogs({ operation_id: operation.id, kind: operation.kind }),
-                );
-                yield* Metric.update(
-                  Metric.withAttributes(sessionKeyOperationResults, {
-                    stage: "reconcile",
-                    result: "retry",
+            Effect.timeout(Duration.seconds(60)),
+            Effect.catchCause((cause) =>
+              Cause.hasInterrupts(cause)
+                ? Effect.interrupt
+                : Effect.gen(function* () {
+                    // Provider errors may embed request URLs or signature payloads. Do not
+                    // serialize them into logs; retain the operation for a later retry.
+                    yield* Effect.logError("session_key.operation.reconciliation_failed").pipe(
+                      Effect.annotateLogs({ operation_id: operation.id, kind: operation.kind }),
+                    );
+                    yield* Metric.update(
+                      Metric.withAttributes(sessionKeyOperationResults, {
+                        stage: "reconcile",
+                        result: "retry",
+                      }),
+                      1,
+                    );
+                    yield* defer(operation, leaseToken);
                   }),
-                  1,
-                );
-                yield* defer(operation, leaseToken);
-              }),
             ),
           ),
         { concurrency: reconciliation.concurrency, discard: true },

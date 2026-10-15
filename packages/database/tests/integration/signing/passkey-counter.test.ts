@@ -4,8 +4,9 @@ import { Effect, Layer, Schema } from "effect";
 import { Email, OrganizationId, SigningKeyId } from "@namera-ai/protocol";
 
 import { Repository, TestDatabase } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
-const Persistence = Repository.layer.pipe(Layer.provideMerge(TestDatabase.layer));
+const Persistence = Repository.layer.pipe(Layer.provideMerge(DatabaseTestLayer));
 
 layer(Persistence)("passkey approval counters", (it) => {
   it.effect("binds an active credential and atomically rejects stale or decreasing counters", () =>

@@ -17,6 +17,7 @@ import { betaInviteTransitions, magicLinkVerificationResults } from "@namera-ai/
 import { makeCompleteSignIn } from "#/auth/complete-sign-in";
 import { AuthConfig } from "#/auth/config";
 import { recordAccountTransition } from "#/auth/google/account";
+import { normalizeAuthReturnTo } from "#/auth/return-to";
 
 export interface VerifyMagicLinkResult {
   readonly sessionToken?: string;
@@ -233,7 +234,7 @@ export const makeVerifyMagicLinkApplication = Effect.gen(function* () {
             sessionToken: completed.sessionToken,
             linked: completed.linked,
             inviteRedeemed: invite !== undefined,
-            returnTo: verification.data.returnTo ?? config.returnTo.defaultPath,
+            returnTo: normalizeAuthReturnTo(verification.data.returnTo, config),
           };
         }),
       );

@@ -5,12 +5,8 @@ import { catalogAtom, catalogDetailAtom, importCatalogMutation } from "@/atoms/c
 import { QueryKeys } from "@/atoms/query-keys";
 import { toMutation, toQuery } from "@/hooks/atom";
 
-export function useCatalog(query: ListAdminCatalogRequest) {
-  return toQuery(() => catalogAtom(query))();
-}
-export function useCatalogDetail(id: AddressCatalogId) {
-  return toQuery(() => catalogDetailAtom(id))();
-}
+export const useCatalog = toQuery((query: ListAdminCatalogRequest) => catalogAtom(query));
+export const useCatalogDetail = toQuery((id: AddressCatalogId) => catalogDetailAtom(id));
 export const useImportCatalog = toMutation(importCatalogMutation, {
   invalidates: QueryKeys.catalog.list,
 });

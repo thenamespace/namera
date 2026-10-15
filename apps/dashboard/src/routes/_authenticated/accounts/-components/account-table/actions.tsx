@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { WalletResponse } from "@namera-ai/protocol/dto";
 import { Button, Dropdown, Label } from "@namera-ai/ui";
+import { CopyDropdownItem } from "@namera-ai/ui";
 import {
   ArrowUpRight01Icon,
   HugeiconsIcon,
@@ -10,7 +11,6 @@ import {
 } from "@namera-ai/ui/icons";
 import { useEventCallback } from "usehooks-ts";
 
-import { CopyDropdownItem } from "@/components/copy-icon-button";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const showWalletIdCopied = () => showSuccessToast({ title: "Wallet ID copied to clipboard" });

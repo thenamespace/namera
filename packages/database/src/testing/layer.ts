@@ -57,6 +57,7 @@ import {
   signingKey,
   credentials,
   providerConnections,
+  signerProvisioning,
   signatureOperation,
   systemRole,
   user,
@@ -151,6 +152,7 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);
         yield* database.delete(signingKey);
+        yield* database.delete(signerProvisioning);
         yield* database.delete(providerConnections);
         yield* database.delete(credentials);
         yield* database.delete(invitation);

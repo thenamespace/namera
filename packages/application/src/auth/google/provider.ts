@@ -36,12 +36,16 @@ export class GoogleIdentityProvider extends Context.Service<
           Config.withDefault(Redacted.make("")),
         ),
       });
-      const enabled = config.clientId.length > 0 && Redacted.value(config.clientSecret).length > 0;
-      if (config.clientId.length > 0 !== Redacted.value(config.clientSecret).length > 0) {
+      const hasClientId = config.clientId.length > 0;
+      const hasClientSecret = Redacted.value(config.clientSecret).length > 0;
+
+      if (hasClientId !== hasClientSecret) {
         return yield* Effect.die(
           "Configure both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither",
         );
       }
+
+      const enabled = hasClientId && hasClientSecret;
       const client = yield* HttpClient.HttpClient;
       const keys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"), {
         timeoutDuration: 10_000,

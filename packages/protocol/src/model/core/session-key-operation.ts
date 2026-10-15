@@ -34,6 +34,9 @@ export const SessionKeyOperationData = Schema.Struct({
   // The canonical JSON codec preserves decoded context timestamps across JSONB.
   prepared: Schema.toCodecJson(EvmPreparedExecution),
   signed: Schema.NullOr(EvmSignedExecution),
+  // Legacy rows without evidence must recover read-only.
+  broadcastAttempted: Schema.optionalKey(Schema.Boolean),
+  submissionRejected: Schema.optionalKey(Schema.Literal(true)),
   managedOwner: Schema.optional(Schema.Struct({ signingKeyId: SigningKeyId, publicKey: Hex })),
 });
 

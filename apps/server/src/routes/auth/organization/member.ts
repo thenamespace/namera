@@ -4,11 +4,12 @@ import { HttpApiBuilder } from "effect/http-api";
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
 
-import { enforceActor, toMemberResponse } from "#/helpers/index";
+import { enforceActor, requireDashboardOrigin, toMemberResponse } from "#/helpers/index";
 
 export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers) =>
   Effect.gen(function* () {
     const app = yield* Application.Application;
+    const config = yield* Application.AuthConfig;
     return handlers
       .handle("listOrgMembers", () =>
         Effect.gen(function* () {
@@ -56,6 +57,7 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["member:update"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           return toMemberResponse(
             yield* app.organization.member.updateRole({
               ...payload,
@@ -74,6 +76,7 @@ export const MemberRoutes = HttpApiBuilder.group(NameraApi, "member", (handlers)
             allowedActors: ["user"],
             requiredPermissions: { user: ["member:remove"] },
           });
+          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* app.organization.member.remove({
             ...payload,
             actorId: data.actorId,

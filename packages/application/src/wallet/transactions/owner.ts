@@ -16,7 +16,7 @@ export type WalletTransactionScope = {
   readonly actorId: ActorId;
   readonly walletId: WalletId;
 };
-export const transactionFailure = () => new WalletTransactionError({ code: "PREPARATION_FAILED" });
+
 export const makeTransactionOwner = Effect.gen(function* () {
   const repository = yield* Repository;
   const publicOwner = yield* makeLoadPublicSessionOwner;
@@ -29,6 +29,8 @@ export const makeTransactionOwner = Effect.gen(function* () {
     if (
       !member ||
       member.organizationMember.removedAt !== null ||
+      member.organizationRole.type !== "system" ||
+      member.organizationRole.key !== "owner" ||
       !member.organizationRole.permissions.includes("wallet:update")
     )
       return yield* new WalletTransactionError({ code: "OWNER_UNAVAILABLE" });
