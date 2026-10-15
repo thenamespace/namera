@@ -441,6 +441,16 @@ before adding tests. Keep provider substitutes in the package that owns the
 service, and compose them into boundary tests in `apps/server/tests` instead of
 mocking application internals.
 
+Use Effect Vitest for Effect workflows and ordinary Vitest for pure or public
+Promise APIs. Keep fixtures typed, clocks deterministic, and cleanup scoped to
+resource acquisition. Assert the intended error and durable side effects; a
+generic failure can hide an invalid fixture or missing authentication.
+
+Run dashboard rendered-control and hook tests through `test:browser`. Run server
+and repository PostgreSQL suites sequentially against a disposable test database.
+Keep compile-only public API assertions in the test typecheck lane. Do not remove
+distinct authority, custody, race, or uncertainty cases merely to reduce test count.
+
 ## Common commands
 
 ```sh

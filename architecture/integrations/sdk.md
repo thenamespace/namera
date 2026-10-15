@@ -35,8 +35,9 @@ credentials or mutation payloads. Injected Fetch implementations are trusted and
 must preserve this policy.
 
 Retry-enabled methods use three retries with exponential delays starting at
-100 ms for transport failures, HTTP 408/5xx, and declared internal-server errors.
-Business failures are not automatically retried. Each preparation creates one
+100 ms for transport failures and declared internal-server errors. Raw undeclared
+HTTP error statuses can surface as response decode failures and are not currently
+retried. Business failures are not automatically retried. Each preparation creates one
 random UUID idempotency key shared by its retries; a new method call gets a new key.
 
 ## Execution
