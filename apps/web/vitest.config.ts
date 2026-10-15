@@ -10,7 +10,7 @@ export default defineConfig({
       globalOptions: { mdxOptions: { rehypeCodeOptions: false, remarkStructureOptions: false } },
     }),
   ],
-  resolve: { conditions: ["namera-source"] },
+  resolve: { conditions: ["namera-source"], tsconfigPaths: true },
   ssr: {
     noExternal: [/^@namera-ai\//],
     resolve: {
