@@ -47,10 +47,12 @@ export function usePrimaryApproval(
         sponsor?: boolean;
         prepared?: PrepareWalletTransactionResponse;
         assertion?: CompleteWalletTransactionRequest;
+        signingStarted?: boolean;
       }
     | undefined
   >(undefined);
   const abort = useRef<AbortController | undefined>(undefined);
+  const abandon = useRef<(() => void) | undefined>(undefined);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export function usePrimaryApproval(
     () => () => {
       abort.current?.abort();
       confirm.current?.(false);
+      abandon.current?.();
     },
     [],
   );
@@ -94,6 +97,28 @@ export function usePrimaryApproval(
       }
 
       const current = (attempt.current ??= { key: retryKey ?? crypto.randomUUID(), sponsor });
+      let cancellation: Promise<void> | undefined;
+      const cancelPreparation = () =>
+        (cancellation ??= (async () => {
+          if (!current.prepared || current.assertion || current.signingStarted) return;
+
+          await cancel.mutateAsync({
+            params: { walletId: wallet.id, operationId: current.prepared.operationId },
+          });
+          if (attempt.current === current) attempt.current = undefined;
+        })());
+
+      abandon.current = () => {
+        // Preparation may finish after navigation. Leave cleanup armed until it returns.
+        if (!current.prepared) return;
+        abandon.current = undefined;
+        void cancelPreparation().catch((error) => {
+          showErrorToast(error, {
+            title: "Couldn’t cancel preparation",
+            description: "Unused gas reservations will expire automatically.",
+          });
+        });
+      };
 
       if (!current.assertion) {
         const chain = getChainDataByCaip2("eip155:1");
@@ -148,6 +173,7 @@ export function usePrimaryApproval(
             current.prepared = await prepareRequest();
           } catch (error) {
             if (
+              controller.signal.aborted ||
               !(
                 Predicate.isTagged(error, "BillingError") &&
                 "limit" in error &&
@@ -188,16 +214,14 @@ export function usePrimaryApproval(
 
         if (!accepted) {
           setProgress("Cancelling…");
-          await cancel.mutateAsync({
-            params: { walletId: wallet.id, operationId: response.operationId },
-          });
-          attempt.current = undefined;
+          await cancelPreparation();
           return;
         }
 
         validatePrimaryApproval(reviewed, response, fee, Effect.runSync(DateTime.now));
 
         if (response.signing.method === "passkey") {
+          current.signingStarted = true;
           setProgress("Signing…");
           const assertion = await startAuthentication({
             optionsJSON: {
@@ -207,6 +231,9 @@ export function usePrimaryApproval(
                 type,
               })),
             },
+          }).catch((error: unknown) => {
+            current.signingStarted = false;
+            throw error;
           });
           if (controller.signal.aborted) return;
           current.assertion = {
@@ -243,6 +270,7 @@ export function usePrimaryApproval(
         });
       }
     } finally {
+      if (controller.signal.aborted) abandon.current?.();
       busy.current = false;
       if (!controller.signal.aborted) {
         setProgress(null);
