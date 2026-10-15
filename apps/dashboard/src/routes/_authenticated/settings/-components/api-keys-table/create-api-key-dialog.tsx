@@ -1,5 +1,5 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Schema } from "effect";
 
@@ -58,13 +58,22 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
   const sessionKeys = useSessionKeys();
   const [isOpen, setIsOpen] = useState(false);
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
+  const pendingPayload = useRef<CreateApiKeyOutput | undefined>(undefined);
+  useEffect(
+    () => () => {
+      pendingPayload.current = undefined;
+    },
+    [],
+  );
   const createApiKey = useCreateApiKey({
     onError: (error) =>
       showErrorToast(error, {
         title: "Couldn’t create API key",
         description: "Review its session-key access and try again.",
       }),
-    onSuccess: (key) => {
+    onSuccess: (key, { payload }) => {
+      if (pendingPayload.current !== payload) return;
+      pendingPayload.current = undefined;
       setCreated(key);
       void writeClipboardText(key.key).then((copied) =>
         copied
@@ -89,16 +98,20 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
   });
 
   const handleOpenChange = useEventCallback((open: boolean) => {
+    if (!open && createApiKey.isPending) return;
     setIsOpen(open);
     if (!open) {
+      pendingPayload.current = undefined;
       form.reset(defaultValues);
       setCreated(null);
       createApiKey.reset();
     }
   });
-  const handleSubmit = form.handleSubmit((payload) => {
+  const createKey = useEventCallback((payload: CreateApiKeyOutput) => {
+    pendingPayload.current = payload;
     createApiKey.mutate({ payload });
   });
+  const handleSubmit = form.handleSubmit(createKey);
   const copyKey = useEventCallback(() => {
     if (created === null) return;
 
@@ -121,10 +134,13 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
         Create API key
       </Button>
 
-      <Modal.Backdrop>
+      <Modal.Backdrop
+        isDismissable={!createApiKey.isPending}
+        isKeyboardDismissDisabled={createApiKey.isPending}
+      >
         <Modal.Container size="lg">
           <Modal.Dialog>
-            <Modal.CloseTrigger />
+            {!createApiKey.isPending ? <Modal.CloseTrigger /> : null}
             <Modal.Header>
               <Modal.Heading>{created ? "API key created" : "Create API key"}</Modal.Heading>
             </Modal.Header>

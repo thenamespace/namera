@@ -60,6 +60,12 @@ Local session private keys stay in creation memory until encrypted export. Manag
 creation retains an idempotency key scoped to organization, user, purpose, and payload; it does not
 persist secret form values. Identity image previews remain local until confirmation.
 
+API-key creation cannot be dismissed while its request is pending. Its one-time
+secret is shown and copied only for the still-active submission; closing the
+dialog or leaving the page invalidates that response target. A late success does
+not populate a later dialog or modify the clipboard. Leaving the page does not
+cancel a creation already accepted by the server.
+
 ## Browser boundary
 
 Route-owned UI lives in adjacent `-components` directories. Cross-route components
