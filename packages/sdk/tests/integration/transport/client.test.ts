@@ -5,6 +5,7 @@ import { EthereumAddress } from "@namera-ai/protocol/evm";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { NameraClient, type NameraFetch } from "../../../src/index.js";
+import { jsonResponse } from "../../fixtures/http.js";
 
 const walletId = Schema.decodeSync(WalletId)("01a00407-5961-75cf-933e-9cfd0336ec16");
 const sessionKeyId = SessionKeyId.make("01a00407-5961-75cf-933e-9cfd0336ec17");
@@ -12,12 +13,6 @@ const submissionId = Schema.decodeSync(ExecutionSubmissionId)(
   "01a00427-5cb5-75be-9159-97eb6b3dca9d",
 );
 const address = Schema.decodeSync(EthereumAddress)("0x1111111111111111111111111111111111111111");
-
-const jsonResponse = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
 
 describe("NameraClient", () => {
   it("preserves a paused-network error without retrying preparation", async () => {
@@ -61,17 +56,23 @@ describe("NameraClient", () => {
   });
 
   it("supports OAuth bearer credentials and lazy token resolution", async () => {
-    const fetch = vi.fn<NameraFetch>().mockResolvedValue(jsonResponse([]));
-    const getAccessToken = vi.fn().mockResolvedValue("oauth_access_token");
+    const fetch = vi.fn<NameraFetch>().mockImplementation(async () => jsonResponse([]));
+    const getAccessToken = vi
+      .fn()
+      .mockResolvedValueOnce("first_token")
+      .mockResolvedValueOnce("rotated_token");
     const client = new NameraClient({ getAccessToken, fetch });
 
+    expect(getAccessToken).not.toHaveBeenCalled();
+    await client.wallets.list();
     await client.wallets.list();
 
-    const [, init] = fetch.mock.calls[0] ?? [];
-    if (init === undefined) throw new Error("Expected a fetch request");
-    expect(getAccessToken).toHaveBeenCalledOnce();
-    expect((init.headers as Record<string, string>).authorization).toBe(
-      "Bearer oauth_access_token",
+    expect(getAccessToken).toHaveBeenCalledTimes(2);
+    expect(
+      fetch.mock.calls.map(([, init]) => new Headers(init?.headers).get("authorization")),
+    ).toEqual(["Bearer first_token", "Bearer rotated_token"]);
+    expect(fetch.mock.calls.every(([, init]) => !new Headers(init?.headers).has("x-api-key"))).toBe(
+      true,
     );
   });
 
