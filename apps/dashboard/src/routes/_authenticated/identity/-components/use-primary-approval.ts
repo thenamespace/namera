@@ -110,7 +110,7 @@ export function usePrimaryApproval(
 
       abandon.current = () => {
         // Preparation may finish after navigation. Leave cleanup armed until it returns.
-        if (!current.prepared) return;
+        if (!current.prepared || current.signingStarted || current.assertion) return;
         abandon.current = undefined;
         void cancelPreparation().catch((error) => {
           showErrorToast(error, {

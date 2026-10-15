@@ -239,67 +239,76 @@ it("does not cancel a retained uncertain submission after unmount", async () => 
   expect(boundary.approve).toHaveBeenCalledOnce();
 });
 
-it("preserves a preparation once passkey signing has started", async () => {
-  let finishSigning!: () => void;
-  boundary.passkey.mockReturnValue(new Promise<void>((resolve) => (finishSigning = resolve)));
-  boundary.prepare.mockResolvedValue({
-    ...preparedWalletTransaction,
-    signing: {
-      method: "passkey",
-      options: {
-        challenge: "challenge",
-        rpId: "localhost",
-        timeout: 60000,
-        userVerification: "required",
-        allowCredentials: [{ id: "credential", type: "public-key" }],
-      },
-    },
-  });
-  const hook = await renderHook(() =>
-    usePrimaryApproval(
-      {
-        ...managedWallet,
-        owner: {
-          signingKeyId: managedWallet.owner.signingKeyId,
-          custody: "local",
-          algorithm: "p256",
-        },
-        data: {
-          version: 1,
-          modularAccountVersion: "2.0.0",
-          validatorType: "webauthn_p256",
-          entryPointVersion: "0.7",
-          salt: 0n,
-          entityId: 0,
-        },
-      },
-      EnsLabel.make("example"),
-      {
-        walletId: managedWallet.id,
-        owner: {
-          signingKeyId: managedWallet.owner.signingKeyId,
-          publicKeyHex: Hex.make(`0x04${"11".repeat(64)}`),
-          credentialId: "credential",
+it.each(["signed", "rejected"] as const)(
+  "handles a %s passkey result after unmount safely",
+  async (outcome) => {
+    let finishSigning!: () => void;
+    boundary.passkey.mockReturnValue(
+      new Promise<void>((resolve, reject) => {
+        finishSigning =
+          outcome === "signed" ? resolve : () => reject(new Error("Passkey cancelled"));
+      }),
+    );
+    boundary.prepare.mockResolvedValue({
+      ...preparedWalletTransaction,
+      signing: {
+        method: "passkey",
+        options: {
+          challenge: "challenge",
           rpId: "localhost",
+          timeout: 60000,
+          userVerification: "required",
+          allowCredentials: [{ id: "credential", type: "public-key" }],
         },
       },
-      vi.fn(),
-      undefined,
-    ),
-  );
-  let attempt!: Promise<void>;
-  await hook.act(() => {
-    attempt = hook.result.current.start(null);
-  });
-  await expect.poll(() => hook.result.current.progress).toBe("Reviewing…");
-  await hook.act(() => hook.result.current.answer(true));
-  await expect.poll(() => boundary.passkey.mock.calls.length).toBe(1);
-  await hook.unmount();
-  finishSigning();
-  await attempt;
-  expect(boundary.cancel).not.toHaveBeenCalled();
-  expect(boundary.approve).not.toHaveBeenCalled();
-});
+    });
+    const hook = await renderHook(() =>
+      usePrimaryApproval(
+        {
+          ...managedWallet,
+          owner: {
+            signingKeyId: managedWallet.owner.signingKeyId,
+            custody: "local",
+            algorithm: "p256",
+          },
+          data: {
+            version: 1,
+            modularAccountVersion: "2.0.0",
+            validatorType: "webauthn_p256",
+            entryPointVersion: "0.7",
+            salt: 0n,
+            entityId: 0,
+          },
+        },
+        EnsLabel.make("example"),
+        {
+          walletId: managedWallet.id,
+          owner: {
+            signingKeyId: managedWallet.owner.signingKeyId,
+            publicKeyHex: Hex.make(`0x04${"11".repeat(64)}`),
+            credentialId: "credential",
+            rpId: "localhost",
+          },
+        },
+        vi.fn(),
+        undefined,
+      ),
+    );
+    let attempt!: Promise<void>;
+    await hook.act(() => {
+      attempt = hook.result.current.start(null);
+    });
+    await expect.poll(() => hook.result.current.progress).toBe("Reviewing…");
+    await hook.act(() => hook.result.current.answer(true));
+    await expect.poll(() => boundary.passkey.mock.calls.length).toBe(1);
+    await hook.unmount();
+    expect(boundary.cancel).not.toHaveBeenCalled();
+    finishSigning();
+    await attempt;
+    expect(boundary.cancel).toHaveBeenCalledTimes(outcome === "signed" ? 0 : 1);
+    expect(boundary.approve).not.toHaveBeenCalled();
+  },
+);
 
 it("reports abandoned cancellation failure without submitting or repeatedly cancelling", async () => {
   boundary.cancel.mockRejectedValue(new Error("Cancellation unavailable"));

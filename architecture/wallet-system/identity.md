@@ -33,7 +33,7 @@ wallet operation. Pending approval and confirmation therefore survive page reloa
 The UI can cancel unsigned preparation; pending chain operations are reconciled.
 Leaving the review also requests cancellation, including preparations returned
 after navigation. Cleanup does not cancel once signing begins or completion has
-been attempted. The cancellation endpoint remains authoritative about operation
+been attempted, unless WebAuthn definitively rejects without an assertion. The cancellation endpoint remains authoritative about operation
 state; unavailable browser cleanup falls back to server reservation expiry and
 recovery. A failed cancellation is reported without submitting the operation.
 
