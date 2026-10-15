@@ -1,26 +1,10 @@
-import { Redacted, Schema } from "effect";
+import { Redacted } from "effect";
 
-import { LocalEvmSessionBinding, LocalSessionKeyMaterial } from "@namera-ai/protocol/local";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { generatePrivateKey } from "viem/accounts";
 import { describe, expect, it } from "vitest";
 
 import { openLocalSessionKey, sealLocalSessionKey } from "../../../src/signing/keystore.js";
-import { localExecutionFixture } from "../../fixtures/local-execution.js";
-
-const fixture = () => {
-  const privateKey = generatePrivateKey();
-  const account = privateKeyToAccount(privateKey);
-  const binding = localExecutionFixture().binding;
-  return Schema.decodeUnknownSync(LocalSessionKeyMaterial)({
-    version: 1,
-    namespace: "eip155",
-    apiOrigin: "http://localhost:8080",
-    privateKey,
-    bindings: [
-      { ...Schema.encodeSync(LocalEvmSessionBinding)(binding), signerAddress: account.address },
-    ],
-  });
-};
+import { makeLocalSessionMaterial as fixture } from "../../fixtures/local-session.js";
 
 describe("portable local session keystore", () => {
   it.each(["test-only export passphrase", "test-only café 🔐 passphrase"])(

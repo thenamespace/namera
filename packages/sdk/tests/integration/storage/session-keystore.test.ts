@@ -1,26 +1,32 @@
-import { mkdtemp, readFile, readdir, rm, stat, chmod } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  chmod,
+  rename,
+  symlink,
+  truncate,
+  mkdir,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { Redacted } from "effect";
 
 import { sealLocalSessionKey } from "@namera-ai/sdk";
-import { afterEach, describe, expect, it } from "vitest";
+import { onTestFinished, describe, expect, it, vi } from "vitest";
 
-import { createSessionKeystore } from "../../../src/services/session-keystore/storage.js";
+import { createSessionKeystore } from "../../../src/node/storage.js";
 import { makeLocalSessionMaterial } from "../../fixtures/local-session.js";
-
-const directories: string[] = [];
-afterEach(async () => {
-  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true })));
-});
 
 const setup = async () => {
   const directory = await mkdtemp(join(tmpdir(), "namera-keystore-test-"));
-  directories.push(directory);
+  onTestFinished(() => rm(directory, { recursive: true }));
   const secrets = new Map<string, string>();
   const keyring = {
-    get: (id: string) => secrets.get(id) ?? null,
+    get: vi.fn((id: string) => secrets.get(id) ?? null),
     set: (id: string, secret: string) => {
       secrets.set(id, secret);
     },
@@ -35,7 +41,7 @@ const setup = async () => {
   return { directory, secrets, material, password, encrypted, store, keyring };
 };
 
-describe("CLI session key storage", () => {
+describe("Node session key storage", () => {
   it("reports decryption failures without writing credentials or files", async () => {
     const f = await setup();
     await expect(
@@ -119,5 +125,33 @@ describe("CLI session key storage", () => {
     await expect(f.store.readKey(f.material.apiOrigin, result.sessionKeyId)).rejects.toMatchObject({
       code: "READ_FAILED",
     });
+    expect(f.keyring.get).not.toHaveBeenCalled();
   });
+
+  it.each(["oversized", "directory", "symlink"] as const)(
+    "rejects a %s record before looking up its unlock secret",
+    async (kind) => {
+      const f = await setup();
+      const result = await f.store.importKey(f.encrypted, f.password, f.material.apiOrigin);
+      const [filename] = await readdir(f.directory);
+      if (!filename) throw new Error("Missing imported key file");
+      const path = join(f.directory, filename);
+
+      if (kind === "oversized") await truncate(path, 128 * 1024 + 1);
+      else {
+        const original = join(f.directory, "original.json");
+        await rename(path, original);
+        if (kind === "directory") await mkdir(path);
+        else await symlink(original, path);
+      }
+
+      await expect(
+        f.store.readKey(f.material.apiOrigin, result.sessionKeyId),
+      ).rejects.toMatchObject({
+        code: "READ_FAILED",
+      });
+      expect(f.keyring.get).not.toHaveBeenCalled();
+      expect(f.secrets.size).toBe(1);
+    },
+  );
 });
