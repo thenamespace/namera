@@ -2,22 +2,13 @@ import { expect, layer } from "@effect/vitest";
 import { Clock, Context, Effect, Option, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
-import { Application } from "@namera-ai/application";
-import { Database, Repository, executionSubmission } from "@namera-ai/database";
+import { Database, executionSubmission } from "@namera-ai/database";
 import { makeTestEvmExecutionService } from "@namera-ai/evm";
 import { EthereumAddress, EvmExecutionError, Hex, UserOperationHash } from "@namera-ai/protocol";
 import { EvmExecutionSubmissionData } from "@namera-ai/protocol/model";
 
-import { queueExecution } from "../../fixtures/execution.js";
-import {
-  makeTestApiClient,
-  resetTestState,
-  setApiKey,
-  setAuthToken,
-  signIn,
-  testEmail,
-} from "../../fixtures/index.js";
-import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { queueRecoveryExecution } from "../../fixtures/execution-recovery.js";
+import { resetTestState } from "../../fixtures/index.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const receiptVisible = Context.Reference<boolean>("test/hashMismatch/receiptVisible", {
@@ -73,34 +64,10 @@ layer(fixture.layer)("mismatched submission response", (it) => {
         Effect.gen(function* () {
           yield* resetTestState();
           yield* TestClock.setTime(yield* TestClock.withLive(Clock.currentTimeMillis));
-          const client = yield* makeTestApiClient;
-          const owner = yield* signIn(client, testEmail("hash-mismatch@example.com"));
-          const wallet = yield* createTestPasskeyWallet(client, "Hash recovery");
-          const session = yield* client.sessionKey.create({
-            payload: yield* localSessionRequest(wallet.id),
-          });
-          yield* fixture.confirmOperation(client, session, "install");
-          const apiKey = yield* client.apiKey.create({
-            payload: {
-              metadata: { version: 1, name: "Recovery agent" },
-              durationDays: 7,
-              sessionKeyIds: [session.id],
-            },
-          });
-          yield* setAuthToken();
-          yield* setApiKey(apiKey.key);
-          const queued = yield* queueExecution(client, {
-            headers: { "idempotency-key": "hash-mismatch" },
-            payload: {
-              namespace: "eip155",
-              walletId: wallet.id,
-              sessionKeyId: session.id,
-              chainId: "eip155:1",
-              calls: [{ to: wallet.address, value: 0n, data: "0x" }],
-            },
-          });
-          const app = yield* Application;
-          const repository = yield* Repository;
+          const { client, owner, queued, repository, app } = yield* queueRecoveryExecution(
+            fixture,
+            "hash-mismatch",
+          );
           yield* TestClock.adjust("2 seconds");
           expect(yield* app.execution.reconcile()).toBe(1);
           expect(

@@ -2,21 +2,11 @@ import { expect, layer } from "@effect/vitest";
 import { Context, DateTime, Duration, Effect, Option, Ref } from "effect";
 import { TestClock } from "effect/testing";
 
-import { Application } from "@namera-ai/application";
-import { Repository } from "@namera-ai/database";
 import { makeTestEvmExecutionService } from "@namera-ai/evm";
 import { EthereumAddress, EvmExecutionError, Hex } from "@namera-ai/protocol";
 
-import { queueExecution } from "../../fixtures/execution.js";
-import {
-  makeTestApiClient,
-  resetTestState,
-  setApiKey,
-  setAuthToken,
-  signIn,
-  testEmail,
-} from "../../fixtures/index.js";
-import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { queueRecoveryExecution } from "../../fixtures/execution-recovery.js";
+import { resetTestState } from "../../fixtures/index.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const sends = Context.Reference<Ref.Ref<number> | undefined>("test/rejection/sends", {
@@ -60,35 +50,10 @@ layer(fixture.layer)("first-send evidence", (it) => {
     it.effect(`protects reservations and one-send semantics: ${scenario}`, () =>
       Effect.gen(function* () {
         yield* resetTestState();
-        const client = yield* makeTestApiClient;
-        const owner = yield* signIn(client, testEmail(`first-${scenario}@example.com`));
-        const wallet = yield* createTestPasskeyWallet(client);
-        const session = yield* client.sessionKey.create({
-          payload: yield* localSessionRequest(wallet.id),
-        });
-        // Installation setup uses its normal package-owned provider, not the failure injection.
-        yield* fixture.confirmOperation(client, session, "install");
-        const apiKey = yield* client.apiKey.create({
-          payload: {
-            metadata: { version: 1, name: "Recovery" },
-            durationDays: 7,
-            sessionKeyIds: [session.id],
-          },
-        });
-        yield* setAuthToken();
-        yield* setApiKey(apiKey.key);
-        const queued = yield* queueExecution(client, {
-          headers: { "idempotency-key": scenario },
-          payload: {
-            namespace: "eip155",
-            walletId: wallet.id,
-            sessionKeyId: session.id,
-            chainId: "eip155:1",
-            calls: [{ to: wallet.address, value: 0n, data: "0x" }],
-          },
-        });
-        const repository = yield* Repository;
-        const app = yield* Application;
+        const { owner, queued, repository, app } = yield* queueRecoveryExecution(
+          fixture,
+          `first-${scenario}`,
+        );
         const counter = yield* Ref.make(0);
         yield* TestClock.adjust("2 seconds");
         if (scenario === "crash-before-rpc") {

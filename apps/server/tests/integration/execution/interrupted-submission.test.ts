@@ -2,21 +2,11 @@ import { expect, layer } from "@effect/vitest";
 import { Context, Effect, Exit } from "effect";
 import { TestClock } from "effect/testing";
 
-import { Application } from "@namera-ai/application";
-import { Repository } from "@namera-ai/database";
-import { makeTestEvmExecutionService } from "@namera-ai/evm";
+import { makeTestEvmExecutionService, TestEvmExecution } from "@namera-ai/evm";
 import { Hex } from "@namera-ai/protocol";
 
-import { queueExecution } from "../../fixtures/execution.js";
-import {
-  makeTestApiClient,
-  resetTestState,
-  setApiKey,
-  setAuthToken,
-  signIn,
-  testEmail,
-} from "../../fixtures/index.js";
-import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { queueRecoveryExecution } from "../../fixtures/execution-recovery.js";
+import { resetTestState, setApiKey, setAuthToken } from "../../fixtures/index.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
 
 const interruptAfterSubmit = Context.Reference<boolean>("test/interruptAfterSubmit", {
@@ -37,46 +27,22 @@ layer(fixture.layer)("interrupted provider submission", (it) => {
   it.effect("recovers the durable signed envelope after lease expiry and settles once", () =>
     Effect.gen(function* () {
       yield* resetTestState();
-      const client = yield* makeTestApiClient;
-      const owner = yield* signIn(client, testEmail("interrupted-submit@example.com"));
-      const organizationId = owner.actor.organization.id;
-      const wallet = yield* createTestPasskeyWallet(client, "Interrupted submission");
-      const session = yield* client.sessionKey.create({
-        payload: yield* localSessionRequest(wallet.id),
-      });
-      yield* fixture.confirmOperation(client, session, "install");
-      const apiKey = yield* client.apiKey.create({
-        payload: {
-          metadata: { version: 1, name: "Recovery agent" },
-          durationDays: 7,
-          sessionKeyIds: [session.id],
-        },
-      });
-      yield* setAuthToken();
-      yield* setApiKey(apiKey.key);
-      const queued = yield* queueExecution(client, {
-        headers: { "idempotency-key": "interrupted-submission" },
-        payload: {
-          namespace: "eip155",
-          walletId: wallet.id,
-          sessionKeyId: session.id,
-          chainId: "eip155:1",
-          calls: [{ to: wallet.address, value: 0n, data: "0x" }],
-        },
-      });
-      const repository = yield* Repository;
-      const app = yield* Application;
+      const { client, owner, queued, organizationId, repository, app } =
+        yield* queueRecoveryExecution(fixture, "interrupted-submission");
       const original = yield* repository.core.executionSubmission.findById(
         queued.submissionId,
         organizationId,
       );
       expect(original).toBeDefined();
       expect(original?.data.signedExecution).not.toBeNull();
+      const execution = yield* TestEvmExecution;
+      const sendsBefore = yield* execution.submissionCount;
       yield* TestClock.adjust("2 seconds");
       const stopped = yield* app.execution
         .reconcile()
         .pipe(Effect.provideService(interruptAfterSubmit, true), Effect.exit);
       expect(Exit.hasInterrupts(stopped)).toBe(true);
+      expect(yield* execution.submissionCount).toBe(sendsBefore + 1);
       const abandoned = yield* repository.core.executionSubmission.findById(
         queued.submissionId,
         organizationId,
@@ -102,6 +68,7 @@ layer(fixture.layer)("interrupted provider submission", (it) => {
       expect(
         yield* client.execution.getSubmission({ params: { submissionId: queued.submissionId } }),
       ).toMatchObject({ status: "confirmed" });
+      expect(yield* execution.submissionCount).toBe(sendsBefore + 1);
       yield* app.billing.reconcile();
       expect(
         (yield* repository.billing.usageReservation.listBySource(
