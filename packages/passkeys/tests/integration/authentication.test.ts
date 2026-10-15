@@ -74,7 +74,11 @@ layer(Passkeys.layer)("live wallet-owner authentication", (it) => {
       }),
     );
 
-  it.effect("rejects credential substitution and non-increasing authenticator counters", () =>
+  it.effect.each([
+    { name: "another credential", patch: { credentialId: "other-credential" } },
+    { name: "replayed counter", patch: { signCount: 1 } },
+    { name: "decreasing counter", patch: { signCount: 2 } },
+  ])("rejects $name", ({ patch }) =>
     Effect.gen(function* () {
       const passkeys = yield* Passkeys;
       const fixture = authenticationFixture(ceremony);
@@ -87,17 +91,33 @@ layer(Passkeys.layer)("live wallet-owner authentication", (it) => {
         publicKeyHex: fixture.publicKeyHex,
         signCount: 0,
       };
-      for (const patch of [
-        { credentialId: "other-credential" },
-        { signCount: 1 },
-        { signCount: 2 },
-      ]) {
-        const error = yield* passkeys
-          .verifyAuthentication({ ...request, ...patch })
-          .pipe(Effect.flip);
-        expect(error.operation).toBe("verify-authentication");
-      }
+      const error = yield* passkeys
+        .verifyAuthentication({ ...request, ...patch })
+        .pipe(Effect.flip);
+      expect(error).toMatchObject({ _tag: "PasskeyError", operation: "verify-authentication" });
     }),
+  );
+
+  it.effect(
+    "rejects a valid assertion when the persisted public key belongs to another owner",
+    () =>
+      Effect.gen(function* () {
+        const passkeys = yield* Passkeys;
+        const fixture = authenticationFixture(ceremony);
+        const other = authenticationFixture(ceremony);
+        const error = yield* passkeys
+          .verifyAuthentication({
+            response: fixture.response,
+            expectedChallenge: ceremony.challenge,
+            expectedOrigin: ceremony.origin,
+            expectedRpId: ceremony.rpId,
+            credentialId: fixture.response.id,
+            publicKeyHex: other.publicKeyHex,
+            signCount: 0,
+          })
+          .pipe(Effect.flip);
+        expect(error).toMatchObject({ _tag: "PasskeyError", operation: "verify-authentication" });
+      }),
   );
 
   it.effect("accepts synced passkeys which consistently report a zero counter", () =>
