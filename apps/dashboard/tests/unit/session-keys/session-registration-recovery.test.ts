@@ -2,13 +2,15 @@ import { Schema } from "effect";
 
 import { EthereumAddress, SessionKeyId, SigningKeyId, WalletId } from "@namera-ai/protocol";
 import { CreateSessionKeyRequest, SessionKeyInstallationResponse } from "@namera-ai/protocol/dto";
-import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
+import { privateKeyToAccount } from "viem/accounts";
 import { expect, it } from "vitest";
 
 import { validateManagedRegistration } from "../../../src/components/session-key-creation/managed-registration";
 import { recoverSessionRegistration } from "../../../src/components/session-key-installations/registration-recovery";
 
-const signer = privateKeyToAccount(generatePrivateKey());
+// Public deterministic test keys; never used for funded accounts.
+const signer = privateKeyToAccount(`0x${"01".repeat(32)}`);
+const otherSigner = privateKeyToAccount(`0x${"02".repeat(32)}`);
 const wallet = {
   id: WalletId.make("01950000-0000-7000-8000-000000000001"),
   address: EthereumAddress.make(signer.address),
@@ -61,12 +63,11 @@ const registration = {
 it("recovers the original pending signer registration and leaves unknown signers alone", () => {
   expect(recoverSessionRegistration(request, wallet, [registration])).toBe(registration);
   expect(recoverSessionRegistration(request, wallet, [])).toBeUndefined();
-  const other = privateKeyToAccount(generatePrivateKey());
   expect(
     recoverSessionRegistration(
       {
         ...request,
-        signer: { custody: "local", algorithm: "secp256k1", publicKey: other.publicKey },
+        signer: { custody: "local", algorithm: "secp256k1", publicKey: otherSigner.publicKey },
       },
       wallet,
       [registration],
@@ -75,10 +76,12 @@ it("recovers the original pending signer registration and leaves unknown signers
 });
 
 it("rejects ambiguous, revoked or changed registrations before export", () => {
-  expect(() => recoverSessionRegistration(request, wallet, [registration, registration])).toThrow();
+  expect(() => recoverSessionRegistration(request, wallet, [registration, registration])).toThrow(
+    "The local signer does not identify one pending registration",
+  );
   expect(() =>
     recoverSessionRegistration(request, wallet, [{ ...registration, status: "revoked" }]),
-  ).toThrow();
+  ).toThrow("The local signer does not identify one pending registration");
   expect(() =>
     recoverSessionRegistration(
       {
@@ -93,7 +96,7 @@ it("rejects ambiguous, revoked or changed registrations before export", () => {
       wallet,
       [registration],
     ),
-  ).toThrow();
+  ).toThrow(expect.objectContaining({ code: "PERMISSION_MISMATCH" }));
   expect(() =>
     recoverSessionRegistration(
       {
@@ -103,7 +106,7 @@ it("rejects ambiguous, revoked or changed registrations before export", () => {
       wallet,
       [registration],
     ),
-  ).toThrow();
+  ).toThrow("Recovered API policies differ from the original request");
 });
 
 it("validates managed public identity and permissions without producing an export", () => {
@@ -115,13 +118,13 @@ it("validates managed public identity and permissions without producing an expor
   expect(validateManagedRegistration(managed, wallet, created)).toBeUndefined();
   expect(() =>
     validateManagedRegistration(managed, wallet, { ...created, status: "active" }),
-  ).toThrow();
+  ).toThrow("Managed session registration does not match requested custody");
   expect(() =>
     validateManagedRegistration(managed, wallet, {
       ...created,
-      signer: { ...created.signer, publicKey: privateKeyToAccount(generatePrivateKey()).publicKey },
+      signer: { ...created.signer, publicKey: otherSigner.publicKey },
     }),
-  ).toThrow();
+  ).toThrow(expect.objectContaining({ code: "IDENTITY_MISMATCH" }));
   expect(() =>
     validateManagedRegistration(
       {
@@ -136,5 +139,5 @@ it("validates managed public identity and permissions without producing an expor
       wallet,
       created,
     ),
-  ).toThrow();
+  ).toThrow(expect.objectContaining({ code: "PERMISSION_MISMATCH" }));
 });

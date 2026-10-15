@@ -15,18 +15,20 @@ describe("custom policy address boundary", () => {
     expect(decode({ address, chainId: "eip155:1" })).toEqual({ address, chainId: "eip155:1" });
   });
   it("rejects a supported network outside the picker scope", () => {
-    expect(() => decode({ address, chainId: "eip155:8453" })).toThrow();
+    expect(() => decode({ address, chainId: "eip155:8453" })).toThrow("Choose an allowed network");
   });
   it.each(["0x1234", "vitalik.eth", "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"])(
     "rejects malformed or incorrectly checksummed input: %s",
     (invalid) => {
-      expect(() => decode({ address: invalid, chainId: "eip155:1" })).toThrow();
+      expect(() => decode({ address: invalid, chainId: "eip155:1" })).toThrow(
+        "Check the address and its checksum",
+      );
     },
   );
   it("does not allow custom addresses when the chain scope is empty", () => {
     expect(() =>
       Schema.decodeUnknownSync(customAddressSchema([]))({ address, chainId: "eip155:1" }),
-    ).toThrow();
+    ).toThrow("Choose an allowed network");
   });
 });
 

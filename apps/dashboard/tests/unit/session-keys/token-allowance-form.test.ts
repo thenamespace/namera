@@ -30,10 +30,11 @@ describe("token allowance form", () => {
     );
   });
   it("rejects rounding, negative amounts, invalid decimals and overflow", () => {
-    for (const amount of ["0.0000001", "-1", "1e6", "NaN", ""])
-      expect(() => make(amount)).toThrow();
+    expect(() => make("0.0000001")).toThrow("Use at most 6 decimal places");
+    for (const amount of ["-1", "1e6", "NaN", ""])
+      expect(() => make(amount)).toThrow("Enter a non-negative token amount");
     for (const decimals of ["-1", "256", "1.5", ""]) expect(() => make("1", decimals)).toThrow();
-    expect(() => make((2n ** 256n).toString(), "0")).toThrow();
+    expect(() => make((2n ** 256n).toString(), "0")).toThrow("Amount is too large");
     expect(make((2n ** 256n - 1n).toString(), "0")).toMatchObject({
       allowance: (2n ** 256n - 1n).toString(),
     });
