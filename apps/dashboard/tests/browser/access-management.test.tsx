@@ -230,6 +230,12 @@ it("creates a management-only key and disables permissions the issuer cannot del
   await dialog.getByLabelText("Name", { exact: true }).fill("Workspace backend");
   await expect.element(dialog.getByLabelText("Passkey application origins")).not.toBeVisible();
   await dialog.getByText("Advanced", { exact: true }).click();
+  await expect
+    .element(dialog.getByLabelText("Passkey application origins", { exact: true }))
+    .toHaveValue("");
+  expect(
+    dialog.getByRole("textbox", { name: /^Passkey application origin/ }).elements(),
+  ).toHaveLength(1);
   await dialog.getByText("Create accounts", { exact: true }).click();
   await expect
     .element(

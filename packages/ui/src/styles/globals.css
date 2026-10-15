@@ -118,6 +118,8 @@
 
   .tooltip {
     @apply rounded-lg border-1 shadow-lg;
+    word-break: normal;
+    overflow-wrap: anywhere;
 
     &[data-exiting="true"] {
       visibility: hidden;

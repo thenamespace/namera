@@ -60,12 +60,13 @@ export function PasskeyOriginsField({
         </div>
         <Button
           aria-label="Add passkey origin"
+          className="h-7 min-h-0 gap-1 px-2 text-xs"
           size="sm"
           variant="tertiary"
           type="button"
           onPress={() => setOrigins([...origins, { id: nextId.current++, value: "" }])}
         >
-          <HugeiconsIcon icon={Add01Icon} />
+          <HugeiconsIcon icon={Add01Icon} className="size-3.5" />
           Add
         </Button>
       </div>

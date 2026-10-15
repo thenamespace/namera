@@ -22,6 +22,10 @@ it("uses one keyboard-focusable copy trigger with an accessible tooltip", async 
     .element(page.getByRole("button", { name: "Copy identity", exact: true }))
     .toHaveFocus();
   await expect.element(page.getByRole("tooltip")).toHaveTextContent("Copy identity");
+  await expect.element(page.getByRole("tooltip")).toHaveStyle({
+    wordBreak: "normal",
+    overflowWrap: "anywhere",
+  });
   await userEvent.keyboard("{Enter}");
   await expect.poll(() => writeText.mock.calls.length).toBe(1);
   await userEvent.keyboard(" ");
