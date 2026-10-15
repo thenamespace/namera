@@ -77,6 +77,7 @@ it("generates complete, nonempty email PNGs with stable dimensions and repeatabl
         return createHash("sha256").update(bytes).digest("hex");
       }),
     );
+    await rm(output, { recursive: true });
     await generate();
     expect(
       await Promise.all(

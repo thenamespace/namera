@@ -1,7 +1,9 @@
-import { Effect, Layer, ManagedRuntime, Schema } from "effect";
+import { createConnection } from "node:net";
+
+import { Deferred, Effect, Fiber, Layer, ManagedRuntime, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
-import { TestDatabase } from "@namera-ai/database";
+import { Database, TestDatabase } from "@namera-ai/database";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startServerProcess } from "../../fixtures/server-process.js";
@@ -13,6 +15,81 @@ afterEach(async () => {
 });
 
 describe.skipIf(postgresPort === undefined)("deployed server composition", () => {
+  it("keeps the TCP listener and workers closed while migrations wait for their lock", async () => {
+    const runtime = ManagedRuntime.make(
+      TestDatabase.postgresLayer(Number(postgresPort)).pipe(Layer.provide(TestClock.layer())),
+    );
+    const release = await runtime.runPromise(Deferred.make<void>());
+    try {
+      await runtime.runPromise(Effect.flatMap(TestDatabase, (database) => database.reset));
+      const acquired = await runtime.runPromise(Deferred.make<void>());
+      const lock = runtime.runFork(
+        Effect.flatMap(Database, (database) =>
+          database.transaction((tx) =>
+            tx
+              .execute("select pg_advisory_xact_lock(hashtext('namera_database_migrations'))")
+              .pipe(
+                Effect.andThen(Deferred.succeed(acquired, undefined)),
+                Effect.andThen(Deferred.await(release)),
+              ),
+          ),
+        ),
+      );
+      await runtime.runPromise(Effect.raceFirst(Deferred.await(acquired), Fiber.join(lock)));
+      const server = await startServerProcess(Number(postgresPort));
+      children.push(server);
+      await vi.waitFor(
+        async () => {
+          expect(server.child.exitCode, server.output()).toBeNull();
+          const waiting = await runtime.runPromise(
+            Effect.flatMap(Database, (database) =>
+              database.execute<{ waiting: number }>(
+                "select count(*)::int as waiting from pg_stat_activity where datname = 'namera_test' and wait_event = 'advisory' and query like '%pg_advisory_lock%'",
+              ),
+            ),
+          );
+          const result = Schema.decodeUnknownSync(
+            Schema.Struct({
+              rows: Schema.Array(Schema.Struct({ waiting: Schema.Number })),
+            }),
+          )(waiting);
+          expect(result.rows[0]?.waiting).toBeGreaterThan(0);
+        },
+        { timeout: 30_000, interval: 100 },
+      );
+
+      await expect(
+        new Promise<void>((resolve, reject) => {
+          const socket = createConnection({
+            host: "127.0.0.1",
+            port: Number(new URL(server.origin).port),
+          });
+          socket.once("connect", () => {
+            socket.destroy();
+            resolve();
+          });
+          socket.once("error", (error) => {
+            socket.destroy();
+            reject(error);
+          });
+          socket.setTimeout(1000, () => {
+            socket.destroy();
+            reject(new Error("TCP probe timed out"));
+          });
+        }),
+      ).rejects.toMatchObject({ code: "ECONNREFUSED" });
+      await server.stop();
+      children.splice(children.indexOf(server), 1);
+      expect(server.output()).not.toContain("database.migrations_completed");
+      expect(server.output()).not.toContain("Listening on");
+      expect(server.output()).not.toContain("worker.stopped");
+      expect(server.output()).not.toContain("worker.failed");
+    } finally {
+      await runtime.runPromise(Deferred.succeed(release, undefined));
+      await runtime.dispose();
+    }
+  }, 60_000);
+
   it("mounts the production routes and middleware and shuts down every worker with its listener", async () => {
     const runtime = ManagedRuntime.make(
       TestDatabase.postgresLayer(Number(postgresPort)).pipe(Layer.provide(TestClock.layer())),

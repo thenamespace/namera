@@ -83,7 +83,7 @@ export const startServerProcess = async (postgresPort: number, database = "namer
   child.stderr.on("data", (chunk: Buffer) => {
     output += chunk.toString();
   });
-  const exited = once(child, "exit");
+  const exited = once(child, "close");
 
   let stopped = false;
   const stop = async () => {

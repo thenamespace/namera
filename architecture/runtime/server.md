@@ -55,7 +55,8 @@ operations are not failed or rebroadcast simply because a receipt is late.
 
 The PostgreSQL test lane launches `src/index.ts` in a separate Node process with
 isolated configuration, an empty disposable database and a loopback OTLP sink.
-It checks migration-before-listen ordering, migration failure, mounted API/raw
+It holds the migration advisory lock and probes TCP to verify the listener stays
+closed before migration completion. It also checks migration failure, mounted API/raw
 routes and middleware, then listener and worker shutdown on SIGTERM. No routes,
 workers or application layers are replaced. Provider credentials are synthetic;
 this smoke test does not exercise hosted provider calls or container packaging.
