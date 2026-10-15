@@ -54,6 +54,7 @@
     "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
     "prepack": "pnpm run build",
     "test": "vitest run",
+    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {

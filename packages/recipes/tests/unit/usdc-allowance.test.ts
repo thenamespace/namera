@@ -9,6 +9,16 @@ const now = 1_800_000_000;
 const expiresAt = new Date((now + 100 * 86_400) * 1000).toISOString();
 
 describe("USDC lifetime allowance", () => {
+  it("accepts exactly uint256 maximum but rejects one additional base unit", () => {
+    const maximum = 2n ** 256n - 1n;
+    const allowance = `${maximum / 1_000_000n}.${(maximum % 1_000_000n).toString().padStart(6, "0")}`;
+    const overflow = `${(maximum + 1n) / 1_000_000n}.${((maximum + 1n) % 1_000_000n).toString().padStart(6, "0")}`;
+    const input = { networks: ["eip155:1"], allowance, expiresAt } as const;
+    const output = usdcAllowanceRecipe.build(input, { now });
+    expect(output.onchain.installations[0]?.permissions).toMatchObject([{ allowance: maximum }]);
+    expect(() => usdcAllowanceRecipe.build({ ...input, allowance: overflow }, { now })).toThrow();
+  });
+
   it("builds independent exact allowances using each network's native USDC", () => {
     const output = usdcAllowanceRecipe.build(
       {

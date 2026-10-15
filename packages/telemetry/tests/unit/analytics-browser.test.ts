@@ -18,6 +18,8 @@ describe("browser analytics lifecycle", () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    vi.spyOn(Math, "random").mockReturnValue(0);
     vi.stubGlobal("window", { addEventListener: vi.fn() });
     vi.stubGlobal("location", {
       hostname: "dashboard.namera.ai",
@@ -28,8 +30,39 @@ describe("browser analytics lifecycle", () => {
     vi.stubGlobal("localStorage", { getItem: vi.fn(() => null), setItem: vi.fn() });
   });
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it("does not display a delayed survey after navigating away", async () => {
+    const analytics = await import("../../src/analytics/browser.js");
+    analytics.initializeAnalytics({ key: "public-test-token", production: true, surface: "web" });
+    analytics.analyticsPage("/docs/sdk");
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sdk.getActiveMatchingSurveys).toHaveBeenCalledOnce();
+
+    const respond = sdk.getActiveMatchingSurveys.mock.calls[0]?.[0];
+    analytics.analyticsPage("/auth");
+    respond([{ id: "survey-test", name: "Namera web: onboarding", type: "popover" }]);
+    expect(sdk.displaySurvey).not.toHaveBeenCalled();
+    expect(document.cookie).not.toContain("namera_survey_seen=");
+  });
+
+  it("drops unregistered events and excludes workspace context on profile settings", async () => {
+    const analytics = await import("../../src/analytics/browser.js");
+    analytics.initializeAnalytics({
+      key: "public-test-token",
+      production: true,
+      surface: "dashboard",
+    });
+    analytics.analyticsIdentity("user-one", "workspace-one", "Name", "Workspace");
+    analytics.analyticsPage("/settings/profile");
+    const beforeSend = sdk.init.mock.calls[0]?.[1].before_send;
+    expect(beforeSend({ event: "unexpected_private_event", properties: {} })).toBeNull();
+    const event = beforeSend({ event: "$pageview", properties: {} });
+    expect(event.properties.workspace_id).toBeUndefined();
+    expect(event.properties.workspace_name).toBeUndefined();
   });
 
   it("never initializes in development or on preview hosts", async () => {
