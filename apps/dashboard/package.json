@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
+    "test:browser": "NODE_OPTIONS=--conditions=namera-source vitest run --config vitest.browser.config.ts",
     "build": "vite build",
     "dev": "vite dev --port 3000",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
@@ -57,9 +58,12 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "5.0.3",
     "klarity": "catalog:",
+    "playwright": "1.62.1",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vitest-browser-react": "2.3.0"
   }
 }
