@@ -5,7 +5,7 @@ import { EthereumAddress } from "@namera-ai/protocol";
 import * as PublicKey from "ox/PublicKey";
 import * as Secp256k1 from "ox/Secp256k1";
 import * as Signature from "ox/Signature";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, custom } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import { recoverAuthorizationAddress } from "viem/utils";
@@ -29,7 +29,15 @@ const owner = {
   account: ownerAccount,
 };
 
-const publicClient = createPublicClient({ chain: sepolia, transport: http() });
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: custom({
+    request: async ({ method }) => {
+      if (method === "eth_getCode") return "0x";
+      throw new Error(`Unexpected account RPC: ${method}`);
+    },
+  }),
+});
 
 it("adapts a provider-neutral secp256k1 signer into a valid 7702 owner", async () => {
   expect(ownerAccount.address).toBe(expectedOwner.address);
