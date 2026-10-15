@@ -30,8 +30,13 @@ messages, keep preview data non-sensitive, and review light/dark rendering.
 
 ```sh
 pnpm --filter @namera-ai/email-templates typecheck
+pnpm --filter @namera-ai/email-templates test
 pnpm --filter @namera-ai/email-templates build
 ```
 
 Delivery and retry behavior are tested at the server boundary. See
 [notifications and email](../../architecture/services/notifications.md).
+
+The asset test runs the production generator in a temporary workspace and checks
+PNG dimensions, transparency, output inventory and deterministic bytes. It does
+not overwrite local artwork or upload generated files.
