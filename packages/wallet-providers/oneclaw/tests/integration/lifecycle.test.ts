@@ -1,33 +1,23 @@
 import { expect, it } from "@effect/vitest";
 import { DateTime, Effect, Option, Redacted, Ref } from "effect";
 
-import { afterEach, beforeEach, vi } from "vitest";
-
 import { OneClawService, oneClawTestLayer, OneClawTestControl } from "../../src/index.js";
 import {
   agent,
   authority,
   claim,
-  fetchMock,
-  identity,
+  ProviderHttp,
   key,
   Live,
   provisioning,
   remoteConnection,
-  requestAt,
-  respond,
   setup,
   template,
 } from "../fixtures/provider.js";
 
-beforeEach(() => {
-  fetchMock.mockReset();
-  vi.stubGlobal("fetch", fetchMock);
-});
-afterEach(() => vi.unstubAllGlobals());
-
 it.effect("empty setup returns only a protected claim using the configured template", () =>
   Effect.gen(function* () {
+    const { fetchMock, respond, requestAt } = yield* ProviderHttp;
     respond(template);
     respond(remoteConnection);
     respond({ ...claim, summary: { vault_id: null, agent_id: null, policy_ids: [] } });
@@ -41,32 +31,43 @@ it.effect("empty setup returns only a protected claim using the configured templ
   }).pipe(Effect.provide(Live)),
 );
 
-it.effect("rejects template drift before bootstrap and unexpected resources afterwards", () =>
+it.effect.each([
+  { name: "nonempty template", change: { spec: { agents: [] } } },
+  { name: "changed version", change: { version: 2 } },
+  { name: "another application", change: { platform_app_id: "other" } },
+  { name: "inactive template", change: { is_active: false } },
+] as const)("rejects $name before bootstrap", ({ change }) =>
   Effect.gen(function* () {
+    const { fetchMock, respond } = yield* ProviderHttp;
     const service = yield* OneClawService;
-    for (const change of [
-      { spec: { agents: [] } },
-      { version: 2 },
-      { platform_app_id: "other" },
-      { is_active: false },
-    ]) {
-      respond({ ...template, ...change });
-      expect((yield* service.connections.bootstrapEmpty(setup).pipe(Effect.flip)).code).toBe(
-        "TEMPLATE_MISMATCH",
-      );
-    }
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    respond({ ...template, ...change });
+    expect((yield* service.connections.bootstrapEmpty(setup).pipe(Effect.flip)).code).toBe(
+      "TEMPLATE_MISMATCH",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  }).pipe(Effect.provide(Live)),
+);
+
+it.effect.each([
+  { name: "agent", summary: { agent_id: "unexpected" } },
+  { name: "unknown resource", summary: { newly_supported_resource: "unexpected" } },
+] as const)("rejects an unexpected $name after bootstrap without retrying", ({ summary }) =>
+  Effect.gen(function* () {
+    const { fetchMock, respond } = yield* ProviderHttp;
+    const service = yield* OneClawService;
     respond(template);
     respond(remoteConnection);
-    respond({ ...claim, summary: { agent_id: "unexpected" } });
+    respond({ ...claim, summary });
     expect((yield* service.connections.bootstrapEmpty(setup).pipe(Effect.flip)).code).toBe(
       "UNEXPECTED_RESOURCES",
     );
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   }).pipe(Effect.provide(Live)),
 );
 
 it.effect("redeems renewed claims with verified customer identity and explicit expiration", () =>
   Effect.gen(function* () {
+    const { respond, identity, requestAt } = yield* ProviderHttp;
     const service = yield* OneClawService;
     respond(claim);
     const renewed = yield* service.connections.reissueClaim("connection");
@@ -81,6 +82,9 @@ it.effect("redeems renewed claims with verified customer identity and explicit e
       expectedCustomerId: "customer",
     });
     expect(session.customerId).toBe("customer");
+    expect(DateTime.toEpochSeconds(session.expiresAt)).toBe(
+      DateTime.toEpochSeconds(yield* DateTime.now) + 86400,
+    );
     expect(JSON.stringify(session)).not.toContain("synthetic-customer-token");
     expect(requestAt(1).headers.has("Authorization")).toBe(false);
     expect(requestAt(2).headers.get("Authorization")).toBe("Bearer synthetic-customer-token");
@@ -104,10 +108,30 @@ it.effect("redeems renewed claims with verified customer identity and explicit e
   }).pipe(Effect.provide(Live)),
 );
 
+it.effect("rejects an expired claim before exchanging its secret", () =>
+  Effect.gen(function* () {
+    const { fetchMock } = yield* ProviderHttp;
+    const service = yield* OneClawService;
+    const error = yield* service.customers
+      .redeemClaim({
+        claim: {
+          connectionId: "connection",
+          token: Redacted.make("synthetic-claim"),
+          expiresAt: yield* DateTime.now,
+        },
+        expectedCustomerId: "customer",
+      })
+      .pipe(Effect.flip);
+    expect(error.code).toBe("AUTHORITY_EXPIRED");
+    expect(fetchMock).not.toHaveBeenCalled();
+  }).pipe(Effect.provide(Live)),
+);
+
 it.effect(
   "creates successive agents through the same delegated path and keys with customer auth",
   () =>
     Effect.gen(function* () {
+      const { fetchMock, respond, identity, requestAt } = yield* ProviderHttp;
       const service = yield* OneClawService;
       identity();
       respond(null, 204);
@@ -142,6 +166,7 @@ it.effect(
 
 it.effect("rejects expired, mismatched customer authority and denied delegation", () =>
   Effect.gen(function* () {
+    const { fetchMock, respond, identity } = yield* ProviderHttp;
     const service = yield* OneClawService;
     const expiresAt = DateTime.makeUnsafe(0);
     const expired = {
@@ -167,6 +192,7 @@ it.effect("rejects expired, mismatched customer authority and denied delegation"
 
 it.effect("handles SDK 409 data envelopes and ambiguous subject recovery", () =>
   Effect.gen(function* () {
+    const { respond } = yield* ProviderHttp;
     const service = yield* OneClawService;
     respond({ link_required: { status: "link_required" } }, 409);
     expect(
@@ -196,6 +222,5 @@ it.effect("test layer observes calls and explicitly rejects unconfigured operati
       "connections.findBySubject",
       "signingKeys.destroy",
     ]);
-    expect(fetchMock).not.toHaveBeenCalled();
   }).pipe(Effect.provide(oneClawTestLayer())),
 );

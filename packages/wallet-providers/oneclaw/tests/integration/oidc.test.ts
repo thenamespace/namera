@@ -26,22 +26,20 @@ const oidcLayer = (encodedKey: string) =>
   );
 const Live = oidcLayer(Buffer.from(privateKey).toString("base64"));
 
-for (const encodedKey of [
-  "invalid-secret!",
-  privateKey,
-  Buffer.from("not a PEM key").toString("base64"),
+for (const { name, encodedKey } of [
+  { name: "invalid base64", encodedKey: "invalid-secret!" },
+  { name: "unencoded PEM", encodedKey: privateKey },
+  { name: "non-PEM content", encodedKey: Buffer.from("not a PEM key").toString("base64") },
 ]) {
-  it.effect(
-    `rejects invalid OIDC key configuration without exposing key material (${encodedKey.length} characters)`,
-    () =>
-      Effect.gen(function* () {
-        const error = yield* Effect.gen(function* () {
-          yield* OneClawOidcService;
-        }).pipe(Effect.provide(oidcLayer(encodedKey)), Effect.flip);
-        expect(error).toMatchObject({ code: "CONFIGURATION_INVALID", operation: "oidc.configure" });
-        if (encodedKey) expect(JSON.stringify(error)).not.toContain(encodedKey);
-        expect(JSON.stringify(error)).not.toContain("PRIVATE KEY");
-      }),
+  it.effect(`rejects ${name} OIDC configuration without exposing key material`, () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.gen(function* () {
+        yield* OneClawOidcService;
+      }).pipe(Effect.provide(oidcLayer(encodedKey)), Effect.flip);
+      expect(error).toMatchObject({ code: "CONFIGURATION_INVALID", operation: "oidc.configure" });
+      if (encodedKey) expect(JSON.stringify(error)).not.toContain(encodedKey);
+      expect(JSON.stringify(error)).not.toContain("PRIVATE KEY");
+    }),
   );
 }
 
@@ -75,10 +73,33 @@ it.effect("issues short-lived organization identity tokens and exports only publ
         algorithms: ["RS256"],
       }),
     );
-    expect(verified.payload.sub).toBe(`namera:org:${organizationId}`);
+    expect(verified.payload).toMatchObject({
+      sub: `namera:org:${organizationId}`,
+      email: "org@example.invalid",
+      email_verified: true,
+      name: "Org",
+    });
+    expect(verified.protectedHeader).toMatchObject({ kid: "test-key", alg: "RS256", typ: "JWT" });
     expect(verified.payload.exp).toBe(Number(verified.payload.iat) + 120);
     expect(jwks.keys).toHaveLength(1);
-    expect(Object.keys(jwks.keys[0] ?? {})).toEqual(["kty", "n", "e", "kid", "alg", "use"]);
+    expect(Object.keys(jwks.keys[0] ?? {}).toSorted()).toEqual([
+      "alg",
+      "e",
+      "kid",
+      "kty",
+      "n",
+      "use",
+    ]);
+    yield* Effect.promise(() =>
+      expect(
+        jwtVerify(Redacted.value(token), createLocalJWKSet(jwks), {
+          issuer: "https://namera.invalid",
+          audience: "test-app",
+          currentDate: new Date(DateTime.toEpochMillis(now) + 120_000),
+          algorithms: ["RS256"],
+        }),
+      ).rejects.toMatchObject({ code: "ERR_JWT_EXPIRED" }),
+    );
     expect(JSON.stringify(token)).not.toContain(Redacted.value(token));
   }).pipe(Effect.provide(Live)),
 );
