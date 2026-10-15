@@ -138,7 +138,7 @@ it("rejects a registration with different permissions without exposing an export
   );
 });
 
-it("does not expose a late registration after unmount and disposes validated drafts on navigation", async () => {
+it("disposes validated drafts on navigation", async () => {
   const { hook, request, registration } = await registerLocalKey();
   await hook.act(async () => callbacks.onSuccess?.(registration, { payload: request }));
   const setup = hook.result.current.setup;
@@ -148,6 +148,15 @@ it("does not expose a late registration after unmount and disposes validated dra
   await expect(
     setup.draft.seal("https://api.example.test", setup.bindings, Redacted.make("test passphrase")),
   ).rejects.toMatchObject({ code: "DRAFT_DISPOSED" });
+});
+
+it("does not expose a registration that completes after navigation", async () => {
+  const { hook, request, registration } = await registerLocalKey();
+  expect(hook.result.current.setup).toBeUndefined();
+  await hook.unmount();
+  await callbacks.onSuccess?.(registration, { payload: request });
+  expect(hook.result.current.setup).toBeUndefined();
+  expect(hook.result.current.registration).toBeUndefined();
 });
 
 it("keeps a failed registration unavailable for export while retaining the same signer for retry", async () => {
