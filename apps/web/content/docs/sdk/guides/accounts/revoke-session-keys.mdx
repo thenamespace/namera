@@ -1,0 +1,47 @@
+---
+title: Revoke and Remove Session Keys
+description: Stop Namera access and remove remaining onchain authority.
+---
+
+Use `session-key:revoke`, `session-key:uninstall`, and `session-key:read` on a workspace management key. These are separate permissions and actions.
+
+## Revoke Namera access
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const result = await namera.sessionKeys.revoke("0199dfe1-0000-7000-8000-000000001000");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/revoking-session-response.md</include>
+
+The complete returned session retains its installation state. Its grants are revoked immediately and unsigned installation requests are cancelled. Installed or signed authority can keep the session `revoking`; a never-installed session can finish immediately.
+
+## Remove installed networks
+
+For each remaining installed network:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000001000",
+  chainId: "eip155:11155111",
+  kind: "uninstall",
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/uninstall-preparation-response.md</include>
+
+Preparation contains the stored removal calldata. Follow the [explicit approval flow](/docs/sdk/guides/accounts/install-session-keys) and poll `getOperation()` until confirmed. A local signer can act outside Namera until its onchain authority is removed.
+
+You may remove one network from an active session without revoking its other network installations. To retire the entire session, revoke server access and remove every installed network. Missing receipts are not proof of removal or failure; let reconciliation resolve signed work.

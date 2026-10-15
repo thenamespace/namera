@@ -1,0 +1,57 @@
+---
+title: sessionKeys.revoke
+description: Revoke a session’s Namera access and grants.
+---
+
+`namera.sessionKeys.revoke()` revoke a session’s Namera access and grants.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.revoke("0199dfe1-0000-7000-8000-000000001000");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns the complete session. Never-installed sessions may become `revoked` immediately; installed or signed authority remains `revoking` until removal/reconciliation finishes. This fixture has an installed network, so server access is revoked while onchain removal is still required.
+
+<include>../../../../snippets/sdk/revoking-session-response.md</include>
+
+## Parameters
+
+### sessionKeyId
+
+Type: `string`. Required. Resource UUID returned by creation, preparation, or recovery; not an address or transaction hash.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.revoke("0199dfe1-0000-7000-8000-000000001000"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires `session-key:revoke` and can target any session in this workspace. Revocation atomically revokes grants and cancels unsigned installation requests. It does not erase onchain authority. Use `prepareOperation({ kind: "uninstall", ... })` and explicit approval for each installed network, then track confirmation. Signed operations must still reconcile.

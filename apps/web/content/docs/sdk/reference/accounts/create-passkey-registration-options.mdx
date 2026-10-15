@@ -1,0 +1,78 @@
+---
+title: wallets.createPasskeyRegistrationOptions
+description: Start a one-time passkey account registration.
+---
+
+`namera.wallets.createPasskeyRegistrationOptions()` start a one-time passkey account registration.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.createPasskeyRegistrationOptions({
+  origin: "https://app.example.com",
+  user: { name: "Customer", displayName: "Customer" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns `verificationId`, browser-ready WebAuthn `options`, and `expiresAt`. The credential’s allowed origin determines the RP ID.
+
+<include>../../../../snippets/sdk/passkey-registration-response.md</include>
+
+## Parameters
+
+### origin
+
+Type: `string`. Required. Exact origin of the application where the browser creates the credential. A human must approve it in this API key’s passkey-origin allowlist when issuing the key. HTTPS is required except HTTP localhost/127.0.0.1 development origins. Paths, query strings, fragments, and credentials are rejected.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.createPasskeyRegistrationOptions({
+  origin: "https://app.example.com", // [!code focus]
+  user: { name: "Customer", displayName: "Customer" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### user
+
+Type: `object`. Required. Application user labels for the browser prompt. `name` and `displayName` must be nonempty strings. These labels are not Namera membership or authorization. Your backend must bind the ceremony to its own authenticated application user.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.createPasskeyRegistrationOptions({
+  origin: "https://app.example.com",
+  user: { name: "Customer", displayName: "Customer" }, // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires `wallet:create` and an allowlisted origin. Keep the API key on your backend; send only the registration options to the browser. Ceremonies from the same API key are independent, so multiple application users can register concurrently. Registration preparation is not automatically retried. The response does not create an account; submit the browser response through `wallets.create()`. Never accept an arbitrary verification ID from a different application user.

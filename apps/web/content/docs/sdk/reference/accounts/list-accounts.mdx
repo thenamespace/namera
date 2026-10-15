@@ -5,7 +5,8 @@ description: Read the accounts available to your credential.
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-`namera.wallets.list()` returns accounts reachable through your active grants.
+`namera.wallets.list()` returns accounts reachable through active session grants,
+or all workspace accounts when the API key has explicit `wallet:read` permission.
 
 ## Usage
 

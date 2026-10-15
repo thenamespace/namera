@@ -59,7 +59,10 @@ export class WalletGroup extends HttpApiGroup.make("wallet")
       params: GetWalletRequest,
       success: GetWalletPasskeyOwnerResponse,
       error: [WalletNotFoundError, ...CommonErrors],
-    }).annotate(OpenApi.Summary, "Read public passkey owner details (organization users only)"),
+    }).annotate(
+      OpenApi.Summary,
+      "Read public passkey owner details for an authorized workspace reader",
+    ),
     HttpApiEndpoint.get("getPortfolio", "/:walletId/portfolio", {
       params: GetWalletRequest,
       query: GetWalletPortfolioRequest,

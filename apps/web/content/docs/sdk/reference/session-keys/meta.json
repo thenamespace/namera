@@ -1,4 +1,14 @@
 {
   "title": "Session Keys",
-  "pages": ["list-session-keys", "get-session-key"]
+  "pages": [
+    "list-session-keys",
+    "get-session-key",
+    "create-session-key",
+    "revoke-session-key",
+    "prepare-operation",
+    "approve-operation",
+    "get-operation",
+    "get-active-operation",
+    "cancel-operation"
+  ]
 }

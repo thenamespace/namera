@@ -66,7 +66,8 @@ export const CreateApiKeyRequest = Schema.Struct({
   )
   .annotate({
     identifier: "CreateApiKeyRequest",
-    description: "Create a time-limited API-key actor with initial session-key grants",
+    description:
+      "Create a time-limited API-key actor with explicit workspace management permissions and optional initial session-key grants",
   });
 
 export const CreateApiKeyResponse = Schema.Struct({

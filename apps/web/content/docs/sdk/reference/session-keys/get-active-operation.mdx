@@ -1,0 +1,190 @@
+---
+title: sessionKeys.getActiveOperation
+description: Recover an active installation or removal operation.
+---
+
+`namera.sessionKeys.getActiveOperation()` recover an active installation or removal operation.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.getActiveOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install",
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns `operation: null` when there is no active operation for this actor and target. Otherwise the operation contains `operationId`, `status`, and `preparation`. An unexpired unsigned operation returns a fresh preparation using its original internal idempotency key; signed/submitted operations have `preparation: null`. The SDK never exposes the stored retry key.
+
+<div className="docs-response">
+
+```json
+{
+  "operation": {
+    "operationId": "0199dfe1-0000-7000-8000-000000000014",
+    "status": "awaiting-signature",
+    "preparation": {
+      "operationId": "0199dfe1-0000-7000-8000-000000000014",
+      "namespace": "eip155",
+      "approval": "1claw",
+      "prepared": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:11155111",
+        "entryPointVersion": "0.7",
+        "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "sponsorship": "alchemy-bso",
+        "context": {
+          "version": 1,
+          "namespace": "eip155",
+          "chainId": "eip155:11155111",
+          "account": "0x3333333333333333333333333333333333333333",
+          "block": {
+            "number": "0",
+            "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "timestamp": "1970-01-01T00:00:00.000Z"
+          },
+          "calls": [
+            {
+              "to": "0x3333333333333333333333333333333333333333",
+              "value": "0",
+              "data": "0x1234"
+            }
+          ],
+          "userOperation": {
+            "nonce": "0",
+            "gas": {
+              "callGasLimit": "0",
+              "verificationGasLimit": "0",
+              "preVerificationGas": "0",
+              "paymasterVerificationGasLimit": "0",
+              "paymasterPostOpGasLimit": "0",
+              "maxFeePerGas": "0",
+              "maxPriorityFeePerGas": "0"
+            },
+            "paymaster": null
+          },
+          "simulation": {
+            "userOperation": {
+              "source": "eth_estimateUserOperationGas",
+              "callGasLimit": "0",
+              "verificationGasLimit": "0",
+              "preVerificationGas": "0",
+              "maxFeePerGas": "1000000000",
+              "maxPriorityFeePerGas": "1"
+            },
+            "calls": {
+              "source": "viem.simulateCalls",
+              "results": [
+                {
+                  "status": "success",
+                  "returnData": "0x",
+                  "gasUsed": "0"
+                }
+              ],
+              "assetChanges": [],
+              "transfers": []
+            }
+          }
+        },
+        "userOperation": {
+          "sender": "0x3333333333333333333333333333333333333333",
+          "nonce": "0",
+          "callData": "0x",
+          "callGasLimit": "0",
+          "verificationGasLimit": "0",
+          "preVerificationGas": "0",
+          "maxFeePerGas": "0",
+          "maxPriorityFeePerGas": "0",
+          "signature": "0x"
+        },
+        "billing": {
+          "executionMeter": "execution.testnet",
+          "sponsorship": null
+        }
+      },
+      "expiresAt": "2026-10-15T02:44:05.075Z"
+    }
+  }
+}
+```
+
+</div>
+
+## Parameters
+
+### sessionKeyId
+
+Type: `string`. Required. Session UUID. Requires session read access to resolve the installation.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.getActiveOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003", // [!code focus]
+  chainId: "eip155:11155111",
+  kind: "install",
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### chainId
+
+Type: `SupportedEvmChainId`. Required. Configured CAIP-2 network ID.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.getActiveOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111", // [!code focus]
+  kind: "install",
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### kind
+
+Type: `"install" | "uninstall"`. Required. The operation type you want to recover.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.getActiveOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install", // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires `session-key:read`; recovering an unsigned preparation also requires its install/uninstall permission. API keys recover only their own operations. If `preparation` is present, review it and explicitly approve. If the operation is signed or submitted, poll it. Cancel an unsigned operation before deliberately preparing a replacement. Recovery does not create or install a new session.

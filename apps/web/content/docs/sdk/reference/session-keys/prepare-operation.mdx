@@ -1,0 +1,122 @@
+---
+title: sessionKeys.prepareOperation
+description: Prepare installation or removal on one configured network.
+---
+
+`namera.sessionKeys.prepareOperation()` prepare installation or removal on one configured network.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install",
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns `operationId`, `namespace`, `approval`, `prepared`, and `expiresAt`. `approval` is `"1claw"` or `"passkey"`; passkey responses also include WebAuthn `options`. Preparation contains the exact stored installation/removal call, simulation, and gas information, but no owner signature.
+
+<include>../../../../snippets/sdk/managed-preparation-response.md</include>
+
+Passkey approval uses this shape:
+
+<include>../../../../snippets/sdk/passkey-preparation-response.md</include>
+
+## Parameters
+
+### sessionKeyId
+
+Type: `string`. Required. Session UUID. The SDK reads this session to resolve its account owner and matching installation. Requires session read access.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003", // [!code focus]
+  chainId: "eip155:11155111",
+  kind: "install",
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### chainId
+
+Type: `SupportedEvmChainId`. Required. Configured CAIP-2 network ID, such as `eip155:11155111`. This is not a numeric chain ID.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111", // [!code focus]
+  kind: "install",
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### kind
+
+Type: `"install" | "uninstall"`. Required. Choose installation or removal. Removal can target an installed network of an active or revoking session.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install", // [!code focus]
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### sponsor
+
+Type: `boolean`. Optional; defaults to `true`. Whether to request gas sponsorship. Billing allowances still apply. Self-funded approval requires independent gas consent through the owner-approval validation helper.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install",
+  sponsor: true, // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires `session-key:read` plus `session-key:install` or `session-key:uninstall`. Preparation never signs or submits. The SDK generates and reuses one idempotency key across transient retries. A new call gets a new key; use `getActiveOperation()` to recover an interrupted operation. `OPERATION_BUSY` means another owner operation occupies that account/network. `INVALID_TRANSITION` means the session or installation cannot enter the requested transition. Callers must validate preparations against independently reviewed authority before approval; these are low-level transport methods, like execution prepare/complete.

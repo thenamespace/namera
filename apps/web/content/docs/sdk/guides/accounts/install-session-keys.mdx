@@ -1,0 +1,118 @@
+---
+title: Install Session Keys
+description: Explicitly approve and track session installation from the SDK.
+---
+
+Use an API key with `session-key:read` and `session-key:install`. You need a registered session with an unexpired pending installation on the chosen network. The account’s owner determines approval; the session signer’s custody does not.
+
+These are low-level owner-operation methods. Review the selected account, signer, permissions, network, validity, and fees before approving. Use the SDK’s `validateManagedOwnerApproval` or `validateOwnerApproval` helpers with independently reconstructed expectations when validating prepared calldata. Do not populate those expectations from the preparation you are validating.
+
+## Prepare installation
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.sessionKeys.prepareOperation({
+  sessionKeyId: "0199dfe1-0000-7000-8000-000000000003",
+  chainId: "eip155:11155111",
+  kind: "install",
+  sponsor: true,
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/managed-preparation-response.md</include>
+
+The SDK resolves the session’s network installation and account owner, then chooses the existing managed or passkey preparation endpoint. Retry keys stay internal. Preparation does not sign or submit.
+
+## Approve a managed account operation
+
+After reviewing and validating the preparation, explicitly approve its operation ID:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.sessionKeys.approveOperation({
+  operationId: "0199dfe1-0000-7000-8000-000000000014",
+  approval: { type: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "operationId": "0199dfe1-0000-7000-8000-000000000014",
+  "status": "signed"
+}
+```
+
+</div>
+
+This call authorizes the managed account owner to sign only the stored installation. Creating the session did not grant this approval.
+
+## Approve a passkey account operation
+
+Passkey preparation returns `approval: "passkey"` and `options`:
+
+<include>../../../../snippets/sdk/passkey-preparation-response.md</include>
+
+Return the preparation to your application’s browser for review and validation. Install `@simplewebauthn/browser` in your frontend and call `startAuthentication({ optionsJSON: preparation.options })` from a user action. The prompt must run on the account’s stored origin. Keep the API key on your backend.
+
+Send the assertion to your authenticated backend, which loads the pending operation ID belonging to that user and calls:
+
+```ts title="index.ts"
+import { NameraClient, type ApproveSessionKeyOperationRequest } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+export async function finishPasskeyInstallation(
+  operationId: string,
+  response: Extract<ApproveSessionKeyOperationRequest["approval"], { type: "passkey" }>["response"],
+) {
+  const result = await namera.sessionKeys.approveOperation({
+    operationId,
+    approval: { type: "passkey", response },
+  });
+  if (!result.success) throw new Error(result.error.message);
+  return result.data;
+}
+```
+
+The success shape is the same operation status shown above. Namera verifies the actual assertion; an API-key permission does not replace the passkey signature.
+
+## Track confirmation and recover interruptions
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const result = await namera.sessionKeys.getOperation("0199dfe1-0000-7000-8000-000000000014");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<div className="docs-response">
+
+```json
+{
+  "operationId": "0199dfe1-0000-7000-8000-000000000014",
+  "status": "confirmed"
+}
+```
+
+</div>
+
+Workers submit signed requests and reconcile receipts. `signed` and `submitted` are not confirmation. Check the session installation for `installed` before using it.
+
+After a restart, call `sessionKeys.getActiveOperation({ sessionKeyId, chainId, kind: "install" })`. An unsigned operation includes a recovered `preparation`; review it before explicit approval. Signed/submitted operations include no preparation and should be polled. No caller-managed idempotency key is needed. `cancelOperation(operationId)` cancels an unsigned preparation; it cannot cancel signed work.

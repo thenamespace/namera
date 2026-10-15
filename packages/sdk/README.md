@@ -1,13 +1,14 @@
 # @namera-ai/sdk
 
-TypeScript client for Namera's programmable wallets. Read accounts and session
-keys, simulate calls, submit transactions, and sign messages within delegated
+TypeScript client for Namera's programmable wallets. Create and manage accounts and session keys with explicitly permitted workspace
+API keys, or simulate calls, submit transactions, and sign within delegated
 permissions. Methods return promises with typed success and error results.
 
 ## Requirements
 
-Node.js 24.14+ or a browser with Fetch and Web Crypto. Create an account, an active
-session key, and an API key with the required grants in the dashboard. Keep API
+Node.js 24.14+ or a browser with Fetch and Web Crypto. Issue an API key in the
+dashboard. Execution needs grants to installed active sessions; provisioning needs
+explicit workspace management permissions. Keep API
 keys in server-side applications, never public browser bundles.
 
 ## Installation
@@ -43,6 +44,47 @@ if (result.success) {
 ```
 
 The default API is `https://api.namera.ai`. Set `baseUrl` for another deployment.
+
+## Create and manage accounts
+
+Issue a key with `wallet:create`, `wallet:read`, `session-key:create`,
+`session-key:read`, and `session-key:install` for a provisioning backend. These
+permissions cover all existing and future accounts in that workspace. Creation
+and installation can grant full control of managed accounts; use execution-only
+session grants for restricted agents.
+
+```ts
+const account = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Backend treasury" },
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!account.success) throw new Error(account.error.message);
+console.log(account.data);
+```
+
+`wallets.createPasskeyRegistrationOptions()` starts a passkey ceremony on an
+origin allowlisted when issuing the key. Your authenticated backend relays options
+and browser responses; the API key never enters the browser. Finish through
+`wallets.create({ owner: { type: "passkey", verificationId, response }, ... })`.
+
+`sessionKeys.create()` accepts a local public key or provisions a managed 1Claw
+signer. It grants this API-key actor access but leaves installation pending.
+`prepareOperation({ sessionKeyId, chainId, kind: "install" })` prepares the exact
+stored configuration. Review and validate it, then explicitly call
+`approveOperation()` with managed approval or a browser passkey assertion.
+`getOperation()` tracks confirmation, `getActiveOperation()` recovers interrupted
+approval, and `cancelOperation()` cancels unsigned work.
+
+The SDK generates provisioning/preparation idempotency keys internally and reuses
+them across supported transient retries. A new invocation is a new request.
+Passkey account creation and local session registration do not automatically retry.
+
+`sessionKeys.revoke()` disables server grants; it does not remove onchain authority.
+Use `kind: "uninstall"` with `session-key:uninstall` to explicitly remove each
+installed network, then wait for receipt confirmation.
+
+See [account management guides](https://namera.ai/docs/sdk/guides/accounts/create-accounts).
 
 ## Simulate a transaction
 

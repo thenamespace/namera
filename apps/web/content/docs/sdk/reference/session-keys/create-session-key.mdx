@@ -1,0 +1,277 @@
+---
+title: sessionKeys.create
+description: Register a local or 1Claw-managed session signer.
+---
+
+`namera.sessionKeys.create()` register a local or 1Claw-managed session signer.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns the complete pending session, public signer, account, creator, and per-network installations. API-key creators use `{ type: "api-key", actorId, id, metadata }`; human creators retain the member/user/role shape. This fixture uses root authority; choose narrower permissions for restricted agents.
+
+<include>../../../../snippets/sdk/created-managed-session-response.md</include>
+
+## Parameters
+
+### namespace
+
+Type: `"eip155"`. Required. The implemented chain namespace.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155", // [!code focus]
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### walletId
+
+Type: `string`. Required. Existing account UUID in the same workspace. Account ownership and session custody are independent.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001", // [!code focus]
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### metadata
+
+Type: `object`. Required. Session display metadata: `version: 1`, a required `name`, and optional `description` and `logo`.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" }, // [!code focus]
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### signer
+
+Type: `object`. Required. Use `{ custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" }`, or `{ custody: "local", algorithm: "secp256k1", publicKey }`. The local public key must be uncompressed, beginning with `0x04` and containing 65 bytes. Keep the corresponding private key in your application’s secure signer store.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" }, // [!code focus]
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### onchain
+
+Type: `object`. Required. Contains at least one installation; each network may appear once.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    // [!code focus]
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+#### onchain.installations
+
+Type: `readonly object[]`. Required. Each entry specifies `chainId` (a supported CAIP-2 network ID), `validAfter` and `validUntil` (Unix seconds), `permissions` (onchain permission definitions), and optional `allowSignatures` (defaults to `false`). Expiry must follow the start time and remain in the future at admission. Amount allowances are `bigint` values in token base units. `root` grants unrestricted account authority and cannot be combined with other permissions.
+
+#### onchain.installations[].chainId
+
+Type: `SupportedEvmChainId`. Required. The supported CAIP-2 network, such as `eip155:11155111`. Each network may appear once.
+
+#### onchain.installations[].validAfter
+
+Type: `number`. Required. Nonnegative Unix timestamp in seconds at which transaction authority begins.
+
+#### onchain.installations[].validUntil
+
+Type: `number`. Required. Unix timestamp in seconds after `validAfter`, still in the future at admission. Each network has its own expiry.
+
+#### onchain.installations[].permissions
+
+Type: `readonly EvmSessionPermission[]`. Required and nonempty. Choose onchain permissions such as native-token or ERC-20 allowances, allowed contracts/functions, and gas limits. Allowances are bigint base-unit amounts, not token display units. Root authority is exclusive and unrestricted. See [Permissions](/docs/sdk/permissions).
+
+#### onchain.installations[].allowSignatures
+
+Type: `boolean`. Optional; defaults to `false`. Enables onchain ERC-1271 signature authority. Transaction spending and time hooks do not constrain existing signature authority; uninstall it to remove that authority onchain. Namera signing also requires an API signature policy.
+
+### policies
+
+Type: `readonly object[]`. Required. Session-level API signature policies. An empty array adds no API signature policy; transaction authority comes from installed onchain permissions. Signature use additionally requires explicit onchain signature authority.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [], // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+#### policies[].type and policies[].version
+
+Type: `"evm.signature" | "evm.time-window" | "evm.chain-allowlist"`, and `1`. Required for each policy. Each policy type may appear once. Creation accepts configuration only; persisted `id` and `appliesTo` fields are assigned by Namera.
+
+#### policies[].allowedTypes and policies[].typedDataRules
+
+Required for `evm.signature`: `allowedTypes` is a nonempty unique array of `"message"` and/or `"typed-data"`. Optional `typedDataRules` is a nonempty array of rules with `chainId`, `verifyingContract`, and nonempty unique `primaryTypes`; `name` and `version` optionally restrict the typed-data domain. Omit rules to allow all typed data when that signature type is enabled. Rules constrain Namera requests, not direct signing with a caller-held key.
+
+#### policies[].startsAt and policies[].expiresAt
+
+Required for `evm.time-window`. SDK values are `DateTime.Utc | null` for `startsAt` and `DateTime.Utc` for `expiresAt`; wire values are ISO date-time strings. Null start means no lower time bound. Expiry must follow a non-null start and remain in the future at admission. This policy restricts API signatures, not installed transaction authority.
+
+#### policies[].chainIds
+
+Required for `evm.chain-allowlist`: a nonempty unique array of supported CAIP-2 network IDs on which API signing is permitted. A chain allowlist does not itself grant signature authority.
+
+## Behavior and errors
+
+Requires `session-key:create` and applies to any account in the API key’s workspace. Local signers submit only a public key. Managed signers provision a dedicated 1Claw key; never submit provider credentials. Creation atomically grants the calling API-key actor access to the new session. The session and installations remain pending until explicit owner-approved installation is confirmed. Managed creation retries transient failures with an SDK-generated idempotency key. Local registration is not automatically retried; retain your signer if a response is lost. No private key is returned. `NETWORK_PAUSED`, billing limits, invalid permissions, duplicate signers, and expired validity windows can reject creation.

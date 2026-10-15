@@ -24,7 +24,7 @@ export const GetWalletPasskeyOwnerResponse = Schema.Struct({
 }).annotate({
   identifier: "GetWalletPasskeyOwnerResponse",
   description:
-    "Public passkey data for independent owner-operation review. User-only; owner is null for non-passkey wallets. No signing capability is returned.",
+    "Public passkey data for independent owner-operation review by users or API keys with wallet:read. Owner is null for non-passkey wallets. No signing capability is returned.",
 });
 
 export type GetWalletPasskeyOwnerResponse = typeof GetWalletPasskeyOwnerResponse.Type;

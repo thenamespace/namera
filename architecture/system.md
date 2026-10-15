@@ -45,7 +45,8 @@ permissions govern management actions; account-owner actions additionally check
 ownership. Platform administration uses separate platform membership.
 
 API keys and OAuth clients do not inherit the creator's complete account access.
-They receive scopes and grants to specific session keys. API keys may additionally
+They receive grants to specific session keys; OAuth authorizations also carry
+scopes. API keys may additionally
 receive explicitly issued workspace-wide wallet management permissions, including
 creation and owner-approved session installation/removal. These do not replace
 execution grants or passkey signatures. The delegated execution

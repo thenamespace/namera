@@ -143,7 +143,7 @@ export const EvmSessionKeyResponse = Schema.Struct({
   installations: Schema.Array(SessionKeyInstallationResponse),
 }).annotate({
   identifier: "EvmSessionKeyResponse",
-  description: "An EVM session key with its wallet and creating organization member",
+  description: "An EVM session key with its wallet and human or API-key creator",
 });
 
 export const SessionKeyResponse = Schema.Union([EvmSessionKeyResponse], {

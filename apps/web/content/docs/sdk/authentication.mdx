@@ -11,7 +11,7 @@ token** for an authorized integration. Choose one authentication method per clie
 ## API Key
 
 Create an API key in the [Namera dashboard](https://dashboard.namera.ai) and
-select the session keys your application needs. Copy the key when it is shown
+select the session grants and explicit workspace management permissions your application needs. Copy the key when it is shown
 and save it in your environment:
 
 ```dotenv title=".env"
@@ -38,8 +38,11 @@ node --env-file=.env index.ts
   Keep API keys on your server and `.env` out of Git. Never include a key in browser code.
 </Callout>
 
-An API key can only access accounts through its granted session keys. It does
-not inherit the permissions of the person who created it.
+An execution-only API key accesses accounts through its session grants. Explicit
+`wallet:read` and `session-key:read` permissions allow workspace-wide management
+reads. Creation, installation, removal, and revocation need their own
+[management permissions](/docs/sdk/permissions#workspace-management-permissions).
+A key does not inherit its creator’s complete role.
 
 ## OAuth Access Token
 
@@ -91,9 +94,9 @@ console.log(actor.data);
 ```
 
 If authentication fails, check that the credential has not expired or been
-revoked. If an account is missing, check its session-key grants.
+revoked. If an account is missing, check its grants or workspace read permissions.
 
-To rotate an API key, create a replacement with the required session keys,
+To rotate an API key, create a replacement with the required grants, management permissions, and passkey origins,
 update your application, then revoke the old key in the dashboard.
 
 Next, [find your accounts and session keys](/docs/sdk/accounts-and-session-keys).
