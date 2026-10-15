@@ -51,6 +51,15 @@ Workers stop with the Effect scope. Leases protect durable work from concurrent
 claims; process-level loops invoke application-owned transitions. Pending chain
 operations are not failed or rebroadcast simply because a receipt is late.
 
+## Verification
+
+The PostgreSQL test lane launches `src/index.ts` in a separate Node process with
+isolated configuration, an empty disposable database and a loopback OTLP sink.
+It checks migration-before-listen ordering, migration failure, mounted API/raw
+routes and middleware, then listener and worker shutdown on SIGTERM. No routes,
+workers or application layers are replaced. Provider credentials are synthetic;
+this smoke test does not exercise hosted provider calls or container packaging.
+
 ## Source
 
 - [Layer composition](../../apps/server/src/layers/)
