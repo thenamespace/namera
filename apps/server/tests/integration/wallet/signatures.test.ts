@@ -16,14 +16,14 @@ import { handledApi } from "../../fixtures/http-api-test.js";
 import {
   createMember,
   makeTestApiClient,
-  resetTestState,
   setAuthToken,
   setApiKey,
   signIn,
   testEmail,
 } from "../../fixtures/index.js";
-import { createTestPasskeyWallet, localSessionRequest } from "../../fixtures/local-session.js";
+import { localSessionRequest } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+import { setupPasskeyWalletOwner } from "../../fixtures/passkey-wallet-owner.js";
 
 const fixture = makeOwnerSessionTestFixture(
   {},
@@ -46,18 +46,7 @@ const typed: PrepareWalletSignatureRequest = {
     message: { nonce: "test-nonce" },
   }),
 };
-const setup = Effect.gen(function* () {
-  yield* resetTestState();
-  const author = yield* signIn(
-    yield* makeTestApiClient,
-    testEmail(`${crypto.randomUUID()}@example.com`),
-  );
-  const client = yield* handledApi(NameraApi, {
-    headers: { cookie: `auth-token=${author.cookie.value}`, origin: "http://dashboard.test" },
-  });
-  const wallet = yield* createTestPasskeyWallet(client);
-  return { author, client, wallet, params: { walletId: wallet.id } };
-});
+const setup = setupPasskeyWalletOwner("signatures");
 const approval = (prepared: PrepareWalletSignatureResponse, origin = "http://dashboard.test") => {
   if (prepared.signing.method !== "passkey") throw new Error("Expected passkey");
   return {

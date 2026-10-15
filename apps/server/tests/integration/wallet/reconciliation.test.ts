@@ -2,16 +2,13 @@ import { expect, it } from "@effect/vitest";
 import { Deferred, Duration, Effect, Fiber, Logger, References, Schema } from "effect";
 import { TestClock } from "effect/testing";
 
-import { NameraApi } from "@namera-ai/api";
 import { Application } from "@namera-ai/application";
 import { Database } from "@namera-ai/database";
 import { TestEvmExecution } from "@namera-ai/evm";
 import { EthereumAddress, EvmExecutionError } from "@namera-ai/protocol";
 
-import { handledApi } from "../../fixtures/http-api-test.js";
-import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
-import { createTestPasskeyWallet } from "../../fixtures/local-session.js";
 import { makeOwnerSessionTestFixture } from "../../fixtures/owner-session.js";
+import { setupPasskeyWalletOwner } from "../../fixtures/passkey-wallet-owner.js";
 
 it.effect(
   "retains pending operations through missing hashes, lookup errors and age without rebroadcast",
@@ -45,16 +42,7 @@ it.effect(
       });
 
       yield* Effect.gen(function* () {
-        yield* resetTestState();
-        const author = yield* signIn(
-          yield* makeTestApiClient,
-          testEmail("pending-reconciliation@example.com"),
-        );
-        const client = yield* handledApi(NameraApi, {
-          headers: { cookie: `auth-token=${author.cookie.value}`, origin: "http://dashboard.test" },
-        });
-        const wallet = yield* createTestPasskeyWallet(client);
-        const params = { walletId: wallet.id };
+        const { client, params } = yield* setupPasskeyWalletOwner("reconciliation");
         const prepared = yield* client.walletTransaction.prepare({
           params,
           headers: { "idempotency-key": "pending-recovery" },
