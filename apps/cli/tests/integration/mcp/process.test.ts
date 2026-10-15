@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
-import { once } from "node:events";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, onTestFinished } from "vitest";
 
 describe("MCP command lifecycle", () => {
   it.each(["2026-07-28", "2025-11-25", "2025-06-18"])(
@@ -21,6 +20,11 @@ describe("MCP command lifecycle", () => {
         ],
         { stdio: "pipe" },
       );
+      const closed = new Promise<number | null>((resolve) => child.once("close", resolve));
+      onTestFinished(async () => {
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+        await closed;
+      });
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (chunk) => {
@@ -76,12 +80,12 @@ describe("MCP command lifecycle", () => {
         );
         expect(messages.find((message) => message.id === 2)?.result.tools).toHaveLength(10);
         expect(stderr).not.toContain("Authorize Namera");
-        const exited = once(child, "exit");
         child.stdin.end();
         await vi.waitFor(() => expect(child.exitCode).not.toBeNull(), { timeout: 5000 });
-        expect((await exited)[0]).toBe(0);
+        expect(await closed).toBe(0);
       } finally {
-        if (child.exitCode === null) child.kill("SIGKILL");
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+        await closed;
       }
     },
     70_000,
