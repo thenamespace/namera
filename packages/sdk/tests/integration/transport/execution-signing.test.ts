@@ -27,6 +27,10 @@ describe("detached execution transport", () => {
       failure: "declared server error",
       respond: () => Promise.resolve(jsonResponse({ _tag: "InternalServerError" }, 500)),
     },
+    ...[408, 500, 502, 503, 504].map((status) => ({
+      failure: `raw HTTP ${status}`,
+      respond: () => Promise.resolve(new Response("upstream unavailable", { status })),
+    })),
   ])(
     "retries $failure with one preparation identity and unchanged payload",
     async ({ respond }) => {
@@ -93,6 +97,23 @@ describe("detached execution transport", () => {
       error: { kind: "contract" },
     });
     expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it("exhausts raw gateway retries without changing the completion signature", async () => {
+    const fetch = vi
+      .fn<NameraFetch>()
+      .mockImplementation(async () => new Response("Bad Gateway", { status: 502 }));
+    const client = new NameraClient({ apiKey: "test-only", fetch });
+
+    expect(await client.executions.complete(complete)).toMatchObject({
+      success: false,
+      error: { status: 502 },
+    });
+    expect(fetch).toHaveBeenCalledTimes(4);
+    for (const [url, init] of fetch.mock.calls) {
+      expect(url.toString()).toBe("https://api.namera.ai/executions/complete");
+      expect(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array))).toEqual(complete);
+    }
   });
 
   it("retries completion with the same signature and returns queued, not confirmed", async () => {

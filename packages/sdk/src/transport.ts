@@ -123,9 +123,10 @@ const isTransientRequestError = (error: unknown): boolean => {
   if (Predicate.isTagged(error, "InternalServerError")) return true;
   if (!HttpClientError.isHttpClientError(error)) return false;
   if (error.reason instanceof HttpClientError.TransportError) return true;
-  if (!(error.reason instanceof HttpClientError.StatusCodeError)) return false;
-
-  return error.reason.response.status === 408 || error.reason.response.status >= 500;
+  // Undeclared gateway responses can fail decoding rather than status validation.
+  // Use the received status, never the decoding failure alone, to allow a retry.
+  const status = error.response?.status;
+  return status !== undefined && (status === 408 || (status >= 500 && status <= 599));
 };
 
 const transientRetrySchedule = Schedule.exponential("100 millis");
