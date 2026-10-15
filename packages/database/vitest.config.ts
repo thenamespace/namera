@@ -12,6 +12,7 @@ export default defineNodeVitestConfig({
     },
   },
   test: {
+    fileParallelism: process.env.NAMERA_TEST_POSTGRES_PORT === undefined,
     maxWorkers: 2,
     hookTimeout: 30_000,
     server: { deps: { inline: [/^@namera-ai\//] } },

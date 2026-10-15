@@ -3,9 +3,10 @@ import { DateTime, Effect, Layer } from "effect";
 import { TestClock } from "effect/testing";
 
 import { Database, Repository, TestDatabase, TransactionService } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(TestDatabase.layer),
+  Layer.provideMerge(DatabaseTestLayer),
 );
 const payload = {
   event: "waitlist_joined" as const,

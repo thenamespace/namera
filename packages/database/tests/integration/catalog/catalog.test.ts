@@ -10,6 +10,7 @@ import {
   addressCatalogEntry,
   contractInterface,
 } from "../../../src/schema/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 
 const fixture = Effect.fnUntraced(function* () {
   yield* (yield* TestDatabase).reset;
@@ -51,7 +52,7 @@ const fixture = Effect.fnUntraced(function* () {
   return { db, catalog, artifact, input };
 });
 
-layer(TestDatabase.layer)("catalog schema persistence", (it) => {
+layer(DatabaseTestLayer)("catalog schema persistence", (it) => {
   it.effect("persists contract metadata and its JSON ABI independently", () =>
     Effect.gen(function* () {
       const { db, catalog, artifact, input } = yield* fixture();

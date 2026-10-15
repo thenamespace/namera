@@ -4,9 +4,10 @@ import { DateTime, Effect, Layer } from "effect";
 import type { ExecutionSubmissionInsert } from "@namera-ai/protocol/model";
 
 import { Repository, TestDatabase } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { sessionOperationFixture } from "../../fixtures/session-operation.js";
 
-const Persistence = Repository.layer.pipe(Layer.provideMerge(TestDatabase.layer));
+const Persistence = Repository.layer.pipe(Layer.provideMerge(DatabaseTestLayer));
 
 const fixture = Effect.fn("test.executionSigning.fixture")(function* (name: string) {
   const owner = yield* sessionOperationFixture(name);

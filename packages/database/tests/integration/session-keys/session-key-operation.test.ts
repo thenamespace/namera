@@ -4,10 +4,11 @@ import { DateTime, Effect, Layer } from "effect";
 import { Hex, TransactionHash, UserOperationHash } from "@namera-ai/protocol";
 
 import { Repository, TestDatabase, TransactionService } from "../../../src/index.js";
+import { DatabaseTestLayer } from "../../fixtures/database.js";
 import { sessionOperationFixture } from "../../fixtures/session-operation.js";
 
 const Persistence = Layer.mergeAll(Repository.layer, TransactionService.layer).pipe(
-  Layer.provideMerge(TestDatabase.layer),
+  Layer.provideMerge(DatabaseTestLayer),
 );
 const time = DateTime.fromEpochSeconds;
 

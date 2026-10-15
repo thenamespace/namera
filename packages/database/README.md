@@ -39,5 +39,12 @@ Inspect generated SQL before committing it. Preserve historical migrations.
 Tests use real migrations and reset isolated databases; never point test reset
 helpers at shared data.
 
+The default test lane uses PGlite. To run every repository suite against disposable
+PostgreSQL, set `NAMERA_TEST_POSTGRES_PORT` to its separate loopback port (not 5432).
+The layer pins the database to `namera_test` and the user to `postgres`; it never
+uses deployment database configuration. Files run serially in this lane because
+each test resets shared tables. Do not run server and package PostgreSQL tests
+against the same database at the same time.
+
 See the [data reference](../../architecture/data/README.md) for table purpose
 and constraints.
