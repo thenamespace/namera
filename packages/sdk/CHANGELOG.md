@@ -1,5 +1,13 @@
 # @namera-ai/sdk
 
+## 1.5.0
+
+### Patch Changes
+
+- Updated dependencies [955539e]
+  - @namera-ai/api@1.5.0
+  - @namera-ai/protocol@1.5.0
+
 ## 1.4.0
 
 ### Minor Changes

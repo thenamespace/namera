@@ -1,5 +1,14 @@
 # @namera-ai/cli
 
+## 1.5.0
+
+### Patch Changes
+
+- 955539e: Add actor-scoped cancellation endpoints for unsigned wallet transactions, session-key approvals, and delegated execution preparations. Cancellation releases applicable reservations atomically, rejects signed or pending transactions and active signing leases, and exposes a terminal cancelled status.
+- Updated dependencies [955539e]
+  - @namera-ai/protocol@1.5.0
+  - @namera-ai/sdk@1.5.0
+
 ## 1.4.0
 
 ### Minor Changes
