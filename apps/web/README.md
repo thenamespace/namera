@@ -43,6 +43,7 @@ See [website architecture](../../architecture/interfaces/website.md).
 
 ```sh
 pnpm --filter @namera-ai/web test
+pnpm --filter @namera-ai/web test:browser
 pnpm --filter @namera-ai/web typecheck
 pnpm --filter @namera-ai/web lint
 pnpm --filter @namera-ai/web build
@@ -51,6 +52,8 @@ pnpm --filter @namera-ai/web preview
 
 Typechecking generates the MDX collection and route tree. The production build
 generates the complete TanStack Start registration.
+Browser tests require Playwright Chromium and cover waitlist submission and retry.
+Node integration tests exercise compiled documentation and date-gated blog output.
 
 ## Deployment
 

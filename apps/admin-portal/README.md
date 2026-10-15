@@ -37,6 +37,7 @@ permissions, with server checks on every request. See
 
 ```sh
 pnpm --filter @namera-ai/admin-portal test
+pnpm --filter @namera-ai/admin-portal test:browser
 pnpm --filter @namera-ai/admin-portal typecheck
 pnpm --filter @namera-ai/admin-portal lint
 pnpm --filter @namera-ai/admin-portal build
@@ -44,3 +45,7 @@ pnpm --filter @namera-ai/admin-portal build
 
 The Dockerfile serves static assets through nginx. API origin changes require a
 rebuild. Deploy with a compatible HTTPS cookie policy and exact CORS origin.
+
+Browser tests require Playwright Chromium (installed through the dashboard's
+Playwright command in the [testing guide](../../architecture/engineering/testing.md)).
+They exercise real forms and mutation hooks against controlled HTTP responses.

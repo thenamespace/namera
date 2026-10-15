@@ -65,7 +65,7 @@ pnpm --filter @namera-ai/dashboard test
 pnpm typecheck:test
 ```
 
-Dashboard component and hook tests run separately in real Chromium with Vitest
+Dashboard, admin portal, and website component and hook tests run separately in real Chromium with Vitest
 Browser Mode and Playwright. They load the application theme and exercise React
 Aria controls, transaction confirmation, autosave authority, and shared inputs.
 Workflow tests substitute session, mutation, and chain-review boundaries; package
@@ -75,11 +75,20 @@ files are disabled.
 ```sh
 pnpm --filter @namera-ai/dashboard exec playwright install chromium
 pnpm --filter @namera-ai/dashboard test:browser
+pnpm --filter @namera-ai/admin-portal test:browser
+pnpm --filter @namera-ai/web test:browser
 ```
 
 On Linux CI, use `playwright install --with-deps chromium` to install required
 system libraries. Browser downloads are separate from Node package installation.
 Failure screenshots are local `.vitest` artifacts, not committed fixtures.
+
+Admin browser tests use real mutation hooks and a scoped atom registry with a
+controlled HTTP boundary. They cover pending controls, retained drafts,
+one-time invite disclosure, catalog review, and feedback list/detail invalidation.
+Website tests exercise the waitlist form and compiled content publication dates.
+Each application has its own browser configuration so aliases resolve within the
+owning app. Run browser suites sequentially on constrained developer machines.
 
 For the PostgreSQL lane, start a dedicated disposable container:
 
@@ -111,7 +120,8 @@ verification.
 - CLI tests separately from other package tests, with bounded concurrency.
 - The complete server suite on PostgreSQL with reproducibly shuffled order.
 - Repository tests on the same disposable PostgreSQL service after the server suite.
-- Dashboard browser tests in a dedicated Chromium job, separate from Node tests.
+- Dashboard, admin portal, and website browser tests in a dedicated Chromium job,
+  separate from Node tests.
 
 The seed is the workflow run number. Package tests exclude the server in CI
 because PostgreSQL covers it separately; local `pnpm test` includes it.

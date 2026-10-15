@@ -19,6 +19,7 @@ export default defineConfig({
     },
   },
   test: {
+    include: ["tests/**/*.test.ts"],
     maxWorkers: 2,
     server: { deps: { inline: [/^@namera-ai\//] } },
   },

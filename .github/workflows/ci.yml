@@ -51,6 +51,8 @@ jobs:
       - name: Install Chromium and system dependencies
         run: pnpm --filter @namera-ai/dashboard exec playwright install --with-deps chromium
       - run: pnpm --filter @namera-ai/dashboard test:browser
+      - run: pnpm --filter @namera-ai/admin-portal test:browser
+      - run: pnpm --filter @namera-ai/web test:browser
   postgres:
     name: PostgreSQL integration
     runs-on: ubuntu-latest
