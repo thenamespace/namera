@@ -9,10 +9,16 @@ describe("public waitlist", () => {
   const payload = Schema.decodeUnknownSync(JoinWaitlistRequest)({ email: " Person@Example.com " });
 
   it("posts normalized email without credentials and accepts repeat submissions", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('{"accepted":true}'));
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ accepted: true }));
     await expect(joinWaitlist(payload, "https://api.example.com", fetcher)).resolves.toEqual({
       accepted: true,
     });
+    await expect(joinWaitlist(payload, "https://api.example.com", fetcher)).resolves.toEqual({
+      accepted: true,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
     expect(fetcher).toHaveBeenCalledWith(
       new URL("https://api.example.com/waitlist"),
       expect.objectContaining({

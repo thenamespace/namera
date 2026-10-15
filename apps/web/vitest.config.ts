@@ -2,6 +2,7 @@ import { fumadocsMdx } from "fumadocs-mdx/vite";
 import defineConfig from "klarity/vitest/node";
 
 export default defineConfig({
+  envDir: false,
   plugins: [
     fumadocsMdx({
       index: { target: "vite" },
