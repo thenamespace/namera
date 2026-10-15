@@ -1,5 +1,11 @@
 # @namera-ai/protocol
 
+## 1.5.0
+
+### Minor Changes
+
+- 955539e: Add actor-scoped cancellation endpoints for unsigned wallet transactions, session-key approvals, and delegated execution preparations. Cancellation releases applicable reservations atomically, rejects signed or pending transactions and active signing leases, and exposes a terminal cancelled status.
+
 ## 1.4.0
 
 ### Minor Changes
