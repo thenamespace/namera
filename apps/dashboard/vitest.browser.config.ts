@@ -12,10 +12,12 @@ export default defineConfig({
       "@hookform/resolvers/standard-schema",
       "usehooks-ts",
       "@simplewebauthn/browser",
+      "@tanstack/react-router",
       "@namera-ai/telemetry > posthog-js",
       "viem",
       "viem/chains",
       "viem/account-abstraction",
+      "viem/siwe",
     ],
   },
   test: {
