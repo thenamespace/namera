@@ -106,6 +106,9 @@ layer(TestServerLayer)("notification inbox routes", (it) => {
       const second = yield* client.notification.list({ query: { cursor: first.nextCursor } });
       expect(second.items).toHaveLength(2);
       expect(second.nextCursor).toBeNull();
+      expect(
+        new Set([...first.items, ...second.items].map(({ notification }) => notification.id)).size,
+      ).toBe(32);
 
       expect(yield* client.notification.markAllRead()).toEqual({ count: 32 });
       expect(yield* client.notification.unreadCount()).toEqual({ count: 0 });

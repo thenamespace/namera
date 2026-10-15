@@ -99,11 +99,13 @@ for (const owner of ["passkey", "1claw"] as const) {
           yield* f.client.sessionKey.revoke({ params: { sessionKeyId: f.session.id } });
           yield* setAuthToken();
           yield* setApiKey(f.apiKey.key);
-          yield* f.client.execution
-            .complete({
-              payload: { namespace: "eip155", submissionId: prepared.submissionId },
-            })
-            .pipe(Effect.flip);
+          expect(
+            yield* f.client.execution
+              .complete({
+                payload: { namespace: "eip155", submissionId: prepared.submissionId },
+              })
+              .pipe(Effect.flip),
+          ).toMatchObject({ code: "NO_AUTHORIZED_SESSION_KEY" });
           expect(yield* Ref.get(f.control.calls)).toEqual([]);
           yield* TestClock.adjust(Duration.minutes(6));
           yield* f.app.execution.reconcile();
