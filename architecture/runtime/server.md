@@ -28,7 +28,8 @@ header receipt to ten seconds, request receipt to thirty seconds, and keep-alive
 to five seconds. These are transport limits, not provider-operation deadlines.
 API responses default to `no-store`; successful public discovery has an explicit
 short cache policy. Security headers include frame denial, `nosniff` and
-`no-referrer`.
+`no-referrer`. They apply both to routed responses and early body/rate-limit
+responses, which can bypass the router's pre-response hook.
 
 Rate limits use a shared process-local memory store. The deployment must overwrite
 `X-Real-IP` and `X-Forwarded-For` and block direct origin access: the server trusts

@@ -2,7 +2,33 @@ import { expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { HttpEffect, HttpServerRequest, HttpServerResponse } from "effect/http";
 
+import { RequestBodyLimitMiddleware } from "../../../src/middlewares/request-body-limit.js";
 import { SecurityHeadersMiddleware } from "../../../src/middlewares/security-headers.js";
+
+it.effect("protects a body-limit response that short-circuits before handled routing", () =>
+  Effect.gen(function* () {
+    const response = yield* SecurityHeadersMiddleware(
+      RequestBodyLimitMiddleware(Effect.die("Oversized body must not reach the route")),
+    ).pipe(
+      Effect.provideService(
+        HttpServerRequest.HttpServerRequest,
+        HttpServerRequest.fromWeb(
+          new Request("https://api.test/oauth/token", {
+            method: "POST",
+            headers: { "content-length": "65537" },
+          }),
+        ),
+      ),
+    );
+    expect(response.status).toBe(413);
+    expect(response.headers).toMatchObject({
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "no-referrer",
+      "cache-control": "no-store",
+    });
+  }),
+);
 
 for (const status of [200, 303, 401, 500]) {
   it.effect(`preserves status ${status} and existing headers while applying API protections`, () =>

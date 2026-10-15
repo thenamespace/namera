@@ -9,18 +9,20 @@ const headers = {
   "referrer-policy": "no-referrer",
 } as const;
 
+const secureResponse = (response: HttpServerResponse.HttpServerResponse) =>
+  HttpServerResponse.setHeaders(response, {
+    ...headers,
+    // Public OAuth discovery opts into caching; errors never inherit it.
+    "cache-control":
+      response.status < 400 ? (response.headers["cache-control"] ?? "no-store") : "no-store",
+  });
+
 export const SecurityHeadersMiddleware = HttpMiddleware.make((httpEffect) =>
   Effect.gen(function* () {
     yield* HttpEffect.appendPreResponseHandler((_request, response) =>
-      Effect.succeed(
-        HttpServerResponse.setHeaders(response, {
-          ...headers,
-          // Public OAuth discovery opts into caching; errors never inherit it.
-          "cache-control":
-            response.status < 400 ? (response.headers["cache-control"] ?? "no-store") : "no-store",
-        }),
-      ),
+      Effect.succeed(secureResponse(response)),
     );
-    return yield* httpEffect;
+    // Serve-level body/rate limits can return before the router's response hook runs.
+    return secureResponse(yield* httpEffect);
   }),
 );
