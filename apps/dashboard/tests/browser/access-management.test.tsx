@@ -35,7 +35,14 @@ vi.mock("../../src/hooks/auth", () => ({
       ...actor,
       role: {
         ...actor.role,
-        permissions: ["member:remove", "member:update", "wallet:create", "session-key:create"],
+        permissions: [
+          "member:remove",
+          "member:update",
+          "wallet:read",
+          "wallet:create",
+          "session-key:read",
+          "session-key:create",
+        ],
       },
     },
   }),
@@ -221,9 +228,13 @@ it("creates a management-only key and disables permissions the issuer cannot del
   await page.getByRole("button", { name: "Create API key", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabelText("Name", { exact: true }).fill("Workspace backend");
-  await dialog.getByText("wallet:create", { exact: true }).click();
+  await expect.element(dialog.getByLabelText("Passkey application origins")).not.toBeVisible();
+  await dialog.getByText("Advanced", { exact: true }).click();
+  await dialog.getByText("Create accounts", { exact: true }).click();
   await expect
-    .element(dialog.getByRole("checkbox", { name: "session-key:revoke", exact: true }))
+    .element(
+      dialog.getByRole("checkbox", { name: "Manage session key installations", exact: true }),
+    )
     .toBeDisabled();
   await dialog
     .getByLabelText("Passkey application origins")
@@ -234,8 +245,32 @@ it("creates a management-only key and disables permissions the issuer cannot del
       metadata: { version: 1, name: "Workspace backend", logo: { type: "emoji", value: "🔐" } },
       durationDays: 30,
       sessionKeyIds: [],
-      permissions: ["wallet:create"],
+      permissions: ["wallet:read", "wallet:create"],
       passkeyOrigins: ["https://app.example.com", "https://other.example.com"],
+    },
+  });
+});
+
+it("preserves session-key read access when another management group is cleared", async () => {
+  await render(<CreateApiKeyDialog initialSessionKeys={[]} />);
+  await page.getByRole("button", { name: "Create API key", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabelText("Name", { exact: true }).fill("Session provisioning");
+  await dialog.getByText("Advanced", { exact: true }).click();
+  await dialog.getByText("Create accounts", { exact: true }).click();
+  await dialog.getByText("Create session keys", { exact: true }).click();
+  await dialog.getByText("Create accounts", { exact: true }).click();
+  await expect
+    .element(dialog.getByRole("checkbox", { name: "Create session keys", exact: true }))
+    .toBeChecked();
+  await dialog.getByRole("button", { name: "Create API key", exact: true }).click();
+  expect(boundary.create).toHaveBeenCalledWith({
+    payload: {
+      metadata: { version: 1, name: "Session provisioning", logo: { type: "emoji", value: "🔐" } },
+      durationDays: 30,
+      sessionKeyIds: [],
+      permissions: ["wallet:read", "session-key:read", "session-key:create"],
+      passkeyOrigins: [],
     },
   });
 });

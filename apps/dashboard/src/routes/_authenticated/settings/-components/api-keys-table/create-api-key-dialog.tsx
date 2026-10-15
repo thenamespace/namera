@@ -9,7 +9,7 @@ import {
   type CreateApiKeyResponse,
   type ListSessionKeysForOrganizationResponse,
 } from "@namera-ai/protocol/dto";
-import { ApiKeyPermission } from "@namera-ai/protocol/model";
+import type { ApiKeyPermission } from "@namera-ai/protocol/model";
 import {
   Button,
   Checkbox,
@@ -23,8 +23,9 @@ import {
   Modal,
   Select,
   Typography,
+  Tooltip,
 } from "@namera-ai/ui";
-import { Add01Icon, Copy01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
+import { Add01Icon, Copy01Icon, HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm } from "react-hook-form";
 import { useEventCallback } from "usehooks-ts";
 
@@ -43,6 +44,27 @@ const durationOptions = [
   { id: "30", name: "30 days" },
   { id: "90", name: "90 days" },
 ] as const;
+
+const managementOptions = [
+  { label: "Create accounts", permissions: ["wallet:read", "wallet:create"] },
+  {
+    label: "Create session keys",
+    permissions: ["wallet:read", "session-key:read", "session-key:create"],
+  },
+  {
+    label: "Manage session key installations",
+    permissions: [
+      "wallet:read",
+      "session-key:read",
+      "session-key:install",
+      "session-key:uninstall",
+      "session-key:revoke",
+    ],
+  },
+] as const satisfies readonly {
+  label: string;
+  permissions: readonly (typeof ApiKeyPermission.Type)[];
+}[];
 
 const defaultValues: CreateApiKeyInput = {
   metadata: {
@@ -150,6 +172,12 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
             {!createApiKey.isPending ? <Modal.CloseTrigger /> : null}
             <Modal.Header>
               <Modal.Heading>{created ? "API key created" : "Create API key"}</Modal.Heading>
+              {!created ? (
+                <Typography className="text-sm" color="muted">
+                  Select session keys for execution access, or grant workspace management
+                  permissions.
+                </Typography>
+              ) : null}
             </Modal.Header>
 
             {created ? (
@@ -182,10 +210,6 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
             ) : (
               <form id="create-api-key-form" noValidate onSubmit={handleSubmit}>
                 <Modal.Body className="grid max-h-[55dvh] gap-5 overflow-y-auto">
-                  <Typography className="text-sm" color="muted">
-                    Select session keys for execution access, or grant workspace management
-                    permissions.
-                  </Typography>
                   <FieldGroup>
                     <Controller
                       control={form.control}
@@ -236,92 +260,6 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
 
                     <Controller
                       control={form.control}
-                      name="permissions"
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel id="api-key-permissions-label">
-                            Workspace management permissions
-                          </FieldLabel>
-                          <Typography className="text-sm" color="muted">
-                            Applies to all existing and future accounts in this workspace. Creating
-                            and installing sessions can grant full control of managed accounts.
-                          </Typography>
-                          <fieldset
-                            aria-labelledby="api-key-permissions-label"
-                            className="grid gap-2"
-                          >
-                            {ApiKeyPermission.literals.map((permission) => {
-                              const memberPermission =
-                                permission === "session-key:install"
-                                  ? "session-key:create"
-                                  : permission === "session-key:uninstall"
-                                    ? "session-key:revoke"
-                                    : permission;
-                              return (
-                                <Checkbox
-                                  key={permission}
-                                  isSelected={field.value?.includes(permission) ?? false}
-                                  isDisabled={
-                                    !currentUser.data?.role.permissions.includes(memberPermission)
-                                  }
-                                  onBlur={field.onBlur}
-                                  onChange={(selected) =>
-                                    field.onChange(
-                                      selected
-                                        ? [...(field.value ?? []), permission]
-                                        : (field.value ?? []).filter(
-                                            (value) => value !== permission,
-                                          ),
-                                    )
-                                  }
-                                >
-                                  <Checkbox.Content>
-                                    <Checkbox.Control>
-                                      <Checkbox.Indicator />
-                                    </Checkbox.Control>
-                                    {permission}
-                                  </Checkbox.Content>
-                                </Checkbox>
-                              );
-                            })}
-                          </fieldset>
-                          {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                        </Field>
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="passkeyOrigins"
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor="api-key-passkey-origins">
-                            Passkey application origins
-                          </FieldLabel>
-                          <Typography className="text-sm" color="muted">
-                            Optional. Enter one exact HTTPS origin per line for SDK passkey
-                            registration. HTTP localhost is allowed for development.
-                          </Typography>
-                          <TextArea
-                            id="api-key-passkey-origins"
-                            name={field.name}
-                            ref={field.ref}
-                            value={(field.value ?? []).join("\n")}
-                            onBlur={() => {
-                              field.onChange(
-                                (field.value ?? []).map((origin) => origin.trim()).filter(Boolean),
-                              );
-                              field.onBlur();
-                            }}
-                            onChange={(event) => field.onChange(event.target.value.split("\n"))}
-                            aria-invalid={fieldState.invalid}
-                          />
-                          {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-                        </Field>
-                      )}
-                    />
-
-                    <Controller
-                      control={form.control}
                       name="durationDays"
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
@@ -356,6 +294,138 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                         </Field>
                       )}
                     />
+                    <details className="group">
+                      <summary className="cursor-pointer text-sm font-medium">Advanced</summary>
+                      <div className="grid gap-5 pt-4">
+                        <Controller
+                          control={form.control}
+                          name="permissions"
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <FieldLabel id="api-key-permissions-label">
+                                Workspace management permissions
+                              </FieldLabel>
+                              <Typography className="text-sm" color="muted">
+                                Applies to all existing and future accounts in this workspace.
+                                Creating and installing sessions can grant full control of managed
+                                accounts.
+                              </Typography>
+                              <fieldset
+                                aria-labelledby="api-key-permissions-label"
+                                className="grid gap-2"
+                              >
+                                {managementOptions.map((option) => {
+                                  const selected = option.permissions.every((permission) =>
+                                    field.value?.includes(permission),
+                                  );
+                                  const canDelegate = option.permissions.every((permission) => {
+                                    const memberPermission =
+                                      permission === "session-key:install"
+                                        ? "session-key:create"
+                                        : permission === "session-key:uninstall"
+                                          ? "session-key:revoke"
+                                          : permission;
+                                    return currentUser.data?.role.permissions.includes(
+                                      memberPermission,
+                                    );
+                                  });
+                                  return (
+                                    <Checkbox
+                                      key={option.label}
+                                      isSelected={selected}
+                                      isDisabled={!canDelegate}
+                                      onBlur={field.onBlur}
+                                      onChange={(checked) => {
+                                        const selectedOptions = managementOptions.filter(
+                                          (candidate) =>
+                                            candidate === option
+                                              ? checked
+                                              : candidate.permissions.every((permission) =>
+                                                  field.value?.includes(permission),
+                                                ),
+                                        );
+                                        field.onChange([
+                                          ...new Set(
+                                            selectedOptions.flatMap(
+                                              (candidate) => candidate.permissions,
+                                            ),
+                                          ),
+                                        ]);
+                                      }}
+                                    >
+                                      <Checkbox.Content>
+                                        <Checkbox.Control>
+                                          <Checkbox.Indicator />
+                                        </Checkbox.Control>
+                                        {option.label}
+                                      </Checkbox.Content>
+                                    </Checkbox>
+                                  );
+                                })}
+                              </fieldset>
+                              {fieldState.invalid ? (
+                                <FieldError errors={[fieldState.error]} />
+                              ) : null}
+                            </Field>
+                          )}
+                        />
+                        <Controller
+                          control={form.control}
+                          name="passkeyOrigins"
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <div className="flex items-center gap-1.5">
+                                <FieldLabel htmlFor="api-key-passkey-origins">
+                                  Passkey application origins
+                                </FieldLabel>
+                                <Tooltip delay={200}>
+                                  <Tooltip.Trigger>
+                                    <Button
+                                      isIconOnly
+                                      aria-label="About passkey application origins"
+                                      size="sm"
+                                      variant="tertiary"
+                                      className="size-5 min-h-5 text-muted"
+                                      type="button"
+                                    >
+                                      <HugeiconsIcon
+                                        icon={InformationCircleIcon}
+                                        className="size-3.5"
+                                      />
+                                    </Button>
+                                  </Tooltip.Trigger>
+                                  <Tooltip.Content className="max-w-64" showArrow>
+                                    <Tooltip.Arrow />
+                                    Optional. Enter one exact HTTPS origin per line for SDK passkey
+                                    registration. HTTP localhost is allowed for development.
+                                  </Tooltip.Content>
+                                </Tooltip>
+                              </div>
+                              <TextArea
+                                variant="secondary"
+                                id="api-key-passkey-origins"
+                                name={field.name}
+                                ref={field.ref}
+                                value={(field.value ?? []).join("\n")}
+                                onBlur={() => {
+                                  field.onChange(
+                                    (field.value ?? [])
+                                      .map((origin) => origin.trim())
+                                      .filter(Boolean),
+                                  );
+                                  field.onBlur();
+                                }}
+                                onChange={(event) => field.onChange(event.target.value.split("\n"))}
+                                aria-invalid={fieldState.invalid}
+                              />
+                              {fieldState.invalid ? (
+                                <FieldError errors={[fieldState.error]} />
+                              ) : null}
+                            </Field>
+                          )}
+                        />
+                      </div>
+                    </details>
                   </FieldGroup>
                 </Modal.Body>
                 <Modal.Footer>
