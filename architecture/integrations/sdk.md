@@ -7,17 +7,18 @@ services or custody-provider credentials.
 
 ## Surface
 
-| Client        | Methods                                                                  |
-| ------------- | ------------------------------------------------------------------------ |
-| `auth`        | `currentActor`                                                           |
-| `wallets`     | `list`, `get`                                                            |
-| `sessionKeys` | `list`, `get`                                                            |
-| `executions`  | `simulate`, `prepare`, `complete`, `execute`, `getStatus`, `get`, `list` |
-| `signatures`  | `prepare`, `complete`, `sign`                                            |
-| Root client   | `sign`, `verifySignature`                                                |
+| Client        | Methods                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`        | `currentActor`                                                                                                                     |
+| `wallets`     | `list`, `get`, `create`, `createPasskeyRegistrationOptions`, `getPasskeyOwner`                                                     |
+| `sessionKeys` | `list`, `get`, `create`, `revoke`, `prepareOperation`, `approveOperation`, `getOperation`, `getActiveOperation`, `cancelOperation` |
+| `executions`  | `simulate`, `prepare`, `complete`, `execute`, `getStatus`, `get`, `list`                                                           |
+| `signatures`  | `prepare`, `complete`, `sign`                                                                                                      |
+| Root client   | `sign`, `verifySignature`                                                                                                          |
 
 Account-owner transactions and session installation approval are not delegated
-execution methods. The browser uses the corresponding HTTP contracts and owner
+execution methods. Installation management has explicit API-key permissions and
+is separate from session execution grants. The browser uses the corresponding HTTP contracts and owner
 approval validation helpers.
 
 ## Transport
@@ -40,6 +41,27 @@ Retry-enabled methods use three retries with exponential delays starting at
 undeclared error body fails decoding. Malformed successful responses, redirects,
 and business failures are not automatically retried. Each preparation creates one
 random UUID idempotency key shared by its retries; a new method call gets a new key.
+
+## Provisioning and owner operations
+
+Managed account/session creation generates one internal idempotency key per SDK
+invocation, reused across transient retries. Passkey and local registration do
+not automatically retry single-use/non-idempotent creation. Public creation inputs
+do not expose an idempotency key. Never submit private keys or custody credentials.
+
+Session operation targets use `sessionKeyId`, `chainId`, and `kind`. The SDK reads
+the session, selects its installation and owner type, then dispatches to the
+existing managed/passkey endpoint. Passkey preparations gain `approval: "passkey"`
+for a uniform discriminated SDK result. These are low-level methods: callers
+validate independently reviewed owner/call/fee expectations with the existing
+owner-approval helpers before signing or approving.
+
+Recovery reads the active operation and re-prepares an unsigned operation using
+the server's stored retry request. The public SDK result exposes a preparation,
+never an idempotency key. Approval retries retain the same operation and assertion;
+only receipt confirmation establishes installation or removal. Cancellation is
+limited to unsigned work. Passkey ceremony and assertion browser calls go through
+the integrating application's authenticated backend, which keeps the API key.
 
 ## Execution
 

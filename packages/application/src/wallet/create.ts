@@ -2,6 +2,7 @@ import { DateTime, Effect, Metric, Option, Schema } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
 import { Evm, getChainDataByChainId, createSecp256k1OwnerAccount } from "@namera-ai/evm";
+import { ManagementPermissionDeniedError } from "@namera-ai/protocol";
 import {
   Hex,
   PasskeyVerificationError,
@@ -22,6 +23,7 @@ import { OneClawService } from "@namera-ai/wallet-provider-oneclaw";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 import {
   enforceLocalWalletLimit,
   enforceOneClawWalletLimit,
@@ -43,6 +45,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   const audit = yield* Audit;
   const evm = yield* Evm;
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const periods = yield* makeBillingPeriods;
   const gcp = yield* GcpService;
@@ -55,7 +58,7 @@ export const makeCreateWallet = Effect.gen(function* () {
   const create = Effect.fn("application.wallet.create")(function* (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
-    readonly userId: UserId;
+    readonly userId?: UserId;
     readonly request: CreateWalletRequest;
     readonly attempt?: ProvisioningAttempt;
   }) {
@@ -103,7 +106,8 @@ export const makeCreateWallet = Effect.gen(function* () {
           const passkey = yield* verifyPasskeyRegistration({
             verificationId: requestedOwner.verificationId,
             organizationId: input.organizationId,
-            userId: input.userId,
+            ...(input.userId === undefined ? {} : { userId: input.userId }),
+            actorId: input.actorId,
             response: requestedOwner.response,
           });
           const publicKeyHex = Schema.decodeSync(Hex)(passkey.publicKeyHex);
@@ -122,6 +126,7 @@ export const makeCreateWallet = Effect.gen(function* () {
                 type: "passkey",
                 credentialId: passkey.credentialId,
                 rpId: passkey.rpId,
+                origin: passkey.origin,
                 transports: [...passkey.transports],
                 signCount: passkey.signCount,
               },
@@ -240,6 +245,10 @@ export const makeCreateWallet = Effect.gen(function* () {
     const result = yield* transaction
       .run(
         Effect.gen(function* () {
+          if (!(yield* checkAuthority({ ...input, permission: "wallet:create" })))
+            return yield* new ManagementPermissionDeniedError({
+              code: "MANAGEMENT_PERMISSION_DENIED",
+            });
           yield* lockOrganizationBilling(repository, input.organizationId);
           if (requestedOwner.type === "passkey") {
             yield* enforceLocalWalletLimit(repository, input.organizationId, periods);
@@ -454,6 +463,8 @@ export const makeCreateWallet = Effect.gen(function* () {
   return Effect.fn("application.wallet.createIdempotent")(function* (
     input: Omit<Parameters<typeof create>[0], "attempt">,
   ) {
+    if (!(yield* checkAuthority({ ...input, permission: "wallet:create" }).pipe(Effect.orDie)))
+      return yield* new ManagementPermissionDeniedError({ code: "MANAGEMENT_PERMISSION_DENIED" });
     if (input.request.owner.type !== "namera-managed" || input.request.owner.provider !== "1claw")
       return yield* create(input).pipe(Effect.catchTag("DatabaseError", Effect.die));
     const { idempotencyKey, ...request } = Schema.encodeSync(CreateWalletRequest)(input.request);

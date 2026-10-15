@@ -3,14 +3,14 @@ import { HttpApiError } from "effect/http-api";
 
 import type { ActorId, OrganizationId } from "@namera-ai/protocol";
 import type { CurrentActorResponse } from "@namera-ai/protocol/dto";
-import type { MemberPermission, OAuthScope } from "@namera-ai/protocol/model";
+import type { ApiKeyPermission, MemberPermission, OAuthScope } from "@namera-ai/protocol/model";
 
 type ActorType = CurrentActorResponse["type"];
 type ActorOfType<Type extends ActorType> = Extract<CurrentActorResponse, { readonly type: Type }>;
 
 export type ActorPermissionRequirements = {
   readonly user: readonly MemberPermission[];
-  readonly "api-key": readonly never[];
+  readonly "api-key": readonly ApiKeyPermission[];
   readonly cli: readonly OAuthScope[];
   readonly mcp: readonly OAuthScope[];
 };
@@ -61,6 +61,11 @@ const enforceActorEffect = Effect.fn("server.enforceActor")(function* (
       return actor.data;
     }
     case "api-key":
+      if (
+        !hasRequiredPermissions(actor.data.apiKey.permissions, requiredPermissions?.["api-key"])
+      ) {
+        return yield* new HttpApiError.Forbidden();
+      }
       return actor.data;
     case "cli":
     case "mcp":
@@ -98,9 +103,43 @@ export const enforceWalletOwner = Effect.fnUntraced(function* (actor: CurrentAct
 
 export const toActorReadScope = (
   data: ActorData<"user" | "api-key" | "cli" | "mcp">,
+  permission?: "wallet:read" | "session-key:read",
 ): ActorReadScope =>
-  // Users may inspect their organization according to role permissions. Machine
-  // actors see only resources reachable through their own grants or ownership.
-  "organization" in data
-    ? { organizationId: data.organization.id }
+  // Management read permissions widen only the named resource. Execution reads
+  // omit this permission and retain their existing actor/grant scope.
+  "organization" in data ||
+  ("apiKey" in data && permission !== undefined && data.apiKey.permissions.includes(permission))
+    ? { organizationId: "organization" in data ? data.organization.id : data.organizationId }
     : { organizationId: data.organizationId, actorId: data.actorId };
+
+export const enforceManagementActor = Effect.fnUntraced(function* (
+  actor: CurrentActorResponse,
+  permission?: ApiKeyPermission,
+) {
+  const memberPermission =
+    permission === "session-key:install"
+      ? "session-key:create"
+      : permission === "session-key:uninstall"
+        ? "session-key:revoke"
+        : permission;
+  const data = yield* enforceActor({
+    actor,
+    allowedActors: ["user", "api-key"],
+    requiredPermissions: {
+      user: memberPermission === undefined ? [] : [memberPermission],
+      "api-key": permission === undefined ? [] : [permission],
+    },
+  });
+  const permissions: readonly string[] =
+    "role" in data ? data.role.permissions : data.apiKey.permissions;
+  const allowedKinds: Array<"install" | "uninstall"> = [];
+  if (permissions.includes(actor.type === "user" ? "session-key:create" : "session-key:install"))
+    allowedKinds.push("install");
+  if (permissions.includes(actor.type === "user" ? "session-key:revoke" : "session-key:uninstall"))
+    allowedKinds.push("uninstall");
+  return {
+    actorId: data.actorId,
+    organizationId: "organization" in data ? data.organization.id : data.organizationId,
+    allowedKinds,
+  };
+});

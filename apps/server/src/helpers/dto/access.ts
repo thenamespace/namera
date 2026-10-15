@@ -37,6 +37,8 @@ export const toApiKeyResponse = (input: ApiKeyView): ApiKeyResponse => ({
   organizationId: input.apiKey.organizationId,
   actorId: input.apiKey.actorId,
   metadata: input.apiKey.metadata,
+  permissions: input.apiKey.permissions,
+  passkeyOrigins: input.apiKey.passkeyOrigins,
   keyStart: input.apiKey.keyStart,
   expiresAt: input.apiKey.expiresAt,
   lastUsedAt: input.apiKey.lastUsedAt,

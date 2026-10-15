@@ -1,3 +1,4 @@
+import { Schema } from "effect";
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api";
 
 import {
@@ -11,6 +12,7 @@ import {
 } from "@namera-ai/protocol";
 import {
   CreateWalletRequest,
+  CreatePasskeyRegistrationOptionsRequest,
   CreateWalletResponse,
   GetWalletRequest,
   GetWalletResponse,
@@ -29,6 +31,7 @@ import { Authorization } from "#/middlewares/index";
 export class WalletGroup extends HttpApiGroup.make("wallet")
   .add(
     HttpApiEndpoint.post("createPasskeyRegistrationOptions", "/passkey/registration-options", {
+      payload: [CreatePasskeyRegistrationOptionsRequest, Schema.Null],
       success: PasskeyRegistrationOptionsResponse,
       error: [PasskeyRegistrationError, ...CommonErrors],
     }).annotate(OpenApi.Summary, "Create passkey registration options for a wallet"),

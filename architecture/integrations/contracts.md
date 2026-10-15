@@ -29,6 +29,12 @@ Internal operator routes carry `AdminAuthorization` and `OpenApi.Exclude`.
 They remain available to the typed internal client but absent from public OpenAPI.
 OAuth form endpoints retain their protocol-specific encodings and headers.
 
+Account passkey-registration options accept a JSON request for API-key application
+origins and user labels; empty legacy browser requests remain accepted. Session
+responses preserve human creator fields and add an explicit API-key creator
+variant. New management permissions are API-key-specific and never inherited by
+OAuth actors or existing credentials.
+
 ## Client boundary
 
 The SDK derives ergonomic request types from DTOs: identifiers are strings,

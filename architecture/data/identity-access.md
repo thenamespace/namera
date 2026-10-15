@@ -21,15 +21,15 @@ mean Google tokens are retained or that password login is implemented.
 
 ## Tenant authority
 
-| Table                 | Purpose and important constraints                                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `organization`        | Tenant metadata and creating user. No slug-based identity.                                                                                         |
-| `actor`               | Organization-scoped `user`, `api-key`, `mcp`, or `cli` identity. Composite ID/organization key supports tenant-safe references.                    |
-| `system_role`         | Unique code-owned role key with permissions and presentation metadata.                                                                             |
-| `organization_role`   | Either a system-role reference or complete custom role fields, never both. Custom keys cannot use system-role names.                               |
-| `organization_member` | User, actor, and role binding. One active membership per user/organization and one membership per actor. Actor and role must belong to the tenant. |
-| `invitation`          | Email, role, inviter, status and expiry. One pending invite per organization/email; role is tenant-bound.                                          |
-| `api_key`             | Unique credential hash and actor, visible prefix, expiry/revocation; creator and revoker references are tenant-bound.                              |
+| Table                 | Purpose and important constraints                                                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `organization`        | Tenant metadata and creating user. No slug-based identity.                                                                                                                                               |
+| `actor`               | Organization-scoped `user`, `api-key`, `mcp`, or `cli` identity. Composite ID/organization key supports tenant-safe references.                                                                          |
+| `system_role`         | Unique code-owned role key with permissions and presentation metadata.                                                                                                                                   |
+| `organization_role`   | Either a system-role reference or complete custom role fields, never both. Custom keys cannot use system-role names.                                                                                     |
+| `organization_member` | User, actor, and role binding. One active membership per user/organization and one membership per actor. Actor and role must belong to the tenant.                                                       |
+| `invitation`          | Email, role, inviter, status and expiry. One pending invite per organization/email; role is tenant-bound.                                                                                                |
+| `api_key`             | Unique credential hash and actor, visible prefix, expiry/revocation, explicit management permissions and approved passkey origins (both default empty); creator and revoker references are tenant-bound. |
 
 Owner-role protection is enforced in workflows and conditional repository writes,
 not a database-wide single-owner constraint on organization membership.

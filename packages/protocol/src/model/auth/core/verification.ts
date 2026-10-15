@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import {
   ApplicationRelativePath,
+  ActorId,
   Email,
   OrganizationId,
   UserId,
@@ -33,7 +34,8 @@ export const PasskeyRegistrationVerificationData = Schema.Struct({
   rpId: NonEmptyString,
   origin: NonEmptyString,
   organizationId: OrganizationId,
-  userId: UserId,
+  userId: Schema.optionalKey(UserId),
+  actorId: Schema.optionalKey(ActorId),
 });
 
 export const VerificationData = Schema.Union([

@@ -34,7 +34,7 @@ layer(live)("wallet mutation Origin", (it) => {
       const owner = yield* signIn(client, testEmail("wallet-origin@example.com"));
       const control = yield* OneClawTestControl;
       yield* Ref.set(control.calls, []);
-      const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+      const registration = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       const payload = {
         namespace: "eip155" as const,
         owner: {
@@ -61,7 +61,7 @@ layer(live)("wallet mutation Origin", (it) => {
           metadata: payload.metadata,
         },
       });
-      const pending = yield* client.wallet.createPasskeyRegistrationOptions();
+      const pending = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       const db = yield* Database;
       const repository = yield* Repository;
       const snapshot = Effect.gen(function* () {

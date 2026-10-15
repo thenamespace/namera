@@ -20,7 +20,7 @@ function ApiKeyNotificationDetail({
       description={
         revoked
           ? "This API key can no longer authenticate requests. Its session-key grants were revoked with it."
-          : "A new API key can authenticate requests using the session keys granted when it was created."
+          : "A new API key can use its selected session grants and workspace management permissions."
       }
       item={item}
     >
@@ -28,6 +28,11 @@ function ApiKeyNotificationDetail({
         <DetailRow label={revoked ? "Revoked grants" : "Session keys"}>
           <span className="tabular-nums">{item.notification.data.sessionKeyCount}</span>
         </DetailRow>
+        {"permissions" in item.notification.data && item.notification.data.permissions?.length ? (
+          <DetailRow label="Workspace management">
+            {item.notification.data.permissions.join(", ")}
+          </DetailRow>
+        ) : null}
         <DetailRow label="API key ID">
           <ResourceId label="API key ID" value={item.notification.resourceId} />
         </DetailRow>

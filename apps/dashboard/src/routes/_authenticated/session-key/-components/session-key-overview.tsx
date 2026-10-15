@@ -16,6 +16,7 @@ import {
 import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { SessionKeyInstallations } from "@/components/session-key-installations";
 import { SessionKeyActions } from "@/components/session-keys-table/actions";
+import { sessionKeyCreatorPresentation } from "@/lib/session-key-creator";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const fallbackSessionKeyIcon: MetadataIcon = { type: "emoji", value: "🔑" };
@@ -90,10 +91,7 @@ export function SessionKeyOverview({ sessionKey }: SessionKeyOverviewProps) {
             <NamespaceDisplay namespace={sessionKey.namespace} />
           </DetailProperty>
           <DetailProperty label="Created by">
-            <MetadataDisplay
-              fallbackName={sessionKey.creator.user.email}
-              metadata={sessionKey.creator.user.metadata}
-            />
+            <MetadataDisplay {...sessionKeyCreatorPresentation(sessionKey.creator)} />
           </DetailProperty>
           <DetailProperty label="Session key ID">
             <div className="flex min-w-0 items-center gap-2">

@@ -17,11 +17,13 @@ import { sessionKeyOperationResults, sessionKeyOperationDuration } from "@namera
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 
 import { makeLoadSessionOperationOwner } from "./operation-owner.js";
 
 export const makePrepareSessionKeyOperations = Effect.gen(function* () {
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const crypto = yield* CryptoService;
   const passkeys = yield* Passkeys;
@@ -39,6 +41,14 @@ export const makePrepareSessionKeyOperations = Effect.gen(function* () {
       },
       approval: "passkey" | "1claw",
     ) {
+      if (
+        !(yield* checkAuthority({
+          ...input,
+          permission:
+            input.request.kind === "install" ? "session-key:install" : "session-key:uninstall",
+        }))
+      )
+        return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
       const owner = yield* loadOwner({
         organizationId: input.organizationId,
         installationId: input.request.installationId,
@@ -122,7 +132,7 @@ export const makePrepareSessionKeyOperations = Effect.gen(function* () {
             ? !["pending", "active"].includes(current.session.status) ||
               !["pending", "failed"].includes(current.installation.status) ||
               current.installation.data.authorization.validUntil <= DateTime.toEpochSeconds(now)
-            : current.session.status !== "revoking" ||
+            : !["active", "revoking"].includes(current.session.status) ||
               !["installed", "revoking"].includes(current.installation.status)
         ) {
           return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });
@@ -150,6 +160,14 @@ export const makePrepareSessionKeyOperations = Effect.gen(function* () {
         );
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
+          if (
+            !(yield* checkAuthority({
+              ...input,
+              permission:
+                input.request.kind === "install" ? "session-key:install" : "session-key:uninstall",
+            }))
+          )
+            return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
           // Serialize owner nonces across every session on this wallet. No remote call holds this lock.
           const locked = yield* repository.core.wallet.findByIdForUpdate(
             owner.wallet.wallet.id,

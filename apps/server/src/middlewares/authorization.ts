@@ -61,6 +61,8 @@ export const AuthorizationLive = Layer.effect(
             apiKey: {
               id: apiKey.id,
               metadata: apiKey.metadata,
+              permissions: apiKey.permissions,
+              passkeyOrigins: apiKey.passkeyOrigins,
               keyStart: apiKey.keyStart,
               expiresAt: apiKey.expiresAt,
               lastUsedAt: apiKey.lastUsedAt,

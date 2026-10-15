@@ -6,6 +6,7 @@ import * as Application from "@namera-ai/application";
 
 import {
   enforceActor,
+  enforceManagementActor,
   requireDashboardOrigin,
   toActorReadScope,
   toSessionKeyResponse,
@@ -20,41 +21,39 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
     return handlers
       .handle("cancelOperation", ({ params }) =>
         Effect.gen(function* () {
-          const data = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
-          const allowedKinds: Array<"install" | "uninstall"> = [];
-          if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
-          if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
+          const actor = yield* CurrentActor;
+          const data = yield* enforceManagementActor(actor);
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return yield* app.sessionKey.cancelOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
-            allowedKinds,
+            allowedKinds: data.allowedKinds,
             ...params,
           });
         }),
       )
       .handle("prepareManagedOperation", ({ payload }) =>
         Effect.gen(function* () {
-          const data = yield* enforceActor({
-            actor: yield* CurrentActor,
-            allowedActors: ["user"],
-            requiredPermissions: {
-              user: [payload.kind === "install" ? "session-key:create" : "session-key:revoke"],
-            },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          const actor = yield* CurrentActor;
+          const data = yield* enforceManagementActor(
+            actor,
+            payload.kind === "install" ? "session-key:install" : "session-key:uninstall",
+          );
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return yield* app.sessionKey.prepareManagedOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
             request: payload,
           });
@@ -62,69 +61,61 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
       )
       .handle("approveManagedOperation", ({ payload }) =>
         Effect.gen(function* () {
-          const data = yield* enforceActor({ actor: yield* CurrentActor, allowedActors: ["user"] });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
-          const allowedKinds: Array<"install" | "uninstall"> = [];
-          if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
-          if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
+          const actor = yield* CurrentActor;
+          const data = yield* enforceManagementActor(actor);
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return yield* app.sessionKey.approveManagedOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
-            allowedKinds,
+            allowedKinds: data.allowedKinds,
             request: payload,
           });
         }),
       )
       .handle("getActiveOperation", ({ params }) =>
         Effect.gen(function* () {
-          const data = yield* enforceActor({
-            actor: yield* CurrentActor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["session-key:read"] },
-          });
+          const actor = yield* CurrentActor;
+          const data = yield* enforceManagementActor(actor, "session-key:read");
           return yield* app.sessionKey.getActiveOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
             request: params,
+            ownOperationsOnly: actor.type === "api-key",
           });
         }),
       )
       .handle("getOperation", ({ params }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["session-key:read"] },
-          });
+          const data = yield* enforceManagementActor(actor, "session-key:read");
           return yield* app.sessionKey.getOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             operationId: params.operationId,
+            ...(actor.type === "api-key" ? { actorId: data.actorId } : {}),
           });
         }),
       )
       .handle("completeOperation", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({ actor, allowedActors: ["user"] });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
-          const allowedKinds: Array<"install" | "uninstall"> = [];
-          if (data.role.permissions.includes("session-key:create")) allowedKinds.push("install");
-          if (data.role.permissions.includes("session-key:revoke")) allowedKinds.push("uninstall");
+          const data = yield* enforceManagementActor(actor);
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return yield* app.sessionKey.completeOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
-            allowedKinds,
+            allowedKinds: data.allowedKinds,
             request: payload,
           });
         }),
@@ -132,21 +123,19 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
       .handle("prepareOperation", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
+          const data = yield* enforceManagementActor(
             actor,
-            allowedActors: ["user"],
-            requiredPermissions: {
-              user: [payload.kind === "install" ? "session-key:create" : "session-key:revoke"],
-            },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+            payload.kind === "install" ? "session-key:install" : "session-key:uninstall",
+          );
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.operation.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return yield* app.sessionKey.prepareOperation({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             actorId: data.actorId,
             request: payload,
           });
@@ -155,22 +144,19 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["session-key:create"] },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          const data = yield* enforceManagementActor(actor, "session-key:create");
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           if (payload.signer.custody === "namera-managed") {
             yield* consumeRateLimit(
               "session_key.create_managed.organization",
-              data.organization.id,
+              data.organizationId,
               rateLimitPolicy.sessionKey.createManagedByOrganization,
             );
           }
           return toSessionKeyResponse(
             yield* app.sessionKey.create({
-              organizationId: data.organization.id,
+              organizationId: data.organizationId,
               actorId: data.actorId,
               request: payload,
             }),
@@ -190,9 +176,9 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
               mcp: ["mcp:read"],
             },
           });
-          return (yield* app.sessionKey.listForOrganization(toActorReadScope(data))).map(
-            toSessionKeyResponse,
-          );
+          return (yield* app.sessionKey.listForOrganization(
+            toActorReadScope(data, "session-key:read"),
+          )).map(toSessionKeyResponse);
         }),
       )
       .handle("listForWallet", ({ params }) =>
@@ -209,7 +195,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
             },
           });
           return (yield* app.sessionKey.listForWallet({
-            ...toActorReadScope(data),
+            ...toActorReadScope(data, "session-key:read"),
             walletId: params.walletId,
           })).map(toSessionKeyResponse);
         }),
@@ -229,7 +215,7 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
           });
           return toSessionKeyResponse(
             yield* app.sessionKey.get({
-              ...toActorReadScope(data),
+              ...toActorReadScope(data, "session-key:read"),
               sessionKeyId: params.sessionKeyId,
             }),
           );
@@ -238,20 +224,17 @@ export const SessionKeyRoutes = HttpApiBuilder.group(NameraApi, "sessionKey", (h
       .handle("revoke", ({ params }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["session-key:revoke"] },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          const data = yield* enforceManagementActor(actor, "session-key:revoke");
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           yield* consumeRateLimit(
             "session_key.revoke.organization",
-            data.organization.id,
+            data.organizationId,
             rateLimitPolicy.sessionKey.revokeByOrganization,
           );
           return toSessionKeyResponse(
             yield* app.sessionKey.revoke({
-              organizationId: data.organization.id,
+              organizationId: data.organizationId,
               actorId: data.actorId,
               sessionKeyId: params.sessionKeyId,
             }),

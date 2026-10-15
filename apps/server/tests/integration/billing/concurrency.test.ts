@@ -121,7 +121,9 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               status: "active",
             });
           }
-          const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+          const registration = yield* client.wallet.createPasskeyRegistrationOptions({
+            payload: null,
+          });
           const request = {
             payload: {
               namespace: "eip155" as const,
@@ -181,7 +183,9 @@ describe.skipIf(process.env.NAMERA_TEST_POSTGRES_PORT === undefined)(
               testEmail("concurrent-local-wallets@example.com"),
             );
             const organizationId = actor.organization.id;
-            const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+            const registration = yield* client.wallet.createPasskeyRegistrationOptions({
+              payload: null,
+            });
             const wallet = yield* client.wallet.create({
               payload: {
                 namespace: "eip155",

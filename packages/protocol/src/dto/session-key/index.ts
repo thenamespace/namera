@@ -5,6 +5,8 @@ export * from "./signer.js";
 
 import {
   OrganizationId,
+  ActorId,
+  ApiKeyId,
   SessionKeyId,
   SessionKeyInstallationId,
   SigningKeyId,
@@ -18,6 +20,7 @@ import {
 } from "#/evm/index";
 import {
   CreateEvmSessionKeyPolicy,
+  ApiKeyMetadata,
   EvmSessionKeyPolicies,
   SessionKeyMetadata,
   SessionKeyStatus,
@@ -128,7 +131,15 @@ export const EvmSessionKeyResponse = Schema.Struct({
   ...EvmSessionKeyResponseFields,
   signer: EvmSessionSignerResponse,
   wallet: WalletResponse,
-  creator: GetOrganizationMemberResponse,
+  creator: Schema.Union([
+    GetOrganizationMemberResponse,
+    Schema.Struct({
+      type: Schema.Literal("api-key"),
+      actorId: ActorId,
+      id: ApiKeyId,
+      metadata: ApiKeyMetadata,
+    }),
+  ]),
   installations: Schema.Array(SessionKeyInstallationResponse),
 }).annotate({
   identifier: "EvmSessionKeyResponse",

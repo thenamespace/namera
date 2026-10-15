@@ -4,6 +4,7 @@ import { Repository, type WalletView } from "@namera-ai/database";
 import type { OrganizationId } from "@namera-ai/protocol";
 import type {
   EvmSessionKey,
+  ApiKey,
   OrganizationMember,
   OrganizationRole,
   User,
@@ -16,11 +17,13 @@ export interface SessionKeyView {
   readonly signingKey: SigningKey;
   readonly installations: ReadonlyArray<SessionKeyInstallation>;
   readonly wallet: WalletView;
-  readonly creator: {
-    readonly organizationMember: OrganizationMember;
-    readonly organizationRole: OrganizationRole;
-    readonly user: User;
-  };
+  readonly creator:
+    | { readonly apiKey: ApiKey }
+    | {
+        readonly organizationMember: OrganizationMember;
+        readonly organizationRole: OrganizationRole;
+        readonly user: User;
+      };
 }
 
 export const makeLoadSessionKeyViews = Effect.gen(function* () {
@@ -32,7 +35,7 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
   ) {
     if (sessionKeys.length === 0) return [];
 
-    const [wallets, creators, installations, signers] = yield* Effect.all([
+    const [wallets, creators, installations, signers, apiKeys] = yield* Effect.all([
       repository.core.wallet.findForOrganization(organizationId),
       repository.auth.member.findByActorIds(organizationId, [
         ...new Set(sessionKeys.map((sessionKey) => sessionKey.createdByActorId)),
@@ -45,6 +48,7 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
         organizationId,
         sessionKeys.map(({ signingKeyId }) => signingKeyId),
       ),
+      repository.auth.apiKey.findForOrganization(organizationId),
     ]);
     const walletById = new Map(wallets.map((wallet) => [wallet.wallet.id, wallet]));
     const signerById = new Map(signers.map((signer) => [signer.id, signer]));
@@ -55,7 +59,10 @@ export const makeLoadSessionKeyViews = Effect.gen(function* () {
     const views: Array<SessionKeyView> = [];
     for (const sessionKey of sessionKeys) {
       const wallet = walletById.get(sessionKey.walletId);
-      const creator = creatorByActorId.get(sessionKey.createdByActorId);
+      const apiKey = apiKeys.find((key) => key.actorId === sessionKey.createdByActorId);
+      const creator =
+        creatorByActorId.get(sessionKey.createdByActorId) ??
+        (apiKey === undefined ? undefined : { apiKey });
       const signingKey = signerById.get(sessionKey.signingKeyId);
       if (wallet === undefined || creator === undefined || signingKey === undefined) {
         return yield* Effect.die("Session-key response relation is missing");

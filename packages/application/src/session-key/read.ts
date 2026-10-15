@@ -27,6 +27,7 @@ export const makeReadSessionKeys = Effect.gen(function* () {
       readonly organizationId: OrganizationId;
       readonly actorId: ActorId;
       readonly request: GetActiveSessionKeyOperationRequest;
+      readonly ownOperationsOnly?: boolean;
     }) {
       const installation = yield* repository.core.sessionKeyInstallation.findById({
         organizationId: input.organizationId,
@@ -38,7 +39,11 @@ export const makeReadSessionKeys = Effect.gen(function* () {
         organizationId: input.organizationId,
         ...input.request,
       });
-      if (operation === undefined) return { operation: null };
+      if (
+        operation === undefined ||
+        (input.ownOperationsOnly && operation.actorId !== input.actorId)
+      )
+        return { operation: null };
       const now = yield* DateTime.now;
       return {
         operation: {
@@ -65,12 +70,16 @@ export const makeReadSessionKeys = Effect.gen(function* () {
     function* (input: {
       readonly organizationId: OrganizationId;
       readonly operationId: SessionKeyOperationId;
+      readonly actorId?: ActorId;
     }) {
       const operation = yield* repository.core.sessionKeyOperation.findById({
         id: input.operationId,
         organizationId: input.organizationId,
       });
-      if (operation === undefined)
+      if (
+        operation === undefined ||
+        (input.actorId !== undefined && operation.actorId !== input.actorId)
+      )
         return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
       // The stored envelope includes signatures and leases; expose only polling state.
       return { operationId: operation.id, status: operation.status };

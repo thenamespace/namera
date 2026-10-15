@@ -19,6 +19,11 @@ export const apiKey = authSchema.table(
     actorId: text("actor_id").notNull().$type<ActorId>(),
     createdByActorId: text("created_by_actor_id").notNull().$type<ActorId>(),
     metadata: jsonb("metadata").notNull().$type<ApiKey["metadata"]>(),
+    permissions: jsonb("permissions").notNull().default([]).$type<ApiKey["permissions"]>(),
+    passkeyOrigins: jsonb("passkey_origins")
+      .notNull()
+      .default([])
+      .$type<ApiKey["passkeyOrigins"]>(),
     keyHash: text("key_hash").notNull(),
     keyStart: text("key_start").notNull(),
     expiresAt: createTimestampField("expires_at"),

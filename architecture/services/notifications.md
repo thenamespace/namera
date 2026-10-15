@@ -40,3 +40,8 @@ jobs needed to complete sign-in.
 - [Email jobs](../../packages/emails/src/jobs.ts)
 - [Worker policy](../../packages/emails/src/data.ts)
 - [Persistence](../data/notifications.md)
+
+API-key creation notifications and email accept zero session grants for
+management-only keys. Their typed payloads include the issued management
+permissions; historical payloads without that field remain readable. Audit records
+also preserve permissions and approved passkey origins from issuance.

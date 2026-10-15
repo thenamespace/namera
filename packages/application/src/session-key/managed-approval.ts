@@ -6,12 +6,14 @@ import { SessionKeyOperationError } from "@namera-ai/protocol";
 import type { SessionKeyOperation } from "@namera-ai/protocol/model";
 import { generateUniqueId } from "@namera-ai/utils";
 
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 import { makeLoadOneClawOwner } from "#/oneclaw/owner";
 
 import { makeLoadSessionOperationOwner } from "./operation-owner.js";
 
 export const makeManagedSessionApproval = Effect.gen(function* () {
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const evm = yield* Evm;
   const loadOwner = yield* makeLoadSessionOperationOwner;
@@ -22,15 +24,12 @@ export const makeManagedSessionApproval = Effect.gen(function* () {
       organizationId: operation.organizationId,
       installationId: operation.installationId,
     });
-    const [member] = yield* repository.auth.member.findByActorIds(operation.organizationId, [
-      operation.actorId,
-    ]);
     if (
-      !member ||
-      member.organizationMember.removedAt !== null ||
-      !member.organizationRole.permissions.includes(
-        operation.kind === "install" ? "session-key:create" : "session-key:revoke",
-      )
+      !(yield* checkAuthority({
+        organizationId: operation.organizationId,
+        actorId: operation.actorId,
+        permission: operation.kind === "install" ? "session-key:install" : "session-key:uninstall",
+      }))
     )
       return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
     if (
@@ -59,7 +58,7 @@ export const makeManagedSessionApproval = Effect.gen(function* () {
         ? !["pending", "active"].includes(owner.session.status) ||
           !["pending", "failed"].includes(owner.installation.status) ||
           owner.installation.data.authorization.validUntil <= DateTime.toEpochSeconds(now)
-        : owner.session.status !== "revoking" ||
+        : !["active", "revoking"].includes(owner.session.status) ||
           !["installed", "revoking"].includes(owner.installation.status)
     )
       return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });
@@ -88,6 +87,15 @@ export const makeManagedSessionApproval = Effect.gen(function* () {
     const owner = yield* Effect.acquireRelease(
       transaction.run(
         Effect.gen(function* () {
+          if (
+            !(yield* checkAuthority({
+              organizationId: operation.organizationId,
+              actorId: operation.actorId,
+              permission:
+                operation.kind === "install" ? "session-key:install" : "session-key:uninstall",
+            }))
+          )
+            return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
           yield* repository.core.wallet.findByIdForUpdate(
             operation.walletId,
             operation.organizationId,

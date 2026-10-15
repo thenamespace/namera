@@ -32,6 +32,7 @@ import { notificationPolicy } from "#/notification/data";
 import { dashboardEmailLink } from "#/notification/email-link";
 
 import { authPolicy } from "../data.js";
+import { managementMemberPermission } from "./management-authority.js";
 
 export interface ApiKeyView {
   readonly apiKey: ApiKey;
@@ -139,6 +140,27 @@ export const makeApiKeyApplication = Effect.gen(function* () {
       const keyHash = yield* crypto.hash({ purpose: cryptoPurpose.apiKey, value: key });
       const created = yield* transaction.run(
         Effect.gen(function* () {
+          const membership = yield* repository.auth.member.lockByActorId(
+            input.organizationId,
+            input.actorId,
+          );
+          const [issuer] = yield* repository.auth.member.findByActorIds(input.organizationId, [
+            input.actorId,
+          ]);
+          const permissions = [...new Set(input.request.permissions ?? [])];
+          if (
+            !membership ||
+            membership.removedAt !== null ||
+            !issuer ||
+            !issuer.organizationRole.permissions.includes("api-key:create") ||
+            permissions.some(
+              (permission) =>
+                !issuer.organizationRole.permissions.includes(
+                  managementMemberPermission[permission],
+                ),
+            )
+          )
+            return yield* new ApiKeyCreationError({ code: "PERMISSION_DENIED" });
           const actor = yield* repository.auth.actor.insert({
             organizationId: input.organizationId,
             type: "api-key",
@@ -148,6 +170,8 @@ export const makeApiKeyApplication = Effect.gen(function* () {
             actorId: actor.id,
             createdByActorId: input.actorId,
             metadata: input.request.metadata,
+            permissions,
+            passkeyOrigins: [...new Set(input.request.passkeyOrigins ?? [])],
             keyHash,
             keyStart: key.slice(0, authPolicy.apiKey.visiblePrefixLength),
             expiresAt,
@@ -166,7 +190,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
             event: "api_key.created",
             resourceType: "api-key",
             resourceId: apiKey.id,
-            data: { version: 1, sessionKeyIds },
+            data: { version: 1, sessionKeyIds, permissions, passkeyOrigins: apiKey.passkeyOrigins },
           });
           const organization = yield* repository.auth.organization.findById(input.organizationId);
           if (organization === undefined) {
@@ -181,7 +205,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
             type: "api_key.created",
             resourceType: "api-key",
             resourceId: apiKey.id,
-            data: { version: 1, sessionKeyCount: sessionKeys.length },
+            data: { version: 1, sessionKeyCount: sessionKeys.length, permissions },
             idempotencyKey: `notification:api_key.created:${apiKey.id}`,
             correlationId: event.correlationId,
             expiresAt: null,
@@ -206,6 +230,7 @@ export const makeApiKeyApplication = Effect.gen(function* () {
                     ),
                     organizationName: organization.metadata.name,
                     sessionKeyCount: sessionKeys.length,
+                    permissions,
                   },
                 },
               })),

@@ -1,6 +1,7 @@
 import { DateTime, Effect, Metric } from "effect";
 
 import { Repository, TransactionService } from "@namera-ai/database";
+import { ManagementPermissionDeniedError } from "@namera-ai/protocol";
 import {
   SessionKeyNotFoundError,
   type ActorId,
@@ -10,6 +11,7 @@ import {
 import { sessionKeyRevocationDuration, sessionKeyRevocationResults } from "@namera-ai/telemetry";
 
 import { Audit } from "#/audit/layer";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 
 import { makeFinishSessionKeyRevocation } from "./finish-revocation.js";
 import { makeLoadSessionKeyViews } from "./view.js";
@@ -17,6 +19,7 @@ import { makeLoadSessionKeyViews } from "./view.js";
 export const makeRevokeSessionKey = Effect.gen(function* () {
   const audit = yield* Audit;
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const finish = yield* makeFinishSessionKeyRevocation;
   const loadViews = yield* makeLoadSessionKeyViews;
@@ -29,6 +32,10 @@ export const makeRevokeSessionKey = Effect.gen(function* () {
     }) {
       const result = yield* transaction.run(
         Effect.gen(function* () {
+          if (!(yield* checkAuthority({ ...input, permission: "session-key:revoke" })))
+            return yield* new ManagementPermissionDeniedError({
+              code: "MANAGEMENT_PERMISSION_DENIED",
+            });
           const existing = yield* repository.core.sessionKey.findById(
             input.sessionKeyId,
             input.organizationId,

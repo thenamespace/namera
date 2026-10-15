@@ -19,7 +19,7 @@ import {
 import { makeTestServerLayer } from "../../fixtures/layers/index.js";
 
 const prepareWallet = Effect.fn("test.prepareIndependentWallet")(function* (client: TestApiClient) {
-  const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+  const registration = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
   const attestation = createTestRegistration({
     challenge: registration.options.challenge,
     origin: "http://dashboard.test",

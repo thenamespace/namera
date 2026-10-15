@@ -118,7 +118,7 @@ export class ApiKeyNotFoundError extends Schema.TaggedError<ApiKeyNotFoundError>
 export class ApiKeyCreationError extends Schema.TaggedError<ApiKeyCreationError>()(
   "ApiKeyCreationError",
   {
-    code: Schema.Literal("SESSION_KEY_NOT_ACTIVE"),
+    code: Schema.Literals(["SESSION_KEY_NOT_ACTIVE", "PERMISSION_DENIED"]),
   },
   { httpApiStatus: 409 },
 ) {}
@@ -126,3 +126,9 @@ export class ApiKeyCreationError extends Schema.TaggedError<ApiKeyCreationError>
 export const ApiKeyErrors = [ApiKeyNotFoundError, ApiKeyCreationError] as const;
 export const ApiKeyError = Schema.Union(ApiKeyErrors);
 export type ApiKeyError = typeof ApiKeyError.Type;
+
+export class ManagementPermissionDeniedError extends Schema.TaggedError<ManagementPermissionDeniedError>()(
+  "ManagementPermissionDeniedError",
+  { code: Schema.Literal("MANAGEMENT_PERMISSION_DENIED") },
+  { httpApiStatus: 403 },
+) {}

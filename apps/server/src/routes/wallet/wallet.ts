@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { HttpApiBuilder } from "effect/http-api";
+import { HttpApiBuilder, HttpApiError } from "effect/http-api";
 
 import { CurrentActor, NameraApi } from "@namera-ai/api";
 import * as Application from "@namera-ai/application";
@@ -7,6 +7,7 @@ import { WalletCustodyUnavailableError } from "@namera-ai/protocol";
 
 import {
   enforceActor,
+  enforceManagementActor,
   requireDashboardOrigin,
   toActorReadScope,
   toWalletResponse,
@@ -18,46 +19,50 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
     const app = yield* Application.Application;
     const config = yield* Application.AuthConfig;
     return handlers
-      .handle("createPasskeyRegistrationOptions", () =>
+      .handle("createPasskeyRegistrationOptions", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["wallet:create"] },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          const data = yield* enforceManagementActor(actor, "wallet:create");
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          if (actor.type === "api-key") {
+            if (!payload?.origin || !payload.user) return yield* new HttpApiError.Forbidden();
+            return yield* app.wallet.createPasskeyRegistrationOptions({
+              ...data,
+              origin: payload.origin,
+              userName: payload.user.name,
+              userDisplayName: payload.user.displayName,
+            });
+          }
+          if (actor.type !== "user") return yield* new HttpApiError.Forbidden();
           return yield* app.wallet.createPasskeyRegistrationOptions({
-            organizationId: data.organization.id,
-            userId: data.user.id,
-            userName: data.user.email,
-            userDisplayName: data.user.metadata.name ?? data.user.email,
+            ...data,
+            userId: actor.data.user.id,
+            userName: actor.data.user.email,
+            userDisplayName: actor.data.user.metadata.name ?? actor.data.user.email,
           });
         }),
       )
       .handle("create", ({ payload }) =>
         Effect.gen(function* () {
           const actor = yield* CurrentActor;
-          const data = yield* enforceActor({
-            actor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["wallet:create"] },
-          });
-          yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
+          const data = yield* enforceManagementActor(actor, "wallet:create");
+          if (actor.type === "user")
+            yield* requireDashboardOrigin(config.dashboardPublicOrigin.origin);
           // Only the 1Claw managed provider is admitted by the public API.
           if (payload.owner.type !== "passkey" && payload.owner.provider !== "1claw")
             return yield* new WalletCustodyUnavailableError({ code: "MANAGED_WALLETS_DISABLED" });
           if (payload.owner.type === "namera-managed")
             yield* consumeRateLimit(
               "wallet.managed.create.organization",
-              data.organization.id,
+              data.organizationId,
               rateLimitPolicy.managedWallet.createByOrganization,
             );
           return toWalletResponse(
             yield* app.wallet.create({
-              organizationId: data.organization.id,
+              organizationId: data.organizationId,
               actorId: data.actorId,
-              userId: data.user.id,
+              ...(actor.type === "user" ? { userId: actor.data.user.id } : {}),
               request: payload,
             }),
           );
@@ -76,7 +81,9 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
               mcp: ["mcp:read"],
             },
           });
-          return (yield* app.wallet.list(toActorReadScope(data))).map(toWalletResponse);
+          return (yield* app.wallet.list(toActorReadScope(data, "wallet:read"))).map(
+            toWalletResponse,
+          );
         }),
       )
       .handle("get", ({ params }) =>
@@ -93,19 +100,18 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             },
           });
           return toWalletResponse(
-            yield* app.wallet.get({ ...toActorReadScope(data), walletId: params.walletId }),
+            yield* app.wallet.get({
+              ...toActorReadScope(data, "wallet:read"),
+              walletId: params.walletId,
+            }),
           );
         }),
       )
       .handle("getPasskeyOwner", ({ params }) =>
         Effect.gen(function* () {
-          const data = yield* enforceActor({
-            actor: yield* CurrentActor,
-            allowedActors: ["user"],
-            requiredPermissions: { user: ["wallet:read"] },
-          });
+          const data = yield* enforceManagementActor(yield* CurrentActor, "wallet:read");
           const { wallet, signingKey } = yield* app.wallet.get({
-            organizationId: data.organization.id,
+            organizationId: data.organizationId,
             walletId: params.walletId,
           });
           return {
@@ -117,6 +123,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
                     publicKeyHex: signingKey.publicKeyHex,
                     credentialId: signingKey.data.credentialId,
                     rpId: signingKey.data.rpId,
+                    origin: signingKey.data.origin ?? config.dashboardPublicOrigin.origin,
                   }
                 : null,
           };
@@ -136,7 +143,7 @@ export const WalletRoutes = HttpApiBuilder.group(NameraApi, "wallet", (handlers)
             },
           });
           return yield* app.wallet.getPortfolio({
-            ...toActorReadScope(data),
+            ...toActorReadScope(data, "wallet:read"),
             walletId: params.walletId,
             request: query,
           });

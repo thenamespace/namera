@@ -15,6 +15,7 @@ import { generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 import { makeBillingMetering } from "#/billing/metering";
 
 import { makeManagedSessionApproval } from "./managed-approval.js";
@@ -22,6 +23,7 @@ import { makeLoadSessionOperationOwner } from "./operation-owner.js";
 
 export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const evm = yield* Evm;
   const passkeys = yield* Passkeys;
@@ -92,7 +94,7 @@ export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
             expectedChallenge: Base64Url.encode(
               Result.getOrThrow(HexEncoding.decode(challenge.slice(2))),
             ),
-            expectedOrigin: config.dashboardPublicOrigin.origin,
+            expectedOrigin: owner.credential.origin ?? config.dashboardPublicOrigin.origin,
             expectedRpId: owner.credential.rpId,
             credentialId: owner.credential.credentialId,
             publicKeyHex: owner.wallet.signingKey.publicKeyHex,
@@ -122,22 +124,12 @@ export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
 
       const persistedOperation = yield* transaction.run(
         Effect.gen(function* () {
-          // Lock membership before wallet/billing so role changes and offboarding
-          // serialize with acceptance, including approvals verified outside this transaction.
-          const membership = yield* repository.auth.member.lockByActorId(
-            input.organizationId,
-            input.actorId,
-          );
-          const [member] = yield* repository.auth.member.findByActorIds(input.organizationId, [
-            input.actorId,
-          ]);
           if (
-            !membership ||
-            membership.removedAt !== null ||
-            !member ||
-            !member.organizationRole.permissions.includes(
-              operation.kind === "install" ? "session-key:create" : "session-key:revoke",
-            )
+            !(yield* checkAuthority({
+              ...input,
+              permission:
+                operation.kind === "install" ? "session-key:install" : "session-key:uninstall",
+            }))
           )
             return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
           const wallet = yield* repository.core.wallet.findByIdForUpdate(
@@ -170,7 +162,7 @@ export const makeCompleteSessionKeyOperations = Effect.gen(function* () {
             return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });
           if (
             operation.kind === "uninstall" &&
-            (current.session.status !== "revoking" ||
+            (!["active", "revoking"].includes(current.session.status) ||
               !["installed", "revoking"].includes(current.installation.status))
           )
             return yield* new SessionKeyOperationError({ code: "INVALID_TRANSITION" });

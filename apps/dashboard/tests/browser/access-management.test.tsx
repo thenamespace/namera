@@ -31,7 +31,13 @@ vi.mock("../../src/hooks/api-key", () => ({
 vi.mock("../../src/hooks/session-key", () => ({ useSessionKeys: () => ({ data: undefined }) }));
 vi.mock("../../src/hooks/auth", () => ({
   useCurrentUser: () => ({
-    data: { ...actor, role: { ...actor.role, permissions: ["member:remove", "member:update"] } },
+    data: {
+      ...actor,
+      role: {
+        ...actor.role,
+        permissions: ["member:remove", "member:update", "wallet:create", "session-key:create"],
+      },
+    },
   }),
   useRemoveMember: () => ({ mutate: boundary.remove, isPending: false }),
   useUpdateMemberRole: () => ({ mutate: boundary.update, isPending: false }),
@@ -72,6 +78,8 @@ const created = Schema.decodeUnknownSync(Schema.toType(CreateApiKeyResponse))({
     organizationId: actor.organization.id,
     actorId: actor.actorId,
     metadata: { version: 1, name: "Trading agent" },
+    permissions: [],
+    passkeyOrigins: [],
     keyStart: "namera-test",
     expiresAt: null,
     lastUsedAt: null,
@@ -110,6 +118,8 @@ it("reveals the created API key once, then clears secret and draft when dismisse
       metadata: { version: 1, name: "Trading agent", logo: { type: "emoji", value: "🔐" } },
       durationDays: 30,
       sessionKeyIds: [session.id],
+      permissions: [],
+      passkeyOrigins: [],
     },
   });
   const variables = boundary.create.mock.calls[0]?.[0];
@@ -204,4 +214,28 @@ it("confirms removal of the selected member, not the current actor or another ro
     payload: { organizationMemberId: target.organizationMember.id },
   });
   expect(boundary.update).not.toHaveBeenCalled();
+});
+
+it("creates a management-only key and disables permissions the issuer cannot delegate", async () => {
+  await render(<CreateApiKeyDialog initialSessionKeys={[]} />);
+  await page.getByRole("button", { name: "Create API key", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabelText("Name", { exact: true }).fill("Workspace backend");
+  await dialog.getByText("wallet:create", { exact: true }).click();
+  await expect
+    .element(dialog.getByRole("checkbox", { name: "session-key:revoke", exact: true }))
+    .toBeDisabled();
+  await dialog
+    .getByLabelText("Passkey application origins")
+    .fill("https://app.example.com\nhttps://other.example.com");
+  await dialog.getByRole("button", { name: "Create API key", exact: true }).click();
+  expect(boundary.create).toHaveBeenCalledWith({
+    payload: {
+      metadata: { version: 1, name: "Workspace backend", logo: { type: "emoji", value: "🔐" } },
+      durationDays: 30,
+      sessionKeyIds: [],
+      permissions: ["wallet:create"],
+      passkeyOrigins: ["https://app.example.com", "https://other.example.com"],
+    },
+  });
 });

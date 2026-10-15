@@ -135,6 +135,14 @@ const createColumns = (canRevoke: boolean): ReadonlyArray<DataGridColumn<Row>> =
       isGroup(row) ? null : (
         <Typography className="text-sm!" color="muted">
           {row.sessionKeys.length} session key{row.sessionKeys.length === 1 ? "" : "s"}
+          {row.permissions.length > 0 ? (
+            <span className="block" title={row.permissions.join(", ")}>
+              {row.permissions.join(", ")}
+            </span>
+          ) : null}
+          {row.passkeyOrigins.length > 0 ? (
+            <span className="block">{row.passkeyOrigins.join(", ")}</span>
+          ) : null}
         </Typography>
       ),
     header: "Access",

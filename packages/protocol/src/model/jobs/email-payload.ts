@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { Email } from "#/common/index";
+import { ApiKeyPermission } from "#/model/auth/core/api-key";
 import { MetadataLogo, NonEmptyString } from "#/model/common";
 import { EvmSessionPolicyType } from "#/model/core/session-key";
 
@@ -115,7 +116,8 @@ export const ApiKeyCreatedEmailVariables = Schema.Struct({
   actionUrl: Schema.optionalKey(NonEmptyString),
   apiKeyName: NonEmptyString,
   organizationName: NonEmptyString,
-  sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
+  sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  permissions: Schema.optionalKey(Schema.Array(ApiKeyPermission)),
 });
 
 export const ApiKeyRevokedEmailVariables = Schema.Struct({

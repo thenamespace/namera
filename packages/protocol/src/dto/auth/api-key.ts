@@ -1,7 +1,12 @@
 import { Schema } from "effect";
 
 import { ActorId, ApiKeyId, OrganizationId, SessionKeyId } from "#/common/index";
-import { ApiKeyMetadata, TimestampFields } from "#/model/index";
+import {
+  ApiKeyMetadata,
+  ApiKeyPermission,
+  ApiKeyPasskeyOrigin,
+  TimestampFields,
+} from "#/model/index";
 
 import { SessionKeySummaryResponse } from "../session-key/index.js";
 import { GetOrganizationMemberResponse } from "./organization/member.js";
@@ -11,6 +16,8 @@ export const ApiKeyResponse = Schema.Struct({
   organizationId: OrganizationId,
   actorId: ActorId,
   metadata: ApiKeyMetadata,
+  permissions: Schema.Array(ApiKeyPermission),
+  passkeyOrigins: Schema.Array(ApiKeyPasskeyOrigin),
   keyStart: Schema.NonEmptyString,
   expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
   lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
@@ -39,14 +46,28 @@ export const ApiKeyDurationDays = Schema.Int.check(
 export const CreateApiKeyRequest = Schema.Struct({
   metadata: ApiKeyMetadata,
   durationDays: ApiKeyDurationDays,
+  permissions: Schema.optionalKey(Schema.Array(ApiKeyPermission)),
+  passkeyOrigins: Schema.optionalKey(
+    Schema.Array(ApiKeyPasskeyOrigin).check(Schema.isMaxLength(20)),
+  ),
   sessionKeyIds: Schema.Array(SessionKeyId).check(
-    Schema.isMinLength(1, { message: "At least one session key grant is required" }),
     Schema.isMaxLength(100, { message: "At most 100 session key grants are allowed" }),
   ),
-}).annotate({
-  identifier: "CreateApiKeyRequest",
-  description: "Create a time-limited API-key actor with initial session-key grants",
-});
+})
+  .check(
+    Schema.makeFilter((request) =>
+      request.sessionKeyIds.length > 0 || (request.permissions?.length ?? 0) > 0
+        ? undefined
+        : {
+            path: ["permissions"],
+            issue: "Select at least one session grant or management permission",
+          },
+    ),
+  )
+  .annotate({
+    identifier: "CreateApiKeyRequest",
+    description: "Create a time-limited API-key actor with initial session-key grants",
+  });
 
 export const CreateApiKeyResponse = Schema.Struct({
   apiKey: ApiKeyResponse,

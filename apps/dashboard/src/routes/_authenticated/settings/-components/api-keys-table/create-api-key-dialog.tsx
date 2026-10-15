@@ -9,8 +9,11 @@ import {
   type CreateApiKeyResponse,
   type ListSessionKeysForOrganizationResponse,
 } from "@namera-ai/protocol/dto";
+import { ApiKeyPermission } from "@namera-ai/protocol/model";
 import {
   Button,
+  Checkbox,
+  TextArea,
   Field,
   FieldError,
   FieldGroup,
@@ -27,6 +30,7 @@ import { useEventCallback } from "usehooks-ts";
 
 import { SessionKeySelect } from "@/components/session-key-select";
 import { useCreateApiKey } from "@/hooks/api-key";
+import { useCurrentUser } from "@/hooks/auth";
 import { useSessionKeys } from "@/hooks/session-key";
 import { copyTextWithFeedback, writeClipboardText } from "@/lib/clipboard";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
@@ -48,6 +52,8 @@ const defaultValues: CreateApiKeyInput = {
   },
   durationDays: 30,
   sessionKeyIds: [],
+  permissions: [],
+  passkeyOrigins: [],
 };
 
 type CreateApiKeyDialogProps = {
@@ -56,6 +62,7 @@ type CreateApiKeyDialogProps = {
 
 export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogProps) {
   const sessionKeys = useSessionKeys();
+  const currentUser = useCurrentUser();
   const [isOpen, setIsOpen] = useState(false);
   const [created, setCreated] = useState<CreateApiKeyResponse | null>(null);
   const pendingPayload = useRef<CreateApiKeyOutput | undefined>(undefined);
@@ -174,9 +181,10 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
               </>
             ) : (
               <form id="create-api-key-form" noValidate onSubmit={handleSubmit}>
-                <Modal.Body className="grid gap-5">
+                <Modal.Body className="grid max-h-[55dvh] gap-5 overflow-y-auto">
                   <Typography className="text-sm" color="muted">
-                    Grant an API key access to one or more active session keys.
+                    Select session keys for execution access, or grant workspace management
+                    permissions.
                   </Typography>
                   <FieldGroup>
                     <Controller
@@ -228,6 +236,92 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
 
                     <Controller
                       control={form.control}
+                      name="permissions"
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel id="api-key-permissions-label">
+                            Workspace management permissions
+                          </FieldLabel>
+                          <Typography className="text-sm" color="muted">
+                            Applies to all existing and future accounts in this workspace. Creating
+                            and installing sessions can grant full control of managed accounts.
+                          </Typography>
+                          <fieldset
+                            aria-labelledby="api-key-permissions-label"
+                            className="grid gap-2"
+                          >
+                            {ApiKeyPermission.literals.map((permission) => {
+                              const memberPermission =
+                                permission === "session-key:install"
+                                  ? "session-key:create"
+                                  : permission === "session-key:uninstall"
+                                    ? "session-key:revoke"
+                                    : permission;
+                              return (
+                                <Checkbox
+                                  key={permission}
+                                  isSelected={field.value?.includes(permission) ?? false}
+                                  isDisabled={
+                                    !currentUser.data?.role.permissions.includes(memberPermission)
+                                  }
+                                  onBlur={field.onBlur}
+                                  onChange={(selected) =>
+                                    field.onChange(
+                                      selected
+                                        ? [...(field.value ?? []), permission]
+                                        : (field.value ?? []).filter(
+                                            (value) => value !== permission,
+                                          ),
+                                    )
+                                  }
+                                >
+                                  <Checkbox.Content>
+                                    <Checkbox.Control>
+                                      <Checkbox.Indicator />
+                                    </Checkbox.Control>
+                                    {permission}
+                                  </Checkbox.Content>
+                                </Checkbox>
+                              );
+                            })}
+                          </fieldset>
+                          {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      control={form.control}
+                      name="passkeyOrigins"
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="api-key-passkey-origins">
+                            Passkey application origins
+                          </FieldLabel>
+                          <Typography className="text-sm" color="muted">
+                            Optional. Enter one exact HTTPS origin per line for SDK passkey
+                            registration. HTTP localhost is allowed for development.
+                          </Typography>
+                          <TextArea
+                            id="api-key-passkey-origins"
+                            name={field.name}
+                            ref={field.ref}
+                            value={(field.value ?? []).join("\n")}
+                            onBlur={() => {
+                              field.onChange(
+                                (field.value ?? []).map((origin) => origin.trim()).filter(Boolean),
+                              );
+                              field.onBlur();
+                            }}
+                            onChange={(event) => field.onChange(event.target.value.split("\n"))}
+                            aria-invalid={fieldState.invalid}
+                          />
+                          {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+                        </Field>
+                      )}
+                    />
+
+                    <Controller
+                      control={form.control}
                       name="durationDays"
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
@@ -268,7 +362,7 @@ export function CreateApiKeyDialog({ initialSessionKeys }: CreateApiKeyDialogPro
                   <Button
                     form="create-api-key-form"
                     fullWidth
-                    isDisabled={createApiKey.isPending || availableSessionKeys.length === 0}
+                    isDisabled={createApiKey.isPending}
                     type="submit"
                   >
                     {createApiKey.isPending ? "Creating…" : "Create API key"}
