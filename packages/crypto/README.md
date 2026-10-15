@@ -26,9 +26,13 @@ value must be recovered.
 ## Development
 
 ```sh
+pnpm --filter @namera-ai/crypto test
+pnpm --filter @namera-ai/crypto typecheck:test
 pnpm --filter @namera-ai/crypto typecheck
 pnpm --filter @namera-ai/crypto build
 ```
 
 Implementation lives in `src/layer.ts`; purposes in `src/data.ts`.
+Tests use scoped NodeCrypto layers and synthetic keys, with independent hash/MAC
+vectors and AES-GCM decryption to verify purpose binding and tamper rejection.
 See [authentication](../../architecture/identity-access/authentication.md).
