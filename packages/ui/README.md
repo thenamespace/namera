@@ -43,3 +43,7 @@ pnpm --filter @namera-ai/ui lint
 ```
 
 Check consuming apps when changing shared props or styles.
+The dashboard browser lane exercises shared copy controls, icon-picker keyboard
+selection and search, metadata fallbacks, and reduced-motion step transitions.
+Picker dialogs use the trigger's accessible label; clearing icon search and
+closing the dialog remain separate actions.

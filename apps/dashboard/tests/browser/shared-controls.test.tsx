@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { act, useState } from "react";
 
 import { CopyIconButton, SignInCodeInput } from "@namera-ai/ui";
 import { expect, it, vi } from "vitest";
@@ -80,6 +80,35 @@ it("copies the current prop after the identity changes", async () => {
   await view.rerender(<CopyIconButton label="Identity" value="second.namera.id" />);
   await page.getByLabelText("Identity copied", { exact: true }).click();
   expect(writeText.mock.calls).toEqual([["first.namera.id"], ["second.namera.id"]]);
+});
+
+it("resets copy feedback after its deadline and clears the deadline on unmount", async () => {
+  vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  const view = await render(<CopyIconButton label="Identity" value="example.namera.id" />);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  const schedule = vi.spyOn(globalThis, "setTimeout");
+  const cancel = vi.spyOn(globalThis, "clearTimeout");
+  try {
+    await page.getByRole("button", { name: "Copy identity", exact: true }).click();
+    await expect
+      .element(page.getByRole("button", { name: "Identity copied", exact: true }))
+      .toBeVisible();
+    await act(() => vi.advanceTimersByTimeAsync(3500));
+    await expect
+      .element(page.getByRole("button", { name: "Copy identity", exact: true }))
+      .toBeVisible();
+    await page.getByRole("button", { name: "Copy identity", exact: true }).click();
+    await expect
+      .element(page.getByRole("button", { name: "Identity copied", exact: true }))
+      .toBeVisible();
+    const deadlineIndex = schedule.mock.calls.findLastIndex(([, delay]) => delay === 3500);
+    expect(deadlineIndex).toBeGreaterThanOrEqual(0);
+    const deadline = schedule.mock.results[deadlineIndex]?.value;
+    await view.unmount();
+    expect(cancel).toHaveBeenCalledWith(deadline);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("reports unavailable clipboard support without claiming success", async () => {

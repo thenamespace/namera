@@ -90,7 +90,7 @@ export function IconPanel({
         <SearchField.Group>
           <SearchField.SearchIcon />
           <SearchField.Input placeholder="Search icons..." />
-          <SearchField.ClearButton />
+          <SearchField.ClearButton aria-label="Clear icon search" />
         </SearchField.Group>
       </SearchField>
 
