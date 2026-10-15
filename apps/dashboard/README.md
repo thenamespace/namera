@@ -47,6 +47,19 @@ pnpm --filter @namera-ai/dashboard lint
 pnpm --filter @namera-ai/dashboard build
 ```
 
+Real-browser tests use Chromium for transaction review, autosave lifecycle, and
+shared controls. Install the matching browser once, then run the separate lane:
+
+```sh
+pnpm --filter @namera-ai/dashboard exec playwright install chromium
+pnpm --filter @namera-ai/dashboard test:browser
+```
+
+The browser lane loads the application theme but no local environment files.
+Tests reject unexpected HTTP requests and use controlled session/clipboard
+boundaries. Node tests remain in `tests/unit` and `tests/integration`; browser
+tests live in `tests/browser`. Neither lane submits real transactions.
+
 ## Deployment
 
 ```sh

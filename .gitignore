@@ -74,6 +74,7 @@ lerna-debug.log
 
 # Testing & Coverage
 coverage/
+.vitest/
 test-results/
 *.log
 .jest/

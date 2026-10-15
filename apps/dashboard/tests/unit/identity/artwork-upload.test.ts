@@ -1,20 +1,14 @@
 import { DateTime, Schema } from "effect";
 
 import { ownerMessageChallenge } from "@namera-ai/evm/signature-review";
+import { EthereumAddress, Hex, SignatureOperationId } from "@namera-ai/protocol";
 import {
-  EthereumAddress,
-  Hex,
-  SignatureOperationId,
-  SigningKeyId,
-  WalletId,
-} from "@namera-ai/protocol";
-import type {
   WalletResponse,
-  PrepareWalletSignatureResponse,
-  CompleteWalletSignatureResponse,
+  type PrepareWalletSignatureResponse,
+  type CompleteWalletSignatureResponse,
   GetWalletPasskeyOwnerResponse,
 } from "@namera-ai/protocol/dto";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ArtworkSchema,
@@ -25,18 +19,8 @@ import {
   validateArtworkApproval,
   type UploadedArtwork,
 } from "../../../src/routes/_authenticated/identity/-components/artwork-upload";
+import { managedWallet as wallet } from "../../fixtures/wallet-transaction";
 
-const wallet = {
-  id: WalletId.make("01950000-0000-7000-8000-000000000001"),
-  address: EthereumAddress.make("0x0000000000000000000000000000000000000001"),
-  owner: {
-    custody: "namera-managed",
-    provider: "1claw",
-    algorithm: "secp256k1",
-    signingKeyId: SigningKeyId.make("01950000-0000-7000-8000-000000000002"),
-  },
-  data: { validatorType: "ecdsa_secp256k1", accountMode: "factory" },
-} as WalletResponse;
 const message = "Authorize this image upload";
 const prepared = (): PrepareWalletSignatureResponse => ({
   namespace: "eip155",
@@ -74,6 +58,12 @@ const fixture = () => {
 };
 
 describe("identity artwork approval and recovery", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-01T12:00:00Z"));
+  });
+  afterEach(() => vi.useRealTimers());
+
   it("signs, uploads directly, then saves the record, independently for each image", async () => {
     const deps = fixture();
     await saveArtwork({ avatar: file, header: file }, {}, wallet, undefined, deps);
@@ -144,27 +134,94 @@ describe("identity artwork approval and recovery", () => {
     ).rejects.toMatchObject({ code: "APPROVAL_INVALID" });
     expect(deps.complete).not.toHaveBeenCalled();
   });
-  it("does not persist an unsafe upload URL", async () => {
+  it.each([
+    "javascript:alert(1)",
+    "http://example.test/image",
+    "https://user:password@example.test/image",
+    "not a URL",
+  ])("does not persist an unsafe upload URL: %s", async (url) => {
     const deps = fixture();
-    deps.upload.mockResolvedValueOnce("javascript:alert(1)");
+    deps.upload.mockResolvedValueOnce(url);
     await expect(
       saveArtwork({ avatar: file, header: null }, {}, wallet, undefined, deps),
     ).rejects.toMatchObject({ code: "UPLOAD_FAILED" });
     expect(deps.save).not.toHaveBeenCalled();
   });
+  it("keeps only the unfinished header cached after partial record failure", async () => {
+    const deps = fixture();
+    const uploads: UploadedArtwork = {};
+    deps.save
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("Header write failed"));
+    await expect(
+      saveArtwork({ avatar: file, header: file }, uploads, wallet, undefined, deps),
+    ).rejects.toThrow("Header write failed");
+    expect(uploads.avatar).toBeUndefined();
+    expect(uploads.header?.file).toBe(file);
+    expect(deps.saved).toHaveBeenCalledExactlyOnceWith("avatar", file, expect.any(String));
+
+    await saveArtwork({ avatar: null, header: file }, uploads, wallet, undefined, deps);
+    expect(deps.authorize).toHaveBeenCalledTimes(2);
+    expect(deps.complete).toHaveBeenCalledTimes(2);
+    expect(deps.upload).toHaveBeenCalledTimes(2);
+    expect(deps.save).toHaveBeenCalledTimes(3);
+    expect(uploads).toEqual({});
+  });
+  it("does not reuse a cached URL when the selected file changes", async () => {
+    const deps = fixture();
+    const replacement = new File(["new image"], "replacement.webp", { type: "image/webp" });
+    const uploads: UploadedArtwork = { avatar: { file, url: "https://example.test/old" } };
+    await saveArtwork({ avatar: replacement, header: null }, uploads, wallet, undefined, deps);
+    expect(deps.authorize).toHaveBeenCalledExactlyOnceWith("avatar");
+    expect(deps.upload).toHaveBeenCalledExactlyOnceWith("avatar", replacement, message, "0x1234");
+    expect(deps.save).not.toHaveBeenCalledWith("avatar", "https://example.test/old");
+  });
+  it("rejects authorization at exact expiry before signing", async () => {
+    const deps = fixture();
+    deps.authorize.mockResolvedValueOnce({ message, expiresAt: Date.now() });
+    await expect(
+      saveArtwork({ avatar: file, header: null }, {}, wallet, undefined, deps),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_EXPIRED" });
+    expect(deps.complete).not.toHaveBeenCalled();
+    expect(deps.upload).not.toHaveBeenCalled();
+    expect(deps.save).not.toHaveBeenCalled();
+  });
+  it("rechecks authorization expiry after signing before upload", async () => {
+    const deps = fixture();
+    const signed = await deps.complete();
+    deps.complete.mockClear().mockImplementationOnce(async () => {
+      vi.setSystemTime(Date.now() + 60_000);
+      return signed;
+    });
+    await expect(
+      saveArtwork({ avatar: file, header: null }, {}, wallet, undefined, deps),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_EXPIRED" });
+    expect(deps.complete).toHaveBeenCalledOnce();
+    expect(deps.upload).not.toHaveBeenCalled();
+    expect(deps.save).not.toHaveBeenCalled();
+  });
   it("binds passkey approval to the exact challenge, relying party and owner credential", () => {
-    const local = {
-      ...wallet,
-      owner: { ...wallet.owner, custody: "local", algorithm: "p256" },
-    } as WalletResponse;
-    const descriptor = {
+    const local = Schema.decodeUnknownSync(WalletResponse)({
+      ...Schema.encodeSync(WalletResponse)(wallet),
+      owner: { signingKeyId: wallet.owner.signingKeyId, custody: "local", algorithm: "p256" },
+      data: {
+        version: 1,
+        modularAccountVersion: "2.0.0",
+        entryPointVersion: "0.7",
+        validatorType: "webauthn_p256",
+        salt: "0",
+        entityId: 0,
+      },
+    });
+    const descriptor = Schema.decodeUnknownSync(GetWalletPasskeyOwnerResponse)({
       walletId: wallet.id,
       owner: {
         signingKeyId: wallet.owner.signingKeyId,
         rpId: "dashboard.namera.ai",
         credentialId: "credential",
+        publicKeyHex: `0x${"11".repeat(64)}`,
       },
-    } as GetWalletPasskeyOwnerResponse;
+    });
     const approval: PrepareWalletSignatureResponse = {
       ...prepared(),
       signing: {
@@ -205,5 +262,7 @@ describe("identity artwork approval and recovery", () => {
     expect(Schema.is(ArtworkSchema)({ avatar: null, header: null, [kind]: oversized })).toBe(false);
     const svg = new File(["<svg/>"], "photo.svg", { type: "image/svg+xml" });
     expect(Schema.is(ArtworkSchema)({ avatar: null, header: null, [kind]: svg })).toBe(false);
+    const empty = new File([], "photo.png", { type: "image/png" });
+    expect(Schema.is(ArtworkSchema)({ avatar: null, header: null, [kind]: empty })).toBe(false);
   });
 });
