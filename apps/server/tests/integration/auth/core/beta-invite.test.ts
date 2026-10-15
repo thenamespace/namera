@@ -305,11 +305,17 @@ layer(BetaLayer)("private-beta invites", (it) => {
       expect(yield* (yield* Repository).auth.user.findByEmail(registration.email)).toBeUndefined();
       const expired = yield* createInvite;
       yield* TestClock.adjust("8 days");
-      const invalid = yield* registration.client.magicLink.request({
-        payload: { email: registration.email, inviteCode: expired.code },
+      const expiredRegistration = yield* challenge(expired.code, "expired-invite@example.com");
+      const invalid = yield* expiredRegistration.client.magicLink.verify({
+        payload: expiredRegistration.payload,
         responseMode: "response-only",
       });
-      expect(invalid.status).toBe(202);
+      expect(invalid.status).toBe(200);
+      expect(invalid.cookies.cookies["auth-token"]).toBeUndefined();
+      expect(invalid.cookies.cookies["beta-signup"]?.value).toBeTruthy();
+      expect(
+        yield* (yield* Repository).auth.user.findByEmail(expiredRegistration.email),
+      ).toBeUndefined();
     }),
   );
   it.effect("allows only one verified signup when two emails redeem the same invite", () =>

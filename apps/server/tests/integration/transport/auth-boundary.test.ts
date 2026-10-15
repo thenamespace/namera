@@ -1,5 +1,5 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { HttpEffect, HttpRouter, HttpServerRequest, type HttpServerResponse } from "effect/http";
 import { HttpApi, HttpApiBuilder } from "effect/http-api";
 
@@ -11,6 +11,7 @@ import {
 } from "@namera-ai/api";
 
 import { SecurityHeadersMiddleware } from "../../../src/middlewares/security-headers.js";
+import { TestClientAddresses } from "../../fixtures/client-address.js";
 import { TestServerLayer } from "../../fixtures/layers/index.js";
 
 // Raw OAuth protocol routes have separate protocol/PKCE tests; this is the typed API surface.
@@ -45,11 +46,17 @@ HttpApi.reflect(NameraApi, {
 });
 
 layer(TestServerLayer)("typed API authentication boundary", (it) => {
-  it.effect(
-    "rejects every protected endpoint without credentials before decoding its payload",
-    () =>
+  it.effect.each([
+    { name: "missing credentials", headers: {} },
+    { name: "invalid session", headers: { cookie: "auth-token=invalid" } },
+    { name: "invalid API key", headers: { "x-api-key": "invalid" } },
+    { name: "invalid bearer", headers: { authorization: "Bearer invalid" } },
+  ] as const)(
+    "rejects $name on every protected endpoint before decoding its payload",
+    ({ headers }) =>
       Effect.gen(function* () {
         const handler = yield* HttpRouter.toHttpEffect(HttpApiBuilder.layer(NameraApi));
+        const addresses = yield* TestClientAddresses;
         expect(protectedEndpoints.length).toBeGreaterThan(0);
         for (const endpoint of protectedEndpoints) {
           const path = endpoint.path.replace(/:[^/]+/g, "00000000-0000-4000-8000-000000000001");
@@ -62,8 +69,8 @@ layer(TestServerLayer)("typed API authentication boundary", (it) => {
             Effect.provideService(
               HttpServerRequest.HttpServerRequest,
               HttpServerRequest.fromWeb(
-                new Request(`http://api.test${path}`, { method: endpoint.method }),
-              ),
+                new Request(`http://api.test${path}`, { method: endpoint.method, headers }),
+              ).modify({ remoteAddress: Option.some(yield* addresses.next) }),
             ),
           );
           expect(response?.status, endpoint.name).toBe(401);
