@@ -22,6 +22,7 @@ export const PasskeySigningKeyData = Schema.Struct({
   type: Schema.Literal("passkey"),
   credentialId: Schema.NonEmptyString,
   rpId: Schema.NonEmptyString,
+  origin: Schema.optionalKey(Schema.NonEmptyString),
   transports: Schema.Array(PasskeyTransport),
   signCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
 });

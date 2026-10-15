@@ -9,6 +9,8 @@ import {
 } from "#/common/index";
 import {
   ApiKeyMetadata,
+  ApiKeyPermission,
+  ApiKeyPasskeyOrigin,
   OAuthAuthorizationMetadata,
   OAuthScopes,
   SessionKey,
@@ -60,6 +62,8 @@ export const ApiKeyActorData = Schema.Struct({
   apiKey: Schema.Struct({
     id: ApiKeyId,
     metadata: ApiKeyMetadata,
+    permissions: Schema.Array(ApiKeyPermission),
+    passkeyOrigins: Schema.Array(ApiKeyPasskeyOrigin),
     keyStart: Schema.String,
     expiresAt: Schema.NullOr(Schema.DateTimeUtcFromDate),
     lastUsedAt: Schema.NullOr(Schema.DateTimeUtcFromDate),

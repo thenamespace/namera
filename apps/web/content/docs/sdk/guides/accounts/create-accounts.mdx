@@ -1,0 +1,84 @@
+---
+title: Create Accounts
+description: Provision managed or passkey-owned accounts from your backend.
+---
+
+Create an API key in **Settings → Workspace → API keys** with `wallet:create` and `wallet:read`. These permissions cover all existing and future accounts in that workspace. Keep the API key in your backend environment.
+
+## Create a managed account
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Provisioned account" },
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/created-account-response.md</include>
+
+The account is derived and persisted without deploying it. The SDK manages managed-provisioning retry keys internally. Keep the returned ID; use it as `walletId` when creating sessions.
+
+## Create a passkey-owned account
+
+At API-key issuance, allowlist your application’s exact origin, such as `https://app.example.com`. Each passkey belongs to that RP and origin. Your backend must authenticate its application user and bind the pending verification ID to that user.
+
+### Start on your backend
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.wallets.createPasskeyRegistrationOptions({
+  origin: "https://app.example.com",
+  user: { name: "Customer", displayName: "Customer" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/passkey-registration-response.md</include>
+
+Persist `verificationId` in your user’s pending account creation and return `options` to their browser. Do not expose the API key. Your application owns the start/finish HTTP routes; these are not additional Namera endpoints.
+
+### Register in the browser
+
+Install `@simplewebauthn/browser` in your frontend. In a user-initiated event, call `startRegistration({ optionsJSON: options })` with the options your backend returned. Send the complete result to your backend. Browser cancellation should leave the account uncreated.
+
+### Finish on your backend
+
+Load `verificationId` from that authenticated user’s pending creation and submit:
+
+```ts title="index.ts"
+import { NameraClient, type CreateWalletRequest } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+export async function finishPasskeyAccount(
+  verificationId: string,
+  response: Extract<CreateWalletRequest["owner"], { type: "passkey" }>["response"],
+) {
+  const result = await namera.wallets.create({
+    namespace: "eip155",
+    metadata: { version: 1, name: "Customer account" },
+    owner: { type: "passkey", verificationId, response },
+  });
+  if (!result.success) throw new Error(result.error.message);
+  return result.data;
+}
+```
+
+<include>../../../../snippets/sdk/created-passkey-account-response.md</include>
+
+The exported function is called by your authenticated finish route after it loads the pending verification. It is not an unauthenticated route accepting arbitrary verification IDs. Registration is single-use and actor-bound. Passkey creation is not automatically retried after a lost response; inspect the workspace account list before attempting a new ceremony.
+
+Next, [create a session key](/docs/sdk/guides/accounts/create-session-keys).

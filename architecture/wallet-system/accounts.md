@@ -24,6 +24,12 @@ workflows call each provider's explicit service.
 
 ## Creation
 
+The SDK supports 1Claw and passkey account creation through scoped API-key actors.
+`wallet:create` is explicit workspace authority; the account still belongs to the
+organization. API-key passkey ceremonies use issuance-approved origins, and signer
+records retain the verified origin. Legacy dashboard ceremonies remain user-bound.
+See [delegated access](../identity-access/delegated-access.md).
+
 1. Check the organization's account allowance.
 2. Verify the passkey registration, or provision the managed signer.
 3. Derive the smart-account address without signing.

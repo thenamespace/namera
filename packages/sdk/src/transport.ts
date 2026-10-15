@@ -62,6 +62,8 @@ const readField = (value: unknown, key: string): string | undefined => {
 };
 
 const apiErrorMessages: Readonly<Record<string, string>> = {
+  MANAGEMENT_PERMISSION_DENIED:
+    "The current authorization does not have the required workspace management permission.",
   NETWORK_PAUSED: "New operations on this network are paused. Try again after it is re-enabled.",
   WALLET_NOT_FOUND: "The wallet was not found or is not available to this authorization.",
   SESSION_KEY_NOT_FOUND: "The session key was not found or is not available to this authorization.",

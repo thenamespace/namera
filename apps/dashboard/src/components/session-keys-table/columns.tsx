@@ -16,6 +16,7 @@ import {
 } from "@/components/display";
 import { SessionKeyCustodyDisplay } from "@/components/display/session-key-custody-display";
 import { sessionKeyDisplayStatus } from "@/components/display/session-key-status-display";
+import { sessionKeyCreatorPresentation, sessionKeyCreatorName } from "@/lib/session-key-creator";
 
 import { SessionKeyActions } from "./actions";
 
@@ -123,10 +124,7 @@ export const sessionKeyColumns: ReadonlyArray<DataGridColumn<SessionKeyTableRow>
     allowsSorting: true,
     cell: (row) =>
       isSessionKeyGroup(row) ? null : (
-        <MetadataDisplay
-          fallbackName={row.creator.user.email}
-          metadata={row.creator.user.metadata}
-        />
+        <MetadataDisplay {...sessionKeyCreatorPresentation(row.creator)} />
       ),
     header: "Created by",
     id: "creator",
@@ -176,10 +174,7 @@ export const sessionKeySorters: Record<
     collator.compare(sessionKeyDisplayStatus(left.status), sessionKeyDisplayStatus(right.status)),
   account: (left, right) => collator.compare(left.wallet.metadata.name, right.wallet.metadata.name),
   creator: (left, right) =>
-    collator.compare(
-      left.creator.user.metadata.name ?? left.creator.user.email,
-      right.creator.user.metadata.name ?? right.creator.user.email,
-    ),
+    collator.compare(sessionKeyCreatorName(left.creator), sessionKeyCreatorName(right.creator)),
   namespace: (left, right) => collator.compare(left.namespace, right.namespace),
   custody: (left, right) => collator.compare(left.signer.custody, right.signer.custody),
   createdAt: (left, right) =>

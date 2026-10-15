@@ -25,3 +25,13 @@ expectTypeOf<EthereumAddress>().toEqualTypeOf<`0x${string}`>();
 expectTypeOf<ExecuteRequest["calls"][number]["value"]>().toEqualTypeOf<bigint>();
 expectTypeOf<CompleteExecutionRequest["submissionId"]>().toEqualTypeOf<string>();
 expectTypeOf<CompleteSignatureRequest["operationId"]>().toEqualTypeOf<string>();
+
+import type {
+  CreateWalletRequest,
+  CreateSessionKeyRequest,
+  PrepareSessionKeyOperationRequest,
+} from "@namera-ai/sdk";
+expectTypeOf<CreateWalletRequest>().not.toHaveProperty("idempotencyKey");
+expectTypeOf<CreateSessionKeyRequest>().not.toHaveProperty("idempotencyKey");
+expectTypeOf<PrepareSessionKeyOperationRequest>().not.toHaveProperty("idempotencyKey");
+expectTypeOf<CreateSessionKeyRequest["walletId"]>().toEqualTypeOf<string>();

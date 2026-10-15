@@ -34,7 +34,9 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
         yield* resetTestState();
         const client = yield* makeTestApiClient;
         const owner = yield* signIn(client, testEmail(`registration-${invalidation}@example.com`));
-        const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+        const registration = yield* client.wallet.createPasskeyRegistrationOptions({
+          payload: null,
+        });
         const create = (credentialId: string) =>
           client.wallet.create({
             payload: {
@@ -79,7 +81,7 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
       const client = yield* makeTestApiClient;
       const owner = yield* signIn(client, testEmail("passkey-options@example.com"));
 
-      const first = yield* client.wallet.createPasskeyRegistrationOptions();
+      const first = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       expect(first.options).toMatchObject({
         rp: { id: "dashboard.test", name: "Namera" },
         user: {
@@ -121,7 +123,7 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
         },
       });
 
-      const second = yield* client.wallet.createPasskeyRegistrationOptions();
+      const second = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       expect(second.verificationId).not.toBe(first.verificationId);
       expect(second.options.challenge).not.toBe(first.options.challenge);
       expect(second.options.user.id).not.toBe(first.options.user.id);
@@ -135,14 +137,14 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       expect(
-        yield* client.wallet.createPasskeyRegistrationOptions().pipe(Effect.flip),
+        yield* client.wallet.createPasskeyRegistrationOptions({ payload: null }).pipe(Effect.flip),
       ).toMatchObject({ _tag: "Unauthorized" });
 
       yield* signIn(client, testEmail("passkey-permission-owner@example.com"));
       const member = yield* createMember(client, testEmail("passkey-member@example.com"));
       yield* setAuthToken(member.memberToken);
       expect(
-        yield* client.wallet.createPasskeyRegistrationOptions().pipe(Effect.flip),
+        yield* client.wallet.createPasskeyRegistrationOptions({ payload: null }).pipe(Effect.flip),
       ).toMatchObject({ _tag: "Forbidden" });
     }),
   );
@@ -153,7 +155,7 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("passkey-wallet@example.com"));
 
-      const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+      const registration = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       const wallet = yield* client.wallet.create({
         payload: {
           namespace: "eip155",
@@ -210,7 +212,7 @@ layer(TestServerLayer)("passkey registration options route", (it) => {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
       yield* signIn(client, testEmail("invalid-passkey-wallet@example.com"));
-      const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+      const registration = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
 
       expect(
         yield* client.wallet

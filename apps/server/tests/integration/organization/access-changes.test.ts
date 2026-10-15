@@ -29,7 +29,7 @@ layer(TestServerLayer)("workspace authority changes", (it) => {
       const memberRole = yield* findOrganizationRole(admin.owner.organization.id, "member");
       const existingSessionId = (yield* client.session.currentUser()).session.id;
       expect((yield* client.session.currentUser()).role.key).toBe("admin");
-      yield* client.wallet.createPasskeyRegistrationOptions();
+      yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
       yield* client.organization.update({
         payload: { metadata: organizationMetadata("Admin update") },
       });
@@ -53,7 +53,7 @@ layer(TestServerLayer)("workspace authority changes", (it) => {
       });
       expect(yield* client.member.listOrgMembers()).toHaveLength(2);
       const mutations: ReadonlyArray<Effect.Effect<unknown, unknown>> = [
-        client.wallet.createPasskeyRegistrationOptions(),
+        client.wallet.createPasskeyRegistrationOptions({ payload: null }),
         client.organization.update({
           payload: { metadata: organizationMetadata("Forbidden update") },
         }),

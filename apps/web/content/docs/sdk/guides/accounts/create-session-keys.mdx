@@ -1,0 +1,86 @@
+---
+title: Create Session Keys
+description: Register a managed or caller-held session signer.
+---
+
+Issue an API key with `session-key:create`, `session-key:read`, and `wallet:read`. You need an account ID in that workspace. Session custody is independent of account ownership: both signer types work with either account owner.
+
+## Create a managed session
+
+The following example deliberately requests root authority for one hour on Sepolia, with message signatures disabled. Root sessions can control the account; select narrower onchain permissions for restricted agents.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: Math.floor(Date.now() / 1000),
+        validUntil: Math.floor(Date.now() / 1000) + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/created-managed-session-response.md</include>
+
+The SDK manages managed-provisioning idempotency internally. Namera returns public signer information only.
+
+## Create a local session
+
+Install `viem` alongside `@namera-ai/sdk`. Generate and securely persist your private key locally before registering its public key:
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const privateKey = generatePrivateKey();
+const signer = privateKeyToAccount(privateKey);
+// Persist the private key in your secure signer store before registration.
+const now = Math.floor(Date.now() / 1000);
+const result = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: "0199dfe1-0000-7000-8000-000000000001",
+  metadata: { version: 1, name: "Local agent" },
+  signer: { custody: "local", algorithm: "secp256k1", publicKey: signer.publicKey },
+  onchain: {
+    installations: [
+      {
+        chainId: "eip155:11155111",
+        validAfter: now,
+        validUntil: now + 3600,
+        permissions: [{ type: "root" }],
+        allowSignatures: false,
+      },
+    ],
+  },
+  policies: [],
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+<include>../../../../snippets/sdk/created-local-session-response.md</include>
+
+The private key never enters a Namera request. Public-key registration does not populate the SDK’s Node signer store. For execution, configure your trusted local signer binding or use the existing encrypted local-key import flow. Retain the signer after a lost registration response; do not generate a replacement key as a retry.
+
+## Approve installation separately
+
+Creation grants the calling API-key actor access to the new session, but does not install it. Each installation starts pending. [Install the session](/docs/sdk/guides/accounts/install-session-keys) before executing or signing.

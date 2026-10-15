@@ -6,7 +6,40 @@ description: Understand what your session key is allowed to execute and sign.
 import { Callout } from "fumadocs-ui/components/callout";
 
 A valid credential is only the first requirement. Your application also needs
-access to a session key whose permissions allow the operation.
+access to a session key whose permissions allow execution or signing. Workspace
+management is a separate, explicitly issued authority.
+
+## Workspace management permissions
+
+In **Settings → Workspace → API keys**, explicitly select the permissions your
+backend needs. Existing keys have none. Permissions cover all existing and future
+accounts and sessions in the key’s workspace, never another workspace.
+
+| Permission              | Allows                                                          |
+| ----------------------- | --------------------------------------------------------------- |
+| `wallet:read`           | Read all workspace accounts and their public owner descriptors. |
+| `wallet:create`         | Create managed or passkey-owned accounts.                       |
+| `session-key:read`      | Read all workspace sessions and this actor’s owner operations.  |
+| `session-key:create`    | Create sessions on any workspace account.                       |
+| `session-key:install`   | Explicitly approve a stored session installation.               |
+| `session-key:uninstall` | Explicitly approve removal of a network installation.           |
+| `session-key:revoke`    | Revoke a session’s Namera access and grants.                    |
+
+Only users holding the corresponding management authority may issue it. Keys do
+not inherit their creator’s complete role and cannot issue other keys or expand
+their own permissions. Create a replacement key to change permissions.
+
+A key with session creation and installation authority can grant itself full
+control of managed accounts. Reserve these permissions for trusted backend wallet
+administration. API-key permission does not replace a passkey owner’s signature.
+Creating a session grants its creating API-key actor access; management access
+alone does not grant execution access to pre-existing sessions.
+
+Passkey registration also requires an exact application origin allowlisted at
+key issuance. Keep the API key on your authenticated backend and bind ceremonies
+and operation approvals to your application users.
+
+See [account management guides](/docs/sdk/guides/accounts/create-accounts).
 
 ## What Allows a Transaction
 
@@ -27,9 +60,10 @@ that covers the transfer, then approve the installation on that network.
 account's contracts. They define transaction authority, including allowed
 targets, functions, spending allowances, and validity periods.
 
-\***\*API policies\*\*** add restrictions to operations made through Namera, such as
-allowed networks, daily spending limits, and gas budgets. All applicable
-policies must pass; one policy cannot override another denial.
+**API policies** govern delegated signatures through Namera: signature type,
+allowed networks, and validity windows. Transaction spending and gas restrictions
+come from installed onchain permissions. All applicable policies must pass; one
+policy cannot override another denial.
 
 <Callout title="Policies cannot expand authority">
   An API policy cannot allow a transaction that the onchain permissions reject. API policies apply

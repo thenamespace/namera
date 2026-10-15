@@ -11,6 +11,7 @@ import {
   WalletId,
 } from "#/common/index";
 import { EthereumAddress, SupportedEvmChainId, TransactionHash } from "#/evm/index";
+import { ApiKeyPermission } from "#/model/auth/core/api-key";
 import { EvmSessionPolicyType } from "#/model/core/session-key";
 import { WalletKeyProtectionLevel } from "#/model/core/wallet-key";
 
@@ -126,7 +127,8 @@ export const ApiKeyCreatedNotificationPayload = Schema.Struct({
   resourceId: ApiKeyId,
   data: Schema.Struct({
     version: Schema.Literal(1),
-    sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)),
+    sessionKeyCount: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    permissions: Schema.optionalKey(Schema.Array(ApiKeyPermission)),
   }),
 });
 

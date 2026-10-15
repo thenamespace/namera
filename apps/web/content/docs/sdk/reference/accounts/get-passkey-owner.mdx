@@ -1,0 +1,72 @@
+---
+title: wallets.getPasskeyOwner
+description: Read the public passkey owner descriptor.
+---
+
+`namera.wallets.getPasskeyOwner()` read the public passkey owner descriptor.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.getPasskeyOwner("0199dfe1-0000-7000-8000-000000000004");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns `walletId` and `owner`. Managed accounts return `owner: null`. A passkey descriptor includes signing-key ID, uncompressed public key, credential ID, RP ID, and origin; it contains no signing capability.
+
+<div className="docs-response">
+
+```json
+{
+  "walletId": "0199dfe1-0000-7000-8000-000000000004",
+  "owner": {
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000016",
+    "publicKeyHex": "0x0411111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "credentialId": "dGVzdA",
+    "rpId": "app.example.com",
+    "origin": "https://app.example.com"
+  }
+}
+```
+
+</div>
+
+## Parameters
+
+### walletId
+
+Type: `string`. Required. Account UUID, not its address. Obtain it from account creation or listing.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.getPasskeyOwner("0199dfe1-0000-7000-8000-000000000004"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires `wallet:read` for workspace-wide API-key access. `WALLET_NOT_FOUND` means the account is missing or outside the workspace. Use the descriptor together with independently reviewed account and installation configuration when validating a passkey approval.

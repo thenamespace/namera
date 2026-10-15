@@ -24,7 +24,7 @@ export const makeLoadPublicSessionOwner = Effect.gen(function* () {
       wallet.data.validatorType === "webauthn_p256" &&
       key.custody === "local" &&
       key.data.type === "passkey" &&
-      key.data.rpId === config.dashboardPublicOrigin.hostname
+      key.data.rpId === new URL(key.data.origin ?? config.dashboardPublicOrigin.origin).hostname
     ) {
       return {
         type: "passkey" as const,

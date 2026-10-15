@@ -79,7 +79,7 @@ export const GetActiveSessionKeyOperationResponse = Schema.Struct({
 }).annotate({
   identifier: "GetActiveSessionKeyOperationResponse",
   description:
-    "Active owner approval for an installation. Only the initiating user can recover its unsigned retry request; signatures and envelopes are never returned.",
+    "Active owner approval for an installation. Only the initiating actor can recover its unsigned retry request; signatures and envelopes are never returned.",
 });
 
 export type GetActiveSessionKeyOperationRequest = typeof GetActiveSessionKeyOperationRequest.Type;

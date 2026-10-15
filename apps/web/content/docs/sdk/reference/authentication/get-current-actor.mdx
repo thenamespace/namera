@@ -6,7 +6,7 @@ description: Inspect the identity, organization, and grants behind your credenti
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 `namera.auth.currentActor()` returns the actor authenticated by the client's
-credential. Use it to check which organization and session-key grants your
+credential. Use it to check which organization, management permissions, and session-key grants your
 integration is using.
 
 ## Usage
@@ -56,7 +56,8 @@ These actor kinds share the following fields:
   when available. Use the ID rather than the name to identify the organization.
 - **`data.grants`** (`array`): Session-key grants available to the actor. Each entry
   contains a `grant` record and its `sessionKey` record. An empty array means
-  there are no grants to use; authentication alone does not authorize operations.
+  there are no delegated execution/signing grants to use. API-key management
+  permissions can independently authorize workspace management.
 - **`data.grants[].grant`** (`object`): Grant ID, organization ID, actor ID,
   session-key ID, granting actor ID, creation time, and nullable revocation time
   and revoking actor ID.
@@ -67,7 +68,9 @@ These actor kinds share the following fields:
   returned by [Get Session Key](/docs/sdk/reference/session-keys/get-session-key).
 
 For `"api-key"`, **`data.apiKey`** contains `id`, `metadata`, `keyStart`,
-`expiresAt`, `lastUsedAt`, and `createdAt`. `keyStart` is a display prefix, not
+`permissions`, `passkeyOrigins`, `expiresAt`, `lastUsedAt`, and `createdAt`.
+`permissions` lists explicitly issued workspace management capabilities;
+`passkeyOrigins` lists approved application origins. `keyStart` is a display prefix, not
 the secret key. Expiry and last-use times can be `null`.
 
 For `"cli"` and `"mcp"`, **`data.authorization`** contains `id`, `clientId`,
@@ -133,6 +136,8 @@ An API-key actor with one session-key grant:
       }
     ],
     "apiKey": {
+      "permissions": [],
+      "passkeyOrigins": [],
       "id": "0199dfe1-0000-7000-8000-000000000017",
       "metadata": {
         "version": 1,

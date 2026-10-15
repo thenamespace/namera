@@ -9,9 +9,11 @@ import {
 } from "@namera-ai/protocol";
 
 import { Audit } from "#/audit/layer";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 
 export const makeCancelSessionKeyOperation = Effect.gen(function* () {
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const transaction = yield* TransactionService;
   const audit = yield* Audit;
   return Effect.fn("application.sessionKey.cancelOperation")(
@@ -29,6 +31,14 @@ export const makeCancelSessionKeyOperation = Effect.gen(function* () {
             !operation ||
             operation.actorId !== input.actorId ||
             !input.allowedKinds.includes(operation.kind)
+          )
+            return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
+          if (
+            !(yield* checkAuthority({
+              ...input,
+              permission:
+                operation.kind === "install" ? "session-key:install" : "session-key:uninstall",
+            }))
           )
             return yield* new SessionKeyOperationError({ code: "OPERATION_UNAVAILABLE" });
           yield* repository.core.wallet.findByIdForUpdate(operation.walletId, input.organizationId);

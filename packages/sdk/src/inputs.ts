@@ -26,3 +26,29 @@ export type ListSessionKeysOptions = Partial<Input<Protocol.ListSessionKeysForWa
 export type { Hex, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 export type EthereumAddress = ExecuteRequest["calls"][number]["to"];
 export type Namespace = ExecuteRequest["namespace"];
+
+export type CreateWalletRequest = Omit<Input<Protocol.CreateWalletRequest>, "idempotencyKey">;
+export type CreateSessionKeyRequest = Omit<
+  Input<Protocol.CreateSessionKeyRequest>,
+  "idempotencyKey"
+>;
+export type CreatePasskeyRegistrationOptionsRequest = Required<
+  Input<Protocol.CreatePasskeyRegistrationOptionsRequest>
+>;
+export type SessionKeyOperationTarget = {
+  readonly sessionKeyId: string;
+  readonly chainId: Protocol.PrepareExecutionRequest["chainId"];
+  readonly kind: "install" | "uninstall";
+};
+export type PrepareSessionKeyOperationRequest = SessionKeyOperationTarget & {
+  readonly sponsor?: boolean;
+};
+export type ApproveSessionKeyOperationRequest = {
+  readonly operationId: string;
+  readonly approval:
+    | { readonly type: "1claw" }
+    | {
+        readonly type: "passkey";
+        readonly response: Input<Protocol.CompleteSessionKeyOperationRequest["response"]>;
+      };
+};

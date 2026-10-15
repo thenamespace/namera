@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import { SigningKeyId, VerificationId, WalletId } from "#/common/index";
 import { Hex } from "#/evm/index";
+import { ApiKeyPasskeyOrigin } from "#/model/auth/core/api-key";
 import { NonEmptyString } from "#/model/common";
 
 const Base64UrlString = Schema.String.check(
@@ -17,12 +18,13 @@ export const GetWalletPasskeyOwnerResponse = Schema.Struct({
       publicKeyHex: Hex,
       credentialId: Base64UrlString,
       rpId: NonEmptyString,
+      origin: Schema.optionalKey(NonEmptyString),
     }),
   ),
 }).annotate({
   identifier: "GetWalletPasskeyOwnerResponse",
   description:
-    "Public passkey data for independent owner-operation review. User-only; owner is null for non-passkey wallets. No signing capability is returned.",
+    "Public passkey data for independent owner-operation review by users or API keys with wallet:read. Owner is null for non-passkey wallets. No signing capability is returned.",
 });
 
 export type GetWalletPasskeyOwnerResponse = typeof GetWalletPasskeyOwnerResponse.Type;
@@ -86,6 +88,18 @@ export const PasskeyRegistrationOptions = Schema.Struct({
   }),
 });
 
+export const CreatePasskeyRegistrationOptionsRequest = Schema.Struct({
+  origin: Schema.optionalKey(ApiKeyPasskeyOrigin),
+  user: Schema.optionalKey(
+    Schema.Struct({
+      name: NonEmptyString,
+      displayName: NonEmptyString,
+    }),
+  ),
+});
+export type CreatePasskeyRegistrationOptionsRequest =
+  typeof CreatePasskeyRegistrationOptionsRequest.Type;
+
 export const PasskeyRegistrationOptionsResponse = Schema.Struct({
   verificationId: VerificationId,
   options: PasskeyRegistrationOptions,
@@ -119,3 +133,5 @@ export const PasskeyRegistrationResponse = Schema.Struct({
 export type PasskeyRegistrationOptions = typeof PasskeyRegistrationOptions.Type;
 export type PasskeyRegistrationOptionsResponse = typeof PasskeyRegistrationOptionsResponse.Type;
 export type PasskeyRegistrationResponse = typeof PasskeyRegistrationResponse.Type;
+
+export type PasskeyAuthenticationResponse = typeof PasskeyAuthenticationResponse.Type;

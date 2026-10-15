@@ -47,7 +47,7 @@ console.log(result.data);
 - **`createdAt`** (`DateTime.Utc`): Creation time.
 - **`signer`** (`object`): Public signer identity and custody. No private key.
 - **`wallet`** (`WalletResponse`): Complete account record.
-- **`creator`** (`object`): Creating organizationMember, user, and organizationRole.
+- **`creator`** (`object`): Human member/user/role details, or an API-key descriptor with `type`, `actorId`, `id`, and `metadata`.
 - **`installations`** (`readonly Installation[]`): Each has id, chainId, status, authorization, installTransactionHash, and uninstallTransactionHash. Authorization includes permissions, signature authority, and validity timestamps.
 
 ### Example Response

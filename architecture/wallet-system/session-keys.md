@@ -2,14 +2,17 @@
 
 A session key delegates account authority to a secp256k1 signer. Its configuration,
 onchain installations and API grants are separate records. Creating a session does
-not install it or grant an arbitrary API actor access.
+not install it or grant an arbitrary API actor access. API-key creation grants
+that initiating actor access atomically; it does not grant any other actor access.
 
 ## Authority
 
 The signer is either caller-held (`local`) or managed by 1Claw. Each configured
 chain gets an installation with its own validator entity, validity window and
 permissions. The account owner approves installation and removal through the
-transaction review flow.
+transaction review flow or explicit SDK prepare/approve operations. API keys need
+separate workspace install/uninstall permissions. Passkey owners still sign with
+their credential; managed owners sign only after explicit API-key approval.
 
 Delegated execution and signing require all of:
 
@@ -38,6 +41,11 @@ Revoking API access immediately revokes active grants and cancels unsigned
 installation requests. It does not erase onchain authority. Installed permissions
 must be removed on every installed network. Signed operations remain subject to
 receipt reconciliation, including during revocation.
+
+Uninstall may remove one network while a session remains active on other networks.
+Whole-session revocation separately revokes API grants. Session response creators
+retain the existing member shape for humans and use a public API-key descriptor
+for machine-created sessions.
 
 ## Persistence
 

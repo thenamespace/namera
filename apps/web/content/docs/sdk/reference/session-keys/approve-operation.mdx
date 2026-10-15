@@ -1,0 +1,91 @@
+---
+title: sessionKeys.approveOperation
+description: Approve a prepared installation or removal.
+---
+
+`namera.sessionKeys.approveOperation()` approve a prepared installation or removal.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.approveOperation({
+  operationId: "0199dfe1-0000-7000-8000-000000000014",
+  approval: { type: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns the operation ID and durable status. `signed` means the signed request was persisted for worker submission; it does not mean the installation is confirmed.
+
+<div className="docs-response">
+
+```json
+{
+  "operationId": "0199dfe1-0000-7000-8000-000000000014",
+  "status": "signed"
+}
+```
+
+</div>
+
+## Parameters
+
+### operationId
+
+Type: `string`. Required. ID returned by preparation or recovery. It must belong to this same API-key actor.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.approveOperation({
+  operationId: "0199dfe1-0000-7000-8000-000000000014", // [!code focus]
+  approval: { type: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### approval
+
+Type: `object`. Required. Use `{ type: "1claw" }` for a managed account owner. This explicitly authorizes managed owner signing. For a passkey owner use `{ type: "passkey", response }`, where `response` is the browser’s complete assertion over the validated preparation challenge.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.approveOperation({
+  operationId: "0199dfe1-0000-7000-8000-000000000014",
+  approval: { type: "1claw" }, // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+#### approval.response
+
+Type: `PasskeyAuthenticationResponse`. Required only for `type: "passkey"`. The assertion must match the stored account credential, challenge, RP ID, origin, and counter. Keep API credentials on your backend; the browser returns only its assertion to your application.
+
+## Behavior and errors
+
+Requires the matching install/uninstall permission. Authorization is checked again before managed signing and at acceptance; revocation prevents unaccepted work from gaining authority. Only the initiating actor can approve. Transient retries reuse the same operation and exact assertion. Accepted signed work remains subject to reconciliation after API-key revocation. Validate using `validateOwnerApproval()` or `validateManagedOwnerApproval()` before this call; the SDK does not silently approve prepared calldata for you. Those helpers require independently reconstructed owner, deployment, call, and fee expectations, not values copied from the preparation.

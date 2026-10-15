@@ -45,7 +45,15 @@ export const toSessionKeyResponse = (input: SessionKeyView): SessionKeyResponse 
   ...toSessionKeySummaryResponse(input.sessionKey),
   signer: toSessionSignerResponse(input.signingKey),
   wallet: toWalletResponse(input.wallet),
-  creator: toMemberResponse(input.creator),
+  creator:
+    "apiKey" in input.creator
+      ? {
+          type: "api-key",
+          actorId: input.creator.apiKey.actorId,
+          id: input.creator.apiKey.id,
+          metadata: input.creator.apiKey.metadata,
+        }
+      : toMemberResponse(input.creator),
   installations: input.installations.map((installation) => ({
     id: installation.id,
     chainId: installation.chainId,

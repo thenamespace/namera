@@ -19,6 +19,10 @@ export interface ApiKeyRepositoryService {
     actorId: ActorId,
     organizationId: OrganizationId,
   ) => Effect.Effect<ApiKeyModel | undefined, DatabaseError>;
+  readonly findByActorIdForUpdate: (
+    actorId: ActorId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<ApiKeyModel | undefined, DatabaseError>;
   readonly findForOrganization: (
     organizationId: OrganizationId,
   ) => Effect.Effect<ReadonlyArray<ApiKeyModel>, DatabaseError>;
@@ -73,6 +77,19 @@ export class ApiKeyRepository extends Context.Service<ApiKeyRepository, ApiKeyRe
             .limit(1);
           return rows[0] === undefined ? undefined : Schema.decodeSync(ApiKey)(rows[0] as any);
         }, mapRepositoryError),
+        findByActorIdForUpdate: Effect.fn("database.apiKeyRepository.findByActorIdForUpdate")(
+          function* (actorId, organizationId) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select()
+              .from(apiKey)
+              .where(and(eq(apiKey.actorId, actorId), eq(apiKey.organizationId, organizationId)))
+              .for("update")
+              .limit(1);
+            return rows[0] === undefined ? undefined : Schema.decodeSync(ApiKey)(rows[0] as any);
+          },
+          mapRepositoryError,
+        ),
         findForOrganization: Effect.fn("database.apiKeyRepository.findForOrganization")(function* (
           organizationId,
         ) {

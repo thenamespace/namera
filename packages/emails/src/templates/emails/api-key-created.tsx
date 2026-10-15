@@ -15,6 +15,7 @@ export const ApiKeyCreatedEmail = ({
   apiKeyName,
   organizationName,
   sessionKeyCount,
+  permissions,
 }: ApiKeyCreatedEmailProps) => {
   const authorizedAccess = formatEmailCount(sessionKeyCount, "session key", "session keys");
 
@@ -27,7 +28,10 @@ export const ApiKeyCreatedEmail = ({
         >
           <EmailDetails>
             <EmailDetail label="API key" value={apiKeyName} />
-            <EmailDetail label="Authorized access" value={authorizedAccess} />
+            <EmailDetail label="Session access" value={authorizedAccess} />
+            {permissions?.length ? (
+              <EmailDetail label="Workspace management" value={permissions.join(", ")} />
+            ) : null}
           </EmailDetails>
           <EmailAction href={actionUrl}>View API keys</EmailAction>
           <EmailNotice>

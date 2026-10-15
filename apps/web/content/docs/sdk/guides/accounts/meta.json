@@ -1,0 +1,4 @@
+{
+  "title": "Account Management",
+  "pages": ["create-accounts", "create-session-keys", "install-session-keys", "revoke-session-keys"]
+}

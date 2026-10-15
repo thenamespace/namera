@@ -1,4 +1,10 @@
 {
   "title": "Accounts",
-  "pages": ["list-accounts", "get-account"]
+  "pages": [
+    "list-accounts",
+    "get-account",
+    "create-account",
+    "create-passkey-registration-options",
+    "get-passkey-owner"
+  ]
 }

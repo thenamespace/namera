@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import {
   type ActorId,
+  type ManagementPermissionDeniedError,
   type OrganizationId,
   type SessionKeyCreationError,
   type SessionKeyOperationError,
@@ -58,10 +59,12 @@ export interface SessionKeyApplication {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly request: GetActiveSessionKeyOperationRequest;
+    readonly ownOperationsOnly?: boolean;
   }) => Effect.Effect<GetActiveSessionKeyOperationResponse, SessionKeyOperationError>;
   readonly getOperation: (input: {
     readonly organizationId: OrganizationId;
     readonly operationId: SessionKeyOperationId;
+    readonly actorId?: ActorId;
   }) => Effect.Effect<SessionKeyOperationResponse, SessionKeyOperationError>;
   readonly reconcileOperations: () => Effect.Effect<number>;
   readonly completeOperation: (input: {
@@ -84,7 +87,10 @@ export interface SessionKeyApplication {
     readonly request: CreateSessionKeyRequest;
   }) => Effect.Effect<
     SessionKeyView,
-    WalletNotFoundError | SessionKeyCreationError | BillingLimitExceededError
+    | ManagementPermissionDeniedError
+    | WalletNotFoundError
+    | SessionKeyCreationError
+    | BillingLimitExceededError
   >;
   readonly get: (input: {
     readonly organizationId: OrganizationId;
@@ -104,7 +110,7 @@ export interface SessionKeyApplication {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
     readonly sessionKeyId: SessionKeyId;
-  }) => Effect.Effect<SessionKeyView, SessionKeyNotFoundError>;
+  }) => Effect.Effect<SessionKeyView, SessionKeyNotFoundError | ManagementPermissionDeniedError>;
 }
 
 export const makeSessionKeyApplication = Effect.gen(function* () {

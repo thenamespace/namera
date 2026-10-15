@@ -41,6 +41,7 @@ layer(fixture.layer)("wallet passkey owner read", (it) => {
           publicKeyHex: key?.publicKeyHex,
           credentialId: key?.data.type === "passkey" ? key.data.credentialId : undefined,
           rpId: "dashboard.test",
+          origin: "http://dashboard.test",
         },
       });
       expect(response.headers["cache-control"]).toBe("no-store");

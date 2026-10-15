@@ -338,6 +338,14 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     title: "API key not found",
     description: "It may have already been revoked.",
   },
+  "ApiKeyCreationError:PERMISSION_DENIED": {
+    title: "Permission unavailable",
+    description: "You can only delegate workspace permissions you currently hold.",
+  },
+  "ManagementPermissionDeniedError:MANAGEMENT_PERMISSION_DENIED": {
+    title: "Permission unavailable",
+    description: "Your current authorization cannot perform this workspace action.",
+  },
   "ApiKeyCreationError:SESSION_KEY_NOT_ACTIVE": {
     title: "Session key unavailable",
     description: "Select only active session keys and try again.",

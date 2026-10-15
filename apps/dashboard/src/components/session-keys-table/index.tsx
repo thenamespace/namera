@@ -32,6 +32,7 @@ import { MetadataDisplay, NamespaceDisplay, SessionKeyStatusDisplay } from "@/co
 import { sessionKeyDisplayStatus } from "@/components/display/session-key-status-display";
 import { ResourceEmptyState } from "@/components/resource-empty-state";
 import { useSessionKeys, useWalletSessionKeys } from "@/hooks/session-key";
+import { sessionKeyCreatorName } from "@/lib/session-key-creator";
 
 import {
   getSessionKeyChildren,
@@ -162,7 +163,7 @@ function SessionKeysTableContent({
             item.id,
             item.wallet.metadata.name,
             item.wallet.address,
-            item.creator.user.email,
+            sessionKeyCreatorName(item.creator),
           ].some((value) => value.toLowerCase().includes(normalizedQuery));
         return (
           matchesQuery &&

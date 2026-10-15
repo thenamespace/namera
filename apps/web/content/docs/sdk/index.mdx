@@ -6,8 +6,8 @@ description: Build with Namera in TypeScript.
 
 import { Card, Cards } from "fumadocs-ui/components/card";
 
-The Namera SDK lets your application work with accounts, send transactions, and
-sign messages using scoped session keys.
+The Namera SDK lets your backend provision accounts and session keys with explicit
+workspace permissions, then send transactions and sign within session authority.
 
 ## Quick Examples
 
@@ -20,6 +20,23 @@ const namera = new NameraClient({
   apiKey: process.env.NAMERA_API_KEY!,
 });
 ```
+
+### Create an Account
+
+With an API key explicitly granted `wallet:create`:
+
+```ts title="index.ts"
+const result = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Backend treasury" },
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+Continue with [session creation and explicit installation](/docs/sdk/guides/accounts/create-session-keys).
 
 ### List Accounts
 
@@ -46,7 +63,7 @@ const result = await namera.sign({
 });
 
 if (result.success) {
-  console.log(result.data.signature);
+  console.log(result.data);
 }
 ```
 

@@ -1,0 +1,125 @@
+---
+title: wallets.create
+description: Create a 1Claw-managed or passkey-owned smart account.
+---
+
+`namera.wallets.create()` create a 1Claw-managed or passkey-owned smart account.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Provisioned account" },
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns the complete account, including its ID, address, public owner descriptor, reconstruction data, and timestamps.
+
+<include>../../../../snippets/sdk/created-account-response.md</include>
+
+## Parameters
+
+### namespace
+
+Type: `"eip155"`. Required. The implemented chain namespace.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.create({
+  namespace: "eip155", // [!code focus]
+  metadata: { version: 1, name: "Provisioned account" },
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### metadata
+
+Type: `object`. Required. Account display metadata. `version` is `1`; `name` identifies the account in the dashboard. Optional `description` and `logo` follow the account metadata schema.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Provisioned account" }, // [!code focus]
+  owner: { type: "namera-managed", provider: "1claw" },
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+### owner
+
+Type: `object`. Required. Select the account owner. Managed owners use `{ type: "namera-managed", provider: "1claw" }`. Passkey owners use `{ type: "passkey", verificationId, response }` from a registration ceremony initiated by this credential. See the [account creation guide](/docs/sdk/guides/accounts/create-accounts).
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.wallets.create({
+  namespace: "eip155",
+  metadata: { version: 1, name: "Provisioned account" },
+  owner: { type: "namera-managed", provider: "1claw" }, // [!code focus]
+});
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+For a passkey owner, your authenticated backend calls this function with its stored verification ID and the browser’s registration response:
+
+```ts title="index.ts"
+import { namera } from "./client";
+import type { CreateWalletRequest } from "@namera-ai/sdk";
+
+export async function createPasskeyAccount(
+  verificationId: string,
+  response: Extract<CreateWalletRequest["owner"], { type: "passkey" }>["response"],
+) {
+  const result = await namera.wallets.create({
+    namespace: "eip155",
+    metadata: { version: 1, name: "Customer account" },
+    owner: { type: "passkey", verificationId, response }, // [!code focus]
+  });
+  if (!result.success) throw new Error(result.error.message);
+  console.log(result.data);
+}
+```
+
+#### owner.verificationId
+
+Type: `string`. Required for passkey ownership. The one-time registration ID returned by `wallets.createPasskeyRegistrationOptions()`. Keep it bound to your authenticated application user on your backend.
+
+#### owner.response
+
+Type: `PasskeyRegistrationResponse`. Required for passkey ownership. The browser’s complete WebAuthn registration response. Namera verifies the challenge, origin, RP ID, expiry, and initiating actor.
+
+## Behavior and errors
+
+The API key needs `wallet:create`. Accounts belong to the credential’s workspace. API keys do not gain account owner signing authority from creation alone. Managed creation retries transient failures with one SDK-generated idempotency key; a new method call starts a new request. Passkey creation is not automatically retried because registration is single-use. Creation does not deploy the smart account or install sessions. Billing limits and provider availability still apply. `MANAGEMENT_PERMISSION_DENIED` indicates authority was removed before admission. A provider result that requires recovery must not be blindly retried as a new request.

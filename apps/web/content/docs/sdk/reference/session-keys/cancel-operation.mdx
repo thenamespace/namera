@@ -1,0 +1,66 @@
+---
+title: sessionKeys.cancelOperation
+description: Cancel an unsigned installation or removal preparation.
+---
+
+`namera.sessionKeys.cancelOperation()` cancel an unsigned installation or removal preparation.
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Usage
+
+Install `@namera-ai/sdk` and set `NAMERA_API_KEY` on your backend. IDs and responses below are illustrative fixtures; replace IDs with your own resources.
+
+<Tabs items={["index.ts", "client.ts"]}>
+<Tab value="index.ts">
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.cancelOperation("0199dfe1-0000-7000-8000-000000000014");
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+</Tab>
+<Tab value="client.ts">
+
+<include>../../../../snippets/sdk/client.md</include>
+
+</Tab>
+</Tabs>
+
+## Returns
+
+<include>../../../../snippets/sdk/result.md</include>
+
+Returns `operationId` and `status: "cancelled"`.
+
+<div className="docs-response">
+
+```json
+{
+  "operationId": "0199dfe1-0000-7000-8000-000000000014",
+  "status": "cancelled"
+}
+```
+
+</div>
+
+## Parameters
+
+### operationId
+
+Type: `string`. Required. Resource UUID returned by creation, preparation, or recovery; not an address or transaction hash.
+
+```ts title="index.ts"
+import { namera } from "./client";
+const result = await namera.sessionKeys.cancelOperation("0199dfe1-0000-7000-8000-000000000014"); // [!code focus]
+if (!result.success) throw new Error(result.error.message);
+
+console.log(result.data);
+```
+
+## Behavior and errors
+
+Requires the operation’s install/uninstall permission and the initiating actor. Signed or submitted work cannot be cancelled; it must reconcile. Cancellation changes no session grants or onchain permissions.

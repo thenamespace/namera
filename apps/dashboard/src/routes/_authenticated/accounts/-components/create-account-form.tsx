@@ -98,7 +98,7 @@ export function CreateAccountForm() {
       });
       return;
     }
-    const ceremony = await registrationOptions.mutateAsync().catch(() => undefined);
+    const ceremony = await registrationOptions.mutateAsync({ payload: {} }).catch(() => undefined);
     if (ceremony === undefined) return;
     const passkeyName = `${values.metadata.name} - Namera`;
     const response = await startRegistration({

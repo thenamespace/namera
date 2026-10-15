@@ -1,0 +1,733 @@
+{
+  "localSession": {
+    "id": "0199dfe1-0000-7000-8000-000000000002",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000006",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000007",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Local agent"
+    },
+    "policies": [],
+    "policyHash": "9Z4ZzPfiQ4hIUpSXTY_nQ2E9-kjd2w_5wbLwIj7visI",
+    "status": "pending",
+    "revokedAt": null,
+    "createdAt": "2026-10-15T02:39:05.274Z",
+    "signer": {
+      "custody": "local",
+      "algorithm": "secp256k1",
+      "publicKey": "0x04118cf91563c3c7b00440980e879331bdac649585ea668f5dfdb0d925ae6bc4bc2ce5449ea5eabee69642fa1b6df0dce03b2dc3e7ae4498878013772fdd155cb6"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000000001",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000006",
+      "metadata": {
+        "version": 1,
+        "name": "Provisioned account"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x3333333333333333333333333333333333333333",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000000008",
+        "custody": "namera-managed",
+        "provider": "1claw",
+        "algorithm": "secp256k1"
+      },
+      "createdAt": "2026-10-15T02:39:05.250Z",
+      "updatedAt": "2026-10-15T02:39:05.250Z",
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "ecdsa_secp256k1",
+        "entryPointVersion": "0.7",
+        "accountMode": "factory",
+        "factoryVersion": "2.0.0",
+        "implementationVersion": "v1.0.0",
+        "ownerAddress": "0x52e7f17258368d7f9Ebd7bDf8d6869Bc4759aBA1",
+        "salt": "0"
+      }
+    },
+    "creator": {
+      "type": "api-key",
+      "actorId": "0199dfe1-0000-7000-8000-000000000009",
+      "id": "0199dfe1-0000-7000-8000-000000000010",
+      "metadata": {
+        "version": 1,
+        "name": "Workspace backend"
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000000011",
+        "chainId": "eip155:11155111",
+        "status": "pending",
+        "authorization": {
+          "version": 1,
+          "entityId": 145278918,
+          "signerAddress": "0xdA46572b24FF407Cb8979412281cEA774087E5d7",
+          "permissions": [
+            {
+              "type": "root"
+            }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1792031945,
+          "validUntil": 1792035545
+        },
+        "installTransactionHash": null,
+        "uninstallTransactionHash": null
+      }
+    ]
+  },
+  "managedSession": {
+    "id": "0199dfe1-0000-7000-8000-000000000003",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000006",
+    "walletId": "0199dfe1-0000-7000-8000-000000000001",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000012",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Local agent"
+    },
+    "policies": [],
+    "policyHash": "9Z4ZzPfiQ4hIUpSXTY_nQ2E9-kjd2w_5wbLwIj7visI",
+    "status": "pending",
+    "revokedAt": null,
+    "createdAt": "2026-10-15T02:39:05.307Z",
+    "signer": {
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1",
+      "publicKey": "0x04e37a5065266fa599595e06a6968cdfe2d588cfbbbbb48f0d4c504048c53786a87ff061f472d579833ea98e99f425febabd2445a8760e225cb1e5b4a029cd18b8"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000000001",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000006",
+      "metadata": {
+        "version": 1,
+        "name": "Provisioned account"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x3333333333333333333333333333333333333333",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000000008",
+        "custody": "namera-managed",
+        "provider": "1claw",
+        "algorithm": "secp256k1"
+      },
+      "createdAt": "2026-10-15T02:39:05.250Z",
+      "updatedAt": "2026-10-15T02:39:05.250Z",
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "ecdsa_secp256k1",
+        "entryPointVersion": "0.7",
+        "accountMode": "factory",
+        "factoryVersion": "2.0.0",
+        "implementationVersion": "v1.0.0",
+        "ownerAddress": "0x52e7f17258368d7f9Ebd7bDf8d6869Bc4759aBA1",
+        "salt": "0"
+      }
+    },
+    "creator": {
+      "type": "api-key",
+      "actorId": "0199dfe1-0000-7000-8000-000000000009",
+      "id": "0199dfe1-0000-7000-8000-000000000010",
+      "metadata": {
+        "version": 1,
+        "name": "Workspace backend"
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000000013",
+        "chainId": "eip155:11155111",
+        "status": "pending",
+        "authorization": {
+          "version": 1,
+          "entityId": 142534698,
+          "signerAddress": "0x7838CE7D0AC8943A2fAA4e8ab8ae901b05eA7A03",
+          "permissions": [
+            {
+              "type": "root"
+            }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1792031945,
+          "validUntil": 1792035545
+        },
+        "installTransactionHash": null,
+        "uninstallTransactionHash": null
+      }
+    ]
+  },
+  "wallet": {
+    "id": "0199dfe1-0000-7000-8000-000000000001",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000006",
+    "metadata": {
+      "version": 1,
+      "name": "Provisioned account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x3333333333333333333333333333333333333333",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000008",
+      "custody": "namera-managed",
+      "provider": "1claw",
+      "algorithm": "secp256k1"
+    },
+    "createdAt": "2026-10-15T02:39:05.250Z",
+    "updatedAt": "2026-10-15T02:39:05.250Z",
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "ecdsa_secp256k1",
+      "entryPointVersion": "0.7",
+      "accountMode": "factory",
+      "factoryVersion": "2.0.0",
+      "implementationVersion": "v1.0.0",
+      "ownerAddress": "0x52e7f17258368d7f9Ebd7bDf8d6869Bc4759aBA1",
+      "salt": "0"
+    }
+  },
+  "managedPreparation": {
+    "operationId": "0199dfe1-0000-7000-8000-000000000014",
+    "namespace": "eip155",
+    "approval": "1claw",
+    "prepared": {
+      "version": 1,
+      "namespace": "eip155",
+      "chainId": "eip155:11155111",
+      "entryPointVersion": "0.7",
+      "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "sponsorship": "alchemy-bso",
+      "context": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:11155111",
+        "account": "0x3333333333333333333333333333333333333333",
+        "block": {
+          "number": "0",
+          "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "timestamp": "1970-01-01T00:00:00.000Z"
+        },
+        "calls": [
+          {
+            "to": "0x3333333333333333333333333333333333333333",
+            "value": "0",
+            "data": "0x1234"
+          }
+        ],
+        "userOperation": {
+          "nonce": "0",
+          "gas": {
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "paymasterVerificationGasLimit": "0",
+            "paymasterPostOpGasLimit": "0",
+            "maxFeePerGas": "0",
+            "maxPriorityFeePerGas": "0"
+          },
+          "paymaster": null
+        },
+        "simulation": {
+          "userOperation": {
+            "source": "eth_estimateUserOperationGas",
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "maxFeePerGas": "1000000000",
+            "maxPriorityFeePerGas": "1"
+          },
+          "calls": {
+            "source": "viem.simulateCalls",
+            "results": [
+              {
+                "status": "success",
+                "returnData": "0x",
+                "gasUsed": "0"
+              }
+            ],
+            "assetChanges": [],
+            "transfers": []
+          }
+        }
+      },
+      "userOperation": {
+        "sender": "0x3333333333333333333333333333333333333333",
+        "nonce": "0",
+        "callData": "0x",
+        "callGasLimit": "0",
+        "verificationGasLimit": "0",
+        "preVerificationGas": "0",
+        "maxFeePerGas": "0",
+        "maxPriorityFeePerGas": "0",
+        "signature": "0x"
+      },
+      "billing": {
+        "executionMeter": "execution.testnet",
+        "sponsorship": null
+      }
+    },
+    "expiresAt": "2026-10-15T02:44:05.075Z"
+  },
+  "passkeyWallet": {
+    "id": "0199dfe1-0000-7000-8000-000000000004",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000015",
+    "metadata": {
+      "version": 1,
+      "name": "Customer account"
+    },
+    "status": "active",
+    "namespace": "eip155",
+    "address": "0x3333333333333333333333333333333333333333",
+    "owner": {
+      "signingKeyId": "0199dfe1-0000-7000-8000-000000000016",
+      "custody": "local",
+      "algorithm": "p256"
+    },
+    "createdAt": "2026-10-15T02:39:06.474Z",
+    "updatedAt": "2026-10-15T02:39:06.474Z",
+    "implementation": "alchemy-modular-v2",
+    "data": {
+      "version": 1,
+      "modularAccountVersion": "2.0.0",
+      "validatorType": "webauthn_p256",
+      "entryPointVersion": "0.7",
+      "salt": "0",
+      "entityId": 0
+    }
+  },
+  "passkeySession": {
+    "id": "0199dfe1-0000-7000-8000-000000000005",
+    "organizationId": "0199dfe1-0000-7000-8000-000000000015",
+    "walletId": "0199dfe1-0000-7000-8000-000000000004",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000000017",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Local agent"
+    },
+    "policies": [],
+    "policyHash": "9Z4ZzPfiQ4hIUpSXTY_nQ2E9-kjd2w_5wbLwIj7visI",
+    "status": "pending",
+    "revokedAt": null,
+    "createdAt": "2026-10-15T02:39:06.498Z",
+    "signer": {
+      "custody": "local",
+      "algorithm": "secp256k1",
+      "publicKey": "0x04275fee61cb0dc2dee0ad212b05ea0d028ba238b77fa774b00e1ed048e5f87b712531a25255b566674941276542e4f91acf836d4ba3e746b9bfaee7d9804c5a80"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000000004",
+      "organizationId": "0199dfe1-0000-7000-8000-000000000015",
+      "metadata": {
+        "version": 1,
+        "name": "Customer account"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x3333333333333333333333333333333333333333",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000000016",
+        "custody": "local",
+        "algorithm": "p256"
+      },
+      "createdAt": "2026-10-15T02:39:06.474Z",
+      "updatedAt": "2026-10-15T02:39:06.474Z",
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "webauthn_p256",
+        "entryPointVersion": "0.7",
+        "salt": "0",
+        "entityId": 0
+      }
+    },
+    "creator": {
+      "type": "api-key",
+      "actorId": "0199dfe1-0000-7000-8000-000000000018",
+      "id": "0199dfe1-0000-7000-8000-000000000019",
+      "metadata": {
+        "version": 1,
+        "name": "Workspace backend"
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000000020",
+        "chainId": "eip155:11155111",
+        "status": "pending",
+        "authorization": {
+          "version": 1,
+          "entityId": 132654142,
+          "signerAddress": "0x1CfFa8A5C00018F8E52E088BD2f637b59419a245",
+          "permissions": [
+            {
+              "type": "root"
+            }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1792031946,
+          "validUntil": 1792035546
+        },
+        "installTransactionHash": null,
+        "uninstallTransactionHash": null
+      }
+    ]
+  },
+  "passkeyPreparation": {
+    "operationId": "0199dfe1-0000-7000-8000-000000000021",
+    "namespace": "eip155",
+    "options": {
+      "challenge": "ERERERERERERERERERERERERERERERERERERERERERE",
+      "rpId": "app.example.com",
+      "timeout": 300000,
+      "allowCredentials": [
+        {
+          "id": "fH9q_W4I4NAClGWOrbumZv4mrefSBfKPdY2UFfTKvcI",
+          "type": "public-key"
+        }
+      ],
+      "userVerification": "required"
+    },
+    "prepared": {
+      "version": 1,
+      "namespace": "eip155",
+      "chainId": "eip155:11155111",
+      "entryPointVersion": "0.7",
+      "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "sponsorship": "alchemy-bso",
+      "context": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:11155111",
+        "account": "0x3333333333333333333333333333333333333333",
+        "block": {
+          "number": "0",
+          "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "timestamp": "1970-01-01T00:00:00.000Z"
+        },
+        "calls": [
+          {
+            "to": "0x3333333333333333333333333333333333333333",
+            "value": "0",
+            "data": "0x1234"
+          }
+        ],
+        "userOperation": {
+          "nonce": "0",
+          "gas": {
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "paymasterVerificationGasLimit": "0",
+            "paymasterPostOpGasLimit": "0",
+            "maxFeePerGas": "0",
+            "maxPriorityFeePerGas": "0"
+          },
+          "paymaster": null
+        },
+        "simulation": {
+          "userOperation": {
+            "source": "eth_estimateUserOperationGas",
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "maxFeePerGas": "1000000000",
+            "maxPriorityFeePerGas": "1"
+          },
+          "calls": {
+            "source": "viem.simulateCalls",
+            "results": [
+              {
+                "status": "success",
+                "returnData": "0x",
+                "gasUsed": "0"
+              }
+            ],
+            "assetChanges": [],
+            "transfers": []
+          }
+        }
+      },
+      "userOperation": {
+        "sender": "0x3333333333333333333333333333333333333333",
+        "nonce": "0",
+        "callData": "0x",
+        "callGasLimit": "0",
+        "verificationGasLimit": "0",
+        "preVerificationGas": "0",
+        "maxFeePerGas": "0",
+        "maxPriorityFeePerGas": "0",
+        "signature": "0x"
+      },
+      "billing": {
+        "executionMeter": "execution.testnet",
+        "sponsorship": null
+      }
+    },
+    "expiresAt": "2026-10-15T02:44:06.347Z"
+  },
+  "registration": {
+    "verificationId": "0199dfe1-0000-7000-8000-000000000022",
+    "options": {
+      "challenge": "OuAZdeWe1cPGP8if-E91tdEwtCgFVy68KEuEyXdtaIY",
+      "rp": {
+        "id": "app.example.com",
+        "name": "Namera"
+      },
+      "user": {
+        "id": "MDFhMTNkNmQtNzZkYi03NTUzLWE4M2QtMTFhMzRkNWJhNjFm",
+        "name": "Customer",
+        "displayName": "Customer"
+      },
+      "pubKeyCredParams": [
+        {
+          "alg": -7,
+          "type": "public-key"
+        }
+      ],
+      "timeout": 300000,
+      "excludeCredentials": [],
+      "authenticatorSelection": {
+        "residentKey": "required",
+        "requireResidentKey": true,
+        "userVerification": "required"
+      },
+      "hints": [],
+      "attestation": "none",
+      "extensions": {
+        "credProps": true
+      }
+    },
+    "expiresAt": "2026-10-15T02:44:06.347Z"
+  },
+  "revokingSession": {
+    "id": "0199dfe1-0000-7000-8000-000000001000",
+    "organizationId": "0199dfe1-0000-7000-8000-000000001001",
+    "walletId": "0199dfe1-0000-7000-8000-000000001002",
+    "signingKeyId": "0199dfe1-0000-7000-8000-000000001003",
+    "namespace": "eip155",
+    "metadata": {
+      "version": 1,
+      "name": "Local agent"
+    },
+    "policies": [],
+    "policyHash": "9Z4ZzPfiQ4hIUpSXTY_nQ2E9-kjd2w_5wbLwIj7visI",
+    "status": "revoking",
+    "revokedAt": "2026-10-15T02:57:34.211Z",
+    "createdAt": "2026-10-15T02:57:32.375Z",
+    "signer": {
+      "custody": "local",
+      "algorithm": "secp256k1",
+      "publicKey": "0x04c70cd5e6b1350f36bb3f47e4c50f276178a843ddc457189b962b660b81945ccee5bd6e75bbf22348c1ece286baeec6776e5cc66206f2b5de96cf0c8a0ca407e1"
+    },
+    "wallet": {
+      "id": "0199dfe1-0000-7000-8000-000000001002",
+      "organizationId": "0199dfe1-0000-7000-8000-000000001001",
+      "metadata": {
+        "version": 1,
+        "name": "Managed owner"
+      },
+      "status": "active",
+      "namespace": "eip155",
+      "address": "0x3333333333333333333333333333333333333333",
+      "owner": {
+        "signingKeyId": "0199dfe1-0000-7000-8000-000000001004",
+        "custody": "namera-managed",
+        "provider": "1claw",
+        "algorithm": "secp256k1"
+      },
+      "createdAt": "2026-10-15T02:57:32.345Z",
+      "updatedAt": "2026-10-15T02:57:32.345Z",
+      "implementation": "alchemy-modular-v2",
+      "data": {
+        "version": 1,
+        "modularAccountVersion": "2.0.0",
+        "validatorType": "ecdsa_secp256k1",
+        "entryPointVersion": "0.7",
+        "accountMode": "factory",
+        "factoryVersion": "2.0.0",
+        "implementationVersion": "v1.0.0",
+        "ownerAddress": "0x90C59223ac50061f5204826078944ec41bc56e0d",
+        "salt": "0"
+      }
+    },
+    "creator": {
+      "organizationMember": {
+        "id": "0199dfe1-0000-7000-8000-000000001005",
+        "userId": "0199dfe1-0000-7000-8000-000000001006",
+        "organizationId": "0199dfe1-0000-7000-8000-000000001001",
+        "organizationRoleId": "0199dfe1-0000-7000-8000-000000001007",
+        "joinedAt": "2026-10-15T02:57:32.244Z"
+      },
+      "user": {
+        "id": "0199dfe1-0000-7000-8000-000000001006",
+        "email": "0199dfe1-0000-7000-8000-000000001008@example.com",
+        "emailVerified": true,
+        "metadata": {
+          "version": 1
+        },
+        "lastLoginAt": "2026-10-15T02:57:32.211Z"
+      },
+      "organizationRole": {
+        "id": "0199dfe1-0000-7000-8000-000000001007",
+        "key": "owner",
+        "permissions": [
+          "organization:read",
+          "organization:update",
+          "member:read",
+          "member:update",
+          "member:remove",
+          "invitation:read",
+          "invitation:create",
+          "invitation:cancel",
+          "role:read",
+          "role:create",
+          "role:update",
+          "role:delete",
+          "billing:read",
+          "billing:update",
+          "billing:cancel",
+          "wallet:read",
+          "wallet:create",
+          "wallet:update",
+          "session-key:read",
+          "session-key:create",
+          "session-key:revoke",
+          "api-key:read",
+          "api-key:create",
+          "api-key:revoke",
+          "execution:read",
+          "mcp-authorization:read",
+          "mcp-authorization:create",
+          "mcp-authorization:revoke",
+          "cli-authorization:read",
+          "cli-authorization:create",
+          "cli-authorization:revoke"
+        ],
+        "metadata": {
+          "version": 1,
+          "name": "Owner",
+          "description": "Organization owner with full access"
+        },
+        "type": "system",
+        "systemRoleId": "0199dfe1-0000-7000-8000-000000001009"
+      }
+    },
+    "installations": [
+      {
+        "id": "0199dfe1-0000-7000-8000-000000001010",
+        "chainId": "eip155:11155111",
+        "status": "installed",
+        "authorization": {
+          "version": 1,
+          "entityId": 94541820,
+          "signerAddress": "0xAB592704Fde287292b3a886Db80C0B6e7AC6DAdc",
+          "permissions": [
+            {
+              "type": "root"
+            }
+          ],
+          "allowSignatures": false,
+          "validAfter": 1792033052,
+          "validUntil": 1792036652
+        },
+        "installTransactionHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "uninstallTransactionHash": null
+      }
+    ]
+  },
+  "uninstallPreparation": {
+    "operationId": "0199dfe1-0000-7000-8000-000000001011",
+    "namespace": "eip155",
+    "approval": "1claw",
+    "prepared": {
+      "version": 1,
+      "namespace": "eip155",
+      "chainId": "eip155:11155111",
+      "entryPointVersion": "0.7",
+      "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "sponsorship": "none",
+      "context": {
+        "version": 1,
+        "namespace": "eip155",
+        "chainId": "eip155:11155111",
+        "account": "0x3333333333333333333333333333333333333333",
+        "block": {
+          "number": "0",
+          "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "timestamp": "1970-01-01T00:00:00.000Z"
+        },
+        "calls": [
+          {
+            "to": "0x3333333333333333333333333333333333333333",
+            "value": "0",
+            "data": "0xabcd"
+          }
+        ],
+        "userOperation": {
+          "nonce": "0",
+          "gas": {
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "paymasterVerificationGasLimit": "0",
+            "paymasterPostOpGasLimit": "0",
+            "maxFeePerGas": "0",
+            "maxPriorityFeePerGas": "0"
+          },
+          "paymaster": null
+        },
+        "simulation": {
+          "userOperation": {
+            "source": "eth_estimateUserOperationGas",
+            "callGasLimit": "0",
+            "verificationGasLimit": "0",
+            "preVerificationGas": "0",
+            "maxFeePerGas": "1000000000",
+            "maxPriorityFeePerGas": "1"
+          },
+          "calls": {
+            "source": "viem.simulateCalls",
+            "results": [
+              {
+                "status": "success",
+                "returnData": "0x",
+                "gasUsed": "0"
+              }
+            ],
+            "assetChanges": [],
+            "transfers": []
+          }
+        }
+      },
+      "userOperation": {
+        "sender": "0x3333333333333333333333333333333333333333",
+        "nonce": "0",
+        "callData": "0x",
+        "callGasLimit": "0",
+        "verificationGasLimit": "0",
+        "preVerificationGas": "0",
+        "maxFeePerGas": "0",
+        "maxPriorityFeePerGas": "0",
+        "signature": "0x"
+      },
+      "billing": {
+        "executionMeter": "execution.testnet",
+        "sponsorship": null
+      }
+    },
+    "expiresAt": "2026-10-15T03:02:34.211Z"
+  }
+}

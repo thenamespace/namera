@@ -9,6 +9,7 @@ import {
   materializeEvmPolicy,
   resolveEvmSessionSigner,
 } from "@namera-ai/evm";
+import { ManagementPermissionDeniedError } from "@namera-ai/protocol";
 import {
   PolicyId,
   SigningKeyId,
@@ -31,6 +32,7 @@ import { Base64, generateUniqueId } from "@namera-ai/utils";
 
 import { Audit } from "#/audit/layer";
 import { AuthConfig } from "#/auth/config";
+import { makeCheckManagementAuthority } from "#/auth/core/management-authority";
 import {
   enforceSessionKeyLimit,
   lockOrganizationBilling,
@@ -51,6 +53,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   const audit = yield* Audit;
   const crypto = yield* CryptoService;
   const repository = yield* Repository;
+  const checkAuthority = yield* makeCheckManagementAuthority;
   const evm = yield* Evm;
   const transaction = yield* TransactionService;
   const periods = yield* makeBillingPeriods;
@@ -271,6 +274,10 @@ export const makeCreateSessionKey = Effect.gen(function* () {
       const sessionKey = yield* transaction
         .run(
           Effect.gen(function* () {
+            if (!(yield* checkAuthority({ ...input, permission: "session-key:create" })))
+              return yield* new ManagementPermissionDeniedError({
+                code: "MANAGEMENT_PERMISSION_DENIED",
+              });
             yield* lockOrganizationBilling(repository, input.organizationId);
             yield* enforceSessionKeyLimit(repository, input.organizationId, provider, periods);
             const current = yield* repository.core.wallet.findByIdForUpdate(
@@ -336,6 +343,20 @@ export const makeCreateSessionKey = Effect.gen(function* () {
               policies,
               policyHash,
             });
+            const apiKey = yield* repository.auth.apiKey.findByActorId(
+              input.actorId,
+              input.organizationId,
+            );
+            if (apiKey !== undefined) {
+              yield* repository.core.sessionKeyGrant.insertMany([
+                {
+                  organizationId: input.organizationId,
+                  actorId: input.actorId,
+                  sessionKeyId: created.id,
+                  grantedByActorId: input.actorId,
+                },
+              ]);
+            }
             for (const installation of installations) {
               yield* repository.core.sessionKeyInstallation.insert({
                 ...installation,
@@ -357,6 +378,7 @@ export const makeCreateSessionKey = Effect.gen(function* () {
                 walletId: created.walletId,
                 namespace: created.namespace,
                 policyTypes,
+                ...(apiKey === undefined ? {} : { grantedToActorId: input.actorId }),
               },
             });
             const organization = yield* repository.auth.organization.findById(input.organizationId);
@@ -462,6 +484,8 @@ export const makeCreateSessionKey = Effect.gen(function* () {
   return Effect.fn("application.sessionKey.createIdempotent")(function* (
     input: Omit<Parameters<typeof create>[0], "attempt">,
   ) {
+    if (!(yield* checkAuthority({ ...input, permission: "session-key:create" }).pipe(Effect.orDie)))
+      return yield* new ManagementPermissionDeniedError({ code: "MANAGEMENT_PERMISSION_DENIED" });
     if (input.request.signer.custody === "local") return yield* create(input);
     const { idempotencyKey, ...request } = Schema.encodeSync(CreateSessionKeyRequest)(
       input.request,

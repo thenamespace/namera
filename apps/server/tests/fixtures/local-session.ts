@@ -10,7 +10,7 @@ export const createTestPasskeyWallet = Effect.fn("test.createPasskeyWallet")(fun
   client: TestApiClient,
   name = "Passkey wallet",
 ) {
-  const registration = yield* client.wallet.createPasskeyRegistrationOptions();
+  const registration = yield* client.wallet.createPasskeyRegistrationOptions({ payload: null });
   return yield* client.wallet.create({
     payload: {
       namespace: "eip155",

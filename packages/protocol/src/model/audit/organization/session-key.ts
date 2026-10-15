@@ -2,6 +2,7 @@ import { Schema } from "effect";
 
 import {
   SessionKeyId,
+  ActorId,
   WalletId,
   SessionKeyInstallationId,
   SessionKeyOperationId,
@@ -37,6 +38,7 @@ export const SessionKeyCreatedEventData = Schema.Struct({
     walletId: WalletId,
     namespace: Schema.Literal("eip155"),
     policyTypes: Schema.Array(EvmSessionPolicyType),
+    grantedToActorId: Schema.optionalKey(ActorId),
   }),
 });
 

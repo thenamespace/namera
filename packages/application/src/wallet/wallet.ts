@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import type { WalletView } from "@namera-ai/database";
 import type {
   ActorId,
+  ManagementPermissionDeniedError,
   BillingError,
   OrganizationId,
   WalletCreationError,
@@ -36,18 +37,27 @@ export interface WalletApplication {
   readonly transactions: Effect.Success<typeof makeWalletTransactions>;
   readonly createPasskeyRegistrationOptions: (input: {
     readonly organizationId: OrganizationId;
-    readonly userId: UserId;
+    readonly userId?: UserId;
+    readonly actorId?: ActorId;
+    readonly origin?: string;
     readonly userName: string;
     readonly userDisplayName: string;
-  }) => Effect.Effect<PasskeyRegistrationOptionsResponse, PasskeyRegistrationError>;
+  }) => Effect.Effect<
+    PasskeyRegistrationOptionsResponse,
+    PasskeyRegistrationError | ManagementPermissionDeniedError
+  >;
   readonly create: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
-    readonly userId: UserId;
+    readonly userId?: UserId;
     readonly request: CreateWalletRequest;
   }) => Effect.Effect<
     WalletView,
-    BillingError | PasskeyVerificationError | WalletCreationError | WalletCustodyUnavailableError
+    | ManagementPermissionDeniedError
+    | BillingError
+    | PasskeyVerificationError
+    | WalletCreationError
+    | WalletCustodyUnavailableError
   >;
   readonly list: (input: {
     readonly organizationId: OrganizationId;

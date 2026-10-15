@@ -50,7 +50,7 @@ function ApiKeysPage() {
             API keys
           </HeadingGroup.Title>
           <HeadingGroup.Description>
-            Grant external clients access through selected session keys.
+            Grant integrations session access or explicit workspace management permissions.
           </HeadingGroup.Description>
         </HeadingGroup>
         {canRead ? (

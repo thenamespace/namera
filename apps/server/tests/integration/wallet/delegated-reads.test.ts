@@ -74,7 +74,7 @@ layer(fixture.layer)("delegated wallet read boundaries", (it) => {
         // A granted machine credential still cannot read owner ceremony material or edit wallets.
         const userOnly: ReadonlyArray<Effect.Effect<unknown, unknown>> = [
           client.wallet.getPasskeyOwner({ params: { walletId: granted.id } }),
-          client.wallet.createPasskeyRegistrationOptions(),
+          client.wallet.createPasskeyRegistrationOptions({ payload: null }),
           client.wallet.update({
             params: { walletId: granted.id },
             payload: { metadata: { version: 1, name: "Forbidden edit" } },
