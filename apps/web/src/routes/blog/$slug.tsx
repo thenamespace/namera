@@ -30,7 +30,7 @@ function BlogArticle() {
       <header className="text-center">
         <h1
           id="article-title"
-          className="mx-auto max-w-[28ch] text-balance text-3xl font-medium leading-[1.15] tracking-tight md:text-5xl"
+          className="mx-auto max-w-[44rem] text-balance text-3xl font-medium leading-[1.15] tracking-tight md:text-5xl"
         >
           {post.title}
         </h1>
