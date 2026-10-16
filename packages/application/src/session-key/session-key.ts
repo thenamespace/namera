@@ -30,6 +30,7 @@ import { makeCompleteSessionKeyOperations } from "./complete-operation.js";
 import { makeCreateSessionKey } from "./create.js";
 import { makePrepareSessionKeyOperations } from "./prepare-operation.js";
 import { makeReadSessionKeys } from "./read.js";
+import { makeReconcileSigningKeyDeactivations } from "./reconcile-deactivations.js";
 import { makeReconcileSessionKeyOperations } from "./reconcile-operations.js";
 import { makeRevokeSessionKey } from "./revoke.js";
 import type { SessionKeyView } from "./view.js";
@@ -67,6 +68,7 @@ export interface SessionKeyApplication {
     readonly actorId?: ActorId;
   }) => Effect.Effect<SessionKeyOperationResponse, SessionKeyOperationError>;
   readonly reconcileOperations: () => Effect.Effect<number>;
+  readonly reconcileDeactivations: () => Effect.Effect<number>;
   readonly completeOperation: (input: {
     readonly organizationId: OrganizationId;
     readonly actorId: ActorId;
@@ -121,6 +123,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
   const complete = yield* makeCompleteSessionKeyOperations;
   const cancelOperation = yield* makeCancelSessionKeyOperation;
   const reconcileOperations = yield* makeReconcileSessionKeyOperations;
+  const reconcileDeactivations = yield* makeReconcileSigningKeyDeactivations;
 
   return {
     create,
@@ -129,6 +132,7 @@ export const makeSessionKeyApplication = Effect.gen(function* () {
     ...prepare,
     ...complete,
     reconcileOperations,
+    reconcileDeactivations,
     cancelOperation,
   } satisfies SessionKeyApplication;
 });

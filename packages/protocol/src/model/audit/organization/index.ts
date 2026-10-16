@@ -44,6 +44,7 @@ import { SignatureCreatedEventData } from "./signature.js";
 import {
   WalletCreatedEventData,
   SigningKeyCreatedEventData,
+  SigningKeyDeactivationEventData,
   WalletUpdatedEventData,
   IdentityChangedEventData,
   WalletOperationEventData,
@@ -65,6 +66,7 @@ export const MemberRoleUpdatedEvent = organizationEvent(MemberRoleUpdatedEventDa
 export const MemberRemovedEvent = organizationEvent(MemberRemovedEventData);
 export const WalletCreatedEvent = organizationEvent(WalletCreatedEventData);
 export const SigningKeyCreatedEvent = organizationEvent(SigningKeyCreatedEventData);
+export const SigningKeyDeactivationEvent = organizationEvent(SigningKeyDeactivationEventData);
 export const WalletUpdatedEvent = organizationEvent(WalletUpdatedEventData);
 export const IdentityChangedEvent = organizationEvent(IdentityChangedEventData);
 export const WalletSignatureEvent = organizationEvent(WalletSignatureEventData);
@@ -99,6 +101,7 @@ export const OrganizationEvent = Schema.Union([
   MemberRemovedEvent,
   WalletCreatedEvent,
   SigningKeyCreatedEvent,
+  SigningKeyDeactivationEvent,
   WalletUpdatedEvent,
   IdentityChangedEvent,
   WalletOperationEvent,

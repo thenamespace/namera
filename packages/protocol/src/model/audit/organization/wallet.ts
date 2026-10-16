@@ -8,6 +8,7 @@ import {
   SupportedEvmChainId,
 } from "#/evm/index";
 import { SigningKeyCustody } from "#/model/core/signing-key";
+import { SigningKeyDeactivationErrorCode } from "#/model/jobs/signing-key-deactivation";
 
 export const WalletImplementation = Schema.Struct({
   implementation: Schema.Literal("alchemy-modular-v2"),
@@ -46,6 +47,21 @@ export const SigningKeyCreatedEventData = Schema.Struct({
   data: Schema.Struct({
     version: Schema.Literal(1),
     custody: SigningKeyCustody,
+  }),
+});
+
+export const SigningKeyDeactivationEventData = Schema.Struct({
+  event: Schema.Literals([
+    "signing_key.deactivation_requested",
+    "signing_key.deactivated",
+    "signing_key.deactivation_failed",
+  ]),
+  resourceType: Schema.Literal("signing-key"),
+  resourceId: SigningKeyId,
+  data: Schema.Struct({
+    version: Schema.Literal(1),
+    provider: Schema.Literal("1claw"),
+    errorCode: Schema.optionalKey(SigningKeyDeactivationErrorCode),
   }),
 });
 

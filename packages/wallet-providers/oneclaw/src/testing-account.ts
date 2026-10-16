@@ -88,6 +88,7 @@ export const oneClawAccountTestLayer = (overrides: OneClawTestScenario = {}) =>
       signingKeys: {
         create: ({ agentId }) => Effect.succeed(key(agentId)),
         list: ({ agentId }) => Effect.succeed([key(agentId)]),
+        deactivate: () => Effect.void,
         ...overrides.signingKeys,
       },
       signing: {

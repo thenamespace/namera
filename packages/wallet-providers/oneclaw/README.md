@@ -6,13 +6,13 @@ It does not persist credentials, construct smart accounts or broadcast transacti
 
 ## Services
 
-| Service group | Responsibility                                                       |
-| ------------- | -------------------------------------------------------------------- |
-| `connections` | Upsert/find connections, bootstrap an empty customer, reissue claims |
-| `customers`   | Redeem claims, verify identity and enable delegation                 |
-| `agents`      | Create/read agents and configure raw signing                         |
-| `signingKeys` | Create/list Ethereum keys; destruction returns `UNSUPPORTED`         |
-| `signing`     | Exchange an agent credential and sign a 32-byte digest               |
+| Service group | Responsibility                                                          |
+| ------------- | ----------------------------------------------------------------------- |
+| `connections` | Upsert/find connections, bootstrap an empty customer, reissue claims    |
+| `customers`   | Redeem claims, verify identity and enable delegation                    |
+| `agents`      | Create/read agents and configure raw signing                            |
+| `signingKeys` | Create/list/deactivate Ethereum keys; destruction returns `UNSUPPORTED` |
+| `signing`     | Exchange an agent credential and sign a 32-byte digest                  |
 
 `OneClawService.layer` uses the SDK. Customer authority is checked against the
 organization, connection, credential, configured app, expiry and remote identity.
@@ -23,6 +23,12 @@ creating a key or making another external call.
 Signing exchanges the agent key for a fresh access token, checks the pinned key
 identity and public material, then verifies the 65-byte recoverable signature
 against the exact digest. It does not hash again or cache access tokens.
+
+Deactivation uses verified customer authority and lists active keys before DELETE.
+It checks the pinned key ID, version and public key because the provider deletes
+by agent and chain. A successful list with no active Ethereum key reconciles an
+earlier uncertain DELETE; a replacement key or a failed lookup never authorizes
+another deletion. Deactivation does not claim permanent key destruction.
 
 `OneClawOidcService` issues 120-second RS256 organization tokens and public JWKS.
 The server hosts discovery and JWKS. Subjects use `namera:org:<id>` and emails must

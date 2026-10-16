@@ -72,6 +72,36 @@ export const makeRevokeSessionKey = Effect.gen(function* () {
               },
             });
           }
+          const session =
+            revoking ??
+            (yield* repository.core.sessionKey.findById(input.sessionKeyId, input.organizationId));
+          if (session?.status === "revoking" || session?.status === "revoked") {
+            const signer = yield* repository.core.signingKey.findById(
+              session.signingKeyId,
+              input.organizationId,
+            );
+            if (!signer) return yield* Effect.die("Revoking session has no signer");
+            if (signer.data.type === "1claw") {
+              yield* repository.core.signingKey.setStatus(
+                signer.id,
+                input.organizationId,
+                "disabled",
+              );
+              const job = yield* repository.jobs.signingKeyDeactivation.enqueue({
+                organizationId: input.organizationId,
+                signingKeyId: signer.id,
+              });
+              if (job)
+                yield* audit.organization({
+                  organizationId: input.organizationId,
+                  actorId: input.actorId,
+                  event: "signing_key.deactivation_requested",
+                  resourceType: "signing-key",
+                  resourceId: signer.id,
+                  data: { version: 1, provider: "1claw" },
+                });
+            }
+          }
           // Unsigned registrations can finish immediately. Signed attempts must be
           // reconciled even after API grants disappear; a server timeout cannot cancel them.
           const finished = yield* finish(input);

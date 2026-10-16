@@ -11,6 +11,7 @@ import { Database, type DatabaseService } from "#/core/layer";
 import { systemRoles } from "#/migrations/data";
 import { runDatabaseMigrations } from "#/migrations/layer";
 import {
+  signingKeyDeactivation,
   account,
   feedback,
   addressCatalog,
@@ -151,6 +152,7 @@ export class TestDatabase extends Context.Service<
         yield* database.delete(sessionKeyInstallation);
         yield* database.delete(sessionKey);
         yield* database.delete(wallet);
+        yield* database.delete(signingKeyDeactivation);
         yield* database.delete(signingKey);
         yield* database.delete(signerProvisioning);
         yield* database.delete(providerConnections);

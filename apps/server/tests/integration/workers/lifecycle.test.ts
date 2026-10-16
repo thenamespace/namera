@@ -143,6 +143,8 @@ it.layer(TestServerLayer)("worker lifecycle", (test) => {
     { kind: "execution", failFirst: true },
     { kind: "session", failFirst: false },
     { kind: "session", failFirst: true },
+    { kind: "deactivation", failFirst: false },
+    { kind: "deactivation", failFirst: true },
   ] as const)("yields and stops $kind polling (failure=$failFirst)", ({ kind, failFirst }) =>
     Effect.gen(function* () {
       const app = yield* Application;
@@ -159,7 +161,12 @@ it.layer(TestServerLayer)("worker lifecycle", (test) => {
       const application = Layer.succeed(Application, {
         ...app,
         execution: { ...app.execution, reconcile },
-        sessionKey: { ...app.sessionKey, reconcileOperations: reconcile },
+        sessionKey: {
+          ...app.sessionKey,
+          ...(kind === "deactivation"
+            ? { reconcileDeactivations: reconcile }
+            : { reconcileOperations: reconcile }),
+        },
       });
 
       yield* Effect.scoped(

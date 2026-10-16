@@ -21,6 +21,11 @@ a new provider request.
 
 ## Delegation
 
+Revoking a 1Claw session disables its signing key immediately and atomically queues
+provider cleanup in `jobs.signing_key_deactivation`. `disabled` records local
+authority; it does not imply remote deletion or key destruction. Owner signing
+keys are not changed by session revocation.
+
 | Table                            | Purpose and important constraints                                                                                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `session_key`                    | Wallet, unique session-purpose signer, immutable policies/hash and lifecycle. References bind wallet, signer and actors to the tenant.                             |

@@ -16,6 +16,7 @@ export const OneClawOperation = Schema.Literals([
   "agents.setRawSigningEnabled",
   "signingKeys.create",
   "signingKeys.list",
+  "signingKeys.deactivate",
   "signingKeys.destroy",
   "signing.signDigest",
 ]);
