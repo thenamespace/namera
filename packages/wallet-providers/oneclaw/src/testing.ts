@@ -75,6 +75,7 @@ export const oneClawTestLayer = (scenario: OneClawTestScenario = {}) =>
         signingKeys: {
           create: observe("signingKeys.create", scenario.signingKeys?.create),
           list: observe("signingKeys.list", scenario.signingKeys?.list),
+          deactivate: observe("signingKeys.deactivate", scenario.signingKeys?.deactivate),
           destroy: observe("signingKeys.destroy", scenario.signingKeys?.destroy),
         },
         signing: { signDigest: observe("signing.signDigest", scenario.signing?.signDigest) },
