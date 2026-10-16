@@ -59,7 +59,11 @@ import {
   SignatureOperationRepository,
   WalletRepository,
 } from "#/repositories/core/index";
-import { AnalyticsJobRepository, EmailJobRepository } from "#/repositories/jobs/index";
+import {
+  AnalyticsJobRepository,
+  EmailJobRepository,
+  SigningKeyDeactivationRepository,
+} from "#/repositories/jobs/index";
 import {
   NotificationPreferenceRepository,
   NotificationRepository,
@@ -130,6 +134,7 @@ export interface RepositoryService {
     wallet: WalletRepository["Service"];
   };
   jobs: {
+    signingKeyDeactivation: SigningKeyDeactivationRepository["Service"];
     analytics: AnalyticsJobRepository["Service"];
     email: EmailJobRepository["Service"];
   };
@@ -172,6 +177,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
       const userEvent = yield* UserEventRepository;
       const emailJob = yield* EmailJobRepository;
       const analyticsJob = yield* AnalyticsJobRepository;
+      const signingKeyDeactivation = yield* SigningKeyDeactivationRepository;
       const notification = yield* NotificationRepository;
       const notificationPreference = yield* NotificationPreferenceRepository;
       const billingAccount = yield* BillingAccountRepository;
@@ -268,6 +274,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
           wallet,
         },
         jobs: {
+          signingKeyDeactivation,
           analytics: analyticsJob,
           email: emailJob,
         },
@@ -309,6 +316,7 @@ export class Repository extends Context.Service<Repository, RepositoryService>()
         UserEventRepository.layer,
         EmailJobRepository.layer,
         AnalyticsJobRepository.layer,
+        SigningKeyDeactivationRepository.layer,
         NotificationRepository.layer,
         NotificationPreferenceRepository.layer,
         BillingAccountRepository.layer,

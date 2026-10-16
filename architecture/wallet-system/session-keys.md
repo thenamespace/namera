@@ -47,6 +47,35 @@ Whole-session revocation separately revokes API grants. Session response creator
 retain the existing member shape for humans and use a public API-key descriptor
 for machine-created sessions.
 
+For 1Claw sessions, whole-session revocation also disables the local signing key
+and enqueues one `jobs.signing_key_deactivation` row in the same transaction as
+grant revocation and the `signing_key.deactivation_requested` audit event. Repeated
+revocation does not duplicate or reset cleanup. Local signers are unaffected.
+The migration queues already-revoking/revoked managed sessions and audits those
+requests without calling the provider; active sessions and wallet owners are excluded.
+
+The session-key worker polls provider cleanup separately from onchain receipts.
+Each attempt loads fresh authority for the signer's existing organization connection,
+renews an expired customer token when necessary, and verifies customer identity.
+Cleanup never creates a customer, bootstraps a connection or enables delegation.
+The adapter lists active Ethereum keys and checks the pinned key ID, version and
+public key before deactivating by agent and chain. A successful empty active-key
+list reconciles an earlier uncertain DELETE; a failed lookup is not success.
+
+Cleanup has a two-minute deadline within a three-minute job lease. Transient
+failures retry with exponential backoff from 30 seconds to one hour, up to twelve
+attempts. Authority/key mismatches and exhausted retries require operator attention.
+Job completion and terminal failure share a transaction with `signing_key.deactivated`
+or `signing_key.deactivation_failed` respectively. Routine retries only update
+operational bookkeeping. Operators must resolve the cause and requeue jobs marked
+`needs-attention`; repeating session revocation does not reset them.
+
+Provider cleanup cannot restore local access or cancel existing signatures. Onchain
+uninstall and signed-operation reconciliation remain independent. A session's
+`revoked` status describes completed onchain revocation, not provider cleanup.
+Deactivation is not evidence of permanent private-key destruction; the local
+signing-key status remains `disabled` and historical metadata is retained.
+
 ## Persistence
 
 | Table (`core`)             | Responsibility                                                                  |
@@ -67,7 +96,14 @@ bindings.
 - [Authority loader](../../packages/application/src/session-key/authority.ts)
 - [Owner operation preparation](../../packages/application/src/session-key/prepare-operation.ts)
 - [Revocation](../../packages/application/src/session-key/revoke.ts)
+- [Provider cleanup](../../packages/application/src/session-key/reconcile-deactivations.ts)
 - [Permission compiler](../../packages/evm/src/sessions/compile.ts)
 
 See [policies](policies.md), [transactions](transactions.md) and
 [reconciliation](reconciliation.md).
+
+Provider adapter tests cover customer scope, pinned-key mismatches, missing/denied
+lookups and uncertain DELETE recovery. Server boundary tests cover atomic enqueue,
+retry exhaustion, token renewal, cross-tenant ciphertext, both owner types, onchain
+removal and migration backfill. Repository tests cover tenant keys, deduplication,
+concurrent claims, expired leases and stale acknowledgments.

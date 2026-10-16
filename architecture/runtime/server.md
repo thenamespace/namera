@@ -38,14 +38,14 @@ RPC and telemetry proxies have dedicated policies and upstream timeouts.
 
 ## Background work
 
-| Worker           | Responsibility                                                                  |
-| ---------------- | ------------------------------------------------------------------------------- |
-| Email            | Deliver encrypted outbox jobs with leases, expiry and bounded retries.          |
-| Execution        | Submit accepted delegated envelopes and reconcile receipts.                     |
-| Session key      | Reconcile owner-approved onchain installation/removal.                          |
-| Wallet operation | Reconcile owner transactions with durable retry scheduling.                     |
-| Billing          | Period rollover, reservation recovery, sponsorship costs and projection repair. |
-| Analytics        | Deliver committed milestones from the outbox.                                   |
+| Worker           | Responsibility                                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Email            | Deliver encrypted outbox jobs with leases, expiry and bounded retries.                                            |
+| Execution        | Submit accepted delegated envelopes and reconcile receipts.                                                       |
+| Session key      | Reconcile owner-approved onchain installation/removal and independently deactivate revoked 1Claw session signers. |
+| Wallet operation | Reconcile owner transactions with durable retry scheduling.                                                       |
+| Billing          | Period rollover, reservation recovery, sponsorship costs and projection repair.                                   |
+| Analytics        | Deliver committed milestones from the outbox.                                                                     |
 
 Workers stop with the Effect scope. Leases protect durable work from concurrent
 claims; process-level loops invoke application-owned transitions. Pending chain

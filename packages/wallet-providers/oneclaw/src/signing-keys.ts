@@ -31,7 +31,7 @@ export const makeSigningKeys = ({ request, customer }: ClientContext) => ({
     input: CustomerAgent & {
       readonly key: Pick<EthereumKey, "id" | "version" | "publicKey">;
     },
-  ) {
+  ): Effect.fn.Return<void, OneClawError> {
     const operation = "signingKeys.deactivate";
     const authenticated = yield* customer(operation, input.authority);
     const result = yield* request(operation, KeysResponse, () =>

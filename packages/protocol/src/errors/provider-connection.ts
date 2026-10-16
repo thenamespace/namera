@@ -11,6 +11,7 @@ export class ProviderConnectionError extends Schema.TaggedError<ProviderConnecti
       "AUTHORITY_EXPIRED",
       "IDENTITY_MISMATCH",
       "PROVISIONING_INCOMPLETE",
+      "DECRYPT_FAILED",
     ]),
   },
 ) {}

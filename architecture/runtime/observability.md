@@ -17,6 +17,11 @@ exclusions. Logs use concise transition names and safe classifications, not sign
 payloads, credentials or arbitrary provider responses. Metric dimensions are
 bounded values, never user IDs, emails, URLs or exception messages.
 
+The session-key worker exposes separate `session_key` and `signing_key_deactivation`
+poll/last-success labels. Deactivation backlog and oldest age include jobs requiring
+operator attention. Terminal cleanup failures log a sanitized error code; typed
+organization audit events record requested, completed and failed deactivation.
+
 Development exports to local Grafana LGTM. Production exports traces, logs and
 metrics to separate Axiom datasets. Server traces batch every ten seconds, logs
 every second, and metrics every sixty seconds. Browser traces batch every second.

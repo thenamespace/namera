@@ -59,6 +59,29 @@ it.effect("reconciles an uncertain DELETE by listing instead of deleting again",
   }).pipe(Effect.provide(Live)),
 );
 
+it.effect("refuses changed public material and ambiguous active key lists", () =>
+  Effect.gen(function* () {
+    const { identity, respond, fetchMock } = yield* ProviderHttp;
+    const service = yield* OneClawService;
+    identity();
+    respond({ keys: [key] });
+    expect(
+      (yield* service.signingKeys
+        .deactivate({
+          ...input,
+          key: { ...input.key, publicKey: `0x${"04".repeat(65)}` },
+        })
+        .pipe(Effect.flip)).code,
+    ).toBe("KEY_MISMATCH");
+    identity();
+    respond({ keys: [key, key] });
+    expect((yield* service.signingKeys.deactivate(input).pipe(Effect.flip)).code).toBe(
+      "KEY_MISMATCH",
+    );
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  }).pipe(Effect.provide(Live)),
+);
+
 it.effect("does not treat a missing agent or denied lookup as confirmed deactivation", () =>
   Effect.gen(function* () {
     const { identity, respond, fetchMock } = yield* ProviderHttp;

@@ -36,19 +36,18 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
     const payload = yield* Schema.decodeUnknownEffect(
       Schema.fromJsonString(OneClawCustomerCredentialPayload),
     )(cleartext).pipe(
-      Effect.mapError(() => new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" })),
+      Effect.mapError(() => new ProviderConnectionError({ code: "IDENTITY_MISMATCH" })),
     );
     return yield* Schema.decodeUnknownEffect(Schema.toType(OneClawCustomerAuthority))({
       connection,
       credential,
       payload,
-    }).pipe(
-      Effect.mapError(() => new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" })),
-    );
+    }).pipe(Effect.mapError(() => new ProviderConnectionError({ code: "IDENTITY_MISMATCH" })));
   });
 
   return Effect.fn("application.oneclaw.ensureCustomer")(function* (
     organizationId: OrganizationId,
+    options?: { readonly existingConnectionId: ProviderConnectionId },
   ) {
     const claw = yield* OneClawService;
     const oidc = yield* OneClawOidcService;
@@ -72,6 +71,14 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       );
 
     let connection = yield* connections.findByOrganization(organizationId, appId);
+    // Cleanup may renew authority, but must never repair setup or create a tenant.
+    if (
+      options &&
+      (!connection ||
+        connection.id !== options.existingConnectionId ||
+        connection.status !== "ready")
+    )
+      return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
     let newlyReserved = false;
     if (!connection) {
       connection = yield* transaction.run(
@@ -111,6 +118,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       let current = yield* connections.findByOrganization(organizationId, appId);
       if (!current || current.status === "disabled")
         return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
+      if (options && (current.id !== options.existingConnectionId || current.status !== "ready"))
+        return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
       if (current.externalConnectionId === null) {
         const recovered = yield* claw.connections.findBySubject(current.data.oidcSubject);
         let remote;
@@ -264,6 +273,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       current = yield* connections.findByOrganization(organizationId, appId);
       if (!current || !credential || credential.type !== "1claw-customer")
         return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
+      if (options && (current.id !== options.existingConnectionId || current.status !== "ready"))
+        return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
       let authority = yield* decodeAuthority(current, credential);
       yield* claw.customers.getIdentity(authority);
       if (current.status !== "ready") {
