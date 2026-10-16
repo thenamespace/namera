@@ -25,7 +25,7 @@ async function requestContent(
     return { request, pathname: path, context: options?.context, response };
   };
   const options = await startInstance.getOptions();
-  const middleware = options.requestMiddleware?.[0]?.options.server;
+  const middleware = options.requestMiddleware?.[1]?.options.server;
   if (!middleware) throw new Error("Documentation middleware missing");
   // This middleware calls next without extending TanStack's generic context.
   const result = await middleware({

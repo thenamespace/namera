@@ -1,8 +1,12 @@
-import { createMiddleware, createStart } from "@tanstack/react-start";
+import { createCsrfMiddleware, createMiddleware, createStart } from "@tanstack/react-start";
 
 import { isMarkdownPreferred } from "fumadocs-core/negotiation";
 
 import { markdownResponse } from "#/lib/markdown/response";
+
+const csrfMiddleware = createCsrfMiddleware({
+  filter: (ctx) => ctx.handlerType === "serverFn",
+});
 
 const documentationAccess = createMiddleware().server(async ({ request, next, handlerType }) => {
   if (handlerType !== "router" || !["GET", "HEAD"].includes(request.method)) return next();
@@ -109,4 +113,6 @@ const documentationAccess = createMiddleware().server(async ({ request, next, ha
   return result;
 });
 
-export const startInstance = createStart(() => ({ requestMiddleware: [documentationAccess] }));
+export const startInstance = createStart(() => ({
+  requestMiddleware: [csrfMiddleware, documentationAccess],
+}));

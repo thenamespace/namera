@@ -34,6 +34,10 @@ origins, and public destinations are centralized rather than assembled per compo
 
 ## Service boundary
 
+Start request middleware applies TanStack's same-origin CSRF checks to server
+functions before content negotiation. Cross-site and headerless RPC requests
+are rejected; public routes remain available to ordinary cross-site navigation.
+
 The waitlist form calls the server's public endpoint without browser credentials.
 The API owns validation, rate limits, persistence, and email enqueueing. The site
 needs the matching `WAITLIST_CORS_ORIGIN`; no admin credential belongs here.
