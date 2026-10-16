@@ -18,6 +18,11 @@ MDX is trusted executable repository content, not an upload format. Blog drafts
 are outside the compiled collection. Future publication dates hide articles from
 the published list but do not make deployed source confidential.
 
+Blog `cover` and `seo.image` frontmatter contain asset slugs, resolved by the
+server catalog under `https://cdn.namera.ai/`. The catalog supplies the post title
+as alt text and 1200 × 630 dimensions to article, listing, search, and social
+metadata consumers. Asset uploads are managed separately from the website build.
+
 Documentation groups are Dashboard, SDK, CLI, and MCP. The build produces processed
 Markdown and structured search content from the same expanded source. Request
 middleware supports `.md` URLs and Markdown content negotiation, with `Vary: Accept`.
@@ -28,6 +33,10 @@ native runtime assets are traced into the Node output. SEO metadata, canonical
 origins, and public destinations are centralized rather than assembled per component.
 
 ## Service boundary
+
+Start request middleware applies TanStack's same-origin CSRF checks to server
+functions before content negotiation. Cross-site and headerless RPC requests
+are rejected; public routes remain available to ordinary cross-site navigation.
 
 The waitlist form calls the server's public endpoint without browser credentials.
 The API owns validation, rate limits, persistence, and email enqueueing. The site

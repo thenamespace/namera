@@ -36,6 +36,12 @@ Follow the [public documentation conventions](../../AGENTS.md#public-docs-writin
 MDX is executable trusted source. Future-dated posts are hidden from publication
 lists, not protected from access to deployed assets.
 
+Blog frontmatter accepts a CDN asset slug for `cover` and the optional `seo.image`
+override, for example `cover: blog/my-post/cover.webp`. Slugs resolve under
+`https://cdn.namera.ai/`; full URLs and leading slashes are not accepted. Images
+use the post title as alt text and dimensions of 1200 × 630. Upload the matching
+assets to the CDN before publishing; the website does not upload them.
+
 HTML, search, Markdown, and LLM indexes derive from the same documentation source.
 See [website architecture](../../architecture/interfaces/website.md).
 

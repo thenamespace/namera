@@ -1,5 +1,12 @@
 import { blog } from "../../../.source/server";
-import type { BlogPost } from "./schema";
+import type { BlogImage, BlogPost } from "./schema";
+
+const cdnImage = (slug: string, title: string): BlogImage => ({
+  src: `https://cdn.namera.ai/${slug}`,
+  alt: title,
+  width: 1200,
+  height: 630,
+});
 
 // Bundle the authored text for search; no filesystem access is needed in Nitro.
 // Avoid Fumadocs' processed Markdown stringifier, which recurses on strong text
@@ -29,8 +36,13 @@ const catalog = Promise.all(
       updated: entry.updated,
       tags: entry.tags,
       authors: entry.authors,
-      cover: entry.cover,
-      seo: entry.seo,
+      cover: entry.cover ? cdnImage(entry.cover, entry.title) : undefined,
+      seo: entry.seo
+        ? {
+            ...entry.seo,
+            image: entry.seo.image ? cdnImage(entry.seo.image, entry.title) : undefined,
+          }
+        : undefined,
       readingMinutes: Math.max(1, Math.ceil(text.split(/\s+/).length / 220)),
       searchText: text,
     };
