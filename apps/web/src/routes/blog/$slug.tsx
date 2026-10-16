@@ -41,7 +41,7 @@ function BlogArticle() {
             width={post.cover.width}
             height={post.cover.height}
             fetchPriority="high"
-            className="mx-auto mt-10 aspect-video w-full max-w-3xl rounded-lg object-cover md:mt-12"
+            className="mx-auto mt-10 aspect-[1200/630] w-full max-w-3xl rounded-lg object-cover md:mt-12"
           />
         ) : null}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-muted">

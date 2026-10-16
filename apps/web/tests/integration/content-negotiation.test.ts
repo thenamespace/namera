@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 import { filterPosts } from "../../src/lib/blog/catalog";
 import { renderBlogRss } from "../../src/lib/blog/rss";
+import { articleHead } from "../../src/lib/blog/seo";
 import { getPublishedPosts } from "../../src/lib/blog/source.server";
 import { startInstance } from "../../src/start";
 
@@ -141,4 +142,33 @@ it("publishes compiled blog content only once its publication day arrives", asyn
   expect(await (await requestContent(`/blog/${slug}.md`, { method: "HEAD" })).response.text()).toBe(
     "",
   );
+});
+
+it("resolves both published covers to CDN WebP assets for display and social metadata", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-16T00:00:00Z"));
+
+  const posts = await getPublishedPosts();
+  for (const slug of [
+    "agents-need-permissions-not-private-keys",
+    "managed-accounts-on-namera-backed-by-1claw",
+  ]) {
+    const post = posts.find((article) => article.slug === slug);
+    if (!post) throw new Error(`Missing published post: ${slug}`);
+
+    const imageUrl = `https://cdn.namera.ai/blog/${slug}/cover.webp`;
+    expect(post.cover).toEqual({
+      src: imageUrl,
+      alt: post.title,
+      width: 1200,
+      height: 630,
+    });
+
+    const head = articleHead(post);
+    expect(head.meta).toContainEqual({ property: "og:image", content: imageUrl });
+    expect(head.meta).toContainEqual({ name: "twitter:image", content: imageUrl });
+    expect(head.scripts.map((script) => JSON.parse(script.children))).toContainEqual(
+      expect.objectContaining({ "@type": "BlogPosting", image: imageUrl }),
+    );
+  }
 });

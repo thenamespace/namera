@@ -14,7 +14,7 @@ const frontmatter = {
   authors: [{ name: "Example Author" }],
 };
 const post: BlogPost = {
-  ...Schema.decodeUnknownSync(BlogFrontmatter)(frontmatter),
+  ...frontmatter,
   slug: "wallets-and-agents",
   path: "wallets-and-agents.mdx",
   readingMinutes: 2,
@@ -27,8 +27,25 @@ describe("blog publication inputs and discovery", () => {
     ["update before publication", { updated: "2026-09-30" }],
     ["empty author list", { authors: [] }],
     ["unsafe author link", { authors: [{ name: "Example", url: "javascript:alert(1)" }] }],
+    ["external cover URL", { cover: "https://images.example.com/cover.webp" }],
+    ["absolute cover path", { cover: "/blog/example/cover.webp" }],
+    ["cover path traversal", { cover: "../example/cover.webp" }],
+    ["external social image", { seo: { image: "https://images.example.com/og.webp" } }],
   ])("rejects %s before publishing", (_label, invalid) => {
     expect(Schema.is(BlogFrontmatter)({ ...frontmatter, ...invalid })).toBe(false);
+  });
+
+  it("accepts CDN asset slugs for cover and social images", () => {
+    expect(
+      Schema.decodeUnknownSync(BlogFrontmatter)({
+        ...frontmatter,
+        cover: "blog/wallets-and-agents/cover.webp",
+        seo: { image: "blog/wallets-and-agents/social.webp" },
+      }),
+    ).toMatchObject({
+      cover: "blog/wallets-and-agents/cover.webp",
+      seo: { image: "blog/wallets-and-agents/social.webp" },
+    });
   });
 
   it("combines search terms across content and author with the selected tag", () => {

@@ -18,6 +18,11 @@ MDX is trusted executable repository content, not an upload format. Blog drafts
 are outside the compiled collection. Future publication dates hide articles from
 the published list but do not make deployed source confidential.
 
+Blog `cover` and `seo.image` frontmatter contain asset slugs, resolved by the
+server catalog under `https://cdn.namera.ai/`. The catalog supplies the post title
+as alt text and 1200 × 630 dimensions to article, listing, search, and social
+metadata consumers. Asset uploads are managed separately from the website build.
+
 Documentation groups are Dashboard, SDK, CLI, and MCP. The build produces processed
 Markdown and structured search content from the same expanded source. Request
 middleware supports `.md` URLs and Markdown content negotiation, with `Vary: Accept`.

@@ -18,7 +18,7 @@ export function PostCard({ post }: { post: BlogPost }) {
             width={post.cover.width}
             height={post.cover.height}
             loading="lazy"
-            className="mb-6 aspect-video w-full rounded-lg border border-border object-cover"
+            className="mb-6 aspect-[1200/630] w-full rounded-lg border border-border object-cover"
           />
         ) : null}
         <h2 className="text-lg font-medium tracking-tight text-foreground">{post.title}</h2>
