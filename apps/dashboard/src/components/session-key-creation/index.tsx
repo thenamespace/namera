@@ -245,7 +245,7 @@ function SessionKeyForm({
                   id="create-session-key-form"
                   noValidate
                   onSubmit={handleSubmit}
-                  className="mt-6 flex items-center justify-between border-t border-separator pt-5"
+                  className="mt-6 flex items-center justify-between pt-5"
                 >
                   <Button
                     type="button"

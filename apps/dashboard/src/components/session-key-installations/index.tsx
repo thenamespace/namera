@@ -13,7 +13,7 @@ import { Button, Typography } from "@namera-ai/ui";
 import { useInterval } from "usehooks-ts";
 
 import { billingAtom } from "@/atoms/billing";
-import { ChainDisplay, EvmAddressDisplay } from "@/components/display";
+import { ChainDisplay } from "@/components/display";
 import { PermissionGuard } from "@/components/permission";
 import {
   useActiveSessionKeyOperation,
@@ -139,21 +139,14 @@ function Installation({
   return (
     <article className="rounded-lg border border-separator px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <div className="grid min-w-0 flex-1 gap-1">
-          <header className="flex min-h-5 items-center [&_.typography]:leading-5">
+        <header className="flex min-w-0 flex-1 items-center">
+          <div className="inline-flex min-h-8 min-w-0 items-center gap-3 rounded-full bg-default px-3 py-1">
             <ChainDisplay chainId={installation.chainId} />
-          </header>
-          <div className="flex min-h-4 flex-wrap items-center gap-x-2 gap-y-1 leading-4">
-            <EvmAddressDisplay address={installation.authorization.signerAddress} />
-            <Typography.Paragraph
-              size="xs"
-              color="muted"
-              className="rounded-sm bg-default px-1 py-0 text-[10px] leading-4 capitalize"
-            >
+            <Typography.Paragraph size="xs" color="muted" className="shrink-0 capitalize">
               {installation.status}
             </Typography.Paragraph>
           </div>
-        </div>
+        </header>
         {eligible || waitingForConfirmation ? (
           <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>
             <div className="shrink-0">
