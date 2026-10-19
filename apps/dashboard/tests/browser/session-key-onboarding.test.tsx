@@ -21,7 +21,7 @@ import {
 import { Sidebar } from "@namera-ai/ui";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import { currentUserAtom } from "../../src/atoms/auth/session";
 import { DashboardPage } from "../../src/components/page";
@@ -245,7 +245,7 @@ it("keeps the return source without reapplying the consumed preset", async () =>
   expect(boundary.mutate).not.toHaveBeenCalled();
 });
 
-it("disables creation when the required onchain permission is removed", async () => {
+it("explains missing permissions and validates Create before sending a request", async () => {
   await mountCreation();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   const create = page.getByRole("button", { name: "Create session key", exact: true });
@@ -253,8 +253,91 @@ it("disables creation when the required onchain permission is removed", async ()
   await page
     .getByRole("button", { name: "Remove unrestricted account access", exact: true })
     .click();
-  await expect.element(create).toBeDisabled();
+  await expect.element(create).toBeEnabled();
+  await expect
+    .element(page.getByText("Add an account permission for Base to continue.", { exact: true }))
+    .toBeVisible();
+  await create.click();
+  const policies = page.getByRole("group", { name: "Base policies", exact: true });
+  await expect
+    .element(policies.getByRole("alert"))
+    .toHaveTextContent("Add an account permission for Base to continue.Add policy");
+  expect(document.activeElement).toBe(policies.element());
   expect(boundary.mutate).not.toHaveBeenCalled();
+  await policies.getByRole("button", { name: "Add policy", exact: true }).click();
+  await expect
+    .element(page.getByRole("dialog", { name: "Add a policy", exact: true }))
+    .toBeVisible();
+  await page
+    .getByRole("button", { name: "Configure Unrestricted account access", exact: true })
+    .click();
+  await expect
+    .element(page.getByText("Add an account permission for Base to continue.", { exact: true }))
+    .not.toBeInTheDocument();
+  await create.click();
+  await expect.poll(() => boundary.mutate.mock.calls.length).toBe(1);
+});
+
+it("guides ordinary creation before any permissions are configured", async () => {
+  await mountCreation(`?accountId=${olderSessionAccount.id}`);
+  await page.getByRole("textbox", { name: /^Name/ }).fill("Agent key");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  const policies = page.getByRole("group", { name: "Ethereum policies", exact: true });
+  await expect
+    .element(policies.getByRole("status"))
+    .toHaveTextContent("Add an account permission for Ethereum to continue.Add policy");
+  const create = page.getByRole("button", { name: "Create session key", exact: true });
+  await expect.element(create).toBeEnabled();
+  await create.click();
+  await expect.element(policies.getByRole("alert")).toBeVisible();
+  expect(boundary.mutate).not.toHaveBeenCalled();
+});
+
+it("reveals and focuses an invalid network when creating from another network", async () => {
+  await mountCreation();
+  await expect
+    .element(page.getByRole("textbox", { name: /^Name/ }))
+    .toHaveValue("My first session key");
+  await page.getByRole("button", { name: /Networks/ }).click();
+  await page.getByRole("option", { name: "Ethereum", exact: true }).click();
+  await userEvent.keyboard("{Escape}");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect
+    .element(page.getByRole("group", { name: "Base policies", exact: true }))
+    .toBeVisible();
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+  const policies = page.getByRole("group", { name: "Ethereum policies", exact: true });
+  await expect.element(policies).toBeVisible();
+  await expect
+    .element(policies.getByRole("alert"))
+    .toHaveTextContent("Add an account permission for Ethereum to continue.Add policy");
+  expect(document.activeElement).toBe(policies.element());
+  expect(boundary.mutate).not.toHaveBeenCalled();
+});
+
+it("keeps Create available and explains when a policy draft needs to be saved", async () => {
+  await mountCreation();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Edit lifetime", exact: true }).click();
+  const create = page.getByRole("button", { name: "Create session key", exact: true });
+  await expect.element(create).toBeEnabled();
+  await create.click();
+  await expect
+    .element(
+      page.getByText("Save or cancel the policy you’re editing before creating the key.", {
+        exact: true,
+      }),
+    )
+    .toBeVisible();
+  expect(boundary.mutate).not.toHaveBeenCalled();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect
+    .element(
+      page.getByText("Save or cancel the policy you’re editing before creating the key.", {
+        exact: true,
+      }),
+    )
+    .not.toBeInTheDocument();
 });
 
 it.each([false, true])(

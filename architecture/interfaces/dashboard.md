@@ -96,8 +96,12 @@ Templates retain `/recipes` route paths and use the private recipes package.
 Forms use React Hook Form with Effect Schema through the Standard Schema resolver.
 The server remains the validation boundary. Domain mutation hooks expose
 `onSuccess`, `onError`, and `onSettled`; shared feedback maps typed errors to toasts.
-Session-key creation subscribes to form validity before switching from details to
-policies, so valid prefilled permissions enable creation without a manual edit.
+Session-key creation keeps Create available for incomplete forms and runs the
+shared resolver on submission. Missing network permissions show an immediate
+hint with an Add policy action. Failed submission reveals and focuses the first
+invalid network, with inline validation messages. Create is disabled during
+submission; unfinished policy edits, resource limits, and uncertain managed
+creation show explicit blockers and cannot dispatch a creation request.
 
 Settings autosave debounces edits, serializes saves, and checks captured authority
 before dispatch, including an unmount/pagehide flush. Read-only forms disable

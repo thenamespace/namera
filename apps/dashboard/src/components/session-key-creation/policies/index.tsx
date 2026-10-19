@@ -1,12 +1,14 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-jsx-as-prop
 import { useState, type ReactNode } from "react";
 
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
 import { FieldError, Modal } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
 import { EvmPolicySummary, type SignaturePolicyInput } from "@/components/policy/evm";
+import { hasTransactionAccess } from "@/components/policy/evm/onchain/catalog";
 import { OnchainPolicyCard } from "@/components/policy/evm/onchain/display-card";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 import { SessionPolicyCard } from "@/components/policy/evm/session-policy-card";
@@ -71,6 +73,14 @@ export function PolicySection({
   const signature = onchain.allowSignatures ? sharedSignature : undefined;
   const [signatureError, setSignatureError] = useState<string>();
   const errors = form.formState.errors.onchain?.installations?.[installationIndex];
+  const needsPermission =
+    permissions.length === 0 || (!hasTransactionAccess(permissions) && !onchain.allowSignatures);
+  const networkName = getChainDataByCaip2(onchain.chainId)?.chain.name ?? onchain.chainId;
+  const addDisabled = editing || !wallets.some((wallet) => wallet.id === walletId);
+  const openPicker = () => {
+    setPane({});
+    onEditingChange(true);
+  };
   const saveSignature = (policy?: SignaturePolicyInput) => {
     if (
       !policy &&
@@ -154,24 +164,27 @@ export function PolicySection({
     <section className="grid gap-3">
       <div className="mb-1 flex items-end gap-3">
         <div className="min-w-0 flex-1">{networkSelector}</div>
-        <div className="shrink-0">
-          <AddPolicyButton
-            disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
-            onPress={() => {
-              setPane({});
-              onEditingChange(true);
-            }}
-          />
-        </div>
+        {!needsPermission ? (
+          <div className="shrink-0">
+            <AddPolicyButton disabled={addDisabled} onPress={openPicker} />
+          </div>
+        ) : null}
       </div>
-      {form.formState.isSubmitted &&
-      (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
+      {needsPermission ? (
+        <div
+          role={form.formState.isSubmitted ? "alert" : "status"}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-separator bg-surface/50 p-3 text-sm"
+        >
+          <p className="min-w-0 flex-1">Add an account permission for {networkName} to continue.</p>
+          <AddPolicyButton disabled={addDisabled} onPress={openPicker} />
+        </div>
+      ) : null}
+      {form.formState.isSubmitted && (errors?.permissions || errors?.allowSignatures) ? (
         <FieldError
           errors={[
-            errors?.permissions,
-            errors?.permissions?.root,
+            needsPermission ? undefined : errors?.permissions,
+            needsPermission ? undefined : errors?.permissions?.root,
             errors?.allowSignatures,
-            form.formState.errors.policies,
           ]}
         />
       ) : null}

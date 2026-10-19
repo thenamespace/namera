@@ -85,15 +85,24 @@ function SessionKeyForm({
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
-  // Subscribe before the policies screen mounts so untouched presets are validated too.
-  const { isValid } = form.formState;
+  const { errors, isSubmitted, isSubmitting } = form.formState;
   const selectedCustody = useWatch({ control: form.control, name: "custody" });
   const installations = useWatch({ control: form.control, name: "onchain.installations" });
   const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
+  const creationBlocker = managedCreationFailed
+    ? "Creation couldn’t be confirmed. Check your session keys before trying again."
+    : limitReached
+      ? "Your session-key limit is reached. Go back to details to review custody options."
+      : editingPolicy
+        ? "Save or cancel the policy you’re editing before creating the key."
+        : undefined;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (limitReached || step !== "policies" || editingPolicy) return;
-    void form.handleSubmit(creation.submit)(event);
+    if (creationBlocker || creation.isPending || isSubmitting || step !== "policies") return;
+    void form.handleSubmit(creation.submit, (invalidFields) => {
+      if (invalidFields.metadata || invalidFields.walletId || invalidFields.custody)
+        setStep("details");
+    })(event);
   };
 
   return (
@@ -226,10 +235,15 @@ function SessionKeyForm({
                   editing={editingPolicy}
                   onEditingChange={setEditingPolicy}
                 />
-                {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
+                {isSubmitted && Object.keys(errors).length > 0 ? (
                   <Typography.Paragraph role="alert" className="mt-3 text-danger" size="sm">
-                    Review the account, lifetime and permission fields before continuing.
+                    Review the highlighted fields before creating your key.
                   </Typography.Paragraph>
+                ) : null}
+                {creationBlocker ? (
+                  <output id="create-session-key-blocker" className="mt-3 block text-sm text-muted">
+                    {creationBlocker}
+                  </output>
                 ) : null}
 
                 <form
@@ -249,14 +263,10 @@ function SessionKeyForm({
                   <Button
                     className="mt-4"
                     form="create-session-key-form"
-                    isDisabled={
-                      managedCreationFailed ||
-                      editingPolicy ||
-                      limitReached ||
-                      creation.isPending ||
-                      form.formState.isSubmitting ||
-                      !isValid
-                    }
+                    {...(creationBlocker
+                      ? { "aria-describedby": "create-session-key-blocker" }
+                      : {})}
+                    isDisabled={creation.isPending || isSubmitting}
                     type="submit"
                   >
                     {creation.isPending ? "Creating…" : "Create session key"}
