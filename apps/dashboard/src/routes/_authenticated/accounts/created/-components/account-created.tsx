@@ -13,9 +13,11 @@ import { AccountOverview } from "../../../account/-components/account-overview";
 export function AccountCreated({
   account,
   canCreateSessionKey,
+  onboarding = false,
 }: {
   account: WalletResponse;
   canCreateSessionKey: boolean;
+  onboarding?: boolean;
 }) {
   return (
     <DashboardPage>
@@ -33,7 +35,11 @@ export function AccountCreated({
                   "h-auto min-h-16 w-full justify-start gap-3 rounded-lg bg-default/40 px-3 py-3 text-left whitespace-normal transition-colors hover:bg-default/80",
               })}
               to="/session-keys/new"
-              search={{ accountId: account.id }}
+              search={
+                onboarding
+                  ? { accountId: account.id, from: "get-started" }
+                  : { accountId: account.id }
+              }
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface/60">
                 <HugeiconsIcon aria-hidden className="size-4 text-muted" icon={Key01Icon} />
@@ -56,13 +62,20 @@ export function AccountCreated({
             </Typography.Paragraph>
           )}
         </section>
-        <Link
-          className={buttonVariants({ variant: "tertiary", size: "sm", className: "mt-6" })}
-          to="/account/$accountId/overview"
-          params={{ accountId: account.id }}
-        >
-          View account
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {onboarding ? (
+            <Link className={buttonVariants({ variant: "primary", size: "sm" })} to="/get-started">
+              Continue setup
+            </Link>
+          ) : null}
+          <Link
+            className={buttonVariants({ variant: "tertiary", size: "sm" })}
+            to="/account/$accountId/overview"
+            params={{ accountId: account.id }}
+          >
+            View account
+          </Link>
+        </div>
       </DashboardPage.Content>
     </DashboardPage>
   );

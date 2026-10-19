@@ -21,7 +21,7 @@ type AuthFormProps = {
   returnTo?: EmailFormOutput["returnTo"];
 };
 
-export function AuthForm({ returnTo, invite, google }: AuthFormProps) {
+export function AuthForm({ returnTo = "/get-started", invite, google }: AuthFormProps) {
   const form = useForm<EmailFormInput, unknown, EmailFormOutput>({
     defaultValues: {
       email: "",

@@ -8,10 +8,12 @@ import { hasPermissions } from "@/components/permission";
 import { PermissionDenied } from "@/components/permission-denied";
 
 import { CreateAccountForm } from "./-components/create-account-form";
+import { validateAccountCreationSearch } from "./-components/creation-search";
 
 const walletCreatePermission = ["wallet:create"] as const;
 
 export const Route = createFileRoute("/_authenticated/accounts/new")({
+  validateSearch: validateAccountCreationSearch,
   loader: async ({ abortController, context }) => {
     const currentUser = await prefetchQuery(
       context.atomRegistry,
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/accounts/new")({
 
 function CreateAccountPage() {
   const { canCreate } = Route.useLoaderData();
+  const { from } = Route.useSearch();
 
   return (
     <DashboardPage>
@@ -46,7 +49,7 @@ function CreateAccountPage() {
                 Create a programmable smart account for this workspace.
               </HeadingGroup.Description>
             </HeadingGroup>
-            <CreateAccountForm />
+            <CreateAccountForm onboarding={from === "get-started"} />
           </>
         ) : (
           <PermissionDenied />

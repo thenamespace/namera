@@ -29,6 +29,11 @@ const mcp: PageSeo = {
 
 // Exhaustive against the generated route tree: a new route must have metadata.
 export const pageSeo = {
+  "/_authenticated/get-started": {
+    title: "Get started",
+    description:
+      "Set up your first account, session key, AI client connection, and agent action in Namera.",
+  },
   "/_authenticated/identity/new": {
     title: "Create identity",
     description: "Give your account a namera.id name and public profile.",

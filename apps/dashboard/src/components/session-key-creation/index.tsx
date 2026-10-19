@@ -7,23 +7,21 @@ import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { type ListWalletsResponse } from "@namera-ai/protocol/dto";
-import type { MetadataIcon } from "@namera-ai/protocol/model";
-import type { RegisteredRecipe } from "@namera-ai/recipes";
 import { AlertDialog, Button, Typography } from "@namera-ai/ui";
-import { useForm, useWatch, type DefaultValues } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { HeadingGroup } from "@/components/heading-group";
 import { hasPermissions } from "@/components/permission";
 import type { TokenSpendingSelection } from "@/components/policy/evm/onchain/token-allowance/form";
 import { useCurrentUser } from "@/hooks/auth";
 import { useBilling } from "@/hooks/billing";
-import { supportsSessionKeys } from "@/lib/session-owner";
 
 import { ActivateSessionKey } from "./activate-key";
 import { SessionKeyCreated } from "./created";
 import type { CustodyLimits } from "./custody-field";
 import { sessionCustodyLimits } from "./custody-limits";
 import { SessionKeyDetailsCard } from "./details-card";
+import { createSessionKeyInitialValues, type SessionKeyInitialOptions } from "./initial-values";
 import { SessionNetworksField } from "./networks-field";
 import { InstallationPolicies } from "./policies/installations";
 import { RecipeCreationForm } from "./recipe-form";
@@ -32,34 +30,9 @@ import { SetupSessionKey } from "./setup-key";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 import { useSessionKeyCreation } from "./use-session-key-creation";
 
-const defaultLogo: MetadataIcon = { type: "emoji", value: "🔑" };
-const defaultValues = {
-  custody: "namera-managed",
-  namespace: "eip155",
-  metadata: {
-    version: 1,
-    name: "",
-    logo: defaultLogo,
-    description: "",
-  },
-  policies: [],
-  onchain: {
-    installations: [
-      {
-        chainId: "eip155:1",
-        validAfter: 0,
-        validUntil: 0,
-        permissions: [],
-        allowSignatures: false,
-      },
-    ],
-  },
-} satisfies DefaultValues<CreateSessionKeyFormInput>;
-
-type CreateSessionKeyFormProps = {
-  initialAccountId?: string | undefined;
+type CreateSessionKeyFormProps = SessionKeyInitialOptions & {
   wallets: ListWalletsResponse;
-  recipe?: RegisteredRecipe;
+  from?: "get-started" | undefined;
 };
 
 const unknownLimits: CustodyLimits = { local: false, managed: false };
@@ -87,30 +60,16 @@ function SessionKeyForm({
   initialAccountId,
   limits,
   recipe,
+  onboarding,
+  from,
 }: CreateSessionKeyFormProps & { limits: CustodyLimits }) {
-  const [initialValues] = useState(() => ({
-    ...defaultValues,
-    metadata: recipe
-      ? {
-          ...defaultValues.metadata,
-          ...recipe.metadata,
-        }
-      : defaultValues.metadata,
-    walletId:
-      wallets.find((wallet) => wallet.id === initialAccountId && supportsSessionKeys(wallet))?.id ??
-      "",
-    onchain: {
-      installations: [
-        {
-          chainId: "eip155:1" as const,
-          validAfter: 0,
-          permissions: [],
-          allowSignatures: false,
-          validUntil: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-        },
-      ],
-    },
-  }));
+  const [initialValues] = useState(() =>
+    createSessionKeyInitialValues(
+      wallets,
+      { initialAccountId, recipe, onboarding },
+      Math.floor(Date.now() / 1000),
+    ),
+  );
   const navigate = useNavigate();
   const creation = useSessionKeyCreation(wallets);
   const { registration, registrationError, managedCreationFailed, setup, needsBackup, blocker } =
@@ -126,13 +85,24 @@ function SessionKeyForm({
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
+  const { isSubmitting } = form.formState;
   const selectedCustody = useWatch({ control: form.control, name: "custody" });
   const installations = useWatch({ control: form.control, name: "onchain.installations" });
   const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
+  const creationBlocker = managedCreationFailed
+    ? "Creation couldn’t be confirmed. Check your session keys before trying again."
+    : limitReached
+      ? "Your session-key limit is reached. Go back to details to review custody options."
+      : editingPolicy
+        ? "Save or cancel the policy you’re editing before creating the key."
+        : undefined;
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (limitReached || step !== "policies" || editingPolicy) return;
-    void form.handleSubmit(creation.submit)(event);
+    if (creationBlocker || creation.isPending || isSubmitting || step !== "policies") return;
+    void form.handleSubmit(creation.submit, (invalidFields) => {
+      if (invalidFields.metadata || invalidFields.walletId || invalidFields.custody)
+        setStep("details");
+    })(event);
   };
 
   return (
@@ -141,6 +111,7 @@ function SessionKeyForm({
         <SessionKeyCreated
           sessionKey={registration}
           embedded
+          onboarding={from === "get-started"}
           onEnableNetworks={() => setCompleted(false)}
         />
       ) : null}
@@ -168,11 +139,13 @@ function SessionKeyForm({
             ) : registration.signer.custody === "namera-managed" ? (
               <ActivateSessionKey
                 sessionKey={registration}
+                onboarding={from === "get-started"}
                 onFinish={recipe ? () => setCompleted(true) : undefined}
               />
             ) : setup ? (
               <SetupSessionKey
                 sessionKey={registration}
+                onboarding={from === "get-started"}
                 draft={setup.draft}
                 bindings={setup.bindings}
                 onSaved={creation.acknowledgeBackup}
@@ -262,17 +235,17 @@ function SessionKeyForm({
                   editing={editingPolicy}
                   onEditingChange={setEditingPolicy}
                 />
-                {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 ? (
-                  <Typography.Paragraph role="alert" className="mt-3 text-danger" size="sm">
-                    Review the account, lifetime and permission fields before continuing.
-                  </Typography.Paragraph>
+                {creationBlocker ? (
+                  <output id="create-session-key-blocker" className="mt-3 block text-sm text-muted">
+                    {creationBlocker}
+                  </output>
                 ) : null}
 
                 <form
                   id="create-session-key-form"
                   noValidate
                   onSubmit={handleSubmit}
-                  className="mt-6 flex items-center justify-between border-t border-separator pt-5"
+                  className="mt-6 flex items-center justify-between pt-5"
                 >
                   <Button
                     type="button"
@@ -285,14 +258,10 @@ function SessionKeyForm({
                   <Button
                     className="mt-4"
                     form="create-session-key-form"
-                    isDisabled={
-                      managedCreationFailed ||
-                      editingPolicy ||
-                      limitReached ||
-                      creation.isPending ||
-                      form.formState.isSubmitting ||
-                      !form.formState.isValid
-                    }
+                    {...(creationBlocker
+                      ? { "aria-describedby": "create-session-key-blocker" }
+                      : {})}
+                    isDisabled={creation.isPending || isSubmitting}
                     type="submit"
                   >
                     {creation.isPending ? "Creating…" : "Create session key"}

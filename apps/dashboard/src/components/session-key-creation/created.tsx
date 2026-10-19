@@ -84,10 +84,12 @@ export function SessionKeyCreated({
   sessionKey: initialSessionKey,
   embedded = false,
   onEnableNetworks,
+  onboarding = false,
 }: {
   sessionKey: SessionKeyResponse;
   embedded?: boolean;
   onEnableNetworks?: () => void;
+  onboarding?: boolean;
 }) {
   const query = useSessionKey(initialSessionKey.id);
   const sessionKey = query.data ?? initialSessionKey;
@@ -225,13 +227,20 @@ export function SessionKeyCreated({
             ) : null}
           </div>
         </section>
-        <Link
-          className={buttonVariants({ variant: "tertiary", size: "sm", className: "mt-6" })}
-          to="/session-key/$sessionKeyId/overview"
-          params={{ sessionKeyId: sessionKey.id }}
-        >
-          View session key
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {onboarding ? (
+            <Link className={buttonVariants({ variant: "primary", size: "sm" })} to="/get-started">
+              Continue setup
+            </Link>
+          ) : null}
+          <Link
+            className={buttonVariants({ variant: "tertiary", size: "sm" })}
+            to="/session-key/$sessionKeyId/overview"
+            params={{ sessionKeyId: sessionKey.id }}
+          >
+            View session key
+          </Link>
+        </div>
       </Content>
       <Modal isOpen={cliOpen} onOpenChange={setCliOpen}>
         <Modal.Backdrop>

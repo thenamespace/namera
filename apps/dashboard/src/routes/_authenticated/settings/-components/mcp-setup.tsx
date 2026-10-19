@@ -1,41 +1,14 @@
 import { useState } from "react";
 
 import { CodeBlock, CopyIconButton, ListBox, Select } from "@namera-ai/ui";
-import { BrandClaudeIcon, BrandOpenaiIcon } from "@namera-ai/ui/icons";
 
 import { DashboardCardContent, DashboardCardRoot } from "@/components/dashboard-card";
 import { HeadingGroup } from "@/components/heading-group";
-
-const clients = [
-  {
-    id: "codex",
-    name: "Codex",
-    icon: BrandOpenaiIcon,
-    language: "bash",
-    instruction: "With the Namera CLI installed, run this in your terminal.",
-    code: "codex mcp add namera -- namera mcp serve --profile codex",
-  },
-  {
-    id: "claude",
-    name: "Claude Code",
-    icon: BrandClaudeIcon,
-    language: "bash",
-    instruction: "With the Namera CLI installed, run this in your terminal.",
-    code: "claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude",
-  },
-  {
-    id: "gemini",
-    name: "Gemini CLI",
-    logo: "/icons/mcp/gemini.svg",
-    language: "bash",
-    instruction: "With the Namera CLI installed, run this in your terminal.",
-    code: "gemini mcp add --scope user --transport stdio namera namera mcp serve -- --profile gemini",
-  },
-] as const;
+import { mcpClients } from "@/lib/mcp-clients";
 
 export function McpSetup() {
   const [client, setClient] = useState<string | number | null>("codex");
-  const selected = clients.find((option) => option.id === client) ?? clients[0];
+  const selected = mcpClients.find((option) => option.id === client) ?? mcpClients[0];
 
   return (
     <DashboardCardRoot className="mb-8">
@@ -60,7 +33,7 @@ export function McpSetup() {
             </Select.Trigger>
             <Select.Popover>
               <ListBox>
-                {clients.map((option) => (
+                {mcpClients.map((option) => (
                   <ListBox.Item key={option.id} id={option.id} textValue={option.name}>
                     <span className="flex items-center gap-2">
                       {"logo" in option ? (

@@ -1,8 +1,9 @@
 // oxlint-disable react-perf/jsx-no-new-array-as-prop react-perf/jsx-no-new-function-as-prop react-perf/jsx-no-jsx-as-prop
 import { useState, type ReactNode } from "react";
 
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import { FieldError, Modal, Typography } from "@namera-ai/ui";
+import { FieldError, Modal } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
@@ -71,6 +72,12 @@ export function PolicySection({
   const signature = onchain.allowSignatures ? sharedSignature : undefined;
   const [signatureError, setSignatureError] = useState<string>();
   const errors = form.formState.errors.onchain?.installations?.[installationIndex];
+  const networkName = getChainDataByCaip2(onchain.chainId)?.chain.name ?? onchain.chainId;
+  const addDisabled = editing || !wallets.some((wallet) => wallet.id === walletId);
+  const openPicker = () => {
+    setPane({});
+    onEditingChange(true);
+  };
   const saveSignature = (policy?: SignaturePolicyInput) => {
     if (
       !policy &&
@@ -155,23 +162,17 @@ export function PolicySection({
       <div className="mb-1 flex items-end gap-3">
         <div className="min-w-0 flex-1">{networkSelector}</div>
         <div className="shrink-0">
-          <AddPolicyButton
-            disabled={editing || !wallets.some((wallet) => wallet.id === walletId)}
-            onPress={() => {
-              setPane({});
-              onEditingChange(true);
-            }}
-          />
+          <AddPolicyButton disabled={addDisabled} onPress={openPicker} />
         </div>
       </div>
-      {form.formState.isSubmitted &&
-      (errors?.permissions || errors?.allowSignatures || form.formState.errors.policies) ? (
+      {form.formState.isSubmitted && (errors?.permissions || errors?.allowSignatures) ? (
         <FieldError
           errors={[
-            errors?.permissions,
-            errors?.permissions?.root,
+            permissions.length === 0 && errors?.permissions
+              ? { message: `Add at least one account access policy for ${networkName}.` }
+              : errors?.permissions,
+            permissions.length ? errors?.permissions?.root : undefined,
             errors?.allowSignatures,
-            form.formState.errors.policies,
           ]}
         />
       ) : null}
@@ -220,10 +221,6 @@ export function PolicySection({
             onRemove={() => saveSignature()}
           >
             <EvmPolicySummary policy={signature} />
-            <Typography.Paragraph size="xs" className="text-muted mt-2">
-              Signing rules are shared across enabled networks. Onchain authority is enabled on this
-              network.
-            </Typography.Paragraph>
           </SessionPolicyCard>
         ) : null}
         {signatureError ? <FieldError>{signatureError}</FieldError> : null}
