@@ -31,7 +31,8 @@ const mcp: PageSeo = {
 export const pageSeo = {
   "/_authenticated/get-started": {
     title: "Get started",
-    description: "Set up your first wallet, session key, integration, and agent action in Namera.",
+    description:
+      "Set up your first account, session key, AI client connection, and agent action in Namera.",
   },
   "/_authenticated/identity/new": {
     title: "Create identity",

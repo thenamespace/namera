@@ -26,7 +26,8 @@ do not keep showing cached protected data; ordinary network failures may retain 
 
 Normal dashboard sign-in defaults to `/get-started`; explicit invitation and
 OAuth/CLI return paths keep their destination. The checklist links to existing
-account, session-key and integration setup screens. Overview remains accessible.
+account, session-key and MCP setup screens. The guided path focuses on AI clients,
+with copyable starter prompts for message signing and transactions. Overview remains accessible.
 Its four workspace milestones use the existing overview and permission-gated
 API-key/CLI/MCP lists: an account, a session key, an integration with `lastUsedAt`
 (or a confirmed non-user execution), and a confirmed execution or successful

@@ -1,14 +1,7 @@
 import { useState } from "react";
 
 import { Button, cn, Typography } from "@namera-ai/ui";
-import {
-  ArrowUpRight01Icon,
-  BookOpen01Icon,
-  CheckmarkCircle02Icon,
-  HugeiconsIcon,
-  Key01Icon,
-  Wallet01Icon,
-} from "@namera-ai/ui/icons";
+import { CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useEventListener, useInterval } from "usehooks-ts";
 
 import type { useGettingStarted } from "@/hooks/getting-started";
@@ -20,51 +13,32 @@ import "./styles.css";
 
 const steps = [
   {
-    title: "Create your first wallet",
+    title: "Create your first account",
     description:
-      "A home for your agent’s funds. Create a smart account that you control, then decide what your agent can do with it.",
-    completed: "Your workspace has a wallet. You’ll find it under Accounts.",
+      "A Namera account is a smart wallet that holds funds and has its own blockchain address. You control the account and choose what your agent is allowed to do.",
+    completed:
+      "Your first account is ready. You can find its address, funds, and activity under Accounts.",
   },
   {
     title: "Give your agent a session key",
     description:
-      "Set the boundaries: which network, which actions, and how much your agent can spend. A session key gives it just that access.",
+      "A session key is your agent’s access pass to an account. You choose what it can do, which networks it can use, how much it can spend, and when access expires.",
     completed:
       "Your session key is created. Make sure it’s enabled on your chosen network before using it.",
   },
   {
-    title: "Connect your agent or app",
+    title: "Connect your AI client",
     description:
-      "Use Namera from your code, terminal, or AI client. Pick one way to connect and make your first authenticated request.",
-    completed: "An integration has used your workspace. Your agent or app is connected.",
+      "Connect an AI client such as Claude Code or Codex through MCP, which lets it use Namera’s tools. Give it access to your session key, then ask it to list your accounts to check the connection.",
+    completed:
+      "Your workspace has a connected integration. You can manage AI client access from MCP settings.",
   },
   {
     title: "Make your first transaction or signature",
     description:
-      "Put it all together. Use your connected integration to send a transaction or sign a message within your session key’s permissions.",
+      "Ask your connected AI client to use your account. Start by signing a short message, or send a transaction when you’re ready. Copy a starter prompt below and review the request before approving it.",
     completed:
       "Your workspace has completed its first transaction or signature. You’re ready to build.",
-  },
-] as const;
-
-const resources = [
-  {
-    title: "Understand your wallet",
-    description: "How accounts and session keys work together.",
-    href: "https://namera.ai/docs/sdk/accounts-and-session-keys",
-    icon: Wallet01Icon,
-  },
-  {
-    title: "Start with a template",
-    description: "Build scoped permissions for a specific task.",
-    href: "/recipes",
-    icon: Key01Icon,
-  },
-  {
-    title: "Build with Namera",
-    description: "Examples and guides for your integration.",
-    href: "https://namera.ai/docs",
-    icon: BookOpen01Icon,
   },
 ] as const;
 
@@ -88,10 +62,10 @@ export function GettingStarted({ setup }: GettingStartedProps) {
         >
           {setup.canFinish ? "You’re all set." : "Let’s get you set up."}
         </Typography.Heading>
-        <Typography.Paragraph className="mt-3 max-w-lg leading-relaxed" color="muted" size="sm">
+        <Typography.Paragraph className="mt-3 leading-relaxed" color="muted" size="sm">
           {setup.canFinish
-            ? "Your wallet, permissions, and integration are in place. Your next idea starts here."
-            : "From your first wallet to your first agent action. We’ll guide you through each step."}
+            ? "Your account and agent are ready. You can start building."
+            : "Set up your account, connect your AI client, and try your first action."}
         </Typography.Paragraph>
       </header>
 
@@ -171,11 +145,7 @@ export function GettingStarted({ setup }: GettingStartedProps) {
                   >
                     {expanded ? (
                       <div className="pb-7 pl-10">
-                        <Typography.Paragraph
-                          size="sm"
-                          color="muted"
-                          className="max-w-sm leading-relaxed"
-                        >
+                        <Typography.Paragraph size="sm" color="muted" className="leading-relaxed">
                           {complete ? step.completed : step.description}
                         </Typography.Paragraph>
                         <div className="mt-5">
@@ -203,49 +173,6 @@ export function GettingStarted({ setup }: GettingStartedProps) {
           <StepIllustration step={activeStep} finished={setup.canFinish} />
         </div>
       </div>
-
-      <section aria-labelledby="setup-explore" className="mt-14 lg:mt-20">
-        <Typography.Heading
-          id="setup-explore"
-          level={2}
-          className="mb-5 text-sm text-muted"
-          weight="normal"
-        >
-          A little more direction
-        </Typography.Heading>
-        <div className="grid gap-7 sm:grid-cols-3 sm:gap-8">
-          {resources.map((resource) => (
-            <a
-              key={resource.title}
-              href={resource.href}
-              target={resource.href.startsWith("https:") ? "_blank" : undefined}
-              rel={resource.href.startsWith("https:") ? "noreferrer" : undefined}
-              className="setup-resource group border-t border-separator pt-5"
-            >
-              <HugeiconsIcon
-                aria-hidden
-                icon={resource.icon}
-                size={20}
-                className="mb-4 text-muted"
-              />
-              <div className="flex items-center justify-between gap-2">
-                <Typography.Heading level={3} className="text-sm" weight="medium">
-                  {resource.title}
-                </Typography.Heading>
-                <HugeiconsIcon
-                  aria-hidden
-                  icon={ArrowUpRight01Icon}
-                  size={16}
-                  className="text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transform-none"
-                />
-              </div>
-              <Typography.Paragraph color="muted" size="sm" className="mt-2 leading-relaxed">
-                {resource.description}
-              </Typography.Paragraph>
-            </a>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

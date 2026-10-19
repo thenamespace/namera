@@ -1,5 +1,7 @@
 import { Navigate } from "@tanstack/react-router";
 
+import { HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
+
 import { HeadingGroup } from "@/components/heading-group";
 import { DashboardPage } from "@/components/page";
 import { useGettingStarted } from "@/hooks/getting-started";
@@ -20,12 +22,12 @@ export function GettingStartedPage() {
         </DashboardPage.Title>
         <DashboardPage.Side>
           <a
-            className="text-sm text-muted hover:text-foreground"
+            className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
             href="https://namera.ai/docs"
             target="_blank"
             rel="noreferrer"
           >
-            Documentation ↗
+            Documentation <HugeiconsIcon aria-hidden icon={LinkSquare02Icon} size={16} />
           </a>
         </DashboardPage.Side>
       </DashboardPage.Header>

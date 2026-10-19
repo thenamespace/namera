@@ -145,23 +145,23 @@ it("shows the sidebar progress and changes its illustration with the selected st
     .element(page.getByRole("link", { name: /Get started/ }))
     .toHaveTextContent("Get started0/4");
   await expect
-    .element(page.getByRole("button", { name: /Create your first wallet/ }))
+    .element(page.getByRole("button", { name: /Create your first account/ }))
     .toHaveAttribute("aria-expanded", "true");
-  await expect.element(page.getByText("Your wallet. Your control.")).toBeVisible();
+  await expect.element(page.getByText("Your account. Your control.")).toBeVisible();
   await page.getByRole("button", { name: /Give your agent a session key/ }).click();
   await expect.element(page.getByText("A key with clear boundaries.")).toBeVisible();
   await expect
-    .element(page.getByText("Create your wallet first, then add a session key."))
+    .element(page.getByText("Create your account first, then add a session key."))
     .toBeVisible();
   await expect
     .element(page.getByRole("link", { name: "Create session key", exact: true }))
     .not.toBeInTheDocument();
-  await page.getByRole("button", { name: /Connect your agent or app/ }).click();
-  await expect.element(page.getByText("Build where you already work.")).toBeVisible();
-  await page.getByRole("radio", { name: "SDK", exact: true }).click();
+  await page.getByRole("button", { name: /Connect your AI client/ }).click();
+  await expect.element(page.getByText("Your AI client, connected.")).toBeVisible();
   await expect
-    .element(page.getByRole("link", { name: "Create API key", exact: true }))
-    .toHaveAttribute("href", "/settings/workspace/api-keys");
+    .element(page.getByRole("link", { name: "Connect AI client", exact: true }))
+    .toHaveAttribute("href", "/settings/workspace/mcp");
+  await expect.element(page.getByRole("radiogroup")).not.toBeInTheDocument();
   await page.getByRole("button", { name: /Make your first transaction or signature/ }).click();
   await expect.element(page.getByText("From setup to something real.")).toBeVisible();
   await expect
@@ -175,7 +175,7 @@ it("resumes at the first unfinished step and retains navigation to Overview", as
     .element(page.getByRole("progressbar", { name: "Setup progress" }))
     .toHaveAttribute("value", "2");
   await expect
-    .element(page.getByRole("button", { name: /Connect your agent or app/ }))
+    .element(page.getByRole("button", { name: /Connect your AI client/ }))
     .toHaveAttribute("aria-expanded", "true");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect.element(page.getByText("Workspace overview", { exact: true })).toBeVisible();
@@ -243,9 +243,34 @@ it("keeps the checklist usable on a narrow screen without horizontal scrolling",
   await mountSetup();
   await expect.element(page.getByRole("heading", { name: "Let’s get you set up." })).toBeVisible();
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
-  await page.getByRole("button", { name: /Connect your agent or app/ }).click();
-  await expect.element(page.getByRole("radio", { name: "MCP", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Connect your AI client/ }).click();
+  await expect
+    .element(page.getByRole("link", { name: "Connect AI client", exact: true }))
+    .toBeVisible();
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   await page.getByRole("button", { name: "Open menu", exact: true }).click();
   await expect.element(page.getByRole("link", { name: /Get started/ })).toBeVisible();
+});
+
+it("offers MCP starter prompts without SDK or CLI choices", async () => {
+  const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  await mountSetup(setupOverview({ accounts: 1, sessionKeys: 1 }));
+  await page.getByRole("button", { name: /Make your first transaction or signature/ }).click();
+  await expect.element(page.getByRole("radiogroup")).not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: "A little more direction" }))
+    .not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: "Sign a message", exact: true }))
+    .toBeVisible();
+  await expect
+    .element(page.getByRole("heading", { name: "Send a transaction", exact: true }))
+    .toBeVisible();
+  await page.getByRole("button", { name: "Copy message signing prompt", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(1);
+  expect(writeText.mock.calls[0]?.[0]).toContain('"Hello from Namera"');
+  expect(writeText.mock.calls[0]?.[0]).toContain("ask for my approval before signing");
+  await page.getByRole("button", { name: "Copy transaction prompt", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(2);
+  expect(writeText.mock.calls[1]?.[0]).toContain("Wait for my approval before sending");
 });

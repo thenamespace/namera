@@ -2,7 +2,6 @@ import {
   ArrowRight01Icon,
   BotIcon,
   CheckmarkCircle02Icon,
-  CodeIcon,
   HugeiconsIcon,
   Key01Icon,
   NameraIcon,
@@ -14,7 +13,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 const captions = [
   {
-    title: "Your wallet. Your control.",
+    title: "Your account. Your control.",
     description: "One smart account, with permissions built in.",
   },
   {
@@ -22,8 +21,8 @@ const captions = [
     description: "Give your agent permission, without giving it everything.",
   },
   {
-    title: "Build where you already work.",
-    description: "Your code, terminal, or AI client. The same wallet.",
+    title: "Your AI client, connected.",
+    description: "Connect your AI client to your Namera account.",
   },
   {
     title: "From setup to something real.",
@@ -112,7 +111,7 @@ function WalletScene() {
           <NameraIcon className="h-5 w-6 fill-current text-muted" />
         </div>
         <p className="setup-small-label">Smart account</p>
-        <p className="setup-card-title">My agent wallet</p>
+        <p className="setup-card-title">My agent account</p>
         <div className="setup-address">
           0x71C…9A42 <span className="setup-address-dots">•••</span>
         </div>
@@ -169,22 +168,12 @@ function ConnectionScene() {
         <NameraIcon className="h-9 w-11 fill-current" />
       </div>
       <div className="setup-connection-lines">
-        <span />
-        <span />
-        <span />
+        <span className="setup-connection-label">MCP</span>
       </div>
       <div className="setup-connection-clients">
         <div className="setup-client-tile">
-          <HugeiconsIcon icon={CodeIcon} size={24} />
-          <span>SDK</span>
-        </div>
-        <div className="setup-client-tile">
-          <span className="text-xl font-medium">&gt;_</span>
-          <span>CLI</span>
-        </div>
-        <div className="setup-client-tile">
-          <HugeiconsIcon icon={BotIcon} size={24} />
-          <span>MCP</span>
+          <HugeiconsIcon icon={BotIcon} size={28} />
+          <span>Your AI client</span>
         </div>
       </div>
       <div className="setup-product-card setup-request-card">
@@ -235,7 +224,7 @@ function CompleteScene() {
       <div className="setup-product-card setup-complete-card">
         <p className="setup-card-title">Ready when you are.</p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          A wallet. Clear permissions.
+          An account. Clear permissions.
           <br />
           An agent connected. A first action done.
         </p>
