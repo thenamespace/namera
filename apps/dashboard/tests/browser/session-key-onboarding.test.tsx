@@ -174,7 +174,7 @@ it("enables creation for the untouched preset and submits exactly the reviewed p
   await expect.poll(() => router.state.location.searchStr).toBe("?from=get-started");
   expect(boundary.mutate).not.toHaveBeenCalled();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect.element(page.getByText("Access duration", { exact: true })).toBeVisible();
+  await expect.element(page.getByText("Start and expiry", { exact: true })).toBeVisible();
   await expect.element(page.getByText("Signatures", { exact: true })).toBeVisible();
   await expect
     .element(page.getByText("Unrestricted account access", { exact: true }))
@@ -316,7 +316,7 @@ it("reveals and focuses an invalid network when creating from another network", 
 it("keeps Create available and explains when a policy draft needs to be saved", async () => {
   await mountCreation();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("button", { name: "Edit access duration", exact: true }).click();
+  await page.getByRole("button", { name: "Edit start and expiry", exact: true }).click();
   const create = page.getByRole("button", { name: "Create session key", exact: true });
   await expect.element(create).toBeEnabled();
   await create.click();

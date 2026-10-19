@@ -139,13 +139,15 @@ function Installation({
   return (
     <article className="rounded-lg border border-separator px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <header className="flex min-w-0 flex-1 items-center">
-          <div className="inline-flex min-h-8 min-w-0 items-center gap-3 rounded-full bg-default px-3 py-1">
-            <ChainDisplay chainId={installation.chainId} />
-            <Typography.Paragraph size="xs" color="muted" className="shrink-0 capitalize">
-              {installation.status}
-            </Typography.Paragraph>
-          </div>
+        <header className="flex min-w-0 flex-1 items-center gap-3">
+          <ChainDisplay chainId={installation.chainId} />
+          <Typography.Paragraph
+            size="xs"
+            color="muted"
+            className="flex h-6 shrink-0 items-center rounded-full bg-default px-2 capitalize"
+          >
+            {installation.status}
+          </Typography.Paragraph>
         </header>
         {eligible || waitingForConfirmation ? (
           <PermissionGuard required={kind === "install" ? createPermission : revokePermission}>

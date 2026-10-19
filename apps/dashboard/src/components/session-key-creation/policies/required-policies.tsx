@@ -41,7 +41,7 @@ export function RequiredPolicies({
   return (
     <>
       <SessionPolicyCard
-        name="Access duration"
+        name="Start and expiry"
         logo={lifetimeLogo}
         onEdit={() => onEdit("lifetime")}
         selected={editing === "lifetime"}

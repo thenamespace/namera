@@ -48,7 +48,7 @@ export function SessionKeyPolicies({ sessionKey }: SessionKeyPoliciesProps) {
         </Field>
         <div className="grid gap-3">
           {installations.map(({ id, authorization }) => (
-            <SessionPolicyCard key={id} name="Access duration" logo={lifetimeLogo}>
+            <SessionPolicyCard key={id} name="Start and expiry" logo={lifetimeLogo}>
               <LifetimeSummary
                 validAfter={authorization.validAfter}
                 validUntil={authorization.validUntil}
