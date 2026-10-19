@@ -1,5 +1,20 @@
 # @namera-ai/sdk
 
+## 1.6.0
+
+### Minor Changes
+
+- b60f9d6: Add explicit workspace API-key permissions for account and session provisioning,
+  installation, removal, and revocation. Expose SDK management and owner-approval
+  methods with internally managed idempotency and operation recovery. Support
+  actor-bound passkey registration on approved application origins.
+
+### Patch Changes
+
+- Updated dependencies [b60f9d6]
+  - @namera-ai/api@1.6.0
+  - @namera-ai/protocol@1.6.0
+
 ## 1.5.0
 
 ### Patch Changes
