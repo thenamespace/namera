@@ -316,10 +316,7 @@ it("copies inline installation, client-specific setup, and a read-only first req
   );
   await page.getByRole("button", { name: "Copy first namera request", exact: true }).click();
   await expect.poll(() => writeText.mock.calls.length).toBe(4);
-  expect(writeText.mock.calls[3]?.[0]).toContain(
-    "Use Namera MCP to list my accounts and session keys",
-  );
-  expect(writeText.mock.calls[3]?.[0]).toContain("Do not send transactions or sign anything.");
+  expect(writeText.mock.calls[3]?.[0]).toBe("Use Namera MCP to list my accounts and session keys.");
   await expect
     .element(page.getByRole("progressbar", { name: "Setup progress" }))
     .toHaveAttribute("value", "2");
