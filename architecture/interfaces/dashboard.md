@@ -97,8 +97,10 @@ Forms use React Hook Form with Effect Schema through the Standard Schema resolve
 The server remains the validation boundary. Domain mutation hooks expose
 `onSuccess`, `onError`, and `onSettled`; shared feedback maps typed errors to toasts.
 Session-key creation keeps Create available for incomplete forms and runs the
-shared resolver on submission. Missing network permissions show an immediate
-hint with an Add policy action. Failed submission reveals and focuses the first
+shared resolver on submission. The Add policy picker groups its six choices into
+Account access, Limits, and Signing; search includes the group names and hides
+empty groups. Missing permissions show inline errors after submission, without
+an upfront hint box. Failed submission reveals and focuses the first
 invalid network, with inline validation messages. Create is disabled during
 submission; unfinished policy edits, resource limits, and uncertain managed
 creation show explicit blockers and cannot dispatch a creation request.

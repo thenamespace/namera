@@ -85,7 +85,7 @@ function SessionKeyForm({
     mode: "onChange",
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
-  const { errors, isSubmitted, isSubmitting } = form.formState;
+  const { isSubmitting } = form.formState;
   const selectedCustody = useWatch({ control: form.control, name: "custody" });
   const installations = useWatch({ control: form.control, name: "onchain.installations" });
   const limitReached = selectedCustody === "local" ? limits.local : limits.managed;
@@ -235,11 +235,6 @@ function SessionKeyForm({
                   editing={editingPolicy}
                   onEditingChange={setEditingPolicy}
                 />
-                {isSubmitted && Object.keys(errors).length > 0 ? (
-                  <Typography.Paragraph role="alert" className="mt-3 text-danger" size="sm">
-                    Review the highlighted fields before creating your key.
-                  </Typography.Paragraph>
-                ) : null}
                 {creationBlocker ? (
                   <output id="create-session-key-blocker" className="mt-3 block text-sm text-muted">
                     {creationBlocker}

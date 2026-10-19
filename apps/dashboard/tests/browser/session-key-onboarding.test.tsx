@@ -245,7 +245,7 @@ it("keeps the return source without reapplying the consumed preset", async () =>
   expect(boundary.mutate).not.toHaveBeenCalled();
 });
 
-it("explains missing permissions and validates Create before sending a request", async () => {
+it("validates missing permissions on Create and lets users choose a policy", async () => {
   await mountCreation();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   const create = page.getByRole("button", { name: "Create session key", exact: true });
@@ -256,12 +256,12 @@ it("explains missing permissions and validates Create before sending a request",
   await expect.element(create).toBeEnabled();
   await expect
     .element(page.getByText("Add an account permission for Base to continue.", { exact: true }))
-    .toBeVisible();
+    .not.toBeInTheDocument();
   await create.click();
   const policies = page.getByRole("group", { name: "Base policies", exact: true });
   await expect
     .element(policies.getByRole("alert"))
-    .toHaveTextContent("Add an account permission for Base to continue.Add policy");
+    .toHaveTextContent("Add at least one account access policy for Base.");
   expect(document.activeElement).toBe(policies.element());
   expect(boundary.mutate).not.toHaveBeenCalled();
   await policies.getByRole("button", { name: "Add policy", exact: true }).click();
@@ -283,9 +283,7 @@ it("guides ordinary creation before any permissions are configured", async () =>
   await page.getByRole("textbox", { name: /^Name/ }).fill("Agent key");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   const policies = page.getByRole("group", { name: "Ethereum policies", exact: true });
-  await expect
-    .element(policies.getByRole("status"))
-    .toHaveTextContent("Add an account permission for Ethereum to continue.Add policy");
+  await expect.element(policies.getByRole("alert")).not.toBeInTheDocument();
   const create = page.getByRole("button", { name: "Create session key", exact: true });
   await expect.element(create).toBeEnabled();
   await create.click();
@@ -310,7 +308,7 @@ it("reveals and focuses an invalid network when creating from another network", 
   await expect.element(policies).toBeVisible();
   await expect
     .element(policies.getByRole("alert"))
-    .toHaveTextContent("Add an account permission for Ethereum to continue.Add policy");
+    .toHaveTextContent("Add at least one account access policy for Ethereum.");
   expect(document.activeElement).toBe(policies.element());
   expect(boundary.mutate).not.toHaveBeenCalled();
 });

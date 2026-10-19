@@ -16,14 +16,14 @@ export const sessionPolicyCatalog = [
   {
     id: "contract-access",
     name: "Contract access",
-    group: "Access",
+    group: "Account access",
     description: "Allow contracts and actions.",
     icon: FileScriptIcon,
   },
   {
     id: "erc20-token-transfer",
     name: "Token Spending (Lifetime)",
-    group: "Access",
+    group: "Account access",
     description: "Limit transfers and approvals.",
     icon: CoinsSwapIcon,
   },
@@ -44,14 +44,14 @@ export const sessionPolicyCatalog = [
   {
     id: "signature",
     name: "Signatures",
-    group: "Advanced",
+    group: "Signing",
     description: "Choose allowed messages.",
     icon: evmPolicyDefinitions["evm.signature"].icon,
   },
   {
     id: "root",
     name: "Unrestricted account access",
-    group: "Advanced",
+    group: "Account access",
     description: "Grant full account authority.",
     icon: ShieldUserIcon,
   },
