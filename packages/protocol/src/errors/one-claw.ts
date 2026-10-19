@@ -11,6 +11,8 @@ export const OneClawOperation = Schema.Literals([
   "customers.redeemClaim",
   "customers.getIdentity",
   "customers.enableDelegation",
+  "customers.setPassword",
+  "customers.verifyPassword",
   "agents.create",
   "agents.get",
   "agents.setRawSigningEnabled",
@@ -49,6 +51,12 @@ export class OneClawError extends Schema.TaggedError<OneClawError>()("OneClawErr
   ]),
   httpStatus: Schema.optionalKey(
     Schema.Int.check(Schema.isBetween({ minimum: 100, maximum: 599 })),
+  ),
+  approval: Schema.optionalKey(
+    Schema.Struct({
+      kind: Schema.Literals(["consensus", "guardrail"]),
+      id: Schema.NonEmptyString,
+    }),
   ),
 }) {}
 

@@ -3,7 +3,11 @@ import { Schema, Struct } from "effect";
 import { CredentialId, OrganizationId, ProviderConnectionId } from "#/common/index";
 import { TimestampFields } from "#/model/common";
 
-export const CredentialType = Schema.Literals(["1claw-agent", "1claw-customer"]);
+export const CredentialType = Schema.Literals([
+  "1claw-agent",
+  "1claw-customer",
+  "1claw-customer-authorization",
+]);
 
 export const OneClawAgentCredentialData = Schema.Struct({
   version: Schema.Literal(1),
@@ -41,9 +45,19 @@ export const OneClawCustomerCredentialInsert = Schema.Struct({
   expiresAt: Schema.DateTimeUtcFromDate,
 });
 
+export const OneClawCustomerAuthorizationInsert = Schema.Struct({
+  ...CredentialFields,
+  type: Schema.Literal("1claw-customer-authorization"),
+  data: Schema.Struct({
+    ...OneClawCustomerCredentialData.fields,
+    status: Schema.Literals(["pending", "ready", "recovery_required"]),
+  }),
+});
+
 export const CredentialInsert = Schema.Union([
   OneClawAgentCredentialInsert,
   OneClawCustomerCredentialInsert,
+  OneClawCustomerAuthorizationInsert,
 ]);
 
 export const OneClawAgentCredential = OneClawAgentCredentialInsert.mapFields(
@@ -53,6 +67,7 @@ export const OneClawAgentCredential = OneClawAgentCredentialInsert.mapFields(
 export const Credential = Schema.Union([
   OneClawAgentCredential,
   OneClawCustomerCredentialInsert.mapFields(Struct.assign(TimestampFields)),
+  OneClawCustomerAuthorizationInsert.mapFields(Struct.assign(TimestampFields)),
 ]);
 
 // Decode only inside the encryption boundary; check all bindings against the
@@ -73,6 +88,15 @@ export const OneClawCustomerCredentialPayload = Schema.Struct({
   expiresAt: Schema.DateTimeUtcFromString,
   token: Schema.RedactedFromValue(Schema.NonEmptyString),
 });
+
+export const OneClawCustomerAuthorizationPayload = Schema.Struct({
+  version: Schema.Literal(1),
+  credentialId: CredentialId,
+  organizationId: OrganizationId,
+  ...OneClawCustomerIdentityFields,
+  password: Schema.RedactedFromValue(Schema.NonEmptyString),
+});
+export type OneClawCustomerAuthorizationPayload = typeof OneClawCustomerAuthorizationPayload.Type;
 
 export type CredentialType = typeof CredentialType.Type;
 export type OneClawAgentCredentialData = typeof OneClawAgentCredentialData.Type;

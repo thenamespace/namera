@@ -30,7 +30,13 @@ export const credentials = coreSchema.table(
     uniqueIndex("credentials_customer_connection_uidx")
       .on(sql`(${table.data}->>'providerConnectionId')`)
       .where(sql`${table.type} = '1claw-customer'`),
-    check("credentials_type_check", sql`${table.type} IN ('1claw-agent', '1claw-customer')`),
+    uniqueIndex("credentials_authorization_connection_uidx")
+      .on(sql`(${table.data}->>'providerConnectionId')`)
+      .where(sql`${table.type} = '1claw-customer-authorization'`),
+    check(
+      "credentials_type_check",
+      sql`${table.type} IN ('1claw-agent', '1claw-customer', '1claw-customer-authorization')`,
+    ),
     check(
       "credentials_data_check",
       sql`(
@@ -39,7 +45,9 @@ export const credentials = coreSchema.table(
     AND ((${table.type} = '1claw-agent' AND jsonb_typeof(${table.data}->'agentId') = 'string'
     AND length(${table.data}->>'agentId') > 0
     AND ${table.expiresAt} IS NULL)
-    OR (${table.type} = '1claw-customer' AND ${table.expiresAt} IS NOT NULL
+    OR (((${table.type} = '1claw-customer' AND ${table.expiresAt} IS NOT NULL)
+      OR (${table.type} = '1claw-customer-authorization' AND ${table.expiresAt} IS NULL
+        AND ${table.data}->>'status' IN ('pending', 'ready', 'recovery_required')))
       AND jsonb_typeof(${table.data}->'providerConnectionId') = 'string'
       AND (${table.data}->>'providerConnectionId') ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
       AND jsonb_typeof(${table.data}->'providerAppId') = 'string' AND length(${table.data}->>'providerAppId') > 0

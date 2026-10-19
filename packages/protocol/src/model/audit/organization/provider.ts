@@ -19,7 +19,8 @@ export const ProviderCredentialEventData = Schema.Struct({
   resourceId: CredentialId,
   data: Schema.Struct({
     version: Schema.Literal(1),
-    type: Schema.Literals(["1claw-agent", "1claw-customer"]),
+    type: Schema.Literals(["1claw-agent", "1claw-customer", "1claw-customer-authorization"]),
     renewed: Schema.Boolean,
+    authorizationStatus: Schema.optionalKey(Schema.Literals(["ready", "recovery_required"])),
   }),
 });

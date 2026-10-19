@@ -4,7 +4,7 @@ import { OneClawError } from "@namera-ai/protocol";
 import type { OneClawCustomerAuthority } from "@namera-ai/protocol/model";
 
 import type { ClientContext } from "#/client";
-import { IdentityResponse, RedeemResponse } from "#/responses";
+import { IdentityResponse, RedeemResponse, TokenResponse } from "#/responses";
 
 export interface Claim {
   readonly connectionId: string;
@@ -19,6 +19,38 @@ export const makeCustomers = ({
   customer,
   platform,
 }: ClientContext) => ({
+  setPassword: Effect.fn("wallet-providers.oneclaw.customers.setPassword")(function* (input: {
+    readonly authority: OneClawCustomerAuthority;
+    readonly password: Redacted.Redacted<string>;
+  }) {
+    const operation = "customers.setPassword";
+    const authenticated = yield* customer(operation, input.authority);
+    yield* request(operation, Schema.Unknown, () =>
+      authenticated.auth.setPassword({
+        password: Redacted.value(input.password),
+        password_confirm: Redacted.value(input.password),
+      }),
+    );
+  }),
+  verifyPassword: Effect.fn("wallet-providers.oneclaw.customers.verifyPassword")(function* (input: {
+    readonly authority: OneClawCustomerAuthority;
+    readonly password: Redacted.Redacted<string>;
+  }) {
+    const operation = "customers.verifyPassword";
+    yield* customer(operation, input.authority);
+    const isolated = client();
+    const token = yield* request(operation, TokenResponse, () =>
+      isolated.auth.login({
+        email: input.authority.connection.data.email,
+        password: Redacted.value(input.password),
+      }),
+    );
+    const identity = yield* request(operation, IdentityResponse, () =>
+      client(token.access_token).http.request("GET", "/v1/auth/me"),
+    );
+    if (identity.id !== input.authority.payload.customerId)
+      return yield* new OneClawError({ operation, code: "IDENTITY_MISMATCH" });
+  }),
   redeemClaim: Effect.fn("wallet-providers.oneclaw.customers.redeemClaim")(function* (input: {
     readonly claim: Claim;
     readonly expectedCustomerId: string;

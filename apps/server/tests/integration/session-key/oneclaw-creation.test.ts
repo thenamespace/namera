@@ -270,7 +270,7 @@ layer(Live)("1Claw session creation", (it) => {
           expect(
             (yield* db.select().from(signingKey)).filter((key) => key.purpose === "session"),
           ).toEqual([]);
-          expect(yield* db.select().from(credentials)).toHaveLength(2);
+          expect(yield* db.select().from(credentials)).toHaveLength(3);
           expect(
             (yield* repository.audit.organization.findForOrganization(organizationId)).some(
               (event) => event.event === "session_key.created",

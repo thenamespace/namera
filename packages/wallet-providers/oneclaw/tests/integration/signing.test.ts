@@ -192,7 +192,7 @@ it.effect(
       respond(agent);
       respond(agent);
       yield* service.agents.setRawSigningEnabled({ authority, agentId: "agent", enabled: true });
-      expect(requestAt(1).body).toEqual({ raw_signing_enabled: true });
+      expect(requestAt(1).body).toEqual({ raw_signing_enabled: true, raw_signing_policy: "allow" });
       identity();
       respond({ status: "pending_approval" }, 202);
       expect(

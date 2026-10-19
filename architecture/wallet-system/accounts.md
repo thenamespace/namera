@@ -42,6 +42,70 @@ attempt to the actor and requested resource. Leases prevent concurrent creation.
 The one-time agent credential is encrypted and persisted before a subsequent key
 creation call. An uncertain provider mutation requires recovery, not blind retry.
 
+### 1Claw customer authorization
+
+Customer JWTs, agent keys and customer authorization passwords are separate encrypted
+credentials. JWT renewal never replaces the password. Initial password setup is
+limited to the Namera organization OIDC subject and runs under the connection lease.
+The generated password is persisted before the provider call, with encryption bound
+to its organization and credential ID. If setup already completed remotely, the same
+saved password must authenticate the same customer. Unknown passwords require
+operator recovery; Namera never resets an existing password automatically.
+
+Password setup can invalidate an otherwise unexpired customer JWT. Setup therefore
+renews and verifies customer authority before handing it to provisioning. A 401 on
+the initial identity check also permits one claim renewal under the connection lease;
+other errors and a second 401 fail closed. Agent/key mutations are never replayed
+as part of token renewal.
+
+Agent setup uses customer `PATCH /v1/agents/{id}` with a request-scoped
+`X-Auth-Confirm` password and explicit `raw_signing_policy: allow`. Read-back must
+confirm an active agent, enabled intents and raw signing, and the allow policy.
+Authorization is setup, not a per-signature login. Existing working signers retain
+their agent credentials and keys; signing still checks fresh local authority and
+the pinned remote key before verifying the returned signature.
+
+Provisioning checkpoints retain the key identity and provider approval reference.
+Retrying the same request can resume after saving the agent credential or after
+raw-signing setup failed, without creating another agent or key. Uncertain remote
+agent/key creation remains quarantined. Approval responses are not success. A saved
+approval is checked through agent read-back on retry, not submitted again; consensus
+approvals requiring separate confirmation remain operator recovery work.
+
+Authorization credential creation and status changes emit `provider_credential.saved`
+in the same transaction. No password, JWT, provider body or signature is logged.
+
+### Dev validation and existing signers
+
+Apply the migration through normal server startup before testing. No new environment
+secret is needed. Test managed account and session-key creation, owner signatures,
+owner transaction confirmation, session installation and session execution in dev.
+Provider fixture tests do not establish that the deployed 1Claw tenant permits
+initial password setup or unattended signing.
+
+Retry interrupted creation with the original idempotency key and unchanged request.
+Do not delete its provisioning row or credentials. Legacy attempts at
+`raw_signing_started` can recover by listing the bound agent's single active key;
+ambiguous `agent_create_started` and `key_create_started` attempts cannot.
+
+An operator can inspect an existing active signer without changing its policy:
+
+```sh
+pnpm --filter @namera-ai/server oneclaw:signer <organization-id> <signing-key-id>
+```
+
+The check may renew expired customer authority. It is not a public HTTP endpoint.
+If it reports `authorization_required`, repeat with `--apply` to authorize that
+signer. It does not rotate keys, change addresses, or send transactions. Inactive,
+denied and approval-required agents are blocked. If apply returns an approval
+requirement, resolve it with the provider before another apply; the command does
+not approve requests or bypass tenant policy.
+
+Working signers need no repair. Back up the authorization credential alongside
+existing credentials and retain the encryption configuration. Unknown passwords,
+identity mismatches, MFA and tenant policy restrictions require explicit recovery,
+not automatic resets or fallback providers.
+
 ## Persistence
 
 | Table (`core`)         | Responsibility                                                                          |

@@ -1,4 +1,4 @@
-import { Config, DateTime, Effect, Option, Schema } from "effect";
+import { Config, DateTime, Effect, Option, Result, Schema } from "effect";
 
 import { CryptoService, cryptoPurpose } from "@namera-ai/crypto";
 import { Repository, TransactionService } from "@namera-ai/database";
@@ -20,11 +20,14 @@ import { OneClawService, OneClawOidcService } from "@namera-ai/wallet-provider-o
 
 import { Audit } from "#/audit/layer";
 
+import { makeEnsureCustomerAuthorization } from "./customer-authorization.js";
+
 export const makeEnsureOneClawCustomer = Effect.gen(function* () {
   const repository = yield* Repository;
   const transaction = yield* TransactionService;
   const crypto = yield* CryptoService;
   const audit = yield* Audit;
+  const ensureAuthorization = yield* makeEnsureCustomerAuthorization;
   const decodeAuthority = Effect.fnUntraced(function* (
     connection: ProviderConnection,
     credential: Credential,
@@ -47,7 +50,10 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
 
   return Effect.fn("application.oneclaw.ensureCustomer")(function* (
     organizationId: OrganizationId,
-    options?: { readonly existingConnectionId: ProviderConnectionId },
+    options?: {
+      readonly existingConnectionId?: ProviderConnectionId;
+      readonly authorizeSigning?: boolean;
+    },
   ) {
     const claw = yield* OneClawService;
     const oidc = yield* OneClawOidcService;
@@ -73,7 +79,7 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
     let connection = yield* connections.findByOrganization(organizationId, appId);
     // Cleanup may renew authority, but must never repair setup or create a tenant.
     if (
-      options &&
+      options?.existingConnectionId &&
       (!connection ||
         connection.id !== options.existingConnectionId ||
         connection.status !== "ready")
@@ -118,7 +124,10 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       let current = yield* connections.findByOrganization(organizationId, appId);
       if (!current || current.status === "disabled")
         return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
-      if (options && (current.id !== options.existingConnectionId || current.status !== "ready"))
+      if (
+        options?.existingConnectionId &&
+        (current.id !== options.existingConnectionId || current.status !== "ready")
+      )
         return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
       if (current.externalConnectionId === null) {
         const recovered = yield* claw.connections.findBySubject(current.data.oidcSubject);
@@ -200,7 +209,8 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
       const renew =
         !credential ||
         DateTime.toEpochMillis(credential.expiresAt) <= DateTime.toEpochMillis(now) + 120_000;
-      if (renew) {
+      const connectionId = current.id;
+      const renewCredential = Effect.fnUntraced(function* () {
         const claim = yield* claw.connections.reissueClaim(externalConnectionId);
         const redeemed = yield* claw.customers.redeemClaim({
           claim,
@@ -211,7 +221,7 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
           version: 1,
           credentialId: id,
           organizationId,
-          providerConnectionId: current.id,
+          providerConnectionId: connectionId,
           providerAppId: appId,
           externalConnectionId,
           customerId,
@@ -269,14 +279,26 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
             return saved;
           }),
         );
-      }
+      });
+      if (renew) yield* renewCredential();
       current = yield* connections.findByOrganization(organizationId, appId);
       if (!current || !credential || credential.type !== "1claw-customer")
         return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
-      if (options && (current.id !== options.existingConnectionId || current.status !== "ready"))
+      if (
+        options?.existingConnectionId &&
+        (current.id !== options.existingConnectionId || current.status !== "ready")
+      )
         return yield* new ProviderConnectionError({ code: "CONNECTION_REVOKED" });
       let authority = yield* decodeAuthority(current, credential);
-      yield* claw.customers.getIdentity(authority);
+      const identity = yield* claw.customers.getIdentity(authority).pipe(Effect.result);
+      if (Result.isFailure(identity)) {
+        if (renew || identity.failure.code !== "UNAUTHENTICATED") return yield* identity.failure;
+        yield* renewCredential();
+        if (!credential)
+          return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
+        authority = yield* decodeAuthority(current, credential);
+        yield* claw.customers.getIdentity(authority);
+      }
       if (current.status !== "ready") {
         yield* claw.customers.enableDelegation(authority);
         current = yield* transaction.run(
@@ -290,7 +312,18 @@ export const makeEnsureOneClawCustomer = Effect.gen(function* () {
         );
         authority = { ...authority, connection: current };
       }
-      return authority;
+      const authorization = options?.authorizeSigning
+        ? yield* ensureAuthorization(authority, lease.leaseToken)
+        : undefined;
+      // Password setup can revoke the current JWT before its advertised expiry.
+      if (authorization?.passwordSet) {
+        yield* renewCredential();
+        if (!credential)
+          return yield* new ProviderConnectionError({ code: "PROVISIONING_INCOMPLETE" });
+        authority = yield* decodeAuthority(current, credential);
+        yield* claw.customers.getIdentity(authority);
+      }
+      return { ...authority, signingPassword: authorization?.password };
     });
     const heartbeat = Effect.forever(
       Effect.sleep("20 seconds").pipe(

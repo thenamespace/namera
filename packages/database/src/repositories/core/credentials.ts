@@ -1,6 +1,11 @@
 import { Context, DateTime, Effect, Layer, Schema } from "effect";
 
-import { DatabaseError, type CredentialId, type OrganizationId } from "@namera-ai/protocol";
+import {
+  DatabaseError,
+  type CredentialId,
+  type OrganizationId,
+  type ProviderConnectionId,
+} from "@namera-ai/protocol";
 import { Credential, CredentialInsert } from "@namera-ai/protocol/model";
 import { and, eq, sql } from "drizzle-orm";
 
@@ -9,6 +14,16 @@ import { transactionOrDatabase } from "#/core/transaction";
 import { credentials, providerConnections } from "#/schema/index";
 
 export interface CredentialsRepositoryService {
+  readonly findCustomerAuthorization: (
+    connectionId: ProviderConnectionId,
+    organizationId: OrganizationId,
+  ) => Effect.Effect<Credential | undefined, DatabaseError>;
+  readonly setAuthorizationStatus: (input: {
+    readonly id: CredentialId;
+    readonly organizationId: OrganizationId;
+    readonly leaseToken: string;
+    readonly status: "ready" | "recovery_required";
+  }) => Effect.Effect<boolean, DatabaseError>;
   readonly replaceCustomerToken: (input: {
     readonly id: CredentialId;
     readonly organizationId: OrganizationId;
@@ -33,6 +48,44 @@ export class CredentialsRepository extends Context.Service<
     Effect.gen(function* () {
       const database = yield* Database;
       return CredentialsRepository.of({
+        findCustomerAuthorization: Effect.fn("database.credentials.findCustomerAuthorization")(
+          function* (connectionId, organizationId) {
+            const db = yield* transactionOrDatabase(database);
+            const rows = yield* db
+              .select()
+              .from(credentials)
+              .where(
+                and(
+                  eq(credentials.organizationId, organizationId),
+                  eq(credentials.type, "1claw-customer-authorization"),
+                  sql`${credentials.data}->>'providerConnectionId' = ${connectionId}`,
+                ),
+              );
+            return rows[0] ? Schema.decodeUnknownSync(Credential)(rows[0]) : undefined;
+          },
+          mapRepositoryError,
+        ),
+        setAuthorizationStatus: Effect.fn("database.credentials.setAuthorizationStatus")(function* (
+          input,
+        ) {
+          const db = yield* transactionOrDatabase(database);
+          const rows = yield* db
+            .update(credentials)
+            .set({
+              data: sql`jsonb_set(${credentials.data}, '{status}', to_jsonb(${input.status}::text))`,
+            })
+            .where(
+              and(
+                eq(credentials.id, input.id),
+                eq(credentials.organizationId, input.organizationId),
+                eq(credentials.type, "1claw-customer-authorization"),
+                sql`${credentials.data}->>'status' = 'pending'`,
+                sql`EXISTS (SELECT 1 FROM ${providerConnections} WHERE ${providerConnections.id} = ${credentials.data}->>'providerConnectionId' AND ${providerConnections.organizationId} = ${credentials.organizationId} AND ${providerConnections.status} <> 'disabled' AND ${providerConnections.leaseToken} = ${input.leaseToken} AND ${providerConnections.leaseExpiresAt} > clock_timestamp() FOR UPDATE)`,
+              ),
+            )
+            .returning({ id: credentials.id });
+          return rows.length === 1;
+        }, mapRepositoryError),
         replaceCustomerToken: Effect.fn("database.credentialsRepository.replaceCustomerToken")(
           function* (input) {
             const db = yield* transactionOrDatabase(database);

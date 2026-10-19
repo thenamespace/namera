@@ -20,6 +20,13 @@ Bootstrap requires an active empty template with the pinned version and owning
 app. Application must persist the returned one-time agent credential before
 creating a key or making another external call.
 
+Initial customer password setup uses `auth.setPassword`. Recovery verifies the
+saved password through an isolated login and checks the returned customer identity.
+Raw-signing configuration sends `X-Auth-Confirm` only on the customer agent PATCH,
+sets the allow policy explicitly and verifies it by read-back. Approval responses
+retain their typed reference and fail closed; this adapter never approves them.
+Passwords are redacted inputs. Application owns their encrypted persistence.
+
 Signing exchanges the agent key for a fresh access token, checks the pinned key
 identity and public material, then verifies the 65-byte recoverable signature
 against the exact digest. It does not hash again or cache access tokens.

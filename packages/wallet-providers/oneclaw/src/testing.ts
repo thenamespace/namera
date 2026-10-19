@@ -57,6 +57,8 @@ export const oneClawTestLayer = (scenario: OneClawTestScenario = {}) =>
           reissueClaim: observe("connections.reissueClaim", scenario.connections?.reissueClaim),
         },
         customers: {
+          setPassword: observe("customers.setPassword", scenario.customers?.setPassword),
+          verifyPassword: observe("customers.verifyPassword", scenario.customers?.verifyPassword),
           redeemClaim: observe("customers.redeemClaim", scenario.customers?.redeemClaim),
           getIdentity: observe("customers.getIdentity", scenario.customers?.getIdentity),
           enableDelegation: observe(
