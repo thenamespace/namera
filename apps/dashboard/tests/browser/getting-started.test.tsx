@@ -162,8 +162,8 @@ it("shows the sidebar progress and changes its illustration with the selected st
   await page.getByRole("button", { name: /Connect your AI client/ }).click();
   await expect.element(page.getByRole("figure", { name: "Setup step 3" })).toBeVisible();
   await expect
-    .element(page.getByRole("link", { name: "Connect AI client", exact: true }))
-    .toHaveAttribute("href", "/settings/workspace/mcp");
+    .element(page.getByRole("button", { name: "Copy install namera cli", exact: true }))
+    .toBeVisible();
   await expect.element(page.getByRole("radiogroup")).not.toBeInTheDocument();
   await page.getByRole("button", { name: /Make your first transaction or signature/ }).click();
   await expect.element(page.getByRole("figure", { name: "Setup step 4" })).toBeVisible();
@@ -263,7 +263,7 @@ it("keeps the checklist usable on a narrow screen without horizontal scrolling",
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   await page.getByRole("button", { name: /Connect your AI client/ }).click();
   await expect
-    .element(page.getByRole("link", { name: "Connect AI client", exact: true }))
+    .element(page.getByRole("button", { name: "Copy install namera cli", exact: true }))
     .toBeVisible();
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   await page.getByRole("button", { name: "Open menu", exact: true }).click();
@@ -291,4 +291,36 @@ it("offers MCP starter prompts without SDK or CLI choices", async () => {
   await page.getByRole("button", { name: "Copy transaction prompt", exact: true }).click();
   await expect.poll(() => writeText.mock.calls.length).toBe(2);
   expect(writeText.mock.calls[1]?.[0]).toContain("Wait for my approval before sending");
+});
+
+it("copies inline installation, client-specific setup, and a read-only first request", async () => {
+  const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+  await mountSetup(setupOverview({ accounts: 1, sessionKeys: 1 }));
+  await page.getByRole("button", { name: "Copy install namera cli", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(1);
+  expect(writeText.mock.calls[0]?.[0]).toBe("npm install -g @namera-ai/cli");
+  await page.getByRole("button", { name: "Copy claude code mcp setup", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(2);
+  expect(writeText.mock.calls[1]?.[0]).toBe(
+    "claude mcp add --transport stdio --scope user namera -- namera mcp serve --profile claude",
+  );
+  await page.getByRole("button", { name: /MCP client/ }).click();
+  await page.getByRole("option", { name: "Codex", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: "Copy claude code mcp setup", exact: true }))
+    .not.toBeInTheDocument();
+  await page.getByRole("button", { name: "Copy codex mcp setup", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(3);
+  expect(writeText.mock.calls[2]?.[0]).toBe(
+    "codex mcp add namera -- namera mcp serve --profile codex",
+  );
+  await page.getByRole("button", { name: "Copy first namera request", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(4);
+  expect(writeText.mock.calls[3]?.[0]).toContain(
+    "Use Namera MCP to list my accounts and session keys",
+  );
+  expect(writeText.mock.calls[3]?.[0]).toContain("Do not send transactions or sign anything.");
+  await expect
+    .element(page.getByRole("progressbar", { name: "Setup progress" }))
+    .toHaveAttribute("value", "2");
 });

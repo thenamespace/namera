@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
 
 import { buttonVariants, CopyIconButton, Typography } from "@namera-ai/ui";
-import { HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
 
 import type { useGettingStarted } from "@/hooks/getting-started";
+
+import { McpConnection } from "./mcp-connection";
 
 const primaryLink = buttonVariants({ variant: "primary", size: "sm" });
 const secondaryLink = buttonVariants({ variant: "secondary", size: "sm" });
@@ -68,33 +69,10 @@ export function StepActions({
   }
 
   if (step === 2) {
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {setup.permissions.includes("mcp-authorization:read") ? (
-            <Link to="/settings/workspace/mcp" className={primaryLink}>
-              {complete ? "Manage AI clients" : "Connect AI client"}
-            </Link>
-          ) : (
-            <p className="text-sm text-muted">
-              Ask a workspace admin to help connect your AI client.
-            </p>
-          )}
-          <a
-            href="https://namera.ai/docs/mcp/getting-started"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-muted underline underline-offset-4 hover:text-foreground"
-          >
-            Setup guide <HugeiconsIcon aria-hidden icon={LinkSquare02Icon} size={15} />
-          </a>
-        </div>
-        {!complete ? (
-          <p className="text-xs leading-relaxed text-muted">
-            This step completes when your AI client first connects to Namera.
-          </p>
-        ) : null}
-      </div>
+    return setup.permissions.includes("mcp-authorization:read") ? (
+      <McpConnection complete={complete} />
+    ) : (
+      <p className="text-sm text-muted">Ask a workspace admin to help connect your AI client.</p>
     );
   }
 
