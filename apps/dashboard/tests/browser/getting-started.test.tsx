@@ -1,4 +1,6 @@
 // oxlint-disable react-perf/jsx-no-new-function-as-prop
+import { act } from "react";
+
 import {
   createMemoryHistory,
   createRootRoute,
@@ -64,6 +66,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await Promise.all(disposers.splice(0).map((dispose) => dispose()));
+  vi.useRealTimers();
   localStorage.removeItem(storageKey);
   vi.mocked(globalThis.fetch).mockClear();
 });
@@ -77,6 +80,8 @@ async function mountSetup(
     : [],
 ) {
   const requests: string[] = [];
+  let fetchedOverview = overview;
+  let fetchedApiKeys = apiKeys;
   let fetchedSessionKeys = sessionKeys;
   vi.mocked(globalThis.fetch).mockImplementation(async (input, init) => {
     const request = new Request(input, init);
@@ -85,9 +90,9 @@ async function mountSetup(
     if (request.method !== "GET") throw new Error(`Unexpected mutation ${request.method} ${path}`);
     if (path === "/auth/session/me") return Response.json(Schema.encodeSync(UserActorData)(actor));
     if (path === "/dashboard/overview")
-      return Response.json(Schema.encodeSync(GetDashboardOverviewResponse)(overview));
+      return Response.json(Schema.encodeSync(GetDashboardOverviewResponse)(fetchedOverview));
     if (path === "/api-keys")
-      return Response.json(apiKeys.map((key) => Schema.encodeSync(ApiKeyResponse)(key)));
+      return Response.json(fetchedApiKeys.map((key) => Schema.encodeSync(ApiKeyResponse)(key)));
     if (path === "/session-keys")
       return Response.json(
         fetchedSessionKeys.map((key) => Schema.encodeSync(SessionKeyResponse)(key)),
@@ -155,6 +160,15 @@ async function mountSetup(
     registry,
     router,
     requests,
+    updateProgress: (progress: {
+      overview?: GetDashboardOverviewResponse;
+      apiKeys?: ListApiKeysResponse;
+      sessionKeys?: readonly SessionKeyResponse[];
+    }) => {
+      fetchedOverview = progress.overview ?? fetchedOverview;
+      fetchedApiKeys = progress.apiKeys ?? fetchedApiKeys;
+      fetchedSessionKeys = progress.sessionKeys ?? fetchedSessionKeys;
+    },
     updateSessionKeys: (updatedSessionKeys: readonly SessionKeyResponse[]) => {
       fetchedSessionKeys = updatedSessionKeys;
       registry.refresh(sessionKeysAtom);
@@ -273,6 +287,69 @@ it.each(["pending", "failed", "submitted"] as const)(
       .toHaveAttribute("aria-expanded", "true");
   },
 );
+
+it("refreshes cached progress immediately on returning to the checklist", async () => {
+  const workspace = await mountSetup(
+    setupOverview({ accounts: 1 }),
+    setupActor,
+    [],
+    [setupSessionKey("submitted")],
+  );
+  await expect.element(page.getByRole("progressbar")).toHaveAttribute("value", "1");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect.element(page.getByText("Workspace overview", { exact: true })).toBeVisible();
+
+  workspace.updateProgress({ sessionKeys: [setupSessionKey()] });
+  await workspace.router.navigate({ to: "/get-started" });
+  await expect.element(page.getByRole("progressbar")).toHaveAttribute("value", "2");
+});
+
+it("polls external progress within three seconds and stops after completion", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const workspace = await mountSetup(
+    setupOverview({ accounts: 1 }),
+    setupActor,
+    [],
+    [setupSessionKey("submitted")],
+  );
+  await expect.element(page.getByRole("progressbar")).toHaveAttribute("value", "1");
+  await expect.poll(() => workspace.requests.includes("/session-keys")).toBe(true);
+  workspace.updateProgress({ sessionKeys: [setupSessionKey()], apiKeys: [setupApiKey(true)] });
+
+  await act(() => vi.advanceTimersByTimeAsync(3_000));
+  await expect.element(page.getByRole("progressbar")).toHaveAttribute("value", "3");
+  await expect
+    .element(page.getByRole("link", { name: /Get started/ }))
+    .toHaveTextContent("Get started3/4");
+  workspace.updateProgress({ overview: setupOverview({ accounts: 1, signatures: 1 }) });
+  await act(() => vi.advanceTimersByTimeAsync(3_000));
+  await expect.element(page.getByRole("button", { name: "Done", exact: true })).toBeVisible();
+
+  const requests = workspace.requests.length;
+  await act(() => vi.advanceTimersByTimeAsync(6_000));
+  expect(workspace.requests).toHaveLength(requests);
+});
+
+it("skips polling while hidden and refreshes immediately when visible again", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const workspace = await mountSetup(setupOverview({ accounts: 1, sessionKeys: 1 }));
+  await expect.poll(() => workspace.requests.includes("/session-keys")).toBe(true);
+  const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+  const requests = workspace.requests.length;
+  workspace.updateProgress({ apiKeys: [setupApiKey(true)] });
+  await act(() => vi.advanceTimersByTimeAsync(6_000));
+  expect(workspace.requests).toHaveLength(requests);
+
+  visibility.mockReturnValue("visible");
+  document.dispatchEvent(new Event("visibilitychange"));
+  await expect.element(page.getByRole("progressbar")).toHaveAttribute("value", "3");
+
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect.element(page.getByText("Workspace overview", { exact: true })).toBeVisible();
+  const requestsAfterLeaving = workspace.requests.length;
+  await act(() => vi.advanceTimersByTimeAsync(6_000));
+  expect(workspace.requests).toHaveLength(requestsAfterLeaving);
+});
 
 it("only dismisses after Done, removes the sidebar entry, and remembers dismissal", async () => {
   const workspace = await mountSetup(

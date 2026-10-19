@@ -32,7 +32,10 @@ export const useRevokeCliAuthorization = toMutation(revokeCliAuthorizationMutati
 export const useOAuthAuthorizationRequest = toQuery(oauthAuthorizationRequestAtom);
 export const useApproveOAuthAuthorizationRequest = toMutation(
   approveOAuthAuthorizationRequestMutation,
-  { analyticsAction: "mcp_authorize" },
+  {
+    analyticsAction: "mcp_authorize",
+    invalidates: QueryKeys.oauth.authorizations,
+  },
 );
 export const useDenyOAuthAuthorizationRequest = toMutation(denyOAuthAuthorizationRequestMutation, {
   analyticsAction: "mcp_deny",
@@ -40,7 +43,10 @@ export const useDenyOAuthAuthorizationRequest = toMutation(denyOAuthAuthorizatio
 export const useOAuthDeviceAuthorization = toQuery(oauthDeviceAuthorizationAtom);
 export const useApproveOAuthDeviceAuthorization = toMutation(
   approveOAuthDeviceAuthorizationMutation,
-  { analyticsAction: "cli_authorize" },
+  {
+    analyticsAction: "cli_authorize",
+    invalidates: QueryKeys.oauth.cliAuthorizations,
+  },
 );
 export const useDenyOAuthDeviceAuthorization = toMutation(denyOAuthDeviceAuthorizationMutation, {
   analyticsAction: "cli_deny",

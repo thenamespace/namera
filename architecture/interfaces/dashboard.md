@@ -66,8 +66,12 @@ page offers Continue setup alongside View session key. A source hint alone does
 not reapply the preset. Ordinary creation keeps its existing success actions,
 and neither navigation parameter is sent in the creation request.
 
-Progress shares the router atom registry and refreshes every 30 seconds and on
-window focus while the checklist is open. Failed checks expose retry feedback;
+Progress shares the router atom registry and refreshes immediately when the
+checklist opens, on window focus or tab visibility restoration, and every three
+seconds while the incomplete checklist is visible. Polling skips hidden tabs and
+stops on completion or leaving the checklist. OAuth approvals invalidate their
+connection lists immediately; usage from external clients and receipt-confirmed
+installations are discovered by polling. Failed checks expose retry feedback;
 denied queries revalidate session authority. The existing overview requires
 wallet, session-key, execution and billing read permissions; roles without those
 permissions keep their normal landing page and do not fetch onboarding data.
