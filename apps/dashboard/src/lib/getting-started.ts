@@ -1,4 +1,4 @@
-import type { GetDashboardOverviewResponse } from "@namera-ai/protocol/dto";
+import type { GetDashboardOverviewResponse, SessionKeyResponse } from "@namera-ai/protocol/dto";
 import type { MemberPermission } from "@namera-ai/protocol/model";
 
 export const gettingStartedReadPermissions = [
@@ -10,13 +10,36 @@ export const gettingStartedReadPermissions = [
 
 export type GettingStartedMilestones = readonly [boolean, boolean, boolean, boolean];
 
+export function gettingStartedSessionProgress(sessionKeys: readonly SessionKeyResponse[]) {
+  const enabled = sessionKeys.some(
+    (sessionKey) =>
+      sessionKey.status === "active" &&
+      sessionKey.installations.some((installation) => installation.status === "installed"),
+  );
+  const approvalSessionKey = enabled
+    ? undefined
+    : sessionKeys.find(
+        (sessionKey) =>
+          (sessionKey.status === "pending" || sessionKey.status === "active") &&
+          sessionKey.installations.some(
+            (installation) =>
+              installation.status === "pending" ||
+              installation.status === "failed" ||
+              installation.status === "submitted",
+          ),
+      );
+
+  return { enabled, approvalSessionKey };
+}
+
 export function gettingStartedMilestones(
   overview: GetDashboardOverviewResponse | undefined,
   usedConnection: boolean,
+  enabledSessionKey = false,
 ): GettingStartedMilestones {
   return [
     (overview?.resources.accounts.total ?? 0) > 0,
-    (overview?.resources.sessionKeys.total ?? 0) > 0,
+    enabledSessionKey,
     usedConnection ||
       (overview?.namespaces.some((namespace) =>
         namespace.executionSources.some(

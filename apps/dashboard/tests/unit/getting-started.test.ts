@@ -1,17 +1,55 @@
 import { describe, expect, it } from "vitest";
 
-import { gettingStartedMilestones, gettingStartedStorageKey } from "../../src/lib/getting-started";
-import { setupOverview } from "../fixtures/getting-started";
+import {
+  gettingStartedMilestones,
+  gettingStartedSessionProgress,
+  gettingStartedStorageKey,
+} from "../../src/lib/getting-started";
+import { setupOverview, setupSessionKey } from "../fixtures/getting-started";
 
 describe("getting started milestones", () => {
   it("does not invent progress before the overview is available", () => {
     expect(gettingStartedMilestones(undefined, false)).toEqual([false, false, false, false]);
   });
 
-  it("tracks wallet and session creation separately from connection and activity", () => {
+  it("does not complete the key step from creation counts alone", () => {
     expect(gettingStartedMilestones(setupOverview({ accounts: 1, sessionKeys: 1 }), false)).toEqual(
-      [true, true, false, false],
+      [true, false, false, false],
     );
+  });
+
+  it("counts a key only after an active session has an installed network", () => {
+    const session = setupSessionKey();
+    const progress = gettingStartedSessionProgress([session]);
+    expect(progress).toEqual({ enabled: true, approvalSessionKey: undefined });
+    expect(
+      gettingStartedMilestones(setupOverview({ accounts: 1 }), false, progress.enabled),
+    ).toEqual([true, true, false, false]);
+  });
+
+  it.each(["pending", "submitted", "failed"] as const)(
+    "keeps a %s installation incomplete and identifies the key to approve",
+    (status) => {
+      const session = setupSessionKey(status);
+      expect(gettingStartedSessionProgress([session])).toEqual({
+        enabled: false,
+        approvalSessionKey: session,
+      });
+    },
+  );
+
+  it.each(["revoking", "revoked"] as const)("does not count a %s session", (status) => {
+    expect(gettingStartedSessionProgress([{ ...setupSessionKey(), status }])).toEqual({
+      enabled: false,
+      approvalSessionKey: undefined,
+    });
+  });
+
+  it("accepts one installed network even if another key still needs approval", () => {
+    expect(gettingStartedSessionProgress([setupSessionKey("pending"), setupSessionKey()])).toEqual({
+      enabled: true,
+      approvalSessionKey: undefined,
+    });
   });
 
   it("counts a used integration independently of any transaction", () => {

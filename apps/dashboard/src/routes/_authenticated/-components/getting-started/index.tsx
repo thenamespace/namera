@@ -23,8 +23,7 @@ const steps = [
     title: "Give your agent a session key",
     description:
       "A session key is your agent’s access pass to an account. You choose what it can do, which networks it can use, how much it can spend, and when access expires.",
-    completed:
-      "Your session key is created. Make sure it’s enabled on your chosen network before using it.",
+    completed: "Your session key is created and enabled onchain.",
   },
   {
     title: "Connect your AI client",
@@ -46,6 +45,12 @@ export function GettingStarted({ setup }: GettingStartedProps) {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const nextStep = setup.completed.findIndex((complete) => !complete);
   const activeStep = selectedStep ?? (nextStep === -1 ? 3 : nextStep);
+  const approvalSessionKey = setup.approvalSessionKey;
+  const approvalDescription = approvalSessionKey?.installations.some(
+    (installation) => installation.status === "submitted",
+  )
+    ? "Your key is created. Network approval is awaiting confirmation."
+    : "Your key is created. Approve it on a network before connecting your AI client.";
 
   useInterval(setup.refresh, setup.canFinish || setup.dismissed ? null : 30_000);
   useEventListener("focus", setup.refresh);
@@ -144,9 +149,13 @@ export function GettingStarted({ setup }: GettingStartedProps) {
                     {expanded ? (
                       <div className="pb-7 pl-10">
                         <Typography.Paragraph size="sm" color="muted" className="leading-relaxed">
-                          {complete ? step.completed : step.description}
+                          {complete
+                            ? step.completed
+                            : index === 1 && approvalSessionKey
+                              ? approvalDescription
+                              : step.description}
                         </Typography.Paragraph>
-                        {index === 1 && !complete ? (
+                        {index === 1 && !complete && !approvalSessionKey ? (
                           <Typography.Paragraph
                             size="sm"
                             color="muted"

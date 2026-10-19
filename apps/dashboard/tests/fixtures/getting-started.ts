@@ -4,9 +4,44 @@ import {
   ApiKeyResponse,
   GetDashboardOverviewResponse,
   UserActorData,
+  type SessionKeyResponse,
 } from "@namera-ai/protocol/dto";
 
 import { actor } from "./actor";
+import { newestSessionAccount, registeredPresetSession } from "./session-key-preset";
+
+export function setupSessionKey(
+  installationStatus: SessionKeyResponse["installations"][number]["status"] = "installed",
+): SessionKeyResponse {
+  const sessionKey = registeredPresetSession({
+    namespace: "eip155",
+    walletId: newestSessionAccount.id,
+    metadata: { version: 1, name: "My first session key" },
+    signer: { custody: "namera-managed", provider: "1claw", algorithm: "secp256k1" },
+    policies: [],
+    onchain: {
+      installations: [
+        {
+          chainId: "eip155:8453",
+          validAfter: 0,
+          validUntil: 2_000_000_000,
+          permissions: [{ type: "root" }],
+          allowSignatures: true,
+        },
+      ],
+    },
+  });
+  const [installation] = sessionKey.installations;
+  if (!installation) throw new Error("Expected a session installation fixture");
+
+  return {
+    ...sessionKey,
+    organizationId: actor.organization.id,
+    wallet: { ...sessionKey.wallet, organizationId: actor.organization.id },
+    status: installationStatus === "installed" ? "active" : "pending",
+    installations: [{ ...installation, status: installationStatus }],
+  };
+}
 
 export const setupActor = Schema.decodeUnknownSync(Schema.toType(UserActorData))({
   ...actor,

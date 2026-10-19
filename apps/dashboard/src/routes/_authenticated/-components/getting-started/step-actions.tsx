@@ -1,3 +1,4 @@
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
 import { Link } from "@tanstack/react-router";
 
 import { buttonVariants, CopyIconButton, Typography } from "@namera-ai/ui";
@@ -53,6 +54,20 @@ export function StepActions({
       return (
         <Link to="/session-keys" className={secondaryLink}>
           View session keys
+        </Link>
+      );
+    if (setup.approvalSessionKey)
+      return (
+        <Link
+          to="/session-key/$sessionKeyId/overview"
+          params={{ sessionKeyId: setup.approvalSessionKey.id }}
+          className={primaryLink}
+        >
+          {setup.approvalSessionKey.installations.some(
+            (installation) => installation.status === "submitted",
+          )
+            ? "View network approval"
+            : "Approve session key"}
         </Link>
       );
     if (!setup.completed[0])

@@ -34,9 +34,14 @@ prompt. Client commands share their definitions with MCP settings. The prompt us
 first-tool-call browser authorization flow; users approve then retry the request.
 Copying setup commands does not complete the connection milestone.
 Its four workspace milestones use the existing overview and permission-gated
-API-key/CLI/MCP lists: an account, a session key, an integration with `lastUsedAt`
+session-key and API-key/CLI/MCP lists: an account, an active session key with at
+least one confirmed network installation, an integration with `lastUsedAt`
 (or a confirmed non-user execution), and a confirmed execution or successful
-signature. Session-key creation does not imply network installation. Merely
+signature. A created key with pending or failed installation keeps the session
+step incomplete and links directly to that key’s overview for owner approval.
+Submitted installations show that confirmation is pending. The session-key list
+refreshes with the other progress queries, so receipt-confirmed installation
+advances the checklist. Session-key creation does not imply network installation. Merely
 creating an API key, opening a guide or submitting a pending transaction does not
 complete the corresponding milestone.
 

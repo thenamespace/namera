@@ -15,6 +15,7 @@ import { AsyncResult, AtomRegistry } from "effect/reactivity";
 import {
   ApiKeyResponse,
   GetDashboardOverviewResponse,
+  SessionKeyResponse,
   UserActorData,
   type ListApiKeysResponse,
 } from "@namera-ai/protocol/dto";
@@ -28,11 +29,17 @@ import { userOrganizationsAtom } from "../../src/atoms/auth/organization";
 import { currentUserAtom } from "../../src/atoms/auth/session";
 import { dashboardOverviewAtom } from "../../src/atoms/dashboard";
 import { gettingStartedAtom } from "../../src/atoms/getting-started";
+import { sessionKeysAtom } from "../../src/atoms/session-key";
 import { DashboardPage } from "../../src/components/page";
 import { AppSidebar } from "../../src/components/sidebar/main-sidebar";
 import { gettingStartedStorageKey } from "../../src/lib/getting-started";
 import { GettingStartedPage } from "../../src/routes/_authenticated/-components/getting-started/page";
-import { setupActor, setupApiKey, setupOverview } from "../fixtures/getting-started";
+import {
+  setupActor,
+  setupApiKey,
+  setupOverview,
+  setupSessionKey,
+} from "../fixtures/getting-started";
 
 vi.mock("../../src/env", () => ({
   env: { backendUrl: "https://api.example.test", environment: "test" },
@@ -65,8 +72,12 @@ async function mountSetup(
   overview = setupOverview(),
   actor: UserActorData = setupActor,
   apiKeys: ListApiKeysResponse = [],
+  sessionKeys: readonly SessionKeyResponse[] = overview.resources.sessionKeys.total > 0
+    ? [setupSessionKey()]
+    : [],
 ) {
   const requests: string[] = [];
+  let fetchedSessionKeys = sessionKeys;
   vi.mocked(globalThis.fetch).mockImplementation(async (input, init) => {
     const request = new Request(input, init);
     const path = new URL(request.url).pathname.replace(/\/$/, "");
@@ -77,6 +88,10 @@ async function mountSetup(
       return Response.json(Schema.encodeSync(GetDashboardOverviewResponse)(overview));
     if (path === "/api-keys")
       return Response.json(apiKeys.map((key) => Schema.encodeSync(ApiKeyResponse)(key)));
+    if (path === "/session-keys")
+      return Response.json(
+        fetchedSessionKeys.map((key) => Schema.encodeSync(SessionKeyResponse)(key)),
+      );
     if (
       [
         "/oauth/authorizations",
@@ -93,6 +108,7 @@ async function mountSetup(
     initialValues: [
       [currentUserAtom, AsyncResult.success(actor)],
       [dashboardOverviewAtom, AsyncResult.success(overview)],
+      [sessionKeysAtom, AsyncResult.success(sessionKeys)],
       [apiKeysAtom, AsyncResult.success(apiKeys)],
       [cliAuthorizationsAtom, AsyncResult.success([])],
       [mcpAuthorizationsAtom, AsyncResult.success([])],
@@ -135,7 +151,15 @@ async function mountSetup(
     registry.dispose();
   };
   disposers.push(dispose);
-  return { registry, router, requests };
+  return {
+    registry,
+    router,
+    requests,
+    updateSessionKeys: (updatedSessionKeys: readonly SessionKeyResponse[]) => {
+      fetchedSessionKeys = updatedSessionKeys;
+      registry.refresh(sessionKeysAtom);
+    },
+  };
 }
 
 it("shows the sidebar progress and changes its illustration with the selected step", async () => {
@@ -200,6 +224,56 @@ it("resumes at the first unfinished step and retains navigation to Overview", as
   await expect.element(page.getByRole("link", { name: /Get started/ })).toBeVisible();
 });
 
+it.each(["pending", "failed", "submitted"] as const)(
+  "keeps the session step incomplete for a %s network and links to its approval",
+  async (status) => {
+    const sessionKey = setupSessionKey(status);
+    const workspace = await mountSetup(
+      setupOverview({ accounts: 1, sessionKeys: 1 }),
+      setupActor,
+      [],
+      [sessionKey],
+    );
+    await expect
+      .element(page.getByRole("button", { name: /Give your agent a session key/ }))
+      .toHaveAttribute("aria-expanded", "true");
+    await expect
+      .element(page.getByRole("progressbar", { name: "Setup progress" }))
+      .toHaveAttribute("value", "1");
+    await expect
+      .element(
+        page.getByText(
+          status === "submitted"
+            ? "Your key is created. Network approval is awaiting confirmation."
+            : "Your key is created. Approve it on a network before connecting your AI client.",
+        ),
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        page.getByRole("link", {
+          name: status === "submitted" ? "View network approval" : "Approve session key",
+          exact: true,
+        }),
+      )
+      .toHaveAttribute("href", `/session-key/${sessionKey.id}/overview`);
+    await expect
+      .element(page.getByRole("link", { name: "Create session key", exact: true }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByText(/We’ll prefill a key for your newest account/))
+      .not.toBeInTheDocument();
+
+    workspace.updateSessionKeys([setupSessionKey()]);
+    await expect
+      .element(page.getByRole("progressbar", { name: "Setup progress" }))
+      .toHaveAttribute("value", "2");
+    await expect
+      .element(page.getByRole("button", { name: /Connect your AI client/ }))
+      .toHaveAttribute("aria-expanded", "true");
+  },
+);
+
 it("only dismisses after Done, removes the sidebar entry, and remembers dismissal", async () => {
   const workspace = await mountSetup(
     setupOverview({ accounts: 1, sessionKeys: 1, executions: 1, source: "cli" }),
@@ -228,6 +302,7 @@ it("does not fetch denied progress or display the checklist for a restricted rol
   await expect.element(page.getByText("Workspace overview", { exact: true })).toBeVisible();
   expect(workspace.registry.get(gettingStartedAtom).available).toBe(false);
   expect(workspace.requests).not.toContain("/dashboard/overview");
+  expect(workspace.requests).not.toContain("/session-keys");
   expect(workspace.requests).not.toContain("/api-keys");
   expect(workspace.requests).not.toContain("/oauth/authorizations");
   await expect.element(page.getByRole("link", { name: /Get started/ })).not.toBeInTheDocument();

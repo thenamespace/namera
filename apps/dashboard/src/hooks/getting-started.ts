@@ -9,6 +9,7 @@ import { apiKeysAtom } from "@/atoms/api-key";
 import { cliAuthorizationsAtom, mcpAuthorizationsAtom } from "@/atoms/auth/oauth";
 import { dashboardOverviewAtom } from "@/atoms/dashboard";
 import { gettingStartedAtom, inactiveGettingStartedAtom } from "@/atoms/getting-started";
+import { sessionKeysAtom } from "@/atoms/session-key";
 import { gettingStartedStorageKey } from "@/lib/getting-started";
 
 import { useCurrentUser } from "./auth";
@@ -38,6 +39,7 @@ export function useGettingStarted() {
   const refresh = useCallback(() => {
     if (dismissed || !progress.available) return;
     registry.refresh(dashboardOverviewAtom);
+    registry.refresh(sessionKeysAtom);
     if (permissions.includes("api-key:read")) registry.refresh(apiKeysAtom);
     if (permissions.includes("cli-authorization:read")) registry.refresh(cliAuthorizationsAtom);
     if (permissions.includes("mcp-authorization:read")) registry.refresh(mcpAuthorizationsAtom);
