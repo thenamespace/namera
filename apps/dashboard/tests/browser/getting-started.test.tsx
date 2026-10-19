@@ -314,9 +314,19 @@ it("copies inline installation, client-specific setup, and a read-only first req
   expect(writeText.mock.calls[2]?.[0]).toBe(
     "codex mcp add namera -- namera mcp serve --profile codex",
   );
-  await page.getByRole("button", { name: "Copy first namera request", exact: true }).click();
+  await page.getByRole("button", { name: /MCP client/ }).click();
+  await page.getByRole("option", { name: "Gemini CLI", exact: true }).click();
+  await page.getByRole("button", { name: "Copy gemini cli mcp setup", exact: true }).click();
   await expect.poll(() => writeText.mock.calls.length).toBe(4);
-  expect(writeText.mock.calls[3]?.[0]).toBe("Use Namera MCP to list my accounts and session keys.");
+  expect(writeText.mock.calls[3]?.[0]).toBe(
+    "gemini mcp add --scope user --transport stdio namera namera mcp serve -- --profile gemini",
+  );
+  await expect
+    .element(page.getByRole("link", { name: "View setup guides" }))
+    .toHaveAttribute("href", "https://namera.ai/docs/mcp/clients");
+  await page.getByRole("button", { name: "Copy first namera request", exact: true }).click();
+  await expect.poll(() => writeText.mock.calls.length).toBe(5);
+  expect(writeText.mock.calls[4]?.[0]).toBe("Use Namera MCP to list my accounts and session keys.");
   await expect
     .element(page.getByRole("progressbar", { name: "Setup progress" }))
     .toHaveAttribute("value", "2");

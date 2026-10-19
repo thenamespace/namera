@@ -28,9 +28,9 @@ Normal dashboard sign-in defaults to `/get-started`; explicit invitation and
 OAuth/CLI return paths keep their destination. The checklist links to existing
 account, session-key and MCP setup screens. The guided path focuses on AI clients,
 with copyable starter prompts for message signing and transactions. Overview remains accessible.
-The connection step embeds CLI installation, a Claude Code/Codex selector with
-copyable stdio registration commands, and a read-only discovery prompt. Client
-commands share their definitions with MCP settings. The prompt uses the existing
+The connection step embeds CLI installation, a selector for Claude Code, Codex,
+and Gemini CLI with copyable stdio registration commands, and a read-only discovery
+prompt. Client commands share their definitions with MCP settings. The prompt uses the existing
 first-tool-call browser authorization flow; users approve then retry the request.
 Copying setup commands does not complete the connection milestone.
 Its four workspace milestones use the existing overview and permission-gated

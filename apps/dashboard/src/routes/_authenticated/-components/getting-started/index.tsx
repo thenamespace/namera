@@ -29,7 +29,7 @@ const steps = [
   {
     title: "Connect your AI client",
     description:
-      "MCP lets your AI client use Namera’s tools. Follow these three steps to connect Claude Code or Codex and check that it can see your accounts.",
+      "MCP lets your AI client use Namera’s tools. Follow these three steps to connect Claude Code, Codex, or Gemini CLI and check that it can see your accounts.",
     completed:
       "Your workspace has a connected integration. You can manage AI client access from MCP settings.",
   },

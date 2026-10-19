@@ -10,17 +10,17 @@ import {
   Select,
   Typography,
 } from "@namera-ai/ui";
+import { HugeiconsIcon, LinkSquare02Icon } from "@namera-ai/ui/icons";
 
 import { mcpClients } from "@/lib/mcp-clients";
 
-const clients = mcpClients.filter((client) => client.id !== "gemini");
 const installCommand = "npm install -g @namera-ai/cli";
 const discoveryPrompt = "Use Namera MCP to list my accounts and session keys.";
 const manageLink = buttonVariants({ variant: "secondary", size: "sm" });
 
 export function McpConnection({ complete }: { complete: boolean }) {
   const [client, setClient] = useState<string | number | null>("claude");
-  const selected = clients.find((option) => option.id === client) ?? mcpClients[0];
+  const selected = mcpClients.find((option) => option.id === client) ?? mcpClients[0];
 
   return (
     <div className="min-w-0 space-y-5">
@@ -35,9 +35,6 @@ export function McpConnection({ complete }: { complete: boolean }) {
           <Typography.Heading level={3} className="text-sm" weight="medium">
             <span className="mr-2 text-muted">2.</span> Add Namera to your client
           </Typography.Heading>
-          <Typography.Paragraph size="sm" color="muted" className="leading-relaxed">
-            With {selected.name} installed, run this in your terminal to add Namera’s tools.
-          </Typography.Paragraph>
           <div className="flex min-w-0 items-center gap-2">
             <div className="min-w-0 flex-1">
               <SetupSnippet
@@ -48,21 +45,32 @@ export function McpConnection({ complete }: { complete: boolean }) {
             </div>
             <Select
               aria-label="MCP client"
-              className="w-36 shrink-0"
+              className="w-40 shrink-0"
               selectedKey={selected.id}
               variant="secondary"
               onSelectionChange={setClient}
             >
-              <Select.Trigger>
+              <Select.Trigger className="whitespace-nowrap">
                 <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
               <Select.Popover>
                 <ListBox>
-                  {clients.map((option) => (
+                  {mcpClients.map((option) => (
                     <ListBox.Item key={option.id} id={option.id} textValue={option.name}>
-                      <span className="flex items-center gap-2">
-                        <option.icon aria-hidden className="size-[18px]" />
+                      <span className="flex items-center gap-2 whitespace-nowrap">
+                        {"logo" in option ? (
+                          <img
+                            src={option.logo}
+                            alt=""
+                            aria-hidden
+                            width={18}
+                            height={18}
+                            className="size-[18px] shrink-0"
+                          />
+                        ) : (
+                          <option.icon aria-hidden className="size-[18px] shrink-0" />
+                        )}
                         {option.name}
                       </span>
                     </ListBox.Item>
@@ -71,6 +79,17 @@ export function McpConnection({ complete }: { complete: boolean }) {
               </Select.Popover>
             </Select>
           </div>
+          <Typography.Paragraph size="sm" color="muted" className="leading-relaxed">
+            Using another client?{" "}
+            <a
+              href="https://namera.ai/docs/mcp/clients"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 underline underline-offset-4 hover:text-foreground"
+            >
+              View setup guides <HugeiconsIcon aria-hidden icon={LinkSquare02Icon} size={14} />
+            </a>
+          </Typography.Paragraph>
         </li>
         <li className="min-w-0 space-y-2.5">
           <Typography.Heading level={3} className="text-sm" weight="medium">
@@ -112,7 +131,7 @@ function SetupSnippet({
         theme="github-dark-dimmed"
         darkTheme="github-dark-dimmed"
         title={value}
-        className="min-w-0 flex-1 overflow-hidden text-[13px] leading-relaxed [&_pre]:truncate"
+        className="min-w-0 flex-1 overflow-hidden text-[13px] leading-relaxed [&_pre]:overflow-hidden [&_pre]:whitespace-nowrap"
       />
       <CopyIconButton
         className="size-7 shrink-0 [&_svg]:size-3.5"
