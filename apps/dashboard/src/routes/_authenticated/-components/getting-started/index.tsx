@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button, cn, Typography } from "@namera-ai/ui";
 import { CheckmarkCircle02Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
@@ -52,8 +52,19 @@ export function GettingStarted({ setup }: GettingStartedProps) {
     ? "Your key is created. Network approval is awaiting confirmation."
     : "Your key is created. Approve it on a network before connecting your AI client.";
 
-  useInterval(setup.refresh, setup.canFinish || setup.dismissed ? null : 30_000);
-  useEventListener("focus", setup.refresh);
+  const refresh = setup.refresh;
+  const refreshVisible = useCallback(() => {
+    if (document.visibilityState === "visible") refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    refreshVisible();
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => document.removeEventListener("visibilitychange", refreshVisible);
+  }, [refreshVisible]);
+
+  useInterval(refreshVisible, setup.canFinish || setup.dismissed ? null : 3_000);
+  useEventListener("focus", refreshVisible);
 
   return (
     <div className="getting-started">
