@@ -35,7 +35,11 @@ export function AccountCreated({
                   "h-auto min-h-16 w-full justify-start gap-3 rounded-lg bg-default/40 px-3 py-3 text-left whitespace-normal transition-colors hover:bg-default/80",
               })}
               to="/session-keys/new"
-              search={{ accountId: account.id }}
+              search={
+                onboarding
+                  ? { accountId: account.id, from: "get-started" }
+                  : { accountId: account.id }
+              }
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface/60">
                 <HugeiconsIcon aria-hidden className="size-4 text-muted" icon={Key01Icon} />

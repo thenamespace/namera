@@ -46,8 +46,8 @@ alongside View account; returning to the checklist selects the next unfinished
 step from the refreshed workspace data. Ordinary account creation keeps its
 existing actions. The source parameter is an allowlisted navigation hint only.
 
-The checklist’s session-key action carries `preset=get-started`. Once accounts
-load, the creation page consumes the allowlisted parameter with a history replace
+The checklist’s session-key action carries `preset=get-started` and
+`from=get-started`. Once accounts load, the creation page consumes the preset with a history replace
 and retains the preset in page state. It selects the newest active account that
 supports session keys and prefills a managed key on Base with a 30-day lifetime,
 message signatures, and unrestricted account access. Form defaults are applied
@@ -55,6 +55,11 @@ once; consuming the parameter and later revalidation preserve edits. Ordinary
 creation and recipe defaults are unchanged. Creation still requires explicit
 submission and the existing owner approval for network installation. Browser
 tests cover preset consumption, validation without edits, and the submitted scope.
+The source hint stays in the URL after preset consumption and follows managed
+activation or local-key setup to the success page, including Skip for now. That
+page offers Continue setup alongside View session key. A source hint alone does
+not reapply the preset. Ordinary creation keeps its existing success actions,
+and neither navigation parameter is sent in the creation request.
 
 Progress shares the router atom registry and refreshes every 30 seconds and on
 window focus while the checklist is open. Failed checks expose retry feedback;

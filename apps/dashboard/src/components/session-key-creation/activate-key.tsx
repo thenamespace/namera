@@ -11,9 +11,11 @@ import { useSessionKey } from "@/hooks/session-key";
 export function ActivateSessionKey({
   sessionKey,
   onFinish,
+  onboarding = false,
 }: {
   sessionKey: SessionKeyResponse;
   onFinish?: (() => void) | undefined;
+  onboarding?: boolean;
 }) {
   const query = useSessionKey(sessionKey.id);
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ export function ActivateSessionKey({
     void navigate({
       to: "/session-keys/created/$sessionKeyId",
       params: { sessionKeyId: sessionKey.id },
+      search: onboarding ? { from: "get-started" } : {},
     });
   });
 

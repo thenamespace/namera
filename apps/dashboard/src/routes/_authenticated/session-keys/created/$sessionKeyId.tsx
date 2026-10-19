@@ -11,7 +11,10 @@ import { DataLoading } from "@/components/data-loading";
 import { SessionKeyCreated } from "@/components/session-key-creation/created";
 import { useSessionKey } from "@/hooks/session-key";
 
+import { validateSessionCreationSource } from "../-components/creation-search";
+
 export const Route = createFileRoute("/_authenticated/session-keys/created/$sessionKeyId")({
+  validateSearch: validateSessionCreationSource,
   loader: async ({ context, params, abortController }) => {
     if (!Schema.is(SessionKeyId)(params.sessionKeyId)) throw notFound();
     await prefetchQuery(
@@ -26,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/session-keys/created/$sess
 
 function SessionKeyCreatedPage() {
   const { sessionKeyId } = Route.useLoaderData();
+  const { from } = Route.useSearch();
   const sessionKey = useSessionKey(sessionKeyId);
   if (sessionKey.isError)
     return (
@@ -36,7 +40,7 @@ function SessionKeyCreatedPage() {
       />
     );
   return sessionKey.data ? (
-    <SessionKeyCreated sessionKey={sessionKey.data} />
+    <SessionKeyCreated sessionKey={sessionKey.data} onboarding={from === "get-started"} />
   ) : (
     <DataLoading label="Loading session key" />
   );

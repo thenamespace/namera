@@ -15,10 +15,12 @@ export function CreateSessionKeyPage({
   canCreate,
   accountId,
   preset,
+  from,
 }: {
   canCreate: boolean;
   accountId?: WalletId | undefined;
   preset?: "get-started" | undefined;
+  from?: "get-started" | undefined;
 }) {
   const [onboarding] = useState(preset === "get-started");
   const wallets = useWallets();
@@ -29,7 +31,7 @@ export function CreateSessionKeyPage({
     // Capture the preset above before replacing the URL, so form edits survive consumption.
     void navigate({
       to: "/session-keys/new",
-      search: accountId ? { accountId } : {},
+      search: { ...(accountId ? { accountId } : {}), from: "get-started" },
       replace: true,
     });
   }, [accountId, canCreate, navigate, preset, wallets.data]);
@@ -46,6 +48,7 @@ export function CreateSessionKeyPage({
               wallets={wallets.data}
               initialAccountId={accountId}
               onboarding={onboarding}
+              from={from ?? (onboarding ? "get-started" : undefined)}
             />
           ) : wallets.isError ? (
             <DataError label="accounts" onRetry={wallets.refetch} isRetrying={wallets.isFetching} />

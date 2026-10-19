@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import { createSessionKeyInitialValues } from "../../../src/components/session-key-creation/initial-values";
 import { CreateSessionKeyFormSchema } from "../../../src/components/session-key-creation/schema";
-import { validateSessionCreationSearch } from "../../../src/routes/_authenticated/session-keys/-components/creation-search";
+import {
+  validateSessionCreationSearch,
+  validateSessionCreationSource,
+} from "../../../src/routes/_authenticated/session-keys/-components/creation-search";
 import {
   frozenSessionAccount,
   newestSessionAccount,
@@ -93,5 +96,13 @@ describe("onboarding session preset", () => {
     expect(validateSessionCreationSearch({ preset: "full-access", accountId: "invalid" })).toEqual(
       {},
     );
+  });
+
+  it("allowlists the return source independently of the one-time preset", () => {
+    expect(validateSessionCreationSearch({ from: "get-started" })).toEqual({ from: "get-started" });
+    expect(validateSessionCreationSource({ from: "get-started", preset: "get-started" })).toEqual({
+      from: "get-started",
+    });
+    expect(validateSessionCreationSource({ from: "https://untrusted.example" })).toEqual({});
   });
 });

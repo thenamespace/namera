@@ -28,15 +28,13 @@ const steps = [
   },
   {
     title: "Connect your AI client",
-    description:
-      "MCP lets your AI client use Namera’s tools. Follow these three steps to connect Claude Code, Codex, or Gemini CLI and check that it can see your accounts.",
+    description: "Connect your AI client to Namera in three steps.",
     completed:
       "Your workspace has a connected integration. You can manage AI client access from MCP settings.",
   },
   {
     title: "Make your first transaction or signature",
-    description:
-      "Ask your connected AI client to use your account. Start by signing a short message, or send a transaction when you’re ready. Copy a starter prompt below and review the request before approving it.",
+    description: "Copy a prompt below to sign a message or send a transaction.",
     completed:
       "Your workspace has completed its first transaction or signature. You’re ready to build.",
   },

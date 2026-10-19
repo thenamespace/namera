@@ -12,28 +12,51 @@ import { RegistryContext, scheduleTask } from "@effect/atom-react";
 import { Schema } from "effect";
 import { AsyncResult, AtomRegistry } from "effect/reactivity";
 
-import { UserActorData, WalletResponse } from "@namera-ai/protocol/dto";
+import {
+  SessionKeyResponse,
+  UserActorData,
+  WalletResponse,
+  type CreateEvmSessionKeyRequest,
+} from "@namera-ai/protocol/dto";
 import { Sidebar } from "@namera-ai/ui";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
 
 import { currentUserAtom } from "../../src/atoms/auth/session";
+import { DashboardPage } from "../../src/components/page";
+import { SessionKeyCreated } from "../../src/components/session-key-creation/created";
 import type * as SessionKeyHooks from "../../src/hooks/session-key";
 import { CreateSessionKeyPage } from "../../src/routes/_authenticated/session-keys/-components/create-session-key-page";
-import { validateSessionCreationSearch } from "../../src/routes/_authenticated/session-keys/-components/creation-search";
+import {
+  validateSessionCreationSearch,
+  validateSessionCreationSource,
+} from "../../src/routes/_authenticated/session-keys/-components/creation-search";
 import { actor } from "../fixtures/actor";
 import {
   newestSessionAccount,
   olderSessionAccount,
   sessionPresetAccounts,
+  registeredPresetSession,
 } from "../fixtures/session-key-preset";
 
 const boundary = vi.hoisted(() => ({ mutate: vi.fn() }));
+let callbacks: NonNullable<Parameters<typeof SessionKeyHooks.useCreateSessionKey>[0]>;
+let serverSession: SessionKeyResponse | undefined;
 vi.mock("../../src/hooks/session-key", async (importOriginal) => {
   const hooks = await importOriginal<typeof SessionKeyHooks>();
-  return { ...hooks, useCreateSessionKey: () => ({ mutate: boundary.mutate, isPending: false }) };
+  return {
+    ...hooks,
+    useCreateSessionKey: (options: typeof callbacks) => {
+      callbacks = options;
+      return { mutate: boundary.mutate, isPending: false };
+    },
+  };
 });
+// Network approval has its own boundary tests; navigation here never signs or submits.
+vi.mock("../../src/components/session-key-installations", () => ({
+  SessionKeyInstallations: () => <p>Network approvals</p>,
+}));
 vi.mock("../../src/env", () => ({
   env: { backendUrl: "https://api.example.test", environment: "test" },
 }));
@@ -50,7 +73,8 @@ vi.mock("../../src/telemetry", async () => {
 
 const disposers: (() => Promise<void>)[] = [];
 beforeEach(async () => {
-  boundary.mutate.mockClear();
+  boundary.mutate.mockReset();
+  serverSession = undefined;
   await page.viewport(1440, 1000);
 });
 afterEach(async () => {
@@ -77,6 +101,9 @@ async function mountCreation(search = "?preset=get-started", accounts?: Promise<
         )
       );
     }
+    if (request.method === "GET" && serverSession && path === `/session-keys/${serverSession.id}`) {
+      return Response.json(Schema.encodeSync(SessionKeyResponse)(serverSession));
+    }
     throw new Error(`Unexpected request ${request.method} ${path}`);
   });
   const registry = AtomRegistry.make({
@@ -98,11 +125,31 @@ async function mountCreation(search = "?preset=get-started", accounts?: Promise<
     component: SessionRoute,
   });
   function SessionRoute() {
-    const { accountId, preset } = route.useSearch();
-    return <CreateSessionKeyPage canCreate accountId={accountId} preset={preset} />;
+    const { accountId, preset, from } = route.useSearch();
+    return <CreateSessionKeyPage canCreate accountId={accountId} preset={preset} from={from} />;
   }
+  const created = createRoute({
+    getParentRoute: () => root,
+    path: "/session-keys/created/$sessionKeyId",
+    validateSearch: validateSessionCreationSource,
+    component: CreatedSessionRoute,
+  });
+  function CreatedSessionRoute() {
+    const { from } = created.useSearch();
+    if (!serverSession) throw new Error("Expected a created session fixture");
+    return <SessionKeyCreated sessionKey={serverSession} onboarding={from === "get-started"} />;
+  }
+  const gettingStarted = createRoute({
+    getParentRoute: () => root,
+    path: "/get-started",
+    component: () => (
+      <DashboardPage>
+        <p>Continue setup checklist</p>
+      </DashboardPage>
+    ),
+  });
   const router = createRouter({
-    routeTree: root.addChildren([route]),
+    routeTree: root.addChildren([route, created, gettingStarted]),
     history: createMemoryHistory({ initialEntries: [`/session-keys/new${search}`] }),
     context: { atomRegistry: registry },
   });
@@ -124,7 +171,7 @@ it("enables creation for the untouched preset and submits exactly the reviewed p
     .element(page.getByRole("textbox", { name: /^Name/ }))
     .toHaveValue("My first session key");
   await expect.element(page.getByText("Newest account", { exact: true }).first()).toBeVisible();
-  await expect.poll(() => router.state.location.searchStr).toBe("");
+  await expect.poll(() => router.state.location.searchStr).toBe("?from=get-started");
   expect(boundary.mutate).not.toHaveBeenCalled();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect.element(page.getByText("Lifetime", { exact: true })).toBeVisible();
@@ -164,7 +211,7 @@ it("consumes the preset after accounts load and preserves subsequent form edits"
   );
   const name = page.getByRole("textbox", { name: /^Name/ });
   await expect.element(name).toHaveValue("My first session key");
-  await expect.poll(() => router.state.location.searchStr).toBe("");
+  await expect.poll(() => router.state.location.searchStr).toBe("?from=get-started");
   await name.fill("Edited session");
   await router.invalidate();
   await expect.element(name).toHaveValue("Edited session");
@@ -191,6 +238,13 @@ it("keeps ordinary account selection and does not apply an unknown preset", asyn
   expect(boundary.mutate).not.toHaveBeenCalled();
 });
 
+it("keeps the return source without reapplying the consumed preset", async () => {
+  await mountCreation(`?accountId=${olderSessionAccount.id}&from=get-started`);
+  await expect.element(page.getByRole("textbox", { name: /^Name/ })).toHaveValue("");
+  await expect.element(page.getByText("Older account", { exact: true }).first()).toBeVisible();
+  expect(boundary.mutate).not.toHaveBeenCalled();
+});
+
 it("disables creation when the required onchain permission is removed", async () => {
   await mountCreation();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
@@ -202,3 +256,62 @@ it("disables creation when the required onchain permission is removed", async ()
   await expect.element(create).toBeDisabled();
   expect(boundary.mutate).not.toHaveBeenCalled();
 });
+
+it.each([false, true])(
+  "carries onboarding through success and returns to setup (active: %s)",
+  async (active) => {
+    const router = await mountCreation("?preset=get-started&from=get-started");
+    boundary.mutate.mockImplementation(({ payload }: { payload: CreateEvmSessionKeyRequest }) => {
+      const registration = registeredPresetSession(payload);
+      serverSession = active
+        ? {
+            ...registration,
+            status: "active",
+            installations: registration.installations.map((installation) => ({
+              ...installation,
+              status: "installed",
+            })),
+          }
+        : registration;
+      void callbacks.onSuccess?.(registration, { payload });
+    });
+    await expect.poll(() => router.state.location.searchStr).toBe("?from=get-started");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page.getByRole("button", { name: "Create session key", exact: true }).click();
+    await expect
+      .element(page.getByRole("heading", { name: "Finish setting up your key" }))
+      .toBeVisible();
+    await page
+      .getByRole("button", { name: active ? "Continue" : "Skip for now", exact: true })
+      .click();
+    const continueSetup = page.getByRole("link", { name: "Continue setup", exact: true });
+    await expect.element(continueSetup).toHaveAttribute("href", "/get-started");
+    await expect
+      .element(page.getByRole("link", { name: "View session key", exact: true }))
+      .toBeVisible();
+    expect(router.state.location.searchStr).toBe("?from=get-started");
+    expect(router.state.location.pathname).toContain("/session-keys/created/");
+    expect(boundary.mutate).toHaveBeenCalledOnce();
+    expect(boundary.mutate.mock.calls[0]?.[0].payload).not.toHaveProperty("from");
+    expect(boundary.mutate.mock.calls[0]?.[0].payload).not.toHaveProperty("preset");
+
+    if (!serverSession) throw new Error("Expected a registered session");
+    const sessionKeyId = serverSession.id;
+    await router.navigate({
+      to: "/session-keys/created/$sessionKeyId",
+      params: { sessionKeyId },
+      search: {},
+    });
+    await expect.element(continueSetup).not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("link", { name: "View session key", exact: true }))
+      .toBeVisible();
+    await router.navigate({
+      to: "/session-keys/created/$sessionKeyId",
+      params: { sessionKeyId },
+      search: { from: "get-started" },
+    });
+    await continueSetup.click();
+    await expect.element(page.getByText("Continue setup checklist", { exact: true })).toBeVisible();
+  },
+);

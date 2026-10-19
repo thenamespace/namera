@@ -146,6 +146,12 @@ it.each([
   expect(workspace.router.state.location.searchStr).toBe(onboarding ? "?from=get-started" : "");
   expect(workspace.payloads).toHaveLength(1);
   expect(workspace.payloads[0]).not.toHaveProperty("from");
+  await expect
+    .element(page.getByRole("link", { name: /Create session key/ }))
+    .toHaveAttribute(
+      "href",
+      `/session-keys/new?accountId=${managedWallet.id}${onboarding ? "&from=get-started" : ""}`,
+    );
 
   const continueSetup = page.getByRole("link", { name: "Continue setup", exact: true });
   if (onboarding) {

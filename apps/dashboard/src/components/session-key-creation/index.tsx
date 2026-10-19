@@ -32,6 +32,7 @@ import { useSessionKeyCreation } from "./use-session-key-creation";
 
 type CreateSessionKeyFormProps = SessionKeyInitialOptions & {
   wallets: ListWalletsResponse;
+  from?: "get-started" | undefined;
 };
 
 const unknownLimits: CustodyLimits = { local: false, managed: false };
@@ -60,6 +61,7 @@ function SessionKeyForm({
   limits,
   recipe,
   onboarding,
+  from,
 }: CreateSessionKeyFormProps & { limits: CustodyLimits }) {
   const [initialValues] = useState(() =>
     createSessionKeyInitialValues(
@@ -100,6 +102,7 @@ function SessionKeyForm({
         <SessionKeyCreated
           sessionKey={registration}
           embedded
+          onboarding={from === "get-started"}
           onEnableNetworks={() => setCompleted(false)}
         />
       ) : null}
@@ -127,11 +130,13 @@ function SessionKeyForm({
             ) : registration.signer.custody === "namera-managed" ? (
               <ActivateSessionKey
                 sessionKey={registration}
+                onboarding={from === "get-started"}
                 onFinish={recipe ? () => setCompleted(true) : undefined}
               />
             ) : setup ? (
               <SetupSessionKey
                 sessionKey={registration}
+                onboarding={from === "get-started"}
                 draft={setup.draft}
                 bindings={setup.bindings}
                 onSaved={creation.acknowledgeBackup}

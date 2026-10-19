@@ -176,7 +176,7 @@ it("links to the session preset and explains its defaults", async () => {
   await mountSetup(setupOverview({ accounts: 1 }));
   await expect
     .element(page.getByRole("link", { name: "Create session key", exact: true }))
-    .toHaveAttribute("href", "/session-keys/new?preset=get-started");
+    .toHaveAttribute("href", "/session-keys/new?preset=get-started&from=get-started");
   await expect
     .element(
       page.getByText(
@@ -286,11 +286,14 @@ it("offers MCP starter prompts without SDK or CLI choices", async () => {
     .toBeVisible();
   await page.getByRole("button", { name: "Copy message signing prompt", exact: true }).click();
   await expect.poll(() => writeText.mock.calls.length).toBe(1);
-  expect(writeText.mock.calls[0]?.[0]).toContain('"Hello from Namera"');
-  expect(writeText.mock.calls[0]?.[0]).toContain("ask for my approval before signing");
+  expect(writeText.mock.calls[0]?.[0]).toBe(
+    'Use Namera MCP to sign "Hello from Namera" with my session key.',
+  );
   await page.getByRole("button", { name: "Copy transaction prompt", exact: true }).click();
   await expect.poll(() => writeText.mock.calls.length).toBe(2);
-  expect(writeText.mock.calls[1]?.[0]).toContain("Wait for my approval before sending");
+  expect(writeText.mock.calls[1]?.[0]).toBe(
+    "Use Namera MCP to send a transaction. Ask for the recipient and amount, then confirm before sending.",
+  );
 });
 
 it("copies inline installation, client-specific setup, and a read-only first request", async () => {
