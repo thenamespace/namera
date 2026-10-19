@@ -11,25 +11,6 @@ import {
 } from "@namera-ai/ui/icons";
 import { motion, useReducedMotion } from "motion/react";
 
-const captions = [
-  {
-    title: "Your account. Your control.",
-    description: "One smart account, with permissions built in.",
-  },
-  {
-    title: "A key with clear boundaries.",
-    description: "Give your agent permission, without giving it everything.",
-  },
-  {
-    title: "Your AI client, connected.",
-    description: "Connect your AI client to your Namera account.",
-  },
-  {
-    title: "From setup to something real.",
-    description: "Every action follows the permissions you choose.",
-  },
-] as const;
-
 const enter = { opacity: 0, y: 12, scale: 0.98 };
 const visible = { opacity: 1, y: 0, scale: 1 };
 const transition = { duration: 0.3, ease: "easeOut" } as const;
@@ -43,10 +24,13 @@ const completeIcons = [
 
 export function StepIllustration({ step, finished }: { step: number; finished: boolean }) {
   const reducedMotion = useReducedMotion();
-  const caption = captions[step] ?? captions[0];
 
   return (
-    <figure className="setup-illustration" data-scene={finished ? "complete" : step}>
+    <figure
+      aria-label={finished ? "Setup complete" : `Setup step ${step + 1}`}
+      className="setup-illustration"
+      data-scene={finished ? "complete" : step}
+    >
       <div className="setup-artwork" aria-hidden="true">
         <svg className="setup-grain" width="100%" height="100%">
           <filter id="setup-paper-grain">
@@ -86,14 +70,6 @@ export function StepIllustration({ step, finished }: { step: number; finished: b
           {finished ? "Ready for what’s next" : "Built for agents. Controlled by you."}
         </div>
       </div>
-      <figcaption className="px-2 pt-5 text-center">
-        <p className="text-sm font-medium">{finished ? "You’re ready to build." : caption.title}</p>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted">
-          {finished
-            ? "Keep your ideas moving. Your boundaries stay in place."
-            : caption.description}
-        </p>
-      </figcaption>
     </figure>
   );
 }

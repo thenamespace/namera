@@ -41,6 +41,16 @@ alongside View account; returning to the checklist selects the next unfinished
 step from the refreshed workspace data. Ordinary account creation keeps its
 existing actions. The source parameter is an allowlisted navigation hint only.
 
+The checklist’s session-key action carries `preset=get-started`. Once accounts
+load, the creation page consumes the allowlisted parameter with a history replace
+and retains the preset in page state. It selects the newest active account that
+supports session keys and prefills a managed key on Base with a 30-day lifetime,
+message signatures, and unrestricted account access. Form defaults are applied
+once; consuming the parameter and later revalidation preserve edits. Ordinary
+creation and recipe defaults are unchanged. Creation still requires explicit
+submission and the existing owner approval for network installation. Browser
+tests cover preset consumption, validation without edits, and the submitted scope.
+
 Progress shares the router atom registry and refreshes every 30 seconds and on
 window focus while the checklist is open. Failed checks expose retry feedback;
 denied queries revalidate session authority. The existing overview requires
@@ -76,6 +86,8 @@ Templates retain `/recipes` route paths and use the private recipes package.
 Forms use React Hook Form with Effect Schema through the Standard Schema resolver.
 The server remains the validation boundary. Domain mutation hooks expose
 `onSuccess`, `onError`, and `onSettled`; shared feedback maps typed errors to toasts.
+Session-key creation subscribes to form validity before switching from details to
+policies, so valid prefilled permissions enable creation without a manual edit.
 
 Settings autosave debounces edits, serializes saves, and checks captured authority
 before dispatch, including an unmount/pagehide flush. Read-only forms disable

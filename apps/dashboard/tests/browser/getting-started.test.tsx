@@ -147,12 +147,12 @@ it("shows the sidebar progress and changes its illustration with the selected st
   await expect
     .element(page.getByRole("button", { name: /Create your first account/ }))
     .toHaveAttribute("aria-expanded", "true");
-  await expect.element(page.getByText("Your account. Your control.")).toBeVisible();
+  await expect.element(page.getByRole("figure", { name: "Setup step 1" })).toBeVisible();
   await expect
     .element(page.getByRole("link", { name: "Create account", exact: true }))
     .toHaveAttribute("href", "/accounts/new?from=get-started");
   await page.getByRole("button", { name: /Give your agent a session key/ }).click();
-  await expect.element(page.getByText("A key with clear boundaries.")).toBeVisible();
+  await expect.element(page.getByRole("figure", { name: "Setup step 2" })).toBeVisible();
   await expect
     .element(page.getByText("Create your account first, then add a session key."))
     .toBeVisible();
@@ -160,16 +160,31 @@ it("shows the sidebar progress and changes its illustration with the selected st
     .element(page.getByRole("link", { name: "Create session key", exact: true }))
     .not.toBeInTheDocument();
   await page.getByRole("button", { name: /Connect your AI client/ }).click();
-  await expect.element(page.getByText("Your AI client, connected.")).toBeVisible();
+  await expect.element(page.getByRole("figure", { name: "Setup step 3" })).toBeVisible();
   await expect
     .element(page.getByRole("link", { name: "Connect AI client", exact: true }))
     .toHaveAttribute("href", "/settings/workspace/mcp");
   await expect.element(page.getByRole("radiogroup")).not.toBeInTheDocument();
   await page.getByRole("button", { name: /Make your first transaction or signature/ }).click();
-  await expect.element(page.getByText("From setup to something real.")).toBeVisible();
+  await expect.element(page.getByRole("figure", { name: "Setup step 4" })).toBeVisible();
   await expect
     .element(page.getByRole("button", { name: "Done", exact: true }))
     .not.toBeInTheDocument();
+});
+
+it("links to the session preset and explains its defaults", async () => {
+  await mountSetup(setupOverview({ accounts: 1 }));
+  await expect
+    .element(page.getByRole("link", { name: "Create session key", exact: true }))
+    .toHaveAttribute("href", "/session-keys/new?preset=get-started");
+  await expect
+    .element(
+      page.getByText(
+        "We’ll prefill a key for your newest account on Base, valid for 30 days, with message signing and full account access.",
+        { exact: true },
+      ),
+    )
+    .toBeVisible();
 });
 
 it("resumes at the first unfinished step and retains navigation to Overview", async () => {

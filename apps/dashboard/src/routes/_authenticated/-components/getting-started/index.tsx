@@ -148,6 +148,16 @@ export function GettingStarted({ setup }: GettingStartedProps) {
                         <Typography.Paragraph size="sm" color="muted" className="leading-relaxed">
                           {complete ? step.completed : step.description}
                         </Typography.Paragraph>
+                        {index === 1 && !complete ? (
+                          <Typography.Paragraph
+                            size="sm"
+                            color="muted"
+                            className="mt-3 leading-relaxed"
+                          >
+                            We’ll prefill a key for your newest account on Base, valid for 30 days,
+                            with message signing and full account access.
+                          </Typography.Paragraph>
+                        ) : null}
                         <div className="mt-5">
                           <StepActions step={index} complete={complete ?? false} setup={setup} />
                         </div>

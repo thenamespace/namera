@@ -8,6 +8,7 @@ import type { useGettingStarted } from "@/hooks/getting-started";
 const primaryLink = buttonVariants({ variant: "primary", size: "sm" });
 const secondaryLink = buttonVariants({ variant: "secondary", size: "sm" });
 const onboardingSearch = { from: "get-started" } as const;
+const sessionPresetSearch = { preset: "get-started" } as const;
 const starterPrompts = [
   {
     title: "Sign a message",
@@ -58,7 +59,7 @@ export function StepActions({
         <p className="text-sm text-muted">Create your account first, then add a session key.</p>
       );
     return setup.permissions.includes("session-key:create") ? (
-      <Link to="/session-keys/new" className={primaryLink}>
+      <Link to="/session-keys/new" search={sessionPresetSearch} className={primaryLink}>
         Create session key
       </Link>
     ) : (
