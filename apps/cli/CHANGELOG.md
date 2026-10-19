@@ -1,5 +1,13 @@
 # @namera-ai/cli
 
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [b60f9d6]
+  - @namera-ai/sdk@1.6.0
+  - @namera-ai/protocol@1.6.0
+
 ## 1.5.0
 
 ### Patch Changes
