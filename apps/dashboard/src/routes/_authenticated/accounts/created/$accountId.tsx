@@ -9,9 +9,11 @@ import { prefetchQuery } from "@/atoms/prefetch";
 import { walletAtom } from "@/atoms/wallet";
 import { hasPermissions } from "@/components/permission";
 
+import { validateAccountCreationSearch } from "../-components/creation-search";
 import { AccountCreated } from "./-components/account-created";
 
 export const Route = createFileRoute("/_authenticated/accounts/created/$accountId")({
+  validateSearch: validateAccountCreationSearch,
   loader: async ({ context, params, abortController }) => {
     if (!Schema.is(WalletId)(params.accountId)) throw notFound();
     const [account, user] = await Promise.all([
@@ -26,5 +28,6 @@ export const Route = createFileRoute("/_authenticated/accounts/created/$accountI
   component: AccountCreatedPage,
 });
 function AccountCreatedPage() {
-  return <AccountCreated {...Route.useLoaderData()} />;
+  const { from } = Route.useSearch();
+  return <AccountCreated {...Route.useLoaderData()} onboarding={from === "get-started"} />;
 }

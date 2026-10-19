@@ -13,9 +13,11 @@ import { AccountOverview } from "../../../account/-components/account-overview";
 export function AccountCreated({
   account,
   canCreateSessionKey,
+  onboarding = false,
 }: {
   account: WalletResponse;
   canCreateSessionKey: boolean;
+  onboarding?: boolean;
 }) {
   return (
     <DashboardPage>
@@ -56,13 +58,20 @@ export function AccountCreated({
             </Typography.Paragraph>
           )}
         </section>
-        <Link
-          className={buttonVariants({ variant: "tertiary", size: "sm", className: "mt-6" })}
-          to="/account/$accountId/overview"
-          params={{ accountId: account.id }}
-        >
-          View account
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {onboarding ? (
+            <Link className={buttonVariants({ variant: "primary", size: "sm" })} to="/get-started">
+              Continue setup
+            </Link>
+          ) : null}
+          <Link
+            className={buttonVariants({ variant: "tertiary", size: "sm" })}
+            to="/account/$accountId/overview"
+            params={{ accountId: account.id }}
+          >
+            View account
+          </Link>
+        </div>
       </DashboardPage.Content>
     </DashboardPage>
   );

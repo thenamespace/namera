@@ -43,7 +43,7 @@ import {
 
 const supportedLogoTypes = ["icon", "emoji", "image"] as const;
 
-export function CreateAccountForm() {
+export function CreateAccountForm({ onboarding = false }: { onboarding?: boolean }) {
   const provisioning = useProvisioningRequest("wallet-root");
   const [managedCreationFailed, setManagedCreationFailed] = useState(false);
   const navigate = useNavigate();
@@ -70,6 +70,7 @@ export function CreateAccountForm() {
       void navigate({
         to: "/accounts/created/$accountId",
         params: { accountId: account.id },
+        search: onboarding ? { from: "get-started" } : {},
         replace: true,
       });
     },

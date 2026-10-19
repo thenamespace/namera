@@ -148,6 +148,9 @@ it("shows the sidebar progress and changes its illustration with the selected st
     .element(page.getByRole("button", { name: /Create your first account/ }))
     .toHaveAttribute("aria-expanded", "true");
   await expect.element(page.getByText("Your account. Your control.")).toBeVisible();
+  await expect
+    .element(page.getByRole("link", { name: "Create account", exact: true }))
+    .toHaveAttribute("href", "/accounts/new?from=get-started");
   await page.getByRole("button", { name: /Give your agent a session key/ }).click();
   await expect.element(page.getByText("A key with clear boundaries.")).toBeVisible();
   await expect

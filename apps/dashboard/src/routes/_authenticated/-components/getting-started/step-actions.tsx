@@ -7,6 +7,7 @@ import type { useGettingStarted } from "@/hooks/getting-started";
 
 const primaryLink = buttonVariants({ variant: "primary", size: "sm" });
 const secondaryLink = buttonVariants({ variant: "secondary", size: "sm" });
+const onboardingSearch = { from: "get-started" } as const;
 const starterPrompts = [
   {
     title: "Sign a message",
@@ -37,7 +38,7 @@ export function StepActions({
         </Link>
       );
     return setup.permissions.includes("wallet:create") ? (
-      <Link to="/accounts/new" className={primaryLink}>
+      <Link to="/accounts/new" search={onboardingSearch} className={primaryLink}>
         Create account
       </Link>
     ) : (

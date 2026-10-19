@@ -35,6 +35,12 @@ signature. Session-key creation does not imply network installation. Merely
 creating an API key, opening a guide or submitting a pending transaction does not
 complete the corresponding milestone.
 
+Account creation started from the checklist carries `from=get-started` through
+the creation form and success page. That success page offers Continue setup
+alongside View account; returning to the checklist selects the next unfinished
+step from the refreshed workspace data. Ordinary account creation keeps its
+existing actions. The source parameter is an allowlisted navigation hint only.
+
 Progress shares the router atom registry and refreshes every 30 seconds and on
 window focus while the checklist is open. Failed checks expose retry feedback;
 denied queries revalidate session authority. The existing overview requires
