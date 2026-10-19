@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from "react";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import { FieldError, Modal, Typography } from "@namera-ai/ui";
+import { FieldError, Modal } from "@namera-ai/ui";
 import { HugeiconsIcon } from "@namera-ai/ui/icons";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 
@@ -220,10 +220,6 @@ export function PolicySection({
             onRemove={() => saveSignature()}
           >
             <EvmPolicySummary policy={signature} />
-            <Typography.Paragraph size="xs" className="text-muted mt-2">
-              Signing rules are shared across enabled networks. Onchain authority is enabled on this
-              network.
-            </Typography.Paragraph>
           </SessionPolicyCard>
         ) : null}
         {signatureError ? <FieldError>{signatureError}</FieldError> : null}
