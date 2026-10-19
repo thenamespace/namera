@@ -19,6 +19,27 @@ export const SignerProvisioningStatus = Schema.Literals([
   "completed",
 ]);
 
+export const SignerProvisioningCheckpoint = Schema.Struct({
+  key: Schema.optionalKey(
+    Schema.Struct({
+      id: Schema.NonEmptyString,
+      agentId: Schema.NonEmptyString,
+      chain: Schema.Literal("ethereum"),
+      curve: Schema.Literal("secp256k1"),
+      publicKey: Schema.NonEmptyString,
+      address: Schema.NonEmptyString,
+      version: Schema.Int.check(Schema.isGreaterThan(0)),
+    }),
+  ),
+  approval: Schema.optionalKey(
+    Schema.Struct({
+      kind: Schema.Literals(["consensus", "guardrail"]),
+      id: Schema.NonEmptyString,
+    }),
+  ),
+});
+export type SignerProvisioningCheckpoint = typeof SignerProvisioningCheckpoint.Type;
+
 export const SignerProvisioning = Schema.Struct({
   id: SignerProvisioningId,
   organizationId: OrganizationId,
@@ -31,6 +52,7 @@ export const SignerProvisioning = Schema.Struct({
   credentialId: CredentialId,
   status: SignerProvisioningStatus,
   stage: Schema.NonEmptyString,
+  checkpoint: Schema.optionalKey(SignerProvisioningCheckpoint),
   signer: Schema.NullOr(SigningKeyInsert),
   resourceId: Schema.NullOr(Schema.NonEmptyString),
   leaseToken: Schema.NullOr(Schema.String),

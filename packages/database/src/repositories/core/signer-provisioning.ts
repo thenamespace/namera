@@ -7,7 +7,11 @@ import type {
   SignerProvisioningId,
   SigningKeyId,
 } from "@namera-ai/protocol";
-import { SignerProvisioning, SigningKeyInsert } from "@namera-ai/protocol/model";
+import {
+  SignerProvisioning,
+  SigningKeyInsert,
+  type SignerProvisioningCheckpoint,
+} from "@namera-ai/protocol/model";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { Database, mapRepositoryError } from "#/core/index";
@@ -79,9 +83,45 @@ const make = Effect.gen(function* () {
           leaseToken: lease.leaseToken,
           leaseExpiresAt: sql`clock_timestamp() + interval '60 seconds'`,
         })
-        .where(and(identity, available, inArray(table.status, ["pending", "ready"])))
+        .where(
+          and(
+            identity,
+            available,
+            or(
+              inArray(table.status, ["pending", "ready"]),
+              and(
+                eq(table.provider, "1claw"),
+                eq(table.status, "recovery_required"),
+                inArray(table.stage, [
+                  "agent_credential_saved",
+                  "key_recorded",
+                  "raw_signing_started",
+                  "authorization_pending",
+                ]),
+              ),
+            ),
+          ),
+        )
         .returning();
       return rows[0] ? Schema.decodeUnknownSync(SignerProvisioning)(rows[0]) : undefined;
+    }, mapRepositoryError),
+    checkpoint: Effect.fn("database.signerProvisioning.checkpoint")(function* (
+      lease: ProvisioningLease,
+      stage: "agent_credential_saved" | "key_recorded" | "authorization_pending",
+      checkpoint: SignerProvisioningCheckpoint,
+    ) {
+      const db = yield* transactionOrDatabase(database);
+      const rows = yield* db
+        .update(table)
+        .set({ status: "pending", stage, checkpoint })
+        .where(
+          and(
+            owned(lease),
+            inArray(table.status, ["pending", "remote_started", "recovery_required"]),
+          ),
+        )
+        .returning({ id: table.id });
+      return rows.length === 1;
     }, mapRepositoryError),
     renew: Effect.fn("database.signerProvisioning.renew")(function* (lease: ProvisioningLease) {
       const db = yield* transactionOrDatabase(database);
@@ -105,7 +145,12 @@ const make = Effect.gen(function* () {
       const rows = yield* db
         .update(table)
         .set({ status: "remote_started", stage })
-        .where(and(owned(lease), inArray(table.status, ["pending", "remote_started"])))
+        .where(
+          and(
+            owned(lease),
+            inArray(table.status, ["pending", "remote_started", "recovery_required"]),
+          ),
+        )
         .returning({ id: table.id });
       return rows.length === 1;
     }, mapRepositoryError),

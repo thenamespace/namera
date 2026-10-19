@@ -1,9 +1,15 @@
 import { expect, layer } from "@effect/vitest";
-import { Effect, Ref, Result } from "effect";
+import { DateTime, Effect, Layer, Redacted, Ref, Result } from "effect";
 import { TestClock } from "effect/testing";
 
+import { Audit, makeMaintainOneClawSigner } from "@namera-ai/application";
 import { Database, Repository } from "@namera-ai/database";
-import { CredentialId, SignerProvisioningId, SigningKeyId } from "@namera-ai/protocol";
+import {
+  CredentialId,
+  SignerProvisioningId,
+  SigningKeyId,
+  OneClawError,
+} from "@namera-ai/protocol";
 import { OneClawTestControl, oneClawAccountTestLayer } from "@namera-ai/wallet-provider-oneclaw";
 
 import { makeTestApiClient, resetTestState, signIn, testEmail } from "../../fixtures/index.js";
@@ -39,7 +45,256 @@ const setup = Effect.gen(function* () {
   return { client, owner, control, request, repository: yield* Repository, db: yield* Database };
 });
 
+const invalidatingProvider = Layer.unwrap(
+  Effect.gen(function* () {
+    const generation = yield* Ref.make(0);
+    return oneClawAccountTestLayer({
+      customers: {
+        redeemClaim: ({ claim, expectedCustomerId }) =>
+          Effect.gen(function* () {
+            const version = yield* Ref.updateAndGet(generation, (value) => value + 1);
+            return {
+              connectionId: claim.connectionId,
+              customerId: expectedCustomerId,
+              token: Redacted.make(`token-${version}`),
+              expiresAt: DateTime.add(yield* DateTime.now, { hours: 24 }),
+            };
+          }),
+        setPassword: () => Ref.update(generation, (value) => value + 1),
+        getIdentity: ({ payload }) =>
+          Effect.gen(function* () {
+            if (Redacted.value(payload.token) !== `token-${yield* Ref.get(generation)}`)
+              return yield* new OneClawError({
+                operation: "customers.getIdentity",
+                code: "UNAUTHENTICATED",
+                httpStatus: 401,
+              });
+            return { customerId: payload.customerId };
+          }),
+      },
+      agents: {
+        create: ({ request, authority }) =>
+          Effect.gen(function* () {
+            if (Redacted.value(authority.payload.token) !== `token-${yield* Ref.get(generation)}`)
+              return yield* new OneClawError({
+                operation: "agents.create",
+                code: "UNAUTHENTICATED",
+                httpStatus: 401,
+              });
+            return {
+              request,
+              credential: {
+                version: 1 as const,
+                credentialId: request.agentCredentialId,
+                organizationId: request.connection.organizationId,
+                agentId: `agent-${request.signingKeyId}`,
+                apiKey: Redacted.make("test-agent-key"),
+              },
+            };
+          }),
+      },
+    });
+  }),
+);
+layer(
+  makeTestServerLayer(
+    {},
+    undefined,
+    makeTestConfigLayer({
+      ONECLAW_PLATFORM_APP_ID: "test-app",
+      ONECLAW_ORG_EMAIL_DOMAIN: "example.invalid",
+    }),
+    undefined,
+    invalidatingProvider,
+  ),
+)("customer token invalidation", (it) => {
+  it.effect("renews after password setup before creating an agent", () =>
+    Effect.gen(function* () {
+      const { client, request, control } = yield* setup;
+      yield* client.wallet.create(request);
+      const calls = yield* Ref.get(control.calls);
+      expect(calls.filter((call) => call === "customers.redeemClaim")).toHaveLength(2);
+      expect(calls.filter((call) => call === "customers.setPassword")).toHaveLength(1);
+      expect(calls.filter((call) => call === "agents.create")).toHaveLength(1);
+    }),
+  );
+});
+
+for (const verified of [true, false]) {
+  const recovery = makeTestServerLayer(
+    {},
+    undefined,
+    makeTestConfigLayer({
+      ONECLAW_PLATFORM_APP_ID: "test-app",
+      ONECLAW_ORG_EMAIL_DOMAIN: "example.invalid",
+    }),
+    undefined,
+    oneClawAccountTestLayer({
+      customers: {
+        setPassword: () =>
+          Effect.fail(
+            new OneClawError({
+              operation: "customers.setPassword",
+              code: "INVALID_REQUEST",
+              httpStatus: 400,
+            }),
+          ),
+        verifyPassword: () =>
+          verified
+            ? Effect.succeed(undefined)
+            : Effect.fail(
+                new OneClawError({
+                  operation: "customers.verifyPassword",
+                  code: "UNAUTHENTICATED",
+                  httpStatus: 401,
+                }),
+              ),
+      },
+    }),
+  );
+  layer(recovery)(`customer password recovery: ${verified}`, (it) => {
+    it.effect(
+      "verifies the saved password or stops without creating an agent or resetting it",
+      () =>
+        Effect.gen(function* () {
+          const { client, request, control, db } = yield* setup;
+          if (verified) {
+            yield* client.wallet.create(request);
+            expect((yield* db.query.signerProvisioning.findMany())[0]?.status).toBe("completed");
+          } else {
+            yield* client.wallet.create(request).pipe(Effect.flip);
+            expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+              code: "PROVIDER_RECOVERY_REQUIRED",
+            });
+            expect(
+              (yield* Ref.get(control.calls)).filter((call) => call === "agents.create"),
+            ).toHaveLength(0);
+          }
+          const calls = yield* Ref.get(control.calls);
+          expect(calls.filter((call) => call === "customers.setPassword")).toHaveLength(1);
+          expect(calls.filter((call) => call === "customers.verifyPassword")).toHaveLength(1);
+        }),
+    );
+  });
+}
+
+const pendingApproval = makeTestServerLayer(
+  {},
+  undefined,
+  makeTestConfigLayer({
+    ONECLAW_PLATFORM_APP_ID: "test-app",
+    ONECLAW_ORG_EMAIL_DOMAIN: "example.invalid",
+  }),
+  undefined,
+  oneClawAccountTestLayer({
+    agents: {
+      setRawSigningEnabled: () =>
+        Effect.fail(
+          new OneClawError({
+            operation: "agents.setRawSigningEnabled",
+            code: "APPROVAL_REQUIRED",
+            httpStatus: 202,
+            approval: { kind: "guardrail", id: "pending-approval" },
+          }),
+        ),
+    },
+  }),
+);
+layer(pendingApproval)("provider approval boundary", (it) => {
+  it.effect("persists pending authorization and does not submit it repeatedly", () =>
+    Effect.gen(function* () {
+      const { client, request, control, db } = yield* setup;
+      for (let i = 0; i < 3; i++)
+        expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+          code: "PROVIDER_RECOVERY_REQUIRED",
+        });
+      const calls = yield* Ref.get(control.calls);
+      for (const operation of [
+        "agents.create",
+        "signingKeys.create",
+        "agents.setRawSigningEnabled",
+      ])
+        expect(calls.filter((call) => call === operation)).toHaveLength(1);
+      expect((yield* db.query.signerProvisioning.findMany())[0]?.checkpoint).toMatchObject({
+        approval: { kind: "guardrail", id: "pending-approval" },
+      });
+    }),
+  );
+});
+
 layer(Live)("durable signer provisioning", (it) => {
+  it.effect(
+    "checks an existing signer without changing policy, and repairs only that key on apply",
+    () =>
+      Effect.gen(function* () {
+        const { client, request, control, repository, owner } = yield* setup;
+        const wallet = yield* client.wallet.create(request);
+        const view = yield* repository.core.wallet.findById(wallet.id, owner.actor.organization.id);
+        if (!view) return yield* Effect.die("Missing wallet");
+        const maintain = yield* makeMaintainOneClawSigner;
+        yield* Ref.set(control.calls, []);
+        const input = {
+          organizationId: owner.actor.organization.id,
+          signingKeyId: view.signingKey.id,
+          apply: false,
+        };
+        expect(yield* maintain(input)).toMatchObject({ status: "authorization_required" });
+        expect(yield* Ref.get(control.calls)).not.toContain("agents.setRawSigningEnabled");
+        expect(yield* maintain({ ...input, apply: true })).toMatchObject({ status: "ready" });
+        const calls = yield* Ref.get(control.calls);
+        expect(calls.filter((call) => call === "agents.setRawSigningEnabled")).toHaveLength(1);
+        expect(calls).not.toContain("agents.create");
+        expect(calls).not.toContain("signingKeys.create");
+        expect(
+          (yield* repository.core.wallet.findById(wallet.id, owner.actor.organization.id))
+            ?.signingKey.id,
+        ).toBe(view.signingKey.id);
+      }).pipe(
+        Effect.provide(Audit.layer),
+        Effect.provide(
+          makeTestConfigLayer({
+            ONECLAW_PLATFORM_APP_ID: "test-app",
+            ONECLAW_ORG_EMAIL_DOMAIN: "example.invalid",
+          }),
+        ),
+      ),
+  );
+  it.effect(
+    "retries raw-signing setup without replacing the agent, key or authorization secret",
+    () =>
+      Effect.gen(function* () {
+        const { client, request, control, db, repository, owner } = yield* setup;
+        yield* Ref.set(control.failNext, "agents.setRawSigningEnabled");
+        expect(yield* client.wallet.create(request).pipe(Effect.flip)).toMatchObject({
+          code: "PROVIDER_RECOVERY_REQUIRED",
+        });
+        const [before] = yield* db.query.signerProvisioning.findMany();
+        expect(before).toMatchObject({ stage: "raw_signing_started", status: "recovery_required" });
+        const result = yield* client.wallet.create(request);
+        expect(result.owner).toMatchObject({ provider: "1claw" });
+        const calls = yield* Ref.get(control.calls);
+        for (const operation of ["agents.create", "signingKeys.create", "customers.setPassword"])
+          expect(calls.filter((call) => call === operation)).toHaveLength(1);
+        const [after] = yield* db.query.signerProvisioning.findMany();
+        expect(after?.signingKeyId).toBe(before?.signingKeyId);
+        expect(after?.status).toBe("completed");
+        const connection = yield* repository.core.providerConnections.findByOrganization(
+          owner.actor.organization.id,
+          "test-app",
+        );
+        expect(connection).toBeDefined();
+        if (!connection) return yield* Effect.die("Missing connection");
+        const authorization = yield* repository.core.credentials.findCustomerAuthorization(
+          connection.id,
+          owner.actor.organization.id,
+        );
+        expect(authorization).toMatchObject({
+          type: "1claw-customer-authorization",
+          data: { status: "ready" },
+        });
+        expect(authorization?.encryptedPayload).not.toContain("password");
+      }),
+  );
   it.effect("replays success and rejects changed input without allocating another agent", () =>
     Effect.gen(function* () {
       const { client, control, request, repository, owner } = yield* setup;

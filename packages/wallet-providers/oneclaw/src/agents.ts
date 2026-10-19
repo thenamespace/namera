@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect, Redacted, Schema } from "effect";
 
 import { OneClawError } from "@namera-ai/protocol";
 import {
@@ -72,12 +72,21 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
     function* (
       input: CustomerAgent & {
         readonly enabled: boolean;
+        readonly password?: Redacted.Redacted<string>;
       },
     ) {
       const operation = "agents.setRawSigningEnabled";
       const authenticated = yield* customer(operation, input.authority);
       yield* request(operation, Schema.Unknown, () =>
-        authenticated.agents.update(input.agentId, { raw_signing_enabled: input.enabled }),
+        authenticated.http.request("PATCH", `/v1/agents/${input.agentId}`, {
+          body: {
+            raw_signing_enabled: input.enabled,
+            ...(input.enabled ? { raw_signing_policy: "allow" } : {}),
+          },
+          ...(input.password
+            ? { headers: { "X-Auth-Confirm": Redacted.value(input.password) } }
+            : {}),
+        }),
       );
       const agent = yield* request(operation, AgentResponse, () =>
         authenticated.agents.get(input.agentId),
@@ -89,7 +98,7 @@ export const makeAgents = ({ config, platform, request, customer }: ClientContex
       if (
         agent.raw_signing_enabled !== input.enabled ||
         (input.enabled &&
-          (!agent.is_active || !agent.intents_api_enabled || agent.raw_signing_policy === "deny"))
+          (!agent.is_active || !agent.intents_api_enabled || agent.raw_signing_policy !== "allow"))
       ) {
         return yield* new OneClawError({ operation, code: "SIGNING_DISABLED" });
       }

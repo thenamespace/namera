@@ -19,6 +19,12 @@ The default listener is `0.0.0.0:8080`; the default dashboard origin is
 `http://localhost:3000`. Migrations and system-role synchronization complete before
 HTTP and workers start.
 
+Use `pnpm --filter @namera-ai/server oneclaw:signer <organization-id> <signing-key-id>`
+to inspect an existing managed signer's capability. It may renew customer authority
+but does not change signing policy without `--apply`. See the
+[authorization recovery procedure](../../architecture/wallet-system/accounts.md#dev-validation-and-existing-signers)
+before applying changes. This operator command does not send transactions.
+
 ## Configuration
 
 Use [`.env.example`](.env.example) locally and

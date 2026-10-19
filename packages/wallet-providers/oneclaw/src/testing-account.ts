@@ -50,6 +50,8 @@ export const oneClawAccountTestLayer = (overrides: OneClawTestScenario = {}) =>
         ...overrides.connections,
       },
       customers: {
+        setPassword: () => Effect.void,
+        verifyPassword: () => Effect.succeed(undefined),
         redeemClaim: ({ claim: input, expectedCustomerId }) =>
           Effect.gen(function* () {
             return {
@@ -64,6 +66,14 @@ export const oneClawAccountTestLayer = (overrides: OneClawTestScenario = {}) =>
         ...overrides.customers,
       },
       agents: {
+        get: ({ agentId }) =>
+          Effect.succeed({
+            id: agentId,
+            is_active: true,
+            intents_api_enabled: true,
+            raw_signing_enabled: false,
+            raw_signing_policy: "allow" as const,
+          }),
         create: ({ request }) =>
           Effect.succeed({
             request,

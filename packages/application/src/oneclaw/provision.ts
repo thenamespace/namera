@@ -44,7 +44,9 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
       record.purpose !== input.purpose
     )
       return yield* Effect.die("Provisioning attempt binding mismatch");
-    const authority = yield* ensureCustomer(input.organizationId).pipe(
+    const authority = yield* ensureCustomer(input.organizationId, {
+      authorizeSigning: record.status !== "ready",
+    }).pipe(
       Effect.provideService(OneClawService, claw),
       Effect.provideService(OneClawOidcService, identity.value),
       Effect.mapError(
@@ -93,14 +95,51 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
       return { signingKey: signer };
     }
     const { signingKeyId, credentialId } = record;
-    if (!(yield* attempts.stage(lease, "agent_create_started")))
-      return yield* new WalletCreationError({
-        code: "PROVIDER_RECOVERY_REQUIRED",
-        namespace: "eip155",
-      });
     // Once the one-time key is returned, interruption must not skip its durable save.
     const agent = yield* Effect.uninterruptibleMask((restore) =>
       Effect.gen(function* () {
+        if (record.stage !== "reserved") {
+          const saved = yield* repository.core.credentials.findById(
+            credentialId,
+            input.organizationId,
+          );
+          if (!saved || saved.type !== "1claw-agent")
+            return yield* new WalletCreationError({
+              code: "PROVIDER_RECOVERY_REQUIRED",
+              namespace: "eip155",
+            });
+          const cleartext = yield* crypto.decrypt({
+            purpose: cryptoPurpose.providerCredential,
+            value: saved.encryptedPayload,
+          });
+          const credential = yield* Schema.decodeUnknownEffect(
+            Schema.fromJsonString(OneClawAgentCredentialPayload),
+          )(cleartext).pipe(
+            Effect.mapError(
+              () =>
+                new WalletCreationError({
+                  code: "PROVIDER_RECOVERY_REQUIRED",
+                  namespace: "eip155",
+                }),
+            ),
+          );
+          if (
+            credential.credentialId !== credentialId ||
+            credential.organizationId !== input.organizationId ||
+            credential.agentId !== saved.data.agentId
+          )
+            return yield* new WalletCreationError({
+              code: "PROVIDER_RECOVERY_REQUIRED",
+              namespace: "eip155",
+            });
+          yield* restore(claw.agents.get({ authority, agentId: credential.agentId }));
+          return { credential };
+        }
+        if (!(yield* attempts.stage(lease, "agent_create_started")))
+          return yield* new WalletCreationError({
+            code: "PROVIDER_RECOVERY_REQUIRED",
+            namespace: "eip155",
+          });
         const created = yield* restore(
           claw.agents.create({
             request: {
@@ -140,7 +179,7 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
               resourceId: credentialId,
               data: { version: 1, type: "1claw-agent", renewed: false },
             });
-            if (!(yield* attempts.stage(lease, "agent_credential_saved")))
+            if (!(yield* attempts.checkpoint(lease, "agent_credential_saved", {})))
               return yield* new WalletCreationError({
                 code: "PROVIDER_RECOVERY_REQUIRED",
                 namespace: "eip155",
@@ -155,32 +194,108 @@ export const makeProvisionOneClawSigner = Effect.gen(function* () {
       ),
     );
     const customerAgent = { authority, agentId: agent.credential.agentId };
-    if (!(yield* attempts.stage(lease, "key_create_started")))
+    const key = yield* Effect.gen(function* () {
+      if (
+        record.checkpoint?.key ||
+        record.stage === "raw_signing_started" ||
+        record.stage === "authorization_pending"
+      ) {
+        const keys = yield* claw.signingKeys.list(customerAgent);
+        const remoteKey = keys[0];
+        const expected = record.checkpoint?.key;
+        if (
+          keys.length !== 1 ||
+          !remoteKey ||
+          (expected &&
+            (remoteKey.id !== expected.id ||
+              remoteKey.version !== expected.version ||
+              remoteKey.publicKey !== expected.publicKey ||
+              remoteKey.address !== expected.address ||
+              remoteKey.agentId !== expected.agentId))
+        )
+          return yield* new WalletCreationError({
+            code: "PROVIDER_RECOVERY_REQUIRED",
+            namespace: "eip155",
+          });
+        return remoteKey;
+      }
+      if (!(yield* attempts.stage(lease, "key_create_started")))
+        return yield* new WalletCreationError({
+          code: "PROVIDER_RECOVERY_REQUIRED",
+          namespace: "eip155",
+        });
+      return yield* claw.signingKeys.create(customerAgent);
+    }).pipe(
+      Effect.mapError(
+        () => new WalletCreationError({ code: "PROVIDER_RECOVERY_REQUIRED", namespace: "eip155" }),
+      ),
+    );
+    if (
+      !(yield* attempts.checkpoint(lease, "key_recorded", {
+        key,
+        ...(record.checkpoint?.approval ? { approval: record.checkpoint.approval } : {}),
+      }))
+    )
       return yield* new WalletCreationError({
         code: "PROVIDER_RECOVERY_REQUIRED",
         namespace: "eip155",
       });
-    const key = yield* claw.signingKeys
-      .create(customerAgent)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new WalletCreationError({ code: "PROVIDER_RECOVERY_REQUIRED", namespace: "eip155" }),
-        ),
-      );
     if (!(yield* attempts.stage(lease, "raw_signing_started")))
       return yield* new WalletCreationError({
         code: "PROVIDER_RECOVERY_REQUIRED",
         namespace: "eip155",
       });
-    yield* claw.agents
-      .setRawSigningEnabled({ ...customerAgent, enabled: true })
-      .pipe(
-        Effect.mapError(
-          () =>
-            new WalletCreationError({ code: "PROVIDER_RECOVERY_REQUIRED", namespace: "eip155" }),
-        ),
-      );
+    yield* Effect.gen(function* () {
+      const current = yield* claw.agents.get(customerAgent);
+      if (
+        current.is_active &&
+        current.intents_api_enabled &&
+        current.raw_signing_enabled &&
+        current.raw_signing_policy === "allow"
+      )
+        return;
+      if (
+        record.checkpoint?.approval ||
+        !current.is_active ||
+        !current.intents_api_enabled ||
+        (current.raw_signing_enabled && current.raw_signing_policy === "deny")
+      )
+        return yield* new WalletCreationError({
+          code: "PROVIDER_RECOVERY_REQUIRED",
+          namespace: "eip155",
+        });
+      if (!authority.signingPassword)
+        return yield* new WalletCreationError({
+          code: "PROVIDER_RECOVERY_REQUIRED",
+          namespace: "eip155",
+        });
+      yield* claw.agents
+        .setRawSigningEnabled({
+          ...customerAgent,
+          enabled: true,
+          password: authority.signingPassword,
+        })
+        .pipe(
+          Effect.tapError((error) =>
+            Effect.gen(function* () {
+              if (error.approval)
+                yield* attempts.checkpoint(lease, "authorization_pending", {
+                  key,
+                  approval: error.approval,
+                });
+              yield* Effect.logWarning("oneclaw.provisioning.authorization_failed", {
+                operation_id: record.id,
+                code: error.code,
+                http_status: error.httpStatus,
+              });
+            }),
+          ),
+        );
+    }).pipe(
+      Effect.mapError(
+        () => new WalletCreationError({ code: "PROVIDER_RECOVERY_REQUIRED", namespace: "eip155" }),
+      ),
+    );
     const keys = yield* claw.signingKeys
       .list(customerAgent)
       .pipe(

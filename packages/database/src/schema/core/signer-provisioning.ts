@@ -29,6 +29,10 @@ export const signerProvisioning = coreSchema.table(
     credentialId: text("credential_id").notNull().$type<CredentialId>(),
     status: text("status").notNull().$type<SignerProvisioningEncoded["status"]>(),
     stage: text("stage").notNull(),
+    checkpoint: jsonb("checkpoint")
+      .notNull()
+      .default({})
+      .$type<NonNullable<SignerProvisioningEncoded["checkpoint"]>>(),
     signer: jsonb("signer").$type<SignerProvisioningEncoded["signer"]>(),
     resourceId: text("resource_id"),
     leaseToken: text("lease_token"),

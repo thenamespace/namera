@@ -35,6 +35,30 @@ export const makeClientContext = Effect.gen(function* () {
       }),
     );
     const status = response.meta?.status;
+    const guardrail = Schema.Struct({
+      status: Schema.Literal("awaiting_approval"),
+      approval_id: Schema.NonEmptyString,
+    });
+    const consensus = Schema.Struct({
+      status: Schema.Literal("pending_approval"),
+      pending_approval_id: Schema.NonEmptyString,
+    });
+    if (status === 202 && Schema.is(guardrail)(response.data)) {
+      return yield* new OneClawError({
+        operation,
+        code: "APPROVAL_REQUIRED",
+        httpStatus: status,
+        approval: { kind: "guardrail", id: response.data.approval_id },
+      });
+    }
+    if (status === 202 && Schema.is(consensus)(response.data)) {
+      return yield* new OneClawError({
+        operation,
+        code: "APPROVAL_REQUIRED",
+        httpStatus: status,
+        approval: { kind: "consensus", id: response.data.pending_approval_id },
+      });
+    }
     if (status === undefined)
       return yield* new OneClawError({ operation, code: "INVALID_RESPONSE" });
     if (
@@ -49,11 +73,12 @@ export const makeClientContext = Effect.gen(function* () {
       const link =
         operation === "connections.upsert" &&
         Schema.is(Schema.Struct({ link_required: Schema.Unknown }))(response.data);
-      return yield* fromOneClawResponse(
+      const error = fromOneClawResponse(
         operation,
         status,
         link ? "link_required" : response.error?.type,
       );
+      return yield* error;
     }
     return yield* decodeResponse(operation, schema, response.data);
   });

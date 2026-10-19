@@ -9,3 +9,4 @@ export * from "./notification/index.js";
 export * from "./session-key/index.js";
 export * from "./signature/index.js";
 export * from "./wallet/index.js";
+export { makeMaintainOneClawSigner } from "./oneclaw/maintenance.js";

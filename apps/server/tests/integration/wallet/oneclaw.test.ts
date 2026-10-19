@@ -96,7 +96,7 @@ layer(Live)("1Claw managed account creation", (it) => {
         const audit = yield* repository.audit.organization.findForOrganization(organizationId);
         expect(audit.filter((event) => event.event === "wallet.created")).toHaveLength(3);
         expect(audit.filter((event) => event.event === "provider_credential.saved")).toHaveLength(
-          4,
+          7,
         );
       }),
   );
@@ -182,7 +182,7 @@ layer(Live)("1Claw managed account creation", (it) => {
           });
           expect(yield* client.wallet.list()).toEqual([]);
           expect(yield* db.select().from(signingKey)).toEqual([]);
-          expect(yield* db.select().from(credentials)).toHaveLength(2);
+          expect(yield* db.select().from(credentials)).toHaveLength(3);
           const events = yield* repository.audit.organization.findForOrganization(organizationId);
           expect(
             events.some(
@@ -279,7 +279,7 @@ layer(Live)("1Claw managed account creation", (it) => {
       expect(after?.customerCredentialId).toBe(before?.customerCredentialId);
       const calls = yield* Ref.get(control.calls);
       expect(calls.filter((op) => op === "connections.bootstrapEmpty")).toHaveLength(1);
-      expect(calls.filter((op) => op === "customers.redeemClaim")).toHaveLength(2);
+      expect(calls.filter((op) => op === "customers.redeemClaim")).toHaveLength(3);
       expect(calls.filter((op) => op === "customers.enableDelegation")).toHaveLength(1);
     }),
   );
