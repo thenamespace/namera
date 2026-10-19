@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
+import { Route as AuthenticatedGetStartedRouteImport } from './routes/_authenticated/get-started'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedMcpRouteImport } from './routes/_authenticated/mcp'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
@@ -73,6 +74,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGetStartedRoute = AuthenticatedGetStartedRouteImport.update({
+  id: '/get-started',
+  path: '/get-started',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
   '/activity': typeof AuthenticatedActivityRoute
+  '/get-started': typeof AuthenticatedGetStartedRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
   '/auth/invite': typeof AuthInviteRoute
@@ -372,6 +379,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRoute
+  '/get-started': typeof AuthenticatedGetStartedRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/mcp': typeof AuthenticatedMcpRoute
   '/auth/invite': typeof AuthInviteRoute
@@ -419,6 +427,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
+  '/_authenticated/get-started': typeof AuthenticatedGetStartedRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/mcp': typeof AuthenticatedMcpRoute
   '/auth/invite': typeof AuthInviteRoute
@@ -469,6 +478,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/activity'
+    | '/get-started'
     | '/inbox'
     | '/mcp'
     | '/auth/invite'
@@ -514,6 +524,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/activity'
+    | '/get-started'
     | '/inbox'
     | '/mcp'
     | '/auth/invite'
@@ -560,6 +571,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/activity'
+    | '/_authenticated/get-started'
     | '/_authenticated/inbox'
     | '/_authenticated/mcp'
     | '/auth/invite'
@@ -638,6 +650,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof AuthenticatedActivityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/get-started': {
+      id: '/_authenticated/get-started'
+      path: '/get-started'
+      fullPath: '/get-started'
+      preLoaderRoute: typeof AuthenticatedGetStartedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inbox': {
@@ -993,6 +1012,7 @@ const AuthenticatedSessionKeySessionKeyIdRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
+  AuthenticatedGetStartedRoute: typeof AuthenticatedGetStartedRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedMcpRoute: typeof AuthenticatedMcpRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1027,6 +1047,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
+  AuthenticatedGetStartedRoute: AuthenticatedGetStartedRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedMcpRoute: AuthenticatedMcpRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

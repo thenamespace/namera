@@ -1,0 +1,461 @@
+@layer components {
+  .setup-step-trigger {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .setup-step-trigger:hover {
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  .setup-resource:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 6px;
+    border-radius: var(--field-radius);
+  }
+
+  .setup-artwork {
+    --scene-color: var(--accent);
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 1.04;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--scene-color) 22%, var(--separator));
+    border-radius: 14px;
+    background:
+      radial-gradient(
+        ellipse at 80% 5%,
+        color-mix(in oklab, var(--scene-color) 42%, transparent),
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse at 0% 100%,
+        color-mix(in oklab, var(--scene-color) 38%, transparent),
+        transparent 65%
+      ),
+      color-mix(in oklab, var(--scene-color) 12%, var(--background));
+  }
+
+  .setup-illustration[data-scene="1"] .setup-artwork {
+    --scene-color: var(--chart-3);
+  }
+  .setup-illustration[data-scene="2"] .setup-artwork {
+    --scene-color: var(--chart-2);
+  }
+  .setup-illustration[data-scene="3"] .setup-artwork {
+    --scene-color: var(--chart-5);
+  }
+  .setup-illustration[data-scene="complete"] .setup-artwork {
+    --scene-color: var(--success);
+  }
+
+  .setup-grain {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.32;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+  .setup-orbit {
+    position: absolute;
+    z-index: -1;
+    border: 1px solid color-mix(in oklab, var(--scene-color) 28%, transparent);
+    border-radius: 50%;
+    transform: rotate(-32deg);
+  }
+  .setup-orbit-outer {
+    width: 145%;
+    height: 80%;
+    left: -24%;
+    top: 10%;
+  }
+  .setup-orbit-inner {
+    width: 122%;
+    height: 63%;
+    left: -12%;
+    top: 20%;
+  }
+  .setup-scene {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 30px;
+  }
+  .setup-artwork-note {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 21px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: var(--foreground);
+    opacity: 0.65;
+    font-size: 10px;
+  }
+  .setup-status-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .setup-product-card {
+    position: relative;
+    width: 100%;
+    border: 1px solid color-mix(in oklab, var(--foreground) 13%, var(--separator));
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow:
+      0 22px 50px -18px color-mix(in oklab, var(--background) 85%, transparent),
+      inset 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+    padding: 24px;
+  }
+  .setup-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .setup-icon-tile {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    background: var(--default);
+    border: 1px solid var(--separator);
+    border-radius: 11px;
+  }
+  .setup-small-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 26px;
+  }
+  .setup-card-title {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+  }
+  .setup-card-title-small {
+    font-size: 16px;
+  }
+  .setup-wallet-stack {
+    position: relative;
+    width: 88%;
+    max-width: 310px;
+    transform: rotate(-7deg);
+  }
+  .setup-wallet-card {
+    padding: 25px 25px 0;
+  }
+  .setup-wallet-shadow-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    border: 1px solid color-mix(in oklab, var(--foreground) 15%, transparent);
+  }
+  .setup-wallet-shadow-card-back {
+    background: color-mix(in oklab, var(--scene-color) 22%, var(--surface));
+    transform: translate(13px, -19px) rotate(11deg);
+  }
+  .setup-wallet-shadow-card-middle {
+    background: color-mix(in oklab, var(--scene-color) 10%, var(--surface));
+    transform: translate(6px, -9px) rotate(5deg);
+  }
+  .setup-address {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 13px;
+  }
+  .setup-address-dots {
+    letter-spacing: 3px;
+  }
+  .setup-wallet-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-block: 16px;
+    margin-top: 26px;
+    border-top: 1px solid var(--separator);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .setup-wallet-footer > span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .setup-floating-pill {
+    position: absolute;
+    bottom: -22px;
+    right: -22px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transform: rotate(7deg);
+    border: 1px solid var(--separator);
+    background: var(--overlay);
+    border-radius: 99px;
+    padding: 11px 14px;
+    font-size: 10px;
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--background) 35%, transparent);
+  }
+  .setup-floating-pill svg {
+    color: var(--chart-3);
+  }
+  .setup-permissions-stack {
+    width: 94%;
+    max-width: 325px;
+    position: relative;
+    padding-top: 22px;
+  }
+  .setup-key-seal {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border: 1px solid color-mix(in oklab, var(--scene-color) 55%, var(--separator));
+    border-radius: 22px;
+    background: color-mix(in oklab, var(--scene-color) 18%, var(--surface));
+    transform: rotate(-12deg);
+    margin: 0 0 -12px 24px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--background) 35%, transparent);
+  }
+  .setup-permissions-card {
+    transform: rotate(3deg);
+    padding-top: 28px;
+  }
+  .setup-policy-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding-block: 15px;
+    border-bottom: 1px solid var(--separator);
+    font-size: 10px;
+  }
+  .setup-policy-row > span {
+    color: var(--muted);
+  }
+  .setup-policy-row strong {
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .setup-permission-footer {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    color: var(--chart-3);
+    margin-top: 18px;
+  }
+  .setup-connections {
+    position: relative;
+    width: 100%;
+    max-width: 310px;
+    padding-bottom: 4px;
+  }
+  .setup-connection-hub {
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    margin-inline: auto;
+    position: relative;
+    z-index: 1;
+    color: var(--foreground);
+    border: 1px solid color-mix(in oklab, var(--scene-color) 45%, var(--separator));
+    border-radius: 24px;
+    background: var(--surface);
+    box-shadow: 0 0 45px color-mix(in oklab, var(--scene-color) 20%, transparent);
+  }
+  .setup-connection-lines {
+    position: relative;
+    height: 65px;
+    width: 72%;
+    margin-inline: auto;
+    border-top: 1px solid var(--scene-color);
+    border-inline: 1px solid var(--scene-color);
+    border-radius: 12px 12px 0 0;
+    margin-top: 30px;
+  }
+  .setup-connection-lines::before {
+    content: "";
+    position: absolute;
+    width: 1px;
+    height: 95px;
+    left: 50%;
+    top: -31px;
+    background: var(--scene-color);
+  }
+  .setup-connection-clients {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .setup-client-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 74px;
+    height: 78px;
+    border: 1px solid var(--separator);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: 0 10px 25px color-mix(in oklab, var(--background) 30%, transparent);
+  }
+  .setup-client-tile > span:last-child {
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .setup-request-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 17px;
+    width: 84%;
+    margin: 24px auto 0;
+    font-size: 11px;
+  }
+  .setup-request-card .setup-status-dot {
+    color: var(--chart-3);
+  }
+  .setup-request-card > svg {
+    margin-left: auto;
+    color: var(--muted);
+  }
+  .setup-activity-stack {
+    width: 93%;
+    max-width: 310px;
+    position: relative;
+    padding-top: 22px;
+  }
+  .setup-signature-mark {
+    position: relative;
+    z-index: 1;
+    width: fit-content;
+    margin: 0 16px -12px auto;
+    padding: 7px 20px;
+    background: color-mix(in oklab, var(--scene-color) 24%, var(--surface));
+    color: var(--foreground);
+    border: 1px solid color-mix(in oklab, var(--scene-color) 50%, var(--separator));
+    border-radius: 8px;
+    font-size: 27px;
+    font-style: italic;
+    transform: rotate(-9deg);
+    letter-spacing: -1px;
+  }
+  .setup-activity-card {
+    transform: rotate(3deg);
+  }
+  .setup-activity-card .setup-card-title {
+    margin-top: 25px;
+    font-size: 19px;
+  }
+  .setup-example-badge {
+    color: var(--muted);
+    border: 1px solid var(--separator);
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  .setup-complete-scene {
+    width: 92%;
+    max-width: 310px;
+    position: relative;
+    text-align: center;
+  }
+  .setup-complete-seal {
+    display: grid;
+    place-items: center;
+    position: relative;
+    z-index: 1;
+    width: 90px;
+    height: 90px;
+    margin: 0 auto -25px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in oklab, var(--success) 50%, var(--separator));
+    background: color-mix(in oklab, var(--success) 25%, var(--surface));
+    color: var(--foreground);
+    box-shadow: 0 10px 30px color-mix(in oklab, var(--background) 35%, transparent);
+  }
+  .setup-complete-card {
+    padding-top: 48px;
+  }
+  .setup-complete-marks {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .setup-complete-marks > span {
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--separator);
+    border-radius: 10px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 1279px) and (min-width: 640px) {
+    .setup-illustration {
+      max-width: 440px;
+      margin-inline: auto;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .setup-scene {
+      padding: 22px;
+    }
+    .setup-product-card {
+      padding: 18px;
+    }
+    .setup-wallet-card {
+      padding: 18px 18px 0;
+    }
+    .setup-card-title {
+      font-size: 18px;
+    }
+    .setup-floating-pill {
+      right: -12px;
+      font-size: 9px;
+      padding: 9px 11px;
+    }
+    .setup-artwork-note {
+      font-size: 9px;
+      bottom: 15px;
+    }
+    .setup-policy-row {
+      padding-block: 12px;
+      gap: 7px;
+    }
+    .setup-key-seal {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+    }
+    .setup-key-seal svg {
+      width: 28px;
+    }
+    .setup-complete-card {
+      padding-top: 42px;
+    }
+  }
+}

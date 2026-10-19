@@ -35,7 +35,7 @@ export const Route = createFileRoute("/auth")({
     );
 
     if (currentUser !== null) {
-      throw redirect({ href: deps.returnTo ?? "/", replace: true });
+      throw redirect({ href: deps.returnTo ?? "/get-started", replace: true });
     }
   },
   component: Outlet,

@@ -24,6 +24,32 @@ do not keep showing cached protected data; ordinary network failures may retain 
 
 ## User workflows
 
+Normal dashboard sign-in defaults to `/get-started`; explicit invitation and
+OAuth/CLI return paths keep their destination. The checklist links to existing
+account, session-key and integration setup screens. Overview remains accessible.
+Its four workspace milestones use the existing overview and permission-gated
+API-key/CLI/MCP lists: an account, a session key, an integration with `lastUsedAt`
+(or a confirmed non-user execution), and a confirmed execution or successful
+signature. Session-key creation does not imply network installation. Merely
+creating an API key, opening a guide or submitting a pending transaction does not
+complete the corresponding milestone.
+
+Progress shares the router atom registry and refreshes every 30 seconds and on
+window focus while the checklist is open. Failed checks expose retry feedback;
+denied queries revalidate session authority. The existing overview requires
+wallet, session-key, execution and billing read permissions; roles without those
+permissions keep their normal landing page and do not fetch onboarding data.
+Optional connection lists require their own read permission.
+
+All four milestones enable an explicit Done action. It saves a versioned boolean
+in browser local storage, scoped to user and workspace, then removes the sidebar
+entry and returns to Overview. Direct visits after dismissal also return to
+Overview. Dismissal does not sync between devices and resets if browser storage
+is cleared. No backend route or persistence schema was added. Browser tests cover
+step/illustration selection, keyboard controls, real connection usage, permission
+gates, and dismissal across the page and sidebar. The illustrations use local
+SVG/CSS textures and respect reduced motion.
+
 | Surface      | Responsibility                                                               |
 | ------------ | ---------------------------------------------------------------------------- |
 | Accounts     | Creation, owner details, portfolio, session keys, execution history          |
