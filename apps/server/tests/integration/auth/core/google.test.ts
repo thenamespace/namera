@@ -134,34 +134,49 @@ layer(GoogleLayer)("Google authentication", (it) => {
       });
     }),
   );
-  it.effect("creates a user, binding, audit and notification, then reuses the Google subject", () =>
-    Effect.gen(function* () {
-      yield* resetTestState();
-      const first = yield* callback(yield* start);
-      expect("sessionToken" in first).toBe(true);
-      const repository = yield* Repository;
-      const binding = yield* repository.auth.account.findGoogle("google-alice");
-      if (!binding) return yield* Effect.die("Missing Google account binding");
-      expect(binding?.accessToken).toBeNull();
-      expect(binding?.idToken).toBeNull();
-      expect(binding?.providerEmail).toBe("alice@gmail.com");
-      const events = yield* repository.audit.user.findForUser(binding.userId);
-      expect(events.filter((event) => event.event === "user.account_linked")).toHaveLength(1);
-      expect(events.filter((event) => event.event === "user.signed_in")).toHaveLength(1);
-      yield* callback(yield* start);
-      expect(yield* repository.auth.account.list(binding.userId)).toHaveLength(1);
-      expect(
-        (yield* repository.audit.user.findForUser(binding.userId)).filter(
-          (event) => event.event === "user.account_linked",
-        ),
-      ).toHaveLength(1);
-      const jobs = yield* EmailJobs;
-      while ((yield* jobs.processOnce) > 0) {}
-      const emails = yield* TestEmails;
-      expect((yield* emails.sent).some((mail) => mail.type === "connected-account-changed")).toBe(
-        true,
-      );
-    }),
+  it.effect(
+    "signs up without an invite, creates a Free workspace, and reuses the Google subject",
+    () =>
+      Effect.gen(function* () {
+        yield* resetTestState();
+        const first = yield* callback(yield* start);
+        expect("sessionToken" in first).toBe(true);
+        expect("admissionToken" in first).toBe(false);
+        if (!("sessionToken" in first)) return yield* Effect.die("Expected open beta session");
+        yield* setAuthToken(first.sessionToken);
+        const client = yield* clientWithOrigin;
+        const actor = yield* client.session.currentUser();
+        expect(actor.organization.metadata.name).toBe("Personal");
+        expect(actor.role.key).toBe("owner");
+        expect(yield* client.billing.get()).toMatchObject({
+          organizationId: actor.organization.id,
+          plan: "free",
+          status: "active",
+        });
+        yield* setAuthToken();
+        const repository = yield* Repository;
+        const binding = yield* repository.auth.account.findGoogle("google-alice");
+        if (!binding) return yield* Effect.die("Missing Google account binding");
+        expect(binding?.accessToken).toBeNull();
+        expect(binding?.idToken).toBeNull();
+        expect(binding?.providerEmail).toBe("alice@gmail.com");
+        const events = yield* repository.audit.user.findForUser(binding.userId);
+        expect(events.filter((event) => event.event === "user.account_linked")).toHaveLength(1);
+        expect(events.filter((event) => event.event === "user.signed_in")).toHaveLength(1);
+        yield* callback(yield* start);
+        expect(yield* repository.auth.account.list(binding.userId)).toHaveLength(1);
+        expect(
+          (yield* repository.audit.user.findForUser(binding.userId)).filter(
+            (event) => event.event === "user.account_linked",
+          ),
+        ).toHaveLength(1);
+        const jobs = yield* EmailJobs;
+        while ((yield* jobs.processOnce) > 0) {}
+        const emails = yield* TestEmails;
+        expect((yield* emails.sent).some((mail) => mail.type === "connected-account-changed")).toBe(
+          true,
+        );
+      }),
   );
   it.effect("rejects wrong browser, wrong nonce, expired state and replayed callbacks", () =>
     Effect.gen(function* () {

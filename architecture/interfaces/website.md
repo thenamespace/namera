@@ -38,9 +38,14 @@ Start request middleware applies TanStack's same-origin CSRF checks to server
 functions before content negotiation. Cross-site and headerless RPC requests
 are rejected; public routes remain available to ordinary cross-site navigation.
 
-The waitlist form calls the server's public endpoint without browser credentials.
-The API owns validation, rate limits, persistence, and email enqueueing. The site
-needs the matching `WAITLIST_CORS_ORIGIN`; no admin credential belongs here.
+Homepage and Free pricing calls to action link directly to the dashboard for
+open beta signup. The website no longer collects waitlist emails and does not
+need `VITE_API_URL` or `WAITLIST_CORS_ORIGIN`. The existing public waitlist API and
+operator records remain on the server for compatibility; no admin credential
+belongs here. The shared browser analytics listener records dashboard links as
+`cta_clicked`, with code-owned placements for the header, hero, closing section,
+and pricing controls. These clicks do not imply a completed signup.
+The hero and closing section also offer a Docs button beside Get started.
 
 `VITE_*` configuration is public build-time input. Source-map upload credentials
 are build-only configuration. The website does not implement account management,
@@ -53,5 +58,5 @@ consent tracking or data-deletion workflows.
 - [Request middleware](../../apps/web/src/start.ts)
 - [Documentation utilities](../../apps/web/src/lib/docs)
 - [Blog utilities](../../apps/web/src/lib/blog)
-- [Waitlist transport](../../apps/web/src/lib/waitlist.ts)
+- [Signup and documentation calls to action](../../apps/web/src/components/marketing/hero-cta.tsx)
 - [Build](../../apps/web/vite.config.ts)

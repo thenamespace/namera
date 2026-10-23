@@ -69,10 +69,15 @@ const RowLabel = ({ label, note }: { readonly label: string; readonly note?: str
 const Action = ({ planId }: { readonly planId: PlanId }) => {
   const plan = PLANS.find((item) => item.id === planId);
   if (plan === undefined) return null;
-  if (plan.action === "waitlist") {
+  if (plan.action === "signup" && SITE_LINKS.app !== null) {
     return (
-      <ActionAnchor href="/#waitlist" variant="light" className="h-10 w-full justify-center">
-        Join the waitlist
+      <ActionAnchor
+        href={SITE_LINKS.app}
+        data-analytics-placement="pricing-comparison"
+        variant="light"
+        className="h-10 w-full justify-center"
+      >
+        Get started
       </ActionAnchor>
     );
   }

@@ -33,8 +33,11 @@ export function LoginOptions({ onContinueWithEmail, returnTo, invite }: LoginOpt
         level={1}
         weight="medium"
       >
-        Log in to Namera
+        Welcome to Namera
       </Typography.Heading>
+      <Typography.Paragraph className="text-center" color="muted" size="sm">
+        Sign up or sign in to continue.
+      </Typography.Paragraph>
 
       {configuration.data?.enabled ? (
         <Button fullWidth isPending={start.isPending} onPress={continueWithGoogle}>

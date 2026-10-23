@@ -7,7 +7,7 @@ type Plan = {
   readonly name: string;
   readonly price: string;
   readonly cadence?: string;
-  readonly action: "waitlist" | "contact" | "none";
+  readonly action: "signup" | "contact" | "none";
   readonly features: readonly string[];
 };
 
@@ -16,7 +16,7 @@ export const PLANS: readonly Plan[] = [
     id: "free",
     name: "Free",
     price: "$0",
-    action: "waitlist",
+    action: "signup",
     features: [
       "5 members per workspace",
       "10 user-owned accounts",

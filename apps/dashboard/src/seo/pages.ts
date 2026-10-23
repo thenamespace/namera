@@ -51,8 +51,8 @@ export const pageSeo = {
   "/auth": signIn,
   "/auth/": signIn,
   "/auth/invite": {
-    title: "Enter your invite code",
-    description: "Enter your invitation code to finish setting up your Namera workspace.",
+    title: "Join Namera",
+    description: "Join Namera's open beta. No invite is required to sign up.",
   },
   "/auth/verify": {
     title: "Verify your email",

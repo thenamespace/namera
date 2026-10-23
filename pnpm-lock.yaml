@@ -667,12 +667,6 @@ importers:
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.3.0
         version: 5.3.0
-      '@hookform/resolvers':
-        specifier: 'catalog:'
-        version: 5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(effect@4.0.1)(react-hook-form@7.89.0(@types/react@19.3.0)(react@19.3.0))(zod@4.6.5)
-      '@namera-ai/protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
       '@namera-ai/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
@@ -718,9 +712,6 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
-      react-hook-form:
-        specifier: 'catalog:'
-        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
       takumi-js:
         specifier: ^2.14.0
         version: 2.14.0(csstype@3.2.3)(preact@10.29.8)(react@19.3.0)

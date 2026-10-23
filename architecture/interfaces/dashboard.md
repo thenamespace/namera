@@ -24,6 +24,11 @@ do not keep showing cached protected data; ordinary network failures may retain 
 
 ## User workflows
 
+Open beta signup uses the ordinary email or Google sign-in flow without an
+invite. The legacy invite screen retains code redemption and offers a link to
+restart sign-in without a code. Workspace invitations and platform membership
+continue to enforce their existing authority checks.
+
 Normal dashboard sign-in defaults to `/get-started`; explicit invitation and
 OAuth/CLI return paths keep their destination. The checklist links to existing
 account, session-key and MCP setup screens. The guided path focuses on AI clients,

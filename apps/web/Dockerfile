@@ -27,7 +27,7 @@ COPY --from=pruner /app/tsconfig.json ./tsconfig.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline --ignore-scripts
 ARG DOTENV=""
-RUN printf '%s\n' "${DOTENV:-VITE_API_URL=https://api.namera.ai}" > apps/web/.env.production
+RUN printf '%s\n' "${DOTENV:-VITE_SITE_URL=https://namera.ai}" > apps/web/.env.production
 
 ARG POSTHOG_CLI_PROJECT_ID=""
 ARG POSTHOG_RELEASE_VERSION=""
