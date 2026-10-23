@@ -1,137 +1,29 @@
-import { useRef, useState } from "react";
-
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { captureAnalytics } from "@namera-ai/telemetry/analytics/browser";
-import { Button, Field, FieldError, FieldLabel, InputGroup } from "@namera-ai/ui";
-import { ArrowRight02Icon, Icon } from "@namera-ai/ui/icons";
 import { cn } from "@namera-ai/ui/utils";
-import { Controller, useForm } from "react-hook-form";
 
-import { useJoinWaitlist } from "./use-join-waitlist";
-import {
-  WaitlistFormValidator,
-  type WaitlistFormInput,
-  type WaitlistFormOutput,
-} from "./waitlist-schema";
+import { ActionAnchor } from "#/components/marketing/primitives";
+import { SITE_LINKS } from "#/lib/site-links";
 
-/*
- * The hero call to action: the ask. Leave an email, hear from us the day
- * Namera opens. Kept compact and left-aligned so it sits under the sentence
- * without competing with the product window below it.
- */
-export const HeroCta = ({ idPrefix = "hero-waitlist" }: { idPrefix?: string }) => {
-  const formId = `${idPrefix}-form`;
-  const emailId = `${idPrefix}-email`;
-  const errorId = `${emailId}-error`;
-  const [joinedEmail, setJoinedEmail] = useState<string>();
-  const [error, setError] = useState<string>();
-  const started = useRef(false);
-
-  const form = useForm<WaitlistFormInput, unknown, WaitlistFormOutput>({
-    resolver: standardSchemaResolver(WaitlistFormValidator),
-    defaultValues: { email: "" },
-  });
-  const join = useJoinWaitlist({ onSuccess: setJoinedEmail, onError: setError });
-
-  return (
-    <div className="flex flex-col gap-6">
-      {joinedEmail ? (
-        <output className="block text-[0.9375rem] text-foreground">
-          You are on the list. We will write to {joinedEmail} the day Namera opens.
-        </output>
-      ) : (
-        <form
-          id={formId}
-          noValidate
-          onSubmit={form.handleSubmit((payload) => {
-            setError(undefined);
-            return join.mutate(payload);
-          })}
-          className="w-full max-w-[30rem]"
-          aria-busy={join.isPending}
-        >
-          <InputGroup
-            aria-label="Join the waitlist"
-            className={
-              cn(
-                "edge-top flex h-auto w-full flex-row items-center gap-1 rounded-[18px] border-1 border-hairline-strong",
-                "bg-surface/80 p-1 backdrop-blur-sm",
-                "transition-colors duration-150 ease-out-quad",
-                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus/60",
-              ) ?? ""
-            }
-          >
-            <Controller
-              control={form.control}
-              name="email"
-              render={({ field, fieldState }) => (
-                <Field className="min-w-0 flex-1">
-                  <FieldLabel htmlFor={emailId} className="sr-only">
-                    Email address
-                  </FieldLabel>
-                  <InputGroup.Input
-                    {...field}
-                    onFocus={() => {
-                      if (!started.current) {
-                        started.current = true;
-                        captureAnalytics("waitlist_form_started", {
-                          placement: idPrefix === "hero-waitlist" ? "hero" : "closing",
-                        });
-                      }
-                    }}
-                    id={emailId}
-                    type="email"
-                    autoComplete="email"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    placeholder="you@company.com"
-                    maxLength={254}
-                    disabled={join.isPending}
-                    aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? errorId : undefined}
-                    onChange={(event) => {
-                      field.onChange(event);
-                      setError(undefined);
-                    }}
-                    className="h-11 w-full min-w-0 rounded-[14px] border-0 bg-transparent px-3 text-base text-foreground shadow-none ring-0 outline-none hover:bg-transparent focus:bg-transparent focus:shadow-none focus:ring-0 focus:outline-none"
-                  />
-                </Field>
-              )}
-            />
-            <Button
-              form={formId}
-              type="submit"
-              size="sm"
-              isDisabled={join.isPending}
-              className={
-                cn(
-                  "group/join inline-flex h-11 w-auto shrink-0 items-center gap-1.5 rounded-[14px] px-2 sm:gap-2 sm:px-4",
-                  "bg-button-light text-sm font-medium text-button-light-foreground",
-                  "transition-[background-color,transform] duration-150 ease-out-quad",
-                  "hover:bg-white active:scale-[0.98]",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus/60",
-                ) ?? ""
-              }
-            >
-              {join.isPending ? "Joining..." : "Notify me at launch"}
-              <Icon
-                icon={ArrowRight02Icon}
-                aria-hidden
-                strokeWidth={2}
-                className="size-3.5 transition-transform duration-150 ease-out-quad group-hover/join:translate-x-0.5"
-              />
-            </Button>
-          </InputGroup>
-
-          <FieldError
-            id={errorId}
-            errors={
-              form.formState.errors.email ? [{ message: "Enter a valid email address." }] : []
-            }
-          />
-          <output className="block text-[0.8125rem] text-ink-subtle empty:hidden">{error}</output>
-        </form>
-      )}
-    </div>
-  );
-};
+export const HeroCta = ({ placement = "hero" }: { readonly placement?: "hero" | "closing" }) => (
+  <div
+    className={cn("flex flex-wrap items-center gap-3", placement === "closing" && "justify-center")}
+  >
+    {SITE_LINKS.app === null ? null : (
+      <ActionAnchor
+        href={SITE_LINKS.app}
+        data-analytics-placement={placement}
+        variant="light"
+        className="h-11 px-5 text-[0.9375rem]"
+      >
+        Get started
+      </ActionAnchor>
+    )}
+    <ActionAnchor
+      href={SITE_LINKS.docs}
+      data-analytics-placement={placement}
+      variant="secondary"
+      className="h-11 px-5 text-[0.9375rem]"
+    >
+      Docs
+    </ActionAnchor>
+  </div>
+);

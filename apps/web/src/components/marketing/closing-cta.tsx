@@ -6,6 +6,7 @@ import { ShaderField } from "#/components/marketing/shader-field";
 import { HeroCta } from "./hero-cta";
 
 export const ClosingCta = () => (
+  // Keep the published waitlist fragment working for old campaign links.
   <Section id="waitlist" className="relative isolate overflow-hidden border-t-1 border-border">
     {/* masked, so the field dies out before it reaches the section's hairlines */}
     <ShaderField
@@ -35,14 +36,14 @@ export const ClosingCta = () => (
       <Reveal>
         <div className="flex flex-col items-center py-12 text-center md:py-24">
           <h2 className="type-display-xl max-w-[15ch] text-balance text-foreground">
-            Launching soon!
+            Namera is in open beta
           </h2>
           <p className="type-lead mt-6 max-w-[46ch] text-pretty text-muted">
             Smart accounts, session keys, and onchain policies - all in one place, ready for agents.
           </p>
 
           <div className="mt-10 w-full max-w-[30rem]">
-            <HeroCta idPrefix="waitlist" />
+            <HeroCta placement="closing" />
           </div>
         </div>
       </Reveal>

@@ -3,7 +3,7 @@ import { Config } from "effect";
 import { authPolicy } from "./data.js";
 
 const AuthEnvironmentConfig = Config.all({
-  inviteRequired: Config.Boolean("AUTH_INVITE_REQUIRED").pipe(Config.withDefault(true)),
+  inviteRequired: Config.Boolean("AUTH_INVITE_REQUIRED").pipe(Config.withDefault(false)),
   apiPublicOrigin: Config.URL("AUTH_API_PUBLIC_ORIGIN"),
   dashboardPublicOrigin: Config.URL("AUTH_DASHBOARD_PUBLIC_ORIGIN"),
   adminPublicOrigin: Config.option(Config.URL("ADMIN_CORS_ORIGIN")),

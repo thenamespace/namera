@@ -95,6 +95,7 @@ export const SiteHeader = () => {
           {SITE_LINKS.app === null ? null : (
             <ActionAnchor
               href={SITE_LINKS.app}
+              data-analytics-placement="header"
               variant="light"
               className="h-7 rounded-md px-2.5 text-xs"
             >

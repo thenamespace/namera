@@ -16,12 +16,12 @@ run them separately.
 
 | Variable           | Purpose                                                   |
 | ------------------ | --------------------------------------------------------- |
-| `VITE_API_URL`     | Public API origin for the waitlist                        |
 | `VITE_SITE_URL`    | Canonical website origin; defaults to `https://namera.ai` |
 | `VITE_POSTHOG_KEY` | Public analytics project key when configured              |
 
-Values are embedded at build time. Configure the API's `WAITLIST_CORS_ORIGIN`
-to the exact website origin. Never put credentials in browser configuration.
+Values are embedded at build time. Open beta calls to action link directly to
+the dashboard; the website does not collect waitlist emails. Never put
+credentials in browser configuration.
 
 ## Content
 
@@ -58,7 +58,7 @@ pnpm --filter @namera-ai/web preview
 
 Typechecking generates the MDX collection and route tree. The production build
 generates the complete TanStack Start registration.
-Browser tests require Playwright Chromium and cover waitlist submission and retry.
+Browser tests require Playwright Chromium and cover open beta signup links and analytics.
 Node integration tests exercise compiled documentation and date-gated blog output.
 
 ## Deployment
