@@ -178,8 +178,12 @@ export const makeTestEvmExecutionService = (
                   quote: {
                     provider: "alchemy",
                     currency: "usd",
-                    nativeAsset: "ETH",
-                    nativePriceMicroUsd: 3_000_000_000n,
+                    nativeAsset:
+                      getChainDataByCaip2(input.chainId)?.name === "arc" ? "USDC" : "ETH",
+                    nativePriceMicroUsd:
+                      getChainDataByCaip2(input.chainId)?.name === "arc"
+                        ? 1_000_000n
+                        : 3_000_000_000n,
                     surchargeBasisPoints: 800,
                     quotedAt: DateTime.fromEpochSeconds(0),
                   },

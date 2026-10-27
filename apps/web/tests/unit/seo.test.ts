@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 
+import { getDocsSection } from "../../src/lib/docs/sections";
+import { docsHead } from "../../src/lib/docs/seo";
 import { jsonLd, seo, SITE } from "../../src/lib/seo";
 
 describe("public page metadata", () => {
+  it("classifies template guides as SDK documentation", () => {
+    expect(getDocsSection("/docs/sdk/guides/templates/usdc-allowance")).toBe("sdk");
+    const head = docsHead({
+      title: "USDC Spend Template",
+      url: "/docs/sdk/guides/templates/usdc-allowance",
+    });
+    expect(head.scripts.map((script) => JSON.parse(script.children))).toContainEqual(
+      expect.objectContaining({ "@type": "TechArticle", articleSection: "SDK" }),
+    );
+  });
   it("escapes script termination without changing structured data", () => {
     const content = { name: '</script><script>alert("example")</script>' };
     const script = jsonLd(content);

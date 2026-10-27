@@ -32,7 +32,8 @@ Exports support the workspace `namera-source` condition and built ESM.
 - `portfolio/` reads Alchemy assets and prices.
 
 The chain registry includes Ethereum, Base, Arbitrum and Optimism mainnets and
-Sepolia testnets. New operation admission respects each chain's enabled flag;
+Sepolia testnets, plus Arc mainnet and testnet. Arc uses native USDC with 18
+decimals; its ERC-20 USDC interface uses 6 decimals and shares the same balance. New operation admission respects each chain's enabled flag;
 receipt recovery retains access to paused chains.
 
 ## Configuration

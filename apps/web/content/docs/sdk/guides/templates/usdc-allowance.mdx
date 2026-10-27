@@ -1,0 +1,137 @@
+---
+title: USDC Spend Template
+icon: Coins01Icon
+description: Give a session a fixed lifetime USDC budget on each selected network.
+---
+
+`usdcAllowanceTemplate.build(input, { now })` creates ERC-20 USDC transfer
+permissions with a chosen expiry. Its registry ID is `usdc-lifetime-allowance`
+and its definition version is `2`.
+
+The budget applies independently to each selected network. Choosing two networks
+with `allowance: "100"` grants 100 USDC on each, up to 200 USDC in total. It does
+not reset daily or monthly. Transfers can go to any recipient.
+
+## Usage
+
+This deterministic example grants 100 USDC on Arc testnet for one day. Its fixed
+clock makes the output reproducible; use the current Unix time in your application.
+
+```ts title="index.ts"
+import { usdcAllowanceTemplate, type UsdcAllowanceInput } from "@namera-ai/templates";
+
+const now = 1_800_000_000;
+const input = {
+  networks: ["eip155:5042002"],
+  allowance: "100",
+  expiresAt: new Date((now + 86_400) * 1000).toISOString(),
+} satisfies UsdcAllowanceInput;
+
+const permissions = usdcAllowanceTemplate.build(input, { now });
+console.dir(permissions, { depth: null });
+```
+
+Pass `permissions` to the existing `sessionKeys.create()` method as shown in
+[Templates Overview](/docs/sdk/guides/templates). Building alone creates no
+account, signer or session and submits no transaction.
+
+## Returns
+
+Returns a `TemplateOutput` object containing `onchain` and `policies`.
+`allowance` values in JavaScript are `bigint`; timestamps are Unix seconds.
+The JSON representation below encodes bigint amounts as decimal strings:
+
+<div className="docs-response">
+
+```json
+{
+  "onchain": {
+    "installations": [
+      {
+        "chainId": "eip155:5042002",
+        "validAfter": 1800000000,
+        "validUntil": 1800086400,
+        "allowSignatures": false,
+        "permissions": [
+          {
+            "type": "erc20-token-transfer",
+            "address": "0x3600000000000000000000000000000000000000",
+            "allowance": "100000000"
+          }
+        ]
+      }
+    ]
+  },
+  "policies": []
+}
+```
+
+</div>
+
+The builder grants no signatures, native transfers, approvals or unrestricted
+contract calls. Expiry limits the installed session's lifetime; changing this
+template in your application does not update sessions already created from it.
+
+## Parameters
+
+### input.networks
+
+Type: `readonly SupportedEvmChainId[]`. Required; no default for building.
+
+Provide one or more unique CAIP-2 IDs. Numeric chain IDs and duplicate networks
+are rejected. Every selected network receives the full allowance.
+
+| Mainnet                      | Testnet                           |
+| ---------------------------- | --------------------------------- |
+| Ethereum: `eip155:1`         | Sepolia: `eip155:11155111`        |
+| OP Mainnet: `eip155:10`      | OP Sepolia: `eip155:11155420`     |
+| Base: `eip155:8453`          | Base Sepolia: `eip155:84532`      |
+| Arbitrum One: `eip155:42161` | Arbitrum Sepolia: `eip155:421614` |
+| Arc: `eip155:5042`           | Arc Testnet: `eip155:5042002`     |
+
+Deployments are pinned to the package version. They use Circle-issued USDC,
+not bridged USDC.e. Testnet tokens have no monetary value.
+
+### input.allowance
+
+Type: `string`. Required; no default for building.
+
+A positive decimal USDC amount with up to six fractional digits. `"0.000001"`
+is the smallest accepted amount. The converted integer must fit in `uint256`.
+Zero, negative numbers, exponent notation and additional decimal places throw;
+the builder does not round the user's amount.
+
+On Arc, this permission uses the 6-decimal ERC-20 interface at
+`0x3600000000000000000000000000000000000000`. Native gas uses 18-decimal USDC.
+Those interfaces share a balance, but the template grants only the ERC-20 path.
+Gas sponsorship and the workspace's billing allowance are separate.
+
+### input.expiresAt
+
+Type: `string`. Required; no default for building.
+
+A valid UTC ISO timestamp ending in `Z`, with whole seconds or exactly three
+millisecond digits, such as `2027-03-01T18:30:00.000Z`. It must be later than
+`context.now` after conversion to whole Unix seconds. The builder rejects invalid
+calendar dates, missing time zones and past or equal expiry instants.
+
+### context.now
+
+Type: `number`. Required; no default.
+
+The current Unix time in whole seconds, for example
+`Math.floor(Date.now() / 1000)`. Supply an explicit clock so previews and tests
+can reproduce the same permissions. It becomes every installation's `validAfter`.
+An expiry less than one full second later cannot produce a valid installation.
+
+## Validation and Discovery
+
+The builder validates inputs synchronously. Invalid inputs throw an Effect
+`SchemaError`; an elapsed expiry throws an `Error`. Neither failure contacts
+Namera. Use `try/catch` around a build when inputs come from a user, then handle
+the SDK result separately.
+
+`usdcAllowanceTemplate.inputSchema` exposes the Effect schema for form validation.
+`display`, `metadata`, `fields` and `defaults` describe the template's presentation;
+the empty defaults are form placeholders, not a valid permission request.
+`getTemplate("usdc-lifetime-allowance")` resolves this same built-in definition.

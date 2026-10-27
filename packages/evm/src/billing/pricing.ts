@@ -3,6 +3,7 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { EvmExecutionError, type EvmGasPriceQuote } from "@namera-ai/protocol";
 
+import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 import { decimalUsdToMicroUsd } from "./money.js";
 
@@ -26,12 +27,13 @@ export const alchemySurchargeBasisPoints = 800;
 
 export const makeEvmGasPrice = (config: EvmConfigValues, httpClient: HttpClient.HttpClient) =>
   Effect.fn("evm.billing.getGasPrice")(
-    function* () {
+    function* (chain: ChainData) {
+      const nativeAsset = chain.name === "arc" ? "USDC" : "ETH";
       const apiKey = encodeURIComponent(Redacted.value(config.alchemyApiKey));
       const response = yield* HttpClient.filterStatusOk(httpClient)
         .execute(
           HttpClientRequest.get(
-            `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-symbol?symbols=ETH`,
+            `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-symbol?symbols=${nativeAsset}`,
           ).pipe(HttpClientRequest.setHeader("accept", "application/json")),
         )
         .pipe(
@@ -39,12 +41,12 @@ export const makeEvmGasPrice = (config: EvmConfigValues, httpClient: HttpClient.
           Effect.flatMap(Schema.decodeUnknownEffect(alchemyPriceResponse)),
           Effect.timeout("5 seconds"),
         );
-      const eth = response.data.find((item) => item.symbol.toUpperCase() === "ETH");
-      const usd = eth?.prices.find((item) => item.currency.toLowerCase() === "usd");
-      if (usd === undefined || (eth?.error !== undefined && eth.error !== null)) {
+      const native = response.data.find((item) => item.symbol.toUpperCase() === nativeAsset);
+      const usd = native?.prices.find((item) => item.currency.toLowerCase() === "usd");
+      if (usd === undefined || (native?.error !== undefined && native.error !== null)) {
         return yield* new EvmExecutionError({
           code: "PREPARATION_FAILED",
-          cause: new Error("Alchemy did not return an available ETH/USD price"),
+          cause: new Error(`Alchemy did not return an available ${nativeAsset}/USD price`),
         });
       }
       const now = DateTime.toEpochMillis(yield* DateTime.now);
@@ -52,19 +54,19 @@ export const makeEvmGasPrice = (config: EvmConfigValues, httpClient: HttpClient.
       if (now - timestamp > 600_000 || timestamp > now + 60_000)
         return yield* new EvmExecutionError({
           code: "PREPARATION_FAILED",
-          cause: new Error("Alchemy ETH/USD price is outside the freshness window"),
+          cause: new Error(`Alchemy ${nativeAsset}/USD price is outside the freshness window`),
         });
       const nativePriceMicroUsd = yield* Effect.try(() => decimalUsdToMicroUsd(usd.value));
       if (nativePriceMicroUsd <= 0n)
         return yield* new EvmExecutionError({
           code: "PREPARATION_FAILED",
-          cause: new Error("Alchemy ETH/USD price must be positive"),
+          cause: new Error(`Alchemy ${nativeAsset}/USD price must be positive`),
         });
 
       return {
         provider: "alchemy",
         currency: "usd",
-        nativeAsset: "ETH",
+        nativeAsset,
         nativePriceMicroUsd,
         surchargeBasisPoints: alchemySurchargeBasisPoints,
         quotedAt: usd.lastUpdatedAt,

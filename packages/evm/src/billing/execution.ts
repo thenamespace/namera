@@ -20,7 +20,7 @@ export const makeEvmExecutionBilling = Effect.fn("evm.billing.prepareExecution")
   readonly chain: ChainData;
   readonly sponsorship: EvmExecutionSponsorship;
   readonly estimatedUserOperation: EvmSerializedUserOperation;
-  readonly getGasPrice: () => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>;
+  readonly getGasPrice: (chain: ChainData) => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>;
 }): Effect.fn.Return<EvmExecutionBilling, EvmExecutionError> {
   const executionMeter =
     input.chain.environment === "mainnet" ? "execution.mainnet" : "execution.testnet";
@@ -28,7 +28,13 @@ export const makeEvmExecutionBilling = Effect.fn("evm.billing.prepareExecution")
     return { executionMeter, sponsorship: null };
   }
 
-  const quote = yield* input.getGasPrice();
+  const quote = yield* input.getGasPrice(input.chain);
+  if (quote.nativeAsset !== input.chain.chain.nativeCurrency.symbol)
+    return yield* new EvmExecutionError({
+      code: "PREPARATION_FAILED",
+      cause: new Error("Gas quote asset does not match the selected network"),
+    });
+
   const reservationAmountMicroUsd = nativeWeiToMicroUsd({
     amountWei: maximumUserOperationCost(input.estimatedUserOperation),
     nativePriceMicroUsd: quote.nativePriceMicroUsd,

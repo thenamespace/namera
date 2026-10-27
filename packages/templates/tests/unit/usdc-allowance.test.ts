@@ -3,7 +3,7 @@ import { Schema } from "effect";
 import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
 import { describe, expect, it } from "vitest";
 
-import { usdcAllowanceRecipe } from "../../src/index.js";
+import { usdcAllowanceTemplate } from "../../src/index.js";
 
 const now = 1_800_000_000;
 const expiresAt = new Date((now + 100 * 86_400) * 1000).toISOString();
@@ -14,15 +14,15 @@ describe("USDC lifetime allowance", () => {
     const allowance = `${maximum / 1_000_000n}.${(maximum % 1_000_000n).toString().padStart(6, "0")}`;
     const overflow = `${(maximum + 1n) / 1_000_000n}.${((maximum + 1n) % 1_000_000n).toString().padStart(6, "0")}`;
     const input = { networks: ["eip155:1"], allowance, expiresAt } as const;
-    const output = usdcAllowanceRecipe.build(input, { now });
+    const output = usdcAllowanceTemplate.build(input, { now });
     expect(output.onchain.installations[0]?.permissions).toMatchObject([{ allowance: maximum }]);
-    expect(() => usdcAllowanceRecipe.build({ ...input, allowance: overflow }, { now })).toThrow();
+    expect(() => usdcAllowanceTemplate.build({ ...input, allowance: overflow }, { now })).toThrow();
   });
 
   it("builds independent exact allowances using each network's native USDC", () => {
-    const output = usdcAllowanceRecipe.build(
+    const output = usdcAllowanceTemplate.build(
       {
-        networks: ["eip155:1", "eip155:8453"],
+        networks: ["eip155:1", "eip155:8453", "eip155:5042", "eip155:5042002"],
         allowance: "9007199254740993.123456",
         expiresAt,
       },
@@ -33,6 +33,8 @@ describe("USDC lifetime allowance", () => {
       [
         { chainId: "eip155:1", address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
         { chainId: "eip155:8453", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" },
+        { chainId: "eip155:5042", address: "0x3600000000000000000000000000000000000000" },
+        { chainId: "eip155:5042002", address: "0x3600000000000000000000000000000000000000" },
       ].map(({ chainId, address }) => ({
         chainId,
         validAfter: now,
@@ -52,7 +54,7 @@ describe("USDC lifetime allowance", () => {
     "rejects unsafe allowance %s without rounding",
     (allowance) => {
       expect(() =>
-        usdcAllowanceRecipe.build(
+        usdcAllowanceTemplate.build(
           {
             networks: ["eip155:1"],
             allowance,
@@ -65,7 +67,7 @@ describe("USDC lifetime allowance", () => {
   );
 
   it("rejects empty, duplicate and unsupported networks", () => {
-    const decode = Schema.decodeUnknownSync(usdcAllowanceRecipe.inputSchema);
+    const decode = Schema.decodeUnknownSync(usdcAllowanceTemplate.inputSchema);
     for (const networks of [[], ["eip155:1", "eip155:1"], ["eip155:999"]])
       expect(() => decode({ networks, allowance: "100", expiresAt })).toThrow();
   });
@@ -79,7 +81,7 @@ describe("USDC lifetime allowance", () => {
     new Date((now - 1) * 1000).toISOString(),
   ])("rejects invalid or elapsed expiry %s", (invalidExpiry) => {
     expect(() =>
-      usdcAllowanceRecipe.build(
+      usdcAllowanceTemplate.build(
         {
           networks: ["eip155:1"],
           allowance: "100",
@@ -91,7 +93,7 @@ describe("USDC lifetime allowance", () => {
   });
 
   it("keeps the smallest unit and supported testnets isolated", () => {
-    const output = usdcAllowanceRecipe.build(
+    const output = usdcAllowanceTemplate.build(
       {
         networks: ["eip155:11155111"],
         allowance: "0.000001",
@@ -110,7 +112,7 @@ describe("USDC lifetime allowance", () => {
 
   it("preserves the chosen expiry instant without adding a relative duration", () => {
     const chosenExpiry = "2027-03-01T18:30:00Z";
-    const output = usdcAllowanceRecipe.build(
+    const output = usdcAllowanceTemplate.build(
       { networks: ["eip155:1"], allowance: "100", expiresAt: chosenExpiry },
       { now },
     );

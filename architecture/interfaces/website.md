@@ -23,7 +23,11 @@ server catalog under `https://cdn.namera.ai/`. The catalog supplies the post tit
 as alt text and 1200 × 630 dimensions to article, listing, search, and social
 metadata consumers. Asset uploads are managed separately from the website build.
 
-Documentation groups are Dashboard, SDK, CLI, and MCP. The build produces processed
+Documentation groups are Dashboard, SDK, CLI and MCP. SDK Guides includes a
+collapsible Templates folder at `/docs/sdk/guides/templates`, with setup, one
+page per built-in template and custom-builder guides. These pages use the SDK
+search filter, metadata and share-image label.
+The build produces processed
 Markdown and structured search content from the same expanded source. Request
 middleware supports `.md` URLs and Markdown content negotiation, with `Vary: Accept`.
 `/llms.txt` and `/llms-full.txt` expose the documentation index and full text.

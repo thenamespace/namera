@@ -1,7 +1,7 @@
 import { DateTime } from "effect";
 
 import type { ListWalletsResponse } from "@namera-ai/protocol/dto";
-import type { RegisteredRecipe } from "@namera-ai/recipes";
+import type { RegisteredTemplate } from "@namera-ai/templates";
 
 import { supportsSessionKeys } from "@/lib/session-owner";
 
@@ -9,16 +9,16 @@ import type { CreateSessionKeyFormInput } from "./types";
 
 export type SessionKeyInitialOptions = {
   initialAccountId?: string | undefined;
-  recipe?: RegisteredRecipe | undefined;
+  template?: RegisteredTemplate | undefined;
   onboarding?: boolean | undefined;
 };
 
 export function createSessionKeyInitialValues(
   wallets: ListWalletsResponse,
-  { initialAccountId, recipe, onboarding = false }: SessionKeyInitialOptions,
+  { initialAccountId, template, onboarding = false }: SessionKeyInitialOptions,
   nowSeconds: number,
 ): CreateSessionKeyFormInput {
-  const useOnboardingPreset = onboarding && !recipe;
+  const useOnboardingPreset = onboarding && !template;
   const account = useOnboardingPreset
     ? wallets
         .filter(supportsSessionKeys)
@@ -37,7 +37,7 @@ export function createSessionKeyInitialValues(
       name: useOnboardingPreset ? "My first session key" : "",
       logo: { type: "emoji", value: "🔑" },
       description: "",
-      ...recipe?.metadata,
+      ...template?.metadata,
     },
     walletId: account?.id ?? "",
     policies: useOnboardingPreset

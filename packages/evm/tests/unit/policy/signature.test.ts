@@ -151,3 +151,30 @@ it("requires a non-empty unique signature chain allowlist", () => {
     Schema.is(EvmChainAllowlistPolicy)({ ...chainAllowlistPolicy, chainIds: [chainId, chainId] }),
   ).toBe(false);
 });
+
+it.effect("requires an explicit Arc chain grant without widening existing signature policies", () =>
+  Effect.gen(function* () {
+    const evm = yield* Evm;
+    const arcPolicy = { ...chainAllowlistPolicy, chainIds: ["eip155:5042"] as const };
+    for (const id of ["eip155:5042", "eip155:5042002"] as const) {
+      const arcContext = { ...context, chainId: id };
+      expect(
+        yield* evm.policy.evaluateSignature({
+          policies: [chainAllowlistPolicy, signaturePolicy],
+          context: arcContext,
+        }),
+      ).toMatchObject({ allowed: false, code: "CHAIN_NOT_ALLOWED" });
+      expect(
+        yield* evm.policy.evaluateSignature({
+          policies: [arcPolicy, signaturePolicy],
+          context: arcContext,
+        }),
+      ).toMatchObject(
+        id === "eip155:5042" ? { allowed: true } : { allowed: false, code: "CHAIN_NOT_ALLOWED" },
+      );
+      expect(
+        yield* evm.policy.evaluateSignature({ policies: [arcPolicy], context: arcContext }),
+      ).toMatchObject({ allowed: false, code: "SIGNATURE_POLICY_REQUIRED" });
+    }
+  }).pipe(Effect.provide(Evm.testLayer)),
+);

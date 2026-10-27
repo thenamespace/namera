@@ -12,6 +12,8 @@ expectTypeOf<Namespace>().toEqualTypeOf<"eip155">();
 expectTypeOf<SupportedEvmChainId>().toEqualTypeOf<
   | "eip155:1"
   | "eip155:10"
+  | "eip155:5042"
+  | "eip155:5042002"
   | "eip155:8453"
   | "eip155:42161"
   | "eip155:84532"

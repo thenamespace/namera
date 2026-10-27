@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-import { usdcAllowanceRecipe } from "@namera-ai/recipes";
+import { usdcAllowanceTemplate } from "@namera-ai/templates";
 import { describe, expect, it } from "vitest";
 
 import { createSessionKeyInitialValues } from "../../../src/components/session-key-creation/initial-values";
@@ -81,12 +81,12 @@ describe("onboarding session preset", () => {
   it("does not add onboarding authority to template defaults", () => {
     const initial = createSessionKeyInitialValues(
       sessionPresetAccounts,
-      { onboarding: true, recipe: usdcAllowanceRecipe },
+      { onboarding: true, template: usdcAllowanceTemplate },
       nowSeconds,
     );
     expect(initial.policies).toEqual([]);
     expect(initial.onchain.installations[0]?.permissions).toEqual([]);
-    expect(initial.metadata.logo).toEqual(usdcAllowanceRecipe.metadata.logo);
+    expect(initial.metadata.logo).toEqual(usdcAllowanceTemplate.metadata.logo);
   });
 
   it("accepts only the known preset and preserves a valid account identifier", () => {

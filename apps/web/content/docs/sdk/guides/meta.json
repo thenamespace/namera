@@ -1,5 +1,5 @@
 {
   "title": "Guides",
   "collapsible": false,
-  "pages": ["accounts", "transactions", "signing"]
+  "pages": ["accounts", "transactions", "signing", "templates"]
 }

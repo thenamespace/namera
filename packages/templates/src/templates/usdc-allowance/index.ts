@@ -2,12 +2,12 @@ import { DateTime, Schema } from "effect";
 
 import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
 
-import type { Recipe } from "#/definition";
+import type { Template } from "#/definition";
 
 import { usdcDeployments, usdcNetworks } from "./deployments.js";
 import { UsdcAllowanceInput, usdcBaseUnits } from "./input.js";
 
-export const usdcAllowanceRecipe = {
+export const usdcAllowanceTemplate = {
   id: "usdc-lifetime-allowance",
   version: 2,
   display: {
@@ -15,7 +15,7 @@ export const usdcAllowanceRecipe = {
     description:
       "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
     logo: "address-catalog/eip155/erc20/usdc.png",
-    banner: "recipes/usdc-lifetime-allowance/header.png",
+    banner: "templates/usdc-lifetime-allowance/header.webp",
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,
@@ -63,4 +63,4 @@ export const usdcAllowanceRecipe = {
       policies: [],
     };
   },
-} satisfies Recipe<typeof UsdcAllowanceInput>;
+} satisfies Template<typeof UsdcAllowanceInput>;

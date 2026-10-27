@@ -13,7 +13,7 @@ import { platformIdentity } from "../../fixtures/platform.js";
 const payload = Schema.decodeUnknownSync(CreateFeedbackRequest)({
   category: "feature_request",
   data: { version: 1, message: "  Copy policies between networks.  " },
-  pagePath: "/recipes",
+  pagePath: "/templates",
 });
 const setup = Effect.gen(function* () {
   yield* resetTestState();
@@ -39,7 +39,7 @@ layer(TestServerLayer)("feedback", (it) => {
         ...created,
         category: "feature_request",
         status: "new",
-        pagePath: "/recipes",
+        pagePath: "/templates",
         data: { version: 1, message: "Copy policies between networks." },
         userId: author.actor.user.id,
         organizationId: author.actor.organization.id,

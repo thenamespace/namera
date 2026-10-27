@@ -1,0 +1,123 @@
+---
+title: Create a Custom Template
+description: Define a reusable, validated native ETH allowance for Base Sepolia.
+---
+
+A custom template is a local permission builder. It returns the same `onchain`
+and `policies` fields as a built-in template, so it works with
+`sessionKeys.create()` without registering anything with Namera.
+
+This example grants a fixed lifetime native ETH budget on Base Sepolia. It does
+not grant arbitrary contract calls or signatures. It uses bigint base units so
+amounts never pass through floating-point arithmetic.
+
+## Install
+
+```sh
+npm install @namera-ai/templates @namera-ai/sdk effect viem
+```
+
+Use the same Effect version as the templates package when importing its schema
+API. The current package uses Effect 4. `viem` provides the `parseEther` helper in
+the usage example.
+
+## Define the Inputs and Builder
+
+Save this reusable definition as `native-allowance.ts`:
+
+```ts title="native-allowance.ts"
+import { Schema } from "effect";
+import type { Template } from "@namera-ai/templates";
+
+const NativeAllowanceInput = Schema.Struct({
+  allowanceWei: Schema.BigInt.check(
+    Schema.isGreaterThanBigInt(0n),
+    Schema.isLessThanOrEqualToBigInt(2n ** 256n - 1n),
+  ),
+  validUntil: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 8_640_000_000_000 })),
+});
+
+export const nativeAllowanceTemplate = {
+  id: "base-sepolia-native-allowance",
+  version: 1,
+  display: {
+    name: "Test ETH Allowance",
+    description: "A lifetime native ETH budget on Base Sepolia.",
+    logo: "address-catalog/eip155/erc20/weth.png",
+    tags: ["ETH", "Base Sepolia"],
+  },
+  inputSchema: NativeAllowanceInput,
+  metadata: { logo: { type: "emoji", value: "🔑" } },
+  defaults: { allowanceWei: 0n, validUntil: 0 },
+  fields: [],
+  build(input, { now }) {
+    const values = Schema.decodeUnknownSync(NativeAllowanceInput)(input);
+    if (values.validUntil <= now) throw new Error("Choose a future expiry.");
+
+    return {
+      onchain: {
+        installations: [
+          {
+            chainId: "eip155:84532",
+            validAfter: now,
+            validUntil: values.validUntil,
+            allowSignatures: false,
+            permissions: [{ type: "native-token-transfer", allowance: values.allowanceWei }],
+          },
+        ],
+      },
+      policies: [],
+    };
+  },
+} satisfies Template<typeof NativeAllowanceInput>;
+```
+
+`inputSchema` validates runtime values; TypeScript types alone cannot validate
+form input or configuration files. `{ now }` is a caller-supplied Unix timestamp
+in whole seconds. Keep the builder deterministic: avoid API calls, generated
+keys and clocks inside `build()`.
+
+## Build the Permissions
+
+Add `index.ts` beside the definition. `TemplateInput` derives the accepted input
+from the schema without duplicating its type:
+
+```ts title="index.ts"
+import { parseEther } from "viem";
+import type { TemplateInput, TemplateOutput } from "@namera-ai/templates";
+import { nativeAllowanceTemplate } from "./native-allowance.js";
+
+const now = Math.floor(Date.now() / 1000);
+const input = {
+  allowanceWei: parseEther("0.001"),
+  validUntil: now + 86_400,
+} satisfies TemplateInput<typeof nativeAllowanceTemplate>;
+
+const permissions: TemplateOutput = nativeAllowanceTemplate.build(input, { now });
+console.dir(permissions, { depth: null });
+```
+
+The result grants `1000000000000000n` native base units for one day. It permits
+transfers to any recipient on Base Sepolia. Gas is separate from the native
+transfer allowance; sponsorship still depends on the workspace's billing limits.
+
+Pass this result to the SDK with `...permissions`, as in
+[Templates Overview](/docs/sdk/guides/templates). The account owner still
+approves installation, and the server checks the resulting permission request.
+
+## Keep Custom Definitions in Your Application
+
+The built-in `templates` registry contains package-owned definitions. A custom
+object does not add a card to the hosted dashboard or a template to the server.
+Store it in your own application or publish it in your own package.
+
+The example's `fields: []` means it supplies no generic form controls. Render your
+own UI for its bigint amount and Unix expiry, or adapt your schema to the exported
+`TemplateField` network, decimal amount and ISO expiry controls. Display image
+paths are relative to Namera's CDN; use an existing asset or coordinate a new upload.
+They do not upload an image automatically.
+
+Increment your template version when its inputs or granted authority change.
+Existing sessions retain their stored configuration until you explicitly change
+their onchain installation. Continue with
+[Test a Custom Template](/docs/sdk/guides/templates/test-custom-template).

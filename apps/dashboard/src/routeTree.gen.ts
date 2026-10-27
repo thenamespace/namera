@@ -28,14 +28,14 @@ import { Route as AuthenticatedIdentityIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIdentityNewRouteImport } from './routes/_authenticated/identity/new'
 import { Route as AuthenticatedInvitationsInvitationIdRouteImport } from './routes/_authenticated/invitations/$invitationId'
 import { Route as AuthenticatedOauthAuthorizeRouteImport } from './routes/_authenticated/oauth/authorize'
-import { Route as AuthenticatedRecipesIndexRouteImport } from './routes/_authenticated/recipes/index'
-import { Route as AuthenticatedRecipesRecipeIdRouteImport } from './routes/_authenticated/recipes/$recipeId'
 import { Route as AuthenticatedSessionKeySessionKeyIdRouteRouteImport } from './routes/_authenticated/session-key/$sessionKeyId/route'
 import { Route as AuthenticatedSessionKeysIndexRouteImport } from './routes/_authenticated/session-keys/index'
 import { Route as AuthenticatedSessionKeysNewRouteImport } from './routes/_authenticated/session-keys/new'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsSecurityRouteImport } from './routes/_authenticated/settings/security'
+import { Route as AuthenticatedTemplatesIndexRouteImport } from './routes/_authenticated/templates/index'
+import { Route as AuthenticatedTemplatesTemplateIdRouteImport } from './routes/_authenticated/templates/$templateId'
 import { Route as AuthenticatedWorkspaceNewRouteImport } from './routes/_authenticated/workspace/new'
 import { Route as AuthenticatedAccountAccountIdIndexRouteImport } from './routes/_authenticated/account/$accountId/index'
 import { Route as AuthenticatedAccountAccountIdAssetsRouteImport } from './routes/_authenticated/account/$accountId/assets'
@@ -160,18 +160,6 @@ const AuthenticatedOauthAuthorizeRoute =
     path: '/oauth/authorize',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedRecipesIndexRoute =
-  AuthenticatedRecipesIndexRouteImport.update({
-    id: '/recipes/',
-    path: '/recipes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRecipesRecipeIdRoute =
-  AuthenticatedRecipesRecipeIdRouteImport.update({
-    id: '/recipes/$recipeId',
-    path: '/recipes/$recipeId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedSessionKeySessionKeyIdRouteRoute =
   AuthenticatedSessionKeySessionKeyIdRouteRouteImport.update({
     id: '/session-key/$sessionKeyId',
@@ -206,6 +194,18 @@ const AuthenticatedSettingsSecurityRoute =
   AuthenticatedSettingsSecurityRouteImport.update({
     id: '/settings/security',
     path: '/settings/security',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatesIndexRoute =
+  AuthenticatedTemplatesIndexRouteImport.update({
+    id: '/templates/',
+    path: '/templates/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatesTemplateIdRoute =
+  AuthenticatedTemplatesTemplateIdRouteImport.update({
+    id: '/templates/$templateId',
+    path: '/templates/$templateId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedWorkspaceNewRoute =
@@ -347,16 +347,16 @@ export interface FileRoutesByFullPath {
   '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
-  '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/templates/$templateId': typeof AuthenticatedTemplatesTemplateIdRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/identity/': typeof AuthenticatedIdentityIndexRoute
-  '/recipes/': typeof AuthenticatedRecipesIndexRoute
   '/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/templates/': typeof AuthenticatedTemplatesIndexRoute
   '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
@@ -392,16 +392,16 @@ export interface FileRoutesByTo {
   '/identity/new': typeof AuthenticatedIdentityNewRoute
   '/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
-  '/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
   '/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/templates/$templateId': typeof AuthenticatedTemplatesTemplateIdRoute
   '/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/identity': typeof AuthenticatedIdentityIndexRoute
-  '/recipes': typeof AuthenticatedRecipesIndexRoute
   '/session-keys': typeof AuthenticatedSessionKeysIndexRoute
+  '/templates': typeof AuthenticatedTemplatesIndexRoute
   '/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
@@ -442,16 +442,16 @@ export interface FileRoutesById {
   '/_authenticated/identity/new': typeof AuthenticatedIdentityNewRoute
   '/_authenticated/invitations/$invitationId': typeof AuthenticatedInvitationsInvitationIdRoute
   '/_authenticated/oauth/authorize': typeof AuthenticatedOauthAuthorizeRoute
-  '/_authenticated/recipes/$recipeId': typeof AuthenticatedRecipesRecipeIdRoute
   '/_authenticated/session-keys/new': typeof AuthenticatedSessionKeysNewRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/security': typeof AuthenticatedSettingsSecurityRoute
+  '/_authenticated/templates/$templateId': typeof AuthenticatedTemplatesTemplateIdRoute
   '/_authenticated/workspace/new': typeof AuthenticatedWorkspaceNewRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/identity/': typeof AuthenticatedIdentityIndexRoute
-  '/_authenticated/recipes/': typeof AuthenticatedRecipesIndexRoute
   '/_authenticated/session-keys/': typeof AuthenticatedSessionKeysIndexRoute
+  '/_authenticated/templates/': typeof AuthenticatedTemplatesIndexRoute
   '/_authenticated/account/$accountId/assets': typeof AuthenticatedAccountAccountIdAssetsRoute
   '/_authenticated/account/$accountId/overview': typeof AuthenticatedAccountAccountIdOverviewRoute
   '/_authenticated/account/$accountId/session-keys': typeof AuthenticatedAccountAccountIdSessionKeysRoute
@@ -492,16 +492,16 @@ export interface FileRouteTypes {
     | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
-    | '/recipes/$recipeId'
     | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
+    | '/templates/$templateId'
     | '/workspace/new'
     | '/accounts/'
     | '/identity/'
-    | '/recipes/'
     | '/session-keys/'
+    | '/templates/'
     | '/account/$accountId/assets'
     | '/account/$accountId/overview'
     | '/account/$accountId/session-keys'
@@ -537,16 +537,16 @@ export interface FileRouteTypes {
     | '/identity/new'
     | '/invitations/$invitationId'
     | '/oauth/authorize'
-    | '/recipes/$recipeId'
     | '/session-keys/new'
     | '/settings/notifications'
     | '/settings/profile'
     | '/settings/security'
+    | '/templates/$templateId'
     | '/workspace/new'
     | '/accounts'
     | '/identity'
-    | '/recipes'
     | '/session-keys'
+    | '/templates'
     | '/account/$accountId/assets'
     | '/account/$accountId/overview'
     | '/account/$accountId/session-keys'
@@ -586,16 +586,16 @@ export interface FileRouteTypes {
     | '/_authenticated/identity/new'
     | '/_authenticated/invitations/$invitationId'
     | '/_authenticated/oauth/authorize'
-    | '/_authenticated/recipes/$recipeId'
     | '/_authenticated/session-keys/new'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/security'
+    | '/_authenticated/templates/$templateId'
     | '/_authenticated/workspace/new'
     | '/_authenticated/accounts/'
     | '/_authenticated/identity/'
-    | '/_authenticated/recipes/'
     | '/_authenticated/session-keys/'
+    | '/_authenticated/templates/'
     | '/_authenticated/account/$accountId/assets'
     | '/_authenticated/account/$accountId/overview'
     | '/_authenticated/account/$accountId/session-keys'
@@ -757,20 +757,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOauthAuthorizeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/recipes/': {
-      id: '/_authenticated/recipes/'
-      path: '/recipes'
-      fullPath: '/recipes/'
-      preLoaderRoute: typeof AuthenticatedRecipesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/recipes/$recipeId': {
-      id: '/_authenticated/recipes/$recipeId'
-      path: '/recipes/$recipeId'
-      fullPath: '/recipes/$recipeId'
-      preLoaderRoute: typeof AuthenticatedRecipesRecipeIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/session-key/$sessionKeyId': {
       id: '/_authenticated/session-key/$sessionKeyId'
       path: '/session-key/$sessionKeyId'
@@ -811,6 +797,20 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof AuthenticatedSettingsSecurityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templates/': {
+      id: '/_authenticated/templates/'
+      path: '/templates'
+      fullPath: '/templates/'
+      preLoaderRoute: typeof AuthenticatedTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templates/$templateId': {
+      id: '/_authenticated/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/templates/$templateId'
+      preLoaderRoute: typeof AuthenticatedTemplatesTemplateIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/workspace/new': {
@@ -1024,16 +1024,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIdentityNewRoute: typeof AuthenticatedIdentityNewRoute
   AuthenticatedInvitationsInvitationIdRoute: typeof AuthenticatedInvitationsInvitationIdRoute
   AuthenticatedOauthAuthorizeRoute: typeof AuthenticatedOauthAuthorizeRoute
-  AuthenticatedRecipesRecipeIdRoute: typeof AuthenticatedRecipesRecipeIdRoute
   AuthenticatedSessionKeysNewRoute: typeof AuthenticatedSessionKeysNewRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsSecurityRoute: typeof AuthenticatedSettingsSecurityRoute
+  AuthenticatedTemplatesTemplateIdRoute: typeof AuthenticatedTemplatesTemplateIdRoute
   AuthenticatedWorkspaceNewRoute: typeof AuthenticatedWorkspaceNewRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
   AuthenticatedIdentityIndexRoute: typeof AuthenticatedIdentityIndexRoute
-  AuthenticatedRecipesIndexRoute: typeof AuthenticatedRecipesIndexRoute
   AuthenticatedSessionKeysIndexRoute: typeof AuthenticatedSessionKeysIndexRoute
+  AuthenticatedTemplatesIndexRoute: typeof AuthenticatedTemplatesIndexRoute
   AuthenticatedAccountsCreatedAccountIdRoute: typeof AuthenticatedAccountsCreatedAccountIdRoute
   AuthenticatedIdentityAccountIdLabelRoute: typeof AuthenticatedIdentityAccountIdLabelRoute
   AuthenticatedSessionKeysCreatedSessionKeyIdRoute: typeof AuthenticatedSessionKeysCreatedSessionKeyIdRoute
@@ -1063,17 +1063,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvitationsInvitationIdRoute:
     AuthenticatedInvitationsInvitationIdRoute,
   AuthenticatedOauthAuthorizeRoute: AuthenticatedOauthAuthorizeRoute,
-  AuthenticatedRecipesRecipeIdRoute: AuthenticatedRecipesRecipeIdRoute,
   AuthenticatedSessionKeysNewRoute: AuthenticatedSessionKeysNewRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsSecurityRoute: AuthenticatedSettingsSecurityRoute,
+  AuthenticatedTemplatesTemplateIdRoute: AuthenticatedTemplatesTemplateIdRoute,
   AuthenticatedWorkspaceNewRoute: AuthenticatedWorkspaceNewRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
   AuthenticatedIdentityIndexRoute: AuthenticatedIdentityIndexRoute,
-  AuthenticatedRecipesIndexRoute: AuthenticatedRecipesIndexRoute,
   AuthenticatedSessionKeysIndexRoute: AuthenticatedSessionKeysIndexRoute,
+  AuthenticatedTemplatesIndexRoute: AuthenticatedTemplatesIndexRoute,
   AuthenticatedAccountsCreatedAccountIdRoute:
     AuthenticatedAccountsCreatedAccountIdRoute,
   AuthenticatedIdentityAccountIdLabelRoute:

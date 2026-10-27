@@ -1,6 +1,12 @@
 import { Schema } from "effect";
 
-export const EvmChainName = Schema.Literals(["arbitrum", "base", "ethereum", "optimism"]).annotate({
+export const EvmChainName = Schema.Literals([
+  "arbitrum",
+  "arc",
+  "base",
+  "ethereum",
+  "optimism",
+]).annotate({
   identifier: "EvmChainName",
   description: "Stable EVM chain name used for presentation and chain grouping",
 });
@@ -8,6 +14,8 @@ export const EvmChainName = Schema.Literals(["arbitrum", "base", "ethereum", "op
 export const SupportedEvmChain = Schema.Literals([
   "arbitrum-mainnet",
   "arbitrum-sepolia",
+  "arc-mainnet",
+  "arc-testnet",
   "base-mainnet",
   "base-sepolia",
   "ethereum-mainnet",
@@ -22,6 +30,8 @@ export const SupportedEvmChain = Schema.Literals([
 export const SupportedEvmChainId = Schema.Literals([
   "eip155:1",
   "eip155:10",
+  "eip155:5042",
+  "eip155:5042002",
   "eip155:8453",
   "eip155:42161",
   "eip155:84532",

@@ -70,6 +70,8 @@ and browser responses; the API key never enters the browser. Finish through
 
 `sessionKeys.create()` accepts a local public key or provisions a managed 1Claw
 signer. It grants this API-key actor access but leaves installation pending.
+Use [`@namera-ai/templates`](https://namera.ai/docs/sdk/guides/templates) to build reusable
+permissions and spread its output into the same creation input.
 `prepareOperation({ sessionKeyId, chainId, kind: "install" })` prepares the exact
 stored configuration. Review and validate it, then explicitly call
 `approveOperation()` with managed approval or a browser passkey assertion.

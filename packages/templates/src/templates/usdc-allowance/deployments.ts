@@ -5,6 +5,8 @@ import { EthereumAddress, type SupportedEvmChainId } from "@namera-ai/protocol/e
 export const usdcDeployments = {
   "eip155:1": EthereumAddress.make("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
   "eip155:10": EthereumAddress.make("0x0b2c639c533813f4aa9d7837caf62653d097ff85"),
+  "eip155:5042": EthereumAddress.make("0x3600000000000000000000000000000000000000"),
+  "eip155:5042002": EthereumAddress.make("0x3600000000000000000000000000000000000000"),
   "eip155:8453": EthereumAddress.make("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"),
   "eip155:42161": EthereumAddress.make("0xaf88d065e77c8cc2239327c5edb3a432268e5831"),
   "eip155:84532": EthereumAddress.make("0x036cbd53842c5426634e7929541ec2318f3dcf7e"),

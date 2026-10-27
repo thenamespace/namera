@@ -29,8 +29,10 @@ made by the source tree.
 
 ## npm release boundary
 
-`api`, `protocol`, `sdk`, and `cli` form one fixed Changesets group. Other
-packages remain private. The [release workflow](../../.github/workflows/release.yml)
+`api`, `protocol`, `sdk`, `cli` and `templates` form one fixed Changesets group.
+All five public packages use the same version and release together. Workspace
+dependencies become exact sibling versions when packed; `pack:check` also rejects
+version drift between public packages. Other packages remain private. The [release workflow](../../.github/workflows/release.yml)
 checks out main and either creates a version PR or publishes versioned packages.
 
 ```sh
@@ -46,5 +48,23 @@ after runtime dependency changes.
 Release uses npm trusted publishing and provenance. It does not run CI itself:
 verify the exact main commit with CI before dispatching Release. The
 `pnpm release` command publishes packages and is not a validation command.
+
+### Templates bootstrap
+
+The initial `@namera-ai/templates@0.0.0` was published manually under the
+`bootstrap` tag to configure its npm settings. This local bootstrap has no CI provenance.
+In npm's package settings, add the GitHub Actions trusted publisher for
+`thenamespace/namera`, workflow `release.yml`, with direct publishing allowed.
+The repository's origin alias currently resolves to this public repository;
+use its canonical name to match the workflow's OIDC identity.
+Leave the environment field empty: the release job declares no environment.
+The workflow already grants `id-token: write`; subsequent trusted publishes
+generate provenance. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+
+Templates now starts from the same checked-in version as the other public
+packages. Its first normal CI release follows the fixed group rather than the
+bootstrap version. With the pending Arc minor changeset, all five advance from
+`1.6.0` to `1.7.0`. Do not publish another bootstrap version or manually advance
+individual package versions.
 
 See [testing](../engineering/testing.md) for validation commands.
