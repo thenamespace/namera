@@ -3,7 +3,15 @@
   "access": "public",
   "baseBranch": "main",
   "commit": false,
-  "fixed": [["@namera-ai/api", "@namera-ai/protocol", "@namera-ai/sdk", "@namera-ai/cli"]],
+  "fixed": [
+    [
+      "@namera-ai/api",
+      "@namera-ai/protocol",
+      "@namera-ai/sdk",
+      "@namera-ai/cli",
+      "@namera-ai/templates"
+    ]
+  ],
   "ignore": [],
   "linked": [],
   "privatePackages": { "tag": false, "version": false },

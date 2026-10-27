@@ -89,11 +89,11 @@ rewrite Git history as a side effect of a refactor.
   and OAuth-bearer access to the public API.
 - [`packages/template`](packages/template/README.md) — starter for new workspace
   packages.
-- [`packages/recipes`](packages/recipes/README.md) — private, browser-safe policy
-  recipe definitions, input schemas and deterministic session builders.
+- [`packages/templates`](packages/templates/README.md) — public, browser-safe policy
+  template definitions, input schemas and deterministic session builders.
 
 Read the relevant package README before changing that package.
-Publishable package READMEs (`api`, `protocol`, `sdk`, and `cli`) are for npm users,
+Publishable package READMEs (`api`, `protocol`, `sdk`, `cli`, and `templates`) are for npm users,
 not internal contributors. Start with a clear description and requirements,
 include npm/pnpm/yarn/bun installation commands, then runnable quick-start and
 practical usage examples. Explain authentication, configuration, and important
@@ -261,8 +261,8 @@ emails           -> crypto, database, telemetry, protocol
 evm              -> protocol
 wallet-providers/*      -> protocol
 passkeys         -> utils
-apps/dashboard   -> api, protocol, recipes, telemetry, ui
-recipes          -> protocol
+apps/dashboard   -> api, protocol, templates, telemetry, ui
+templates        -> protocol
 apps/admin-portal -> api, protocol, ui
 email-templates  -> emails, protocol, ui (preview and build-time asset generation only)
 ui               -> protocol, Namespace UIKit

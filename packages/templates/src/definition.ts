@@ -4,9 +4,14 @@ import type { CreateEvmSessionKeyRequest } from "@namera-ai/protocol/dto";
 import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 
-export type RecipeOutput = Pick<CreateEvmSessionKeyRequest, "onchain" | "policies">;
+export type TemplateOutput = Pick<CreateEvmSessionKeyRequest, "onchain" | "policies">;
 
-export type RecipeField<Name extends string = string> = {
+export type TemplateContext = { readonly now: number };
+
+export type TemplateInput<T extends { readonly inputSchema: Schema.Top }> =
+  T["inputSchema"]["Type"];
+
+export type TemplateField<Name extends string = string> = {
   readonly name: Name;
   readonly label: string;
   readonly description?: string;
@@ -16,7 +21,7 @@ export type RecipeField<Name extends string = string> = {
   | { readonly kind: "expiry" }
 );
 
-export type Recipe<S extends Schema.Top> = {
+export type Template<S extends Schema.Top> = {
   readonly id: string;
   readonly version: number;
   readonly display: {
@@ -33,6 +38,6 @@ export type Recipe<S extends Schema.Top> = {
     readonly logo?: MetadataIcon;
   };
   readonly defaults: S["Encoded"];
-  readonly fields: readonly RecipeField<Extract<keyof S["Encoded"], string>>[];
-  readonly build: (input: S["Type"], context: { readonly now: number }) => RecipeOutput;
+  readonly fields: readonly TemplateField<Extract<keyof S["Encoded"], string>>[];
+  readonly build: (input: S["Type"], context: TemplateContext) => TemplateOutput;
 };

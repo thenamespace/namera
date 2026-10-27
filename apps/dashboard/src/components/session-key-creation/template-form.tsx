@@ -5,7 +5,7 @@ import { DateTime, Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { CreateEvmSessionKeyRequest, type ListWalletsResponse } from "@namera-ai/protocol/dto";
-import type { RegisteredRecipe } from "@namera-ai/recipes";
+import type { RegisteredTemplate } from "@namera-ai/templates";
 import {
   Button,
   Field,
@@ -32,16 +32,16 @@ import type { CustodyLimits } from "./custody-field";
 import { SessionKeyDetailsCard } from "./details-card";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
-type RecipeInput = RegisteredRecipe["inputSchema"]["Encoded"];
+type TemplateInput = RegisteredTemplate["inputSchema"]["Encoded"];
 const emptyNetworks: readonly never[] = [];
-const futureExpiry = Schema.makeFilter((input: RecipeInput) =>
+const futureExpiry = Schema.makeFilter((input: TemplateInput) =>
   DateTime.toEpochMillis(DateTime.makeUnsafe(input.expiresAt)) > Date.now()
     ? undefined
     : { path: ["expiresAt"], issue: "Choose an expiry date in the future." },
 );
 
-export function RecipeCreationForm({
-  recipe,
+export function TemplateCreationForm({
+  template,
   metadataForm,
   wallets,
   limits,
@@ -49,7 +49,7 @@ export function RecipeCreationForm({
   disabled,
   onCreate,
 }: {
-  recipe: RegisteredRecipe;
+  template: RegisteredTemplate;
   metadataForm: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   wallets: ListWalletsResponse;
   limits: CustodyLimits;
@@ -61,7 +61,7 @@ export function RecipeCreationForm({
   const [step, setStep] = useState<"details" | "configuration">("details");
   const schema = useMemo(
     () =>
-      recipe.inputSchema.check(
+      template.inputSchema.check(
         futureExpiry,
         Schema.makeFilter((input) =>
           input.networks.every(isChainOperationEnabled)
@@ -72,10 +72,10 @@ export function RecipeCreationForm({
               },
         ),
       ),
-    [recipe],
+    [template],
   );
-  const form = useForm<RecipeInput>({
-    defaultValues: recipe.defaults,
+  const form = useForm<TemplateInput>({
+    defaultValues: template.defaults,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
     mode: "onChange",
   });
@@ -99,7 +99,7 @@ export function RecipeCreationForm({
         }
         void form
           .handleSubmit(async (input) => {
-            const generated = recipe.build(input, { now: Math.floor(Date.now() / 1000) });
+            const generated = template.build(input, { now: Math.floor(Date.now() / 1000) });
             metadataForm.setValue(
               "onchain",
               Schema.encodeSync(CreateEvmSessionKeyRequest.fields.onchain)(generated.onchain),
@@ -138,7 +138,7 @@ export function RecipeCreationForm({
           <DashboardCardRoot>
             <DashboardCardContent>
               <FieldGroup className="contents divide-y divide-separator">
-                {recipe.fields.map((definition) => (
+                {template.fields.map((definition) => (
                   <Controller
                     key={definition.name}
                     name={definition.name}

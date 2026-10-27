@@ -3,22 +3,22 @@ import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
 
-import { recipes } from "@namera-ai/recipes";
+import { templates } from "@namera-ai/templates";
 import { Chip, Input, Typography } from "@namera-ai/ui";
 import { ArrowRight01Icon, HugeiconsIcon } from "@namera-ai/ui/icons";
 
 import { HeadingGroup } from "@/components/heading-group";
 
-const recipeCards = recipes.map((recipe) => ({
-  id: recipe.id,
-  display: recipe.display,
-  params: { recipeId: recipe.id },
+const templateCards = templates.map((template) => ({
+  id: template.id,
+  display: template.display,
+  params: { templateId: template.id },
 }));
 
-export function RecipeList() {
+export function TemplateList() {
   const [search, setSearch] = useState("");
   const query = search.trim().toLowerCase();
-  const visible = recipeCards.filter(({ display }) =>
+  const visible = templateCards.filter(({ display }) =>
     [display.name, display.description, ...display.tags].some((text) =>
       text.toLowerCase().includes(query),
     ),
@@ -43,15 +43,15 @@ export function RecipeList() {
         variant="secondary"
       />
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        {visible.map((recipe) => (
+        {visible.map((template) => (
           <Link
-            key={recipe.id}
-            to="/recipes/$recipeId"
-            params={recipe.params}
+            key={template.id}
+            to="/templates/$templateId"
+            params={template.params}
             className="group overflow-hidden rounded-xl border border-separator transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
           >
             <img
-              src={`https://cdn.namera.ai/${recipe.display.banner}`}
+              src={`https://cdn.namera.ai/${template.display.banner}`}
               alt=""
               className="h-36 w-full bg-surface object-cover"
               loading="lazy"
@@ -60,7 +60,7 @@ export function RecipeList() {
               <div className="flex items-center justify-between gap-3">
                 <div className="relative -mt-6 rounded-full bg-background p-1">
                   <img
-                    src={`https://cdn.namera.ai/${recipe.display.logo}`}
+                    src={`https://cdn.namera.ai/${template.display.logo}`}
                     alt=""
                     className="size-12 rounded-full object-cover"
                   />
@@ -68,15 +68,15 @@ export function RecipeList() {
               </div>
               <div className="grid gap-2">
                 <Typography.Heading level={2} className="text-base">
-                  {recipe.display.name}
+                  {template.display.name}
                 </Typography.Heading>
                 <Typography.Paragraph size="sm" color="muted" className="line-clamp-3">
-                  {recipe.display.description}
+                  {template.display.description}
                 </Typography.Paragraph>
               </div>
               <div className="flex items-end justify-between gap-3">
                 <div className="flex flex-wrap gap-1.5">
-                  {recipe.display.tags.map((tag) => (
+                  {template.display.tags.map((tag) => (
                     <Chip key={tag} size="sm" variant="soft">
                       {tag}
                     </Chip>

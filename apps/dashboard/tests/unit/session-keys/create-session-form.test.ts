@@ -3,7 +3,7 @@ import { Schema } from "effect";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import * as chainRegistry from "@namera-ai/evm/chains";
 import { CreateEvmSessionKeyRequest } from "@namera-ai/protocol/dto";
-import { usdcAllowanceRecipe } from "@namera-ai/recipes";
+import { usdcAllowanceTemplate } from "@namera-ai/templates";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { selectInstallationNetworks } from "../../../src/components/session-key-creation/policies/installation-selection";
@@ -38,9 +38,9 @@ const request = {
 } as const;
 
 it.each(["local", "namera-managed"] as const)(
-  "validates recipe output through the shared %s creation boundary without changing amounts",
+  "validates template output through the shared %s creation boundary without changing amounts",
   async (custody) => {
-    const generated = usdcAllowanceRecipe.build(
+    const generated = usdcAllowanceTemplate.build(
       {
         networks: ["eip155:1", "eip155:8453"],
         allowance: "100.000001",

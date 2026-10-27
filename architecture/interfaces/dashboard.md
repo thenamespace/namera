@@ -62,7 +62,7 @@ and retains the preset in page state. It selects the newest active account that
 supports session keys and prefills a managed key on Base with a 30-day lifetime,
 message signatures, and unrestricted account access. Form defaults are applied
 once; consuming the parameter and later revalidation preserve edits. Ordinary
-creation and recipe defaults are unchanged. Creation still requires explicit
+creation and template defaults are unchanged. Creation still requires explicit
 submission and the existing owner approval for network installation. Browser
 tests cover preset consumption, validation without edits, and the submitted scope.
 The source hint stays in the URL after preset consumption and follows managed
@@ -95,7 +95,7 @@ SVG/CSS textures and respect reduced motion.
 | ------------ | ---------------------------------------------------------------------------- |
 | Accounts     | Creation, owner details, portfolio, session keys, execution history          |
 | Session keys | Local/managed creation, policy composition, network installation, revocation |
-| Templates    | Recipe-driven session creation through the same approval flow                |
+| Templates    | Template-driven session creation through the same approval flow              |
 | Identity     | ENS records, primary-name transactions, avatar/header uploads                |
 | Inbox        | Cursor-paginated notifications, search, filters, read/archive actions        |
 | Settings     | Profile, sessions, workspace membership, API/OAuth access, billing           |
@@ -103,7 +103,9 @@ SVG/CSS textures and respect reduced motion.
 
 Session-key table groups use wallet IDs, not account names. Inbox defaults to a
 seven-day view; All time removes the cutoff on loaded pages, not pagination.
-Templates retain `/recipes` route paths and use the private recipes package.
+Templates use `/templates` and `/templates/$templateId` with the public
+`@namera-ai/templates` package. Banner assets resolve under the CDN's `templates/`
+prefix. Existing sessions keep their stored permissions when templates change.
 
 ## Forms and confirmations
 

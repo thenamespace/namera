@@ -8,14 +8,22 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 
+import { checkTemplateDocs } from "./check-template-docs.mjs";
 import { run as runAsync, startPackageRegistry } from "./package-registry.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-const packages = ["packages/protocol", "packages/api", "packages/sdk", "apps/cli"];
+const packages = [
+  "packages/protocol",
+  "packages/api",
+  "packages/sdk",
+  "packages/templates",
+  "apps/cli",
+];
 const publicNames = new Set([
   "@namera-ai/protocol",
   "@namera-ai/api",
   "@namera-ai/sdk",
+  "@namera-ai/templates",
   "@namera-ai/cli",
 ]);
 const directory = mkdtempSync(join(tmpdir(), "namera-pack-check-"));
@@ -49,6 +57,11 @@ try {
       run("pnpm", ["exec", "attw", tarball, "--profile", "esm-only"]);
     }
   }
+  assert.equal(
+    new Set(candidates.map(({ manifest }) => manifest.version)).size,
+    1,
+    "Public packages must share the fixed release version",
+  );
   registry = await startPackageRegistry(candidates);
   const consumer = join(directory, "consumer");
   mkdirSync(consumer);
@@ -149,11 +162,23 @@ try {
     import { getSessionKeystore } from '@namera-ai/sdk/node';
     import { NameraApi } from '@namera-ai/api';
     import { WalletId } from '@namera-ai/protocol';
+    import { getTemplate, templates, usdcAllowanceTemplate } from '@namera-ai/templates';
     import '@namera-ai/protocol/dto';
     import { Schema } from 'effect';
     import { OpenApi } from 'effect/http-api';
     assert.ok(import.meta.resolve('@namera-ai/sdk').endsWith('/dist/index.node.js'));
     assert.equal(typeof getSessionKeystore, 'function');
+    assert.equal(getTemplate('usdc-lifetime-allowance'), usdcAllowanceTemplate);
+    assert.equal(templates.length, 1);
+    const permissions = usdcAllowanceTemplate.build({
+      networks: ['eip155:5042002'],
+      allowance: '100.000001',
+      expiresAt: '2027-02-01T00:00:00.000Z',
+    }, { now: 1800000000 });
+    assert.equal(permissions.onchain.installations[0].permissions[0].allowance, 100000001n);
+    assert.equal(permissions.onchain.installations[0].permissions[0].address, '0x3600000000000000000000000000000000000000');
+    assert.equal(permissions.onchain.installations[0].allowSignatures, false);
+    assert.deepEqual(permissions.policies, []);
     assert.ok(OpenApi.fromApi(NameraApi).paths['/wallets']);
     assert.equal(Schema.decodeSync(WalletId)('01a00407-5961-75cf-933e-9cfd0336ec16'), '01a00407-5961-75cf-933e-9cfd0336ec16');
     let requested = false;
@@ -165,12 +190,13 @@ try {
     }});
     assert.deepEqual(await client.wallets.list(), { success: true, data: [], error: null });
     assert.ok(requested);
-    console.log('Clean npm CLI, SDK, API and protocol smoke tests passed.');
+    console.log('Clean npm CLI, SDK, API, protocol and templates smoke tests passed.');
   `,
     ],
     consumer,
     env,
   );
+  checkTemplateDocs(root, consumer, env);
 } finally {
   await registry?.close();
   rmSync(directory, { recursive: true, force: true });

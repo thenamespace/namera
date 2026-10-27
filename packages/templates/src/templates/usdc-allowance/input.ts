@@ -42,3 +42,5 @@ export const UsdcAllowanceInput = Schema.Struct({
     }),
   ),
 });
+
+export type UsdcAllowanceInput = typeof UsdcAllowanceInput.Type;

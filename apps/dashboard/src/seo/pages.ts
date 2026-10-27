@@ -114,11 +114,11 @@ export const pageSeo = {
     description:
       "Define agent permissions, encrypt your session key, import it into the CLI, and approve network access.",
   },
-  "/_authenticated/recipes/": {
+  "/_authenticated/templates/": {
     title: "Templates",
     description: "Create session keys from ready-to-use policy templates.",
   },
-  "/_authenticated/recipes/$recipeId": {
+  "/_authenticated/templates/$templateId": {
     title: "Create from template",
     description: "Configure a template and complete session key setup in one place.",
   },

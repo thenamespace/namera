@@ -48,15 +48,23 @@ gas counter duplicates the installed onchain permissions.
 
 ## Templates
 
-`packages/recipes` supplies browser-safe templates, displayed as Templates in the
-dashboard. A definition contains display metadata, an Effect input schema,
+The public `@namera-ai/templates` package supplies browser-safe templates shared
+by the dashboard and SDK consumers. A definition contains display metadata, an Effect input schema,
 declarative fields, defaults and a deterministic builder. The dashboard supplies
 the account and signer and submits the ordinary session creation request.
 
 The USDC allowance template creates a lifetime allowance per selected network
 using native Circle USDC deployments. Each network receives the full allowance;
 there is no cross-chain pool or periodic reset. Signatures are disabled. The
-generated immutable authorization is persisted, not a recipe version reference.
+generated immutable authorization is persisted, not a template version reference.
+
+`usdcAllowanceTemplate.build(input, { now })` returns `onchain` and `policies` for
+the existing SDK `sessionKeys.create()` input. Building is local and deterministic;
+creation, owner approval and receipt-confirmed installation remain separate.
+Custom templates can implement the exported `Template` contract in the caller's
+code; they are not registered with the server or added to the dashboard catalog.
+The built-in registry exposes `templates` and `getTemplate(id)`. The package does
+not depend on SDK, application, custody clients or database services.
 
 ## Code
 
@@ -64,4 +72,4 @@ generated immutable authorization is persisted, not a recipe version reference.
 - [Permission safety](../../packages/evm/src/sessions/permission-safety.ts)
 - [Signature registry](../../packages/evm/src/policy/registry.ts)
 - [Signature decisions](../../packages/evm/src/policy/service.ts)
-- [Templates](../../packages/recipes/src/index.ts)
+- [Templates](../../packages/templates/src/index.ts)

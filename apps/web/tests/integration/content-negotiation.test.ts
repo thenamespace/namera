@@ -118,6 +118,26 @@ it("serves compiled SDK documentation with expanded snippets", async () => {
   expect(body).not.toContain("<include");
 });
 
+it("publishes template guides in Markdown, the index and the full documentation", async () => {
+  await Promise.all(
+    [
+      "/docs/sdk/guides/templates.md",
+      "/docs/sdk/guides/templates/usdc-allowance.md",
+      "/docs/sdk/guides/templates/create-custom-template.md",
+      "/docs/sdk/guides/templates/test-custom-template.md",
+    ].map(async (path) => {
+      const { response } = await requestContent(path);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toContain("text/markdown");
+      expect(await response.text()).not.toContain("<include");
+    }),
+  );
+  const index = await (await requestContent("/llms.txt")).response.text();
+  expect(index).toContain("SDK: USDC Spend Template");
+  const full = await (await requestContent("/llms-full.txt")).response.text();
+  expect(full).toContain("nativeAllowanceTemplate");
+});
+
 it("publishes compiled blog content only once its publication day arrives", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   const slug = "agents-need-permissions-not-private-keys";

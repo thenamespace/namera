@@ -1,12 +1,29 @@
 {
-  "name": "@namera-ai/recipes",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@namera-ai/templates",
+  "version": "1.6.0",
+  "description": "Reusable session permission templates for Namera's programmable wallets.",
+  "keywords": [
+    "ethereum",
+    "namera",
+    "session-keys",
+    "templates",
+    "wallets"
+  ],
+  "homepage": "https://namera.ai/docs/sdk/guides/templates",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera/issues"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera.git",
+    "directory": "packages/templates"
+  },
   "files": [
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "imports": {
     "#/*": "./src/*.ts"
   },
@@ -21,16 +38,19 @@
     "exports": {
       ".": "./dist/index.js",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
+    "prepack": "pnpm run build",
     "format": "oxfmt . --write --no-error-on-unmatched-pattern",
     "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
     "lint": "oxlint . --no-error-on-unmatched-pattern",
     "typecheck": "tsc -p tsconfig.json --pretty false",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run"
+    "test": "NODE_OPTIONS=--conditions=namera-source vitest run"
   },
   "dependencies": {
     "@namera-ai/protocol": "workspace:*",
@@ -42,5 +62,8 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.14.0"
   }
 }
