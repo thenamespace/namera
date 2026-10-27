@@ -1,5 +1,17 @@
 # @namera-ai/sdk
 
+## 1.7.0
+
+### Minor Changes
+
+- bbf4ae3: Support Arc mainnet and testnet network identifiers and USDC-denominated gas quotes. Add Arc to CLI network selection and preserve existing ETH quote decoding.
+
+### Patch Changes
+
+- Updated dependencies [bbf4ae3]
+  - @namera-ai/protocol@1.7.0
+  - @namera-ai/api@1.7.0
+
 ## 1.6.0
 
 ### Minor Changes
