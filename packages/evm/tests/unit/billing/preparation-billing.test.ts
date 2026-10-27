@@ -4,7 +4,13 @@ import { HttpClient, HttpClientResponse } from "effect/http";
 
 import { EthereumAddress, EvmPreparedExecution, Hex } from "@namera-ai/protocol";
 import type { EvmExecutionSponsorship, SupportedEvmChainId } from "@namera-ai/protocol";
-import { createPublicClient, custom } from "viem";
+import {
+  createPublicClient,
+  custom,
+  encodeAbiParameters,
+  parseAbiParameters,
+  toEventSelector,
+} from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { createWalletKeySecp256k1Account } from "../../../src/accounts/secp256k1.js";
@@ -18,6 +24,9 @@ const cases: ReadonlyArray<{
   readonly sponsorship: EvmExecutionSponsorship;
   readonly invalidPrice?: boolean;
 }> = [
+  { name: "sponsored Arc", chainId: "eip155:5042", sponsorship: "alchemy-bso" },
+  { name: "sponsored Arc Testnet", chainId: "eip155:5042002", sponsorship: "alchemy-bso" },
+  { name: "self-funded Arc", chainId: "eip155:5042", sponsorship: "none" },
   { name: "sponsored Base", chainId: "eip155:8453", sponsorship: "alchemy-bso" },
   { name: "sponsored Ethereum", chainId: "eip155:1", sponsorship: "alchemy-bso" },
   { name: "sponsored Sepolia", chainId: "eip155:11155111", sponsorship: "alchemy-bso" },
@@ -45,6 +54,7 @@ const cases: ReadonlyArray<{
 for (const scenario of cases) {
   it.effect(`prepares and round trips billing for ${scenario.name}`, () =>
     Effect.gen(function* () {
+      const arc = scenario.chainId === "eip155:5042" || scenario.chainId === "eip155:5042002";
       const owner = privateKeyToAccount(generatePrivateKey());
       const address = EthereumAddress.make(owner.address);
       let quoteRequests = 0;
@@ -58,11 +68,11 @@ for (const scenario of cases) {
                 JSON.stringify({
                   data: [
                     {
-                      symbol: "ETH",
+                      symbol: arc ? "USDC" : "ETH",
                       prices: [
                         {
                           currency: "usd",
-                          value: scenario.invalidPrice ? "0" : "3000",
+                          value: scenario.invalidPrice ? "0" : arc ? "1" : "3000",
                           lastUpdatedAt: "1970-01-01T00:00:00.000Z",
                         },
                       ],
@@ -86,8 +96,47 @@ for (const scenario of cases) {
           }).extend(() => ({
             simulateCalls: async () => ({
               block: { hash: `0x${"ab".repeat(32)}`, number: 1n, timestamp: 1n },
-              results: [{ status: "success", data: "0x", gasUsed: 100n }],
-              assetChanges: [],
+              results: [
+                {
+                  status: "success",
+                  data: "0x",
+                  gasUsed: 100n,
+                  logs: arc
+                    ? [
+                        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "0xfffffffffffffffffffffffffffffffffffffffe",
+                      ].map((emitter) => ({
+                        address: emitter,
+                        data: encodeAbiParameters(parseAbiParameters("uint256"), [10n ** 18n]),
+                        topics: [
+                          toEventSelector("Transfer(address,address,uint256)"),
+                          `0x${"00".repeat(12)}${address.slice(2)}`,
+                          `0x${"00".repeat(12)}${address.slice(2)}`,
+                        ],
+                      }))
+                    : [],
+                },
+              ],
+              assetChanges: arc
+                ? [
+                    {
+                      token: {
+                        address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        symbol: "ETH",
+                        decimals: 18,
+                      },
+                      value: { pre: 2n * 10n ** 18n, post: 10n ** 18n, diff: -(10n ** 18n) },
+                    },
+                    {
+                      token: {
+                        address: "0x3600000000000000000000000000000000000000",
+                        symbol: "USDC",
+                        decimals: 6,
+                      },
+                      value: { pre: 2_000_000n, post: 1_000_000n, diff: -1_000_000n },
+                    },
+                  ]
+                : [],
             }),
           }));
           // Substitute only the provider responses; preparation and account reconstruction are real.
@@ -108,9 +157,9 @@ for (const scenario of cases) {
             }),
           } as unknown as ExecutionClients;
         },
-        () => {
+        (chain) => {
           quoteRequests += 1;
-          return getGasPrice();
+          return getGasPrice(chain);
         },
       );
       const preparation = prepare({
@@ -145,18 +194,29 @@ for (const scenario of cases) {
         return;
       }
       const prepared = yield* preparation;
+      if (arc) {
+        expect(prepared.context.simulation.calls.assetChanges).toHaveLength(1);
+        expect(prepared.context.simulation.calls.assetChanges[0]?.asset).toMatchObject({
+          symbol: "USDC",
+          decimals: 18,
+        });
+        expect(prepared.context.simulation.calls.transfers).toHaveLength(1);
+        expect(prepared.context.simulation.calls.transfers[0]?.value).toBe(10n ** 18n);
+      }
       const encoded = yield* Schema.encodeEffect(EvmPreparedExecution)(prepared);
       const decoded = yield* Schema.decodeUnknownEffect(EvmPreparedExecution)(encoded);
       expect(decoded.billing).toEqual(prepared.billing);
       const sponsoredMainnet =
-        scenario.chainId !== "eip155:11155111" && scenario.sponsorship === "alchemy-bso";
+        !(["eip155:11155111", "eip155:5042002"] as string[]).includes(scenario.chainId) &&
+        scenario.sponsorship === "alchemy-bso";
       expect(quoteRequests).toBe(sponsoredMainnet ? 1 : 0);
       if (sponsoredMainnet) {
-        expect(prepared.billing.sponsorship?.reservationAmountMicroUsd).toBe(810_000n);
+        expect(prepared.billing.sponsorship?.reservationAmountMicroUsd).toBe(arc ? 270n : 810_000n);
         expect(encoded.billing.sponsorship).toMatchObject({
-          reservationAmountMicroUsd: "810000",
+          reservationAmountMicroUsd: arc ? "270" : "810000",
           quote: {
-            nativePriceMicroUsd: "3000000000",
+            nativeAsset: arc ? "USDC" : "ETH",
+            nativePriceMicroUsd: arc ? "1000000" : "3000000000",
             quotedAt: "1970-01-01T00:00:00.000Z",
           },
         });

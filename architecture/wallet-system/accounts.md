@@ -22,6 +22,20 @@ The EVM adapter receives public reconstruction data and signing callbacks. It
 does not load database credentials or choose a custody provider. Application
 workflows call each provider's explicit service.
 
+## Networks
+
+Arc mainnet (`eip155:5042`) and testnet (`eip155:5042002`) use the existing
+factory ECDSA and passkey account paths. Chain configuration remains in the EVM
+registry; custody providers continue signing exact chain-bound digests.
+
+Read-only Alchemy checks on 27 October 2026 confirmed both chain IDs, EntryPoint
+0.7 support, and bytecode at the pinned factories, ECDSA implementation, WebAuthn
+validator and five permission modules. Both networks returned matching bytecode
+for those addresses. Fee quotes, Portfolio API, basic `eth_simulateV1`, and
+USDC/USD pricing were available. These checks did not submit operations and do
+not establish a mined BSO-sponsored owner or session execution. Hosted sponsorship
+must be enabled on the configured BSO policy for both Arc networks.
+
 ## Creation
 
 The SDK supports 1Claw and passkey account creation through scoped API-key actors.

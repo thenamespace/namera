@@ -62,7 +62,7 @@ const EvmExecutionEnvelope = {
 export const EvmGasPriceQuote = Schema.Struct({
   provider: Schema.Literal("alchemy"),
   currency: Schema.Literal("usd"),
-  nativeAsset: Schema.Literal("ETH"),
+  nativeAsset: Schema.Literals(["ETH", "USDC"]),
   nativePriceMicroUsd: EvmQuantity,
   surchargeBasisPoints: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
   // The encoded form remains an ISO string inside JSON persistence while the

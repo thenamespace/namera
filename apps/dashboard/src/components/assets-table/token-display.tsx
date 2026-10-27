@@ -11,14 +11,22 @@ function TokenAvatar({
   logoUrl,
   symbol,
   native,
+  chainId,
 }: {
   logoUrl: string | null;
   symbol: string;
   native: boolean;
+  chainId: CatalogAddress["chainId"];
 }) {
+  const nativeLogo =
+    native && getChainDataByCaip2(chainId)?.name === "arc"
+      ? "https://cdn.namera.ai/address-catalog/eip155/erc20/usdc.png"
+      : null;
+  const imageUrl = logoUrl ?? nativeLogo;
+
   return (
     <Avatar size="sm" className="size-8">
-      {logoUrl ? <Avatar.Image alt="" src={logoUrl} /> : null}
+      {imageUrl ? <Avatar.Image alt="" src={imageUrl} /> : null}
       <Avatar.Fallback>
         {native && symbol === "ETH" ? (
           <ChainIcon aria-hidden chain="ethereum" namespace="eip155" className="size-8" />
@@ -40,6 +48,7 @@ function CatalogTokenAvatar({ symbol, ...address }: CatalogAddress & { symbol: s
       logoUrl={metadata?.type === "erc20" ? `https://cdn.namera.ai/${metadata.display.logo}` : null}
       symbol={symbol}
       native={false}
+      chainId={address.chainId}
     />
   );
 }
@@ -66,6 +75,7 @@ export function AssetTokenDisplay({ asset }: { asset: AssetTableRow }) {
             logoUrl={asset.metadata.logoUrl}
             symbol={symbol}
             native={asset.type === "native"}
+            chainId={asset.chainId}
           />
         )}
         {chain ? (

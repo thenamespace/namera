@@ -34,9 +34,9 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     description: "Check this account’s owner access and try again.",
   },
   "WalletTransactionError:INSUFFICIENT_FUNDS": {
-    title: "Not enough ETH for gas",
+    title: "Not enough funds for gas",
     description:
-      "Gas sponsorship allowance is unavailable. Add ETH to this account on Ethereum and try again.",
+      "Add the network’s native currency to this account or check its gas sponsorship allowance.",
   },
   "IdentityPrimaryError:FORWARD_MISMATCH": {
     title: "Check the Ethereum address",
@@ -48,7 +48,7 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
   },
   "WalletTransactionError:OPERATION_BUSY": {
     title: "Account approval in progress",
-    description: "Finish the pending Ethereum operation before starting another.",
+    description: "Finish the pending operation on this network before starting another.",
   },
   "WalletTransactionError:APPROVAL_EXPIRED": {
     title: "Approval expired",
@@ -59,8 +59,8 @@ const errorMessages: Readonly<Record<string, ErrorMessageResolver>> = {
     description: "Retry using this account’s owner passkey.",
   },
   "WalletTransactionError:PREPARATION_FAILED": {
-    title: "Ethereum unavailable",
-    description: "Check the account’s ETH balance and try again.",
+    title: "Transaction preparation failed",
+    description: "Check the network and this account’s native balance, then try again.",
   },
   "WalletTransactionError:OPERATION_UNAVAILABLE": {
     title: "Approval unavailable",

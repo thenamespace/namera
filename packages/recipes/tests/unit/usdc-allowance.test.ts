@@ -22,7 +22,7 @@ describe("USDC lifetime allowance", () => {
   it("builds independent exact allowances using each network's native USDC", () => {
     const output = usdcAllowanceRecipe.build(
       {
-        networks: ["eip155:1", "eip155:8453"],
+        networks: ["eip155:1", "eip155:8453", "eip155:5042", "eip155:5042002"],
         allowance: "9007199254740993.123456",
         expiresAt,
       },
@@ -33,6 +33,8 @@ describe("USDC lifetime allowance", () => {
       [
         { chainId: "eip155:1", address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
         { chainId: "eip155:8453", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" },
+        { chainId: "eip155:5042", address: "0x3600000000000000000000000000000000000000" },
+        { chainId: "eip155:5042002", address: "0x3600000000000000000000000000000000000000" },
       ].map(({ chainId, address }) => ({
         chainId,
         validAfter: now,

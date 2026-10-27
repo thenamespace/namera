@@ -21,9 +21,18 @@ pages; the cursor is an offset, not a durable historical snapshot identifier.
 ## Networks
 
 The registry includes Ethereum, Base, Arbitrum and Optimism mainnets and their
-Sepolia testnets. `operationsEnabled` controls new transaction/signature admission
+Sepolia testnets, plus Arc mainnet and testnet. `operationsEnabled` controls new transaction/signature admission
 without removing chain identity needed for recovery of existing operations.
 Portfolio availability also depends on Alchemy Portfolio access for the server key.
+
+Arc indexer requests run separately from other networks and each other. The
+adapter reads native USDC through `eth_getBalance`, preserves its 18-decimal
+precision, and removes the duplicate six-decimal ERC-20 representation before
+application totals and pagination. Prices remain provider-supplied and nullable.
+If indexing fails, a known nonzero native balance can still be returned with a
+partial failure; it is not a complete or cacheable snapshot. If native RPC fails,
+an available indexed native balance is used; an ERC-20-only balance stays partial.
+Verified zero balances are omitted without inventing assets.
 
 ## Code
 

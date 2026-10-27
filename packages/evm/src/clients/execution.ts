@@ -6,9 +6,11 @@ import { createClient, createPublicClient, type PublicClient } from "viem";
 import {
   createBundlerClient,
   type BundlerClient,
+  type BundlerClientConfig,
   type SmartAccount,
 } from "viem/account-abstraction";
 
+import { arcMinimumFeePerGas } from "../chains/arc.js";
 import type { ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
 
@@ -56,39 +58,34 @@ const createExecutionClients = (config: EvmConfigValues, chain: ChainData): Exec
     undefined,
     AlchemyBundlerRpcSchema
   >({ chain: chain.chain, transport });
+  const userOperation: NonNullable<BundlerClientConfig["userOperation"]> = {
+    estimateFeesPerGas: async ({ account, bundlerClient: feeClient, userOperation: operation }) => {
+      const fees = await estimateFeesPerGas({
+        bundlerClient: feeClient,
+        ...(account === undefined ? {} : { account }),
+        ...(operation === undefined ? {} : { userOperation: operation }),
+      });
+
+      return {
+        ...fees,
+        maxFeePerGas:
+          chain.name === "arc" && fees.maxFeePerGas < arcMinimumFeePerGas
+            ? arcMinimumFeePerGas
+            : fees.maxFeePerGas,
+      };
+    },
+  };
   const bundlerClient = createBundlerClient({
     chain: chain.chain,
     client: publicClient,
     transport,
-    userOperation: {
-      estimateFeesPerGas: ({
-        account: feeAccount,
-        bundlerClient: feeBundlerClient,
-        userOperation,
-      }) =>
-        estimateFeesPerGas({
-          bundlerClient: feeBundlerClient,
-          ...(feeAccount === undefined ? {} : { account: feeAccount }),
-          ...(userOperation === undefined ? {} : { userOperation }),
-        }),
-    },
+    userOperation,
   });
   const sponsoredBundlerClient = createBundlerClient({
     chain: chain.chain,
     client: publicClient,
     transport: sponsoredTransport,
-    userOperation: {
-      estimateFeesPerGas: ({
-        account: feeAccount,
-        bundlerClient: feeBundlerClient,
-        userOperation,
-      }) =>
-        estimateFeesPerGas({
-          bundlerClient: feeBundlerClient,
-          ...(feeAccount === undefined ? {} : { account: feeAccount }),
-          ...(userOperation === undefined ? {} : { userOperation }),
-        }),
-    },
+    userOperation,
   });
 
   return {
@@ -103,18 +100,7 @@ const createExecutionClients = (config: EvmConfigValues, chain: ChainData): Exec
         chain: chain.chain,
         client: publicClient,
         transport,
-        userOperation: {
-          estimateFeesPerGas: ({
-            account: feeAccount,
-            bundlerClient: feeBundlerClient,
-            userOperation,
-          }) =>
-            estimateFeesPerGas({
-              bundlerClient: feeBundlerClient,
-              ...(feeAccount === undefined ? {} : { account: feeAccount }),
-              ...(userOperation === undefined ? {} : { userOperation }),
-            }),
-        },
+        userOperation,
       }),
   };
 };

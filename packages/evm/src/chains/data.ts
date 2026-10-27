@@ -9,6 +9,8 @@ import type { Chain } from "viem";
 import {
   arbitrum,
   arbitrumSepolia,
+  arc,
+  arcTestnet,
   base,
   baseSepolia,
   mainnet,
@@ -22,6 +24,8 @@ export type { EvmChainName, SupportedEvmChain, SupportedEvmChainId } from "@name
 export type AlchemyChain =
   | "arb-mainnet"
   | "arb-sepolia"
+  | "arc-mainnet"
+  | "arc-testnet"
   | "base-mainnet"
   | "base-sepolia"
   | "eth-mainnet"
@@ -58,6 +62,19 @@ const chainData = <const TChain extends Chain, const TAlchemyChain extends Alche
 export const chains: Readonly<Record<SupportedEvmChain, ChainData>> = {
   "arbitrum-mainnet": chainData(arbitrum, "arbitrum", "arb-mainnet", true),
   "arbitrum-sepolia": chainData(arbitrumSepolia, "arbitrum", "arb-sepolia", true),
+  "arc-mainnet": chainData(arc, "arc", "arc-mainnet", true),
+  "arc-testnet": chainData(
+    {
+      ...arcTestnet,
+      rpcUrls: { default: { http: ["https://rpc.testnet.arc.io"] } },
+      blockExplorers: {
+        default: { name: "Arc Explorer", url: "https://explorer.testnet.arc.io" },
+      },
+    },
+    "arc",
+    "arc-testnet",
+    true,
+  ),
   "base-mainnet": chainData(base, "base", "base-mainnet", true),
   "base-sepolia": chainData(baseSepolia, "base", "base-sepolia", true),
   "ethereum-mainnet": chainData(mainnet, "ethereum", "eth-mainnet", true),

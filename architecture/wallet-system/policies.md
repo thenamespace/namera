@@ -27,6 +27,12 @@ configuration; callers do not supply a replacement permission set at execution.
 Installed permissions are the onchain enforcement boundary, including against a
 caller who bypasses Namera's API.
 
+Arc uses the same permission compiler and chain-specific installations. Its native
+spending and gas amounts use 18-decimal USDC base units; ERC-20 USDC allowances
+use six decimals. Those are separate counters over one balance, not a combined
+spending budget. The USDC template grants only the ERC-20 path on Arc. Adding a
+supported network never widens an existing installation or signature allowlist.
+
 ## API signature policies
 
 | Policy                | Role                                                  |

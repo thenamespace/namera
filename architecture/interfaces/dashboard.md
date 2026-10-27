@@ -141,6 +141,16 @@ dialog or leaving the page invalidates that response target. A late success does
 not populate a later dialog or modify the clipboard. Leaving the page does not
 cancel a creation already accepted by the server.
 
+## Networks
+
+Dashboard transaction, signature, session-installation, policy and template
+selectors derive their networks from the shared EVM registry. Arc mainnet and
+testnet appear in the existing mainnet/testnet groups with the shared Arc icon.
+Native value displays use chain metadata; policy editors distinguish native USDC
+base units from ERC-20 token units. Native Arc portfolio rows use the USDC logo.
+The admin catalog and CLI retain their own network presentation lists and include
+both Arc networks.
+
 ## Browser boundary
 
 Route-owned UI lives in adjacent `-components` directories. Cross-route components
