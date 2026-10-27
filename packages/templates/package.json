@@ -1,6 +1,6 @@
 {
   "name": "@namera-ai/templates",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Reusable session permission templates for Namera's programmable wallets.",
   "keywords": [
     "ethereum",
