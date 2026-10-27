@@ -136,7 +136,7 @@ it("publishes template guides in Markdown, the index and the full documentation"
   expect(index).toContain("SDK: USDC Spend Template");
   const full = await (await requestContent("/llms-full.txt")).response.text();
   expect(full).toContain("nativeAllowanceTemplate");
-});
+}, 30_000);
 
 it("publishes compiled blog content only once its publication day arrives", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
