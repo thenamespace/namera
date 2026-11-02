@@ -69,6 +69,13 @@ grants `commit(bytes32)` and
 of `renew`. Names, owners, resolvers, subregistries and registration durations
 are supplied at execution; selector permissions do not constrain them. Agents
 coordinate commit/reveal and its secret; no registration worker was added.
+Registration version 2 adds a checkbox, enabled by default, for
+`deployProxy(address,uint256,bytes)` on each selected network's reviewed
+VerifiableFactory. Disabling it omits that permission. Implementation, salt and
+initializer data are not constrained; the permission allows arbitrary factory
+proxy deployments, including Permissioned Resolvers. It adds no authority for
+subsequent calls on deployed proxies. Native value remains zero and signatures
+remain disabled. Renewal and subname-issuer permissions are unchanged.
 
 The ENSv2 subname issuer selects one Ethereum mainnet or Sepolia network and a
 permissioned registry address. It grants only that registry's

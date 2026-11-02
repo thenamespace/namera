@@ -101,6 +101,10 @@ networks and expiry. Token selection maps to mainnet USDC/DAI or ENS mock deploy
 Sepolia; it does not offer arbitrary addresses or Circle test USDC. Template
 banners and logos use CDN-relative assets; uploadable artwork stays in the
 ignored `assets` folder.
+Registration also includes "Allow ENS factory deployments", checked by default.
+The field explains that implementations and initialization data are unrestricted;
+clearing it removes factory access from every selected network. Browser tests
+cover both submitted scopes and retention of the choice when returning to details.
 
 The ENSv2 subname issuer form uses a single network, registry address and expiry.
 Before creation, it reads the registry's code, permissioned-registry interface

@@ -30,7 +30,14 @@ but grants only the registrar's `commit` and `register` functions. The agent own
 availability checks, commitment-secret storage, the commitment wait and reveal.
 The template does not restrict the registered name, owner, resolver or duration,
 and does not grant renewal. Both registrar templates share reviewed deployments
-and payment validation under `src/ens`.
+and payment validation under `src/ens`. Registration version 2 also offers
+"Allow ENS factory deployments", enabled by default. It grants only
+`deployProxy(address,uint256,bytes)` on the selected networks' VerifiableFactory
+contracts. Disabling it removes the factory permission. Implementation, salt and
+initialization data remain unrestricted; this permits proxies beyond ENS
+Permissioned Resolvers. Initializer calls can configure a new resolver, but
+later record edits require separate permissions on its address. Renewal does
+not grant factory access.
 
 The ENSv2 subname issuer template takes one network, a nonzero permissioned
 registry address and a session expiry. It grants only
@@ -49,7 +56,7 @@ Increment the version when input or authority semantics change. Generated sessio
 configuration is persisted; recipe versions are not stored as runtime references.
 
 Fields support single or multiple networks, contract addresses, amounts, expiry
-and token selection with CDN-relative icons.
+and token selection with CDN-relative icons, plus boolean checkboxes.
 
 Display images are CDN-relative slugs, resolved by the dashboard against
 `https://cdn.namera.ai/`. Keep image generation and upload outside the package.

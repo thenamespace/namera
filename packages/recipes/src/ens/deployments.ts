@@ -8,6 +8,7 @@ export const ensNetworks = ["eip155:1", "eip155:11155111"] as const;
 export const ensDeployments = {
   "eip155:1": {
     registrar: EthereumAddress.make("0xd6d8369e55c94ae8afa714e6cf7ab5be54d5cc81"),
+    factory: EthereumAddress.make("0x77510ba162dfea3d8989e3f0928a691b345730d2"),
     tokens: {
       usdc: EthereumAddress.make("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
       dai: EthereumAddress.make("0x6b175474e89094c44da98b954eedeac495271d0f"),
@@ -15,6 +16,7 @@ export const ensDeployments = {
   },
   "eip155:11155111": {
     registrar: EthereumAddress.make("0xf633e7fc17e2bbe0d0965d18ec1821dcb754a3d3"),
+    factory: EthereumAddress.make("0xda70306c98e97ece36f997a21368e53298572991"),
     tokens: {
       usdc: EthereumAddress.make("0x240b0316df57887dbbe58b586508b19e633a14aa"),
       dai: EthereumAddress.make("0xf6fac8a58a0be13b9197f27c41b73162fe32572b"),

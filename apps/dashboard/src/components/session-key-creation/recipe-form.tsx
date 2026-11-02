@@ -8,6 +8,7 @@ import { CreateEvmSessionKeyRequest, type ListWalletsResponse } from "@namera-ai
 import type { Recipe, RegisteredRecipe } from "@namera-ai/recipes";
 import {
   Button,
+  Checkbox,
   Field,
   FieldError,
   FieldGroup,
@@ -183,11 +184,34 @@ export function RecipeCreationForm({
                       return (
                         <DashboardCardRow>
                           <Field className="contents" data-invalid={fieldState.invalid}>
-                            <FieldLabel id={`${fieldId}-label`} htmlFor={fieldId} isRequired>
+                            <FieldLabel
+                              id={`${fieldId}-label`}
+                              htmlFor={fieldId}
+                              isRequired={definition.kind !== "checkbox"}
+                            >
                               {definition.label}
                             </FieldLabel>
                             <div className="grid w-full min-w-0 gap-2">
-                              {definition.kind === "networks" ? (
+                              {definition.kind === "checkbox" ? (
+                                <Checkbox
+                                  id={fieldId}
+                                  aria-labelledby={`${fieldId}-label`}
+                                  aria-describedby={`${fieldId}-feedback`}
+                                  name={field.name}
+                                  isSelected={field.value === true}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  ref={field.ref}
+                                  isInvalid={fieldState.invalid}
+                                  isDisabled={configurationDisabled}
+                                >
+                                  <Checkbox.Content>
+                                    <Checkbox.Control>
+                                      <Checkbox.Indicator />
+                                    </Checkbox.Control>
+                                  </Checkbox.Content>
+                                </Checkbox>
+                              ) : definition.kind === "networks" ? (
                                 <EvmNetworkMultiSelect
                                   aria-labelledby={`${fieldId}-label`}
                                   aria-describedby={`${fieldId}-feedback`}
