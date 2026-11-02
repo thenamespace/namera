@@ -16,7 +16,7 @@ export const usdcAllowanceRecipe = {
     description:
       "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
     logo: "address-catalog/eip155/erc20/usdc.png",
-    banner: "recipes/usdc-lifetime-allowance/header.png",
+    banner: "templates/usdc-lifetime-allowance/header.webp",
     tags: ["USDC", "Token spending", "Multi-network"],
   },
   inputSchema: UsdcAllowanceInput,

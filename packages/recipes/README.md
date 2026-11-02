@@ -33,10 +33,12 @@ Increment the version when input or authority semantics change. Generated sessio
 configuration is persisted; recipe versions are not stored as runtime references.
 
 Fields support networks, amounts, expiry and token selection with CDN-relative
-icons. A template can supply a permission notice beside its configuration.
+icons.
 
 Display images are CDN-relative slugs, resolved by the dashboard against
 `https://cdn.namera.ai/`. Keep image generation and upload outside the package.
+Template headers use `templates/<template-id>/header.webp` on the CDN, matching
+their local uploadable path under `assets/templates/`.
 
 ## Development
 

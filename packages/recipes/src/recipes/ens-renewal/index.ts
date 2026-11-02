@@ -20,7 +20,7 @@ export const ensRenewalRecipe = {
     name: "ENS Renewal Template",
     description: "Let an agent renew .eth names with your selected payment tokens and expiry.",
     logo: "address-catalog/eip155/contract/ens.png",
-    banner: "recipes/ens-renewal/header.webp",
+    banner: "templates/ens-renewal/header.webp",
     tags: ["ENSv2", "Name renewal", "Ethereum"],
   },
   inputSchema: EnsRenewalInput,
@@ -40,11 +40,6 @@ export const ensRenewalRecipe = {
     },
     { name: "expiresAt", kind: "expiry", label: "Expires on" },
   ],
-  notice: {
-    title: "Approval access",
-    description:
-      "Allows approve() on selected tokens for any spender and amount. Approvals remain active after expiry.",
-  },
   build(input, { now }) {
     const values = Schema.decodeUnknownSync(EnsRenewalInput)(input);
     const validUntil = recipeValidUntil(values.expiresAt, now);

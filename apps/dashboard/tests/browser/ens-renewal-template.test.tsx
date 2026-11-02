@@ -79,11 +79,7 @@ beforeEach(async () => {
 it("submits only the selected payment-token approvals on both networks", async () => {
   await render(<TemplateHarness />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect
-    .element(page.getByRole("note", { name: "Approval access" }))
-    .toHaveTextContent(
-      "Allows approve() on selected tokens for any spender and amount. Approvals remain active after expiry.",
-    );
+  await expect.element(page.getByRole("note", { name: "Approval access" })).not.toBeInTheDocument();
 
   const tokens = page.getByRole("button", { name: /Payment tokens/ });
   await tokens.click();

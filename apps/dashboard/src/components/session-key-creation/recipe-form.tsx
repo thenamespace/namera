@@ -235,16 +235,6 @@ export function RecipeCreationForm({
               </FieldGroup>
             </DashboardCardContent>
           </DashboardCardRoot>
-          {recipe.notice ? (
-            <Typography.Paragraph
-              role="note"
-              aria-label={recipe.notice.title}
-              size="xs"
-              color="muted"
-            >
-              {recipe.notice.description}
-            </Typography.Paragraph>
-          ) : null}
         </section>
       )}
       {metadataForm.formState.errors.onchain || metadataForm.formState.errors.policies ? (

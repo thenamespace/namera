@@ -59,9 +59,9 @@ Circle test USDC. A zero native-token allowance blocks attached ETH, and
 signature authority is disabled. It does not grant batch renewal or registration.
 Approval spender and amount, renewal label and duration are not constrained.
 Approvals survive session expiry; there is no session spending budget. The
-dashboard displays this authority before creation and uses the normal owner
-installation approval flow. Template tests verify exact deployments/selectors,
-token subsets, expiry and rejection of unsupported networks/tokens.
+dashboard uses the normal owner installation approval flow to review permissions.
+Template tests verify exact deployments/selectors, token subsets, expiry and
+rejection of unsupported networks/tokens.
 
 ## Code
 
