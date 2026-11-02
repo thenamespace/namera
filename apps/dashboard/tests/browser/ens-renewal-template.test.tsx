@@ -79,11 +79,16 @@ beforeEach(async () => {
 it("submits only the selected payment-token approvals on both networks", async () => {
   await render(<TemplateHarness />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect.element(page.getByText("Approval access", { exact: true })).toBeVisible();
-  await expect.element(page.getByText(/There is no spending budget/)).toBeVisible();
+  await expect
+    .element(page.getByRole("note", { name: "Approval access" }))
+    .toHaveTextContent(
+      "Allows approve() on selected tokens for any spender and amount. Approvals remain active after expiry.",
+    );
 
   const tokens = page.getByRole("button", { name: /Payment tokens/ });
   await tokens.click();
+  expect(page.getByRole("option", { name: /^USDC/ }).element().textContent?.trim()).toBe("USDC");
+  expect(page.getByRole("option", { name: /^DAI/ }).element().textContent?.trim()).toBe("DAI");
   await page.getByRole("option", { name: /^USDC/ }).click();
   await userEvent.keyboard("{Escape}");
   await expect.element(tokens).toHaveTextContent("DAI");

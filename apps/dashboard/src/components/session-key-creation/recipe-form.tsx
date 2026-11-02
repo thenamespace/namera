@@ -236,17 +236,14 @@ export function RecipeCreationForm({
             </DashboardCardContent>
           </DashboardCardRoot>
           {recipe.notice ? (
-            <aside
-              aria-labelledby={`${id}-notice`}
-              className="grid gap-2 rounded-xl border border-warning/30 bg-warning/5 px-5 py-4"
+            <Typography.Paragraph
+              role="note"
+              aria-label={recipe.notice.title}
+              size="xs"
+              color="muted"
             >
-              <Typography.Heading id={`${id}-notice`} level={3} className="text-sm">
-                {recipe.notice.title}
-              </Typography.Heading>
-              <Typography.Paragraph size="sm" color="muted">
-                {recipe.notice.description}
-              </Typography.Paragraph>
-            </aside>
+              {recipe.notice.description}
+            </Typography.Paragraph>
           ) : null}
         </section>
       )}

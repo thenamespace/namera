@@ -70,14 +70,11 @@ export function RecipeTokenSelect({
               <img
                 src={`https://cdn.namera.ai/${token.logo}`}
                 alt=""
-                width={28}
-                height={28}
-                className="size-7 shrink-0 rounded-full"
+                width={20}
+                height={20}
+                className="size-5 shrink-0 rounded-full"
               />
-              <div className="grid min-w-0 flex-1 gap-0.5 pr-6">
-                <span className="font-medium">{token.symbol}</span>
-                <span className="text-xs text-muted">{token.description}</span>
-              </div>
+              <span className="min-w-0 flex-1 truncate pr-6">{token.symbol}</span>
               <ListBox.ItemIndicator />
             </ListBox.Item>
           )}

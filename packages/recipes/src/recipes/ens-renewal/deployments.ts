@@ -28,13 +28,11 @@ export const ensPaymentTokens = [
     name: "USD Coin",
     symbol: "USDC",
     logo: "address-catalog/eip155/erc20/usdc.png",
-    description: "USDC on Ethereum; ENS mock USDC on Sepolia.",
   },
   {
     id: "dai",
     name: "Dai",
     symbol: "DAI",
     logo: "address-catalog/eip155/erc20/dai.png",
-    description: "DAI on Ethereum; ENS mock DAI on Sepolia.",
   },
 ] as const;

@@ -26,7 +26,7 @@ export const ensRenewalRecipe = {
   inputSchema: EnsRenewalInput,
   metadata: {
     name: "ENS renewals",
-    logo: { type: "image", value: "https://cdn.namera.ai/address-catalog/eip155/contract/ens.png" },
+    logo: { type: "emoji", value: "🔄" },
   },
   defaults: { networks: [], tokens: ["usdc", "dai"], expiresAt: "" },
   fields: [
@@ -43,7 +43,7 @@ export const ensRenewalRecipe = {
   notice: {
     title: "Approval access",
     description:
-      "This key can approve any spender for any amount on the selected tokens and renew any eligible .eth name for any duration. Token approvals remain active after the key expires. There is no spending budget.",
+      "Allows approve() on selected tokens for any spender and amount. Approvals remain active after expiry.",
   },
   build(input, { now }) {
     const values = Schema.decodeUnknownSync(EnsRenewalInput)(input);

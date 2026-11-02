@@ -11,7 +11,6 @@ export type RecipeToken = {
   readonly name: string;
   readonly symbol: string;
   readonly logo: string;
-  readonly description: string;
 };
 
 export type RecipeField<Name extends string = string> = {
