@@ -34,14 +34,13 @@ export const ensRegistrationRecipe = {
       name: "tokens",
       kind: "tokens",
       label: "Payment tokens",
-      description: "Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.",
       options: ensPaymentTokens,
     },
     {
       name: "allowFactoryDeployments",
       kind: "checkbox",
-      label: "Allow ENS factory deployments",
-      description:
+      label: "Allow resolver deployments",
+      tooltip:
         "Allows proxy deployments with any implementation and initialization data, including Permissioned Resolvers.",
     },
     { name: "expiresAt", kind: "expiry", label: "Expires on" },

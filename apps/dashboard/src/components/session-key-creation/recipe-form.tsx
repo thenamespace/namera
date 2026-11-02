@@ -14,8 +14,10 @@ import {
   FieldGroup,
   FieldLabel,
   InputGroup,
+  Tooltip,
   Typography,
 } from "@namera-ai/ui";
+import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 
 import {
@@ -184,13 +186,34 @@ export function RecipeCreationForm({
                       return (
                         <DashboardCardRow>
                           <Field className="contents" data-invalid={fieldState.invalid}>
-                            <FieldLabel
-                              id={`${fieldId}-label`}
-                              htmlFor={fieldId}
-                              isRequired={definition.kind !== "checkbox"}
-                            >
-                              {definition.label}
-                            </FieldLabel>
+                            <div className="flex items-center gap-1">
+                              <FieldLabel
+                                id={`${fieldId}-label`}
+                                htmlFor={fieldId}
+                                isRequired={definition.kind !== "checkbox"}
+                              >
+                                {definition.label}
+                              </FieldLabel>
+                              {"tooltip" in definition && typeof definition.tooltip === "string" ? (
+                                <Tooltip delay={0}>
+                                  <Button
+                                    type="button"
+                                    variant="tertiary"
+                                    size="sm"
+                                    isIconOnly
+                                    aria-label={`${definition.label} information`}
+                                  >
+                                    <HugeiconsIcon
+                                      icon={InformationCircleIcon}
+                                      className="size-4 text-muted"
+                                    />
+                                  </Button>
+                                  <Tooltip.Content className="max-w-xs">
+                                    {definition.tooltip}
+                                  </Tooltip.Content>
+                                </Tooltip>
+                              ) : null}
+                            </div>
                             <div className="grid w-full min-w-0 gap-2">
                               {definition.kind === "checkbox" ? (
                                 <Checkbox

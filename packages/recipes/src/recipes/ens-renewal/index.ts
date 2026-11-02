@@ -31,7 +31,6 @@ export const ensRenewalRecipe = {
       name: "tokens",
       kind: "tokens",
       label: "Payment tokens",
-      description: "Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.",
       options: ensPaymentTokens,
     },
     { name: "expiresAt", kind: "expiry", label: "Expires on" },

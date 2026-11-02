@@ -32,7 +32,6 @@ export const ensSubnameIssuerRecipe = {
       kind: "address",
       label: "Registry address",
       placeholder: "0x…",
-      description: "Your account must already have the registrar role on this ENSv2 registry.",
     },
     { name: "expiresAt", kind: "expiry", label: "Expires on" },
   ],

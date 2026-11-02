@@ -84,6 +84,13 @@ function registryRpc(options: { code?: string; supports?: boolean; roles?: bigin
 async function openConfiguration() {
   await render(<TemplateHarness />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect
+    .element(
+      page.getByText("Your account must already have the registrar role on this ENSv2 registry.", {
+        exact: true,
+      }),
+    )
+    .not.toBeInTheDocument();
 }
 
 beforeEach(async () => {

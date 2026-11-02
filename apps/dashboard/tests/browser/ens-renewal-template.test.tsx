@@ -80,6 +80,13 @@ it("submits only the selected payment-token approvals on both networks", async (
   await render(<TemplateHarness />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect.element(page.getByRole("note", { name: "Approval access" })).not.toBeInTheDocument();
+  await expect
+    .element(
+      page.getByText("Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.", {
+        exact: true,
+      }),
+    )
+    .not.toBeInTheDocument();
 
   const tokens = page.getByRole("button", { name: /Payment tokens/ });
   await tokens.click();
@@ -213,12 +220,37 @@ it.each([true, false])(
     await render(<TemplateHarness recipe={recipe} />);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     const factory = page.getByRole("checkbox", {
-      name: "Allow ENS factory deployments",
+      name: "Allow resolver deployments",
       exact: true,
     });
     await expect.element(factory).toBeChecked();
+    await expect
+      .element(
+        page.getByText(
+          "Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.",
+          { exact: true },
+        ),
+      )
+      .not.toBeInTheDocument();
+    const explanation =
+      "Allows proxy deployments with any implementation and initialization data, including Permissioned Resolvers.";
+    await expect.element(page.getByText(explanation, { exact: true })).not.toBeInTheDocument();
+    const information = page.getByRole("button", {
+      name: "Allow resolver deployments information",
+      exact: true,
+    });
+    page
+      .getByRole("button", { name: /Payment tokens/ })
+      .element()
+      .focus();
+    await userEvent.keyboard("{Tab}");
+    await expect.element(information).toHaveFocus();
+    await expect.element(page.getByRole("tooltip")).toHaveTextContent(explanation);
+    expect(onCreate).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
     if (!allowFactoryDeployments) {
-      await page.getByText("Allow ENS factory deployments", { exact: true }).click();
+      await page.getByText("Allow resolver deployments", { exact: true }).click();
       await expect.element(factory).not.toBeChecked();
       await page.getByRole("button", { name: "Back to details", exact: true }).click();
       await page.getByRole("button", { name: "Continue", exact: true }).click();

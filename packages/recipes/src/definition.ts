@@ -17,6 +17,7 @@ export type RecipeField<Name extends string = string> = {
   readonly name: Name;
   readonly label: string;
   readonly description?: string;
+  readonly tooltip?: string;
 } & (
   | { readonly kind: "networks"; readonly chainIds: readonly SupportedEvmChainId[] }
   | { readonly kind: "network"; readonly chainIds: readonly SupportedEvmChainId[] }
