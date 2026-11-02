@@ -24,9 +24,9 @@ import { SessionKeyDetailsCard } from "./details-card";
 import { createSessionKeyInitialValues, type SessionKeyInitialOptions } from "./initial-values";
 import { SessionNetworksField } from "./networks-field";
 import { InstallationPolicies } from "./policies/installations";
-import { RecipeCreationForm } from "./recipe-form";
 import { CreateSessionKeyFormSchema } from "./schema";
 import { SetupSessionKey } from "./setup-key";
+import { TemplateCreationForm } from "./template-form";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 import { useSessionKeyCreation } from "./use-session-key-creation";
 
@@ -59,14 +59,14 @@ function SessionKeyForm({
   wallets,
   initialAccountId,
   limits,
-  recipe,
+  template,
   onboarding,
   from,
 }: CreateSessionKeyFormProps & { limits: CustodyLimits }) {
   const [initialValues] = useState(() =>
     createSessionKeyInitialValues(
       wallets,
-      { initialAccountId, recipe, onboarding },
+      { initialAccountId, template, onboarding },
       Math.floor(Date.now() / 1000),
     ),
   );
@@ -116,10 +116,10 @@ function SessionKeyForm({
         />
       ) : null}
       <div hidden={completed}>
-        {recipe && !registration ? (
+        {template && !registration ? (
           <div className="relative mb-8">
             <img
-              src={`https://cdn.namera.ai/${recipe.display.banner}`}
+              src={`https://cdn.namera.ai/${template.display.banner}`}
               alt=""
               width={2048}
               height={683}
@@ -127,7 +127,7 @@ function SessionKeyForm({
             />
             <div className="absolute -bottom-4 left-5 rounded-full bg-background p-1">
               <img
-                src={`https://cdn.namera.ai/${recipe.display.logo}`}
+                src={`https://cdn.namera.ai/${template.display.logo}`}
                 alt=""
                 width={48}
                 height={48}
@@ -140,12 +140,12 @@ function SessionKeyForm({
           <HeadingGroup.Title level={1} size="lg">
             {registration
               ? "Finish setting up your key"
-              : (recipe?.display.name ?? "Create a session key")}
+              : (template?.display.name ?? "Create a session key")}
           </HeadingGroup.Title>
           <HeadingGroup.Description>
             {registration
               ? "Your key is registered. Complete these steps before using it."
-              : (recipe?.display.description ??
+              : (template?.display.description ??
                 "Define scoped access to an account for agents and integrations.")}
           </HeadingGroup.Description>
         </HeadingGroup>
@@ -160,7 +160,7 @@ function SessionKeyForm({
               <ActivateSessionKey
                 sessionKey={registration}
                 onboarding={from === "get-started"}
-                onFinish={recipe ? () => setCompleted(true) : undefined}
+                onFinish={template ? () => setCompleted(true) : undefined}
               />
             ) : setup ? (
               <SetupSessionKey
@@ -169,7 +169,7 @@ function SessionKeyForm({
                 draft={setup.draft}
                 bindings={setup.bindings}
                 onSaved={creation.acknowledgeBackup}
-                onFinish={recipe ? () => setCompleted(true) : undefined}
+                onFinish={template ? () => setCompleted(true) : undefined}
               />
             ) : null}
             {registrationError ? (
@@ -194,9 +194,9 @@ function SessionKeyForm({
                 no key appears, contact support; a provider resource may still have been created.
               </Typography.Paragraph>
             ) : null}
-            {recipe ? (
-              <RecipeCreationForm
-                recipe={recipe}
+            {template ? (
+              <TemplateCreationForm
+                template={template}
                 metadataForm={form}
                 wallets={wallets}
                 limits={limits}

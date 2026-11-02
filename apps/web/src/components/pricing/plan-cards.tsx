@@ -50,16 +50,17 @@ export const PlanCards = () => (
           </ul>
 
           <div className="mt-auto pt-12">
-            {plan.action === "waitlist" ? (
+            {plan.action === "signup" && SITE_LINKS.app !== null ? (
               <ActionAnchor
-                href="/#waitlist"
+                href={SITE_LINKS.app}
+                data-analytics-placement="pricing-cards"
                 onClick={() =>
-                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "waitlist" })
+                  captureAnalytics("pricing_cta_clicked", { plan: plan.id, action: "signup" })
                 }
                 variant="light"
                 className="h-11 w-full justify-center text-[0.9375rem]"
               >
-                Join the waitlist
+                Get started
               </ActionAnchor>
             ) : plan.action === "contact" && SITE_LINKS.contact !== null ? (
               <ActionAnchor

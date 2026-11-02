@@ -40,7 +40,7 @@ TypeScript monorepo using Node.js 24, pnpm, Turborepo, and Effect v4.
 | [Protocol](packages/protocol) / [API](packages/api) | Runtime schemas and HTTP contracts                    |
 | [UI](packages/ui)                                   | Shared React components and theme                     |
 
-Provider adapters, ENS, crypto, email delivery, telemetry, recipes, and utilities
+Provider adapters, ENS, crypto, email delivery, telemetry, templates, and utilities
 live in their own packages. Start with the [architecture knowledge base](architecture/README.md)
 for their boundaries.
 

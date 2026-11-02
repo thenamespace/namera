@@ -2,15 +2,15 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { uniswapV3LiquidityRecipe } from "@namera-ai/recipes";
+import { uniswapV3LiquidityTemplate } from "@namera-ai/templates";
 import { useForm } from "react-hook-form";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
 
 import { createSessionKeyInitialValues } from "../../src/components/session-key-creation/initial-values";
-import { RecipeCreationForm } from "../../src/components/session-key-creation/recipe-form";
 import { CreateSessionKeyFormSchema } from "../../src/components/session-key-creation/schema";
+import { TemplateCreationForm } from "../../src/components/session-key-creation/template-form";
 import type {
   CreateSessionKeyFormInput,
   CreateSessionKeyFormValues,
@@ -25,10 +25,10 @@ const now = Math.floor(Date.now() / 1000);
 const expiresAt = new Date((now + 86_400) * 1000).toISOString();
 const wallets = [newestSessionAccount];
 const onCreate = vi.fn();
-const recipe = {
-  ...uniswapV3LiquidityRecipe,
+const template = {
+  ...uniswapV3LiquidityTemplate,
   defaults: {
-    ...uniswapV3LiquidityRecipe.defaults,
+    ...uniswapV3LiquidityTemplate.defaults,
     networks: ["eip155:1", "eip155:11155420"] as const,
     expiresAt,
   },
@@ -44,15 +44,15 @@ function TemplateHarness() {
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues: createSessionKeyInitialValues(
       wallets,
-      { initialAccountId: newestSessionAccount.id, recipe: uniswapV3LiquidityRecipe },
+      { initialAccountId: newestSessionAccount.id, template: uniswapV3LiquidityTemplate },
       now,
     ),
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   return (
     <div className="mx-auto w-full max-w-2xl p-4">
-      <RecipeCreationForm
-        recipe={recipe}
+      <TemplateCreationForm
+        template={template}
         metadataForm={form}
         wallets={wallets}
         limits={{ local: false, managed: false }}

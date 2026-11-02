@@ -53,6 +53,23 @@ const fixture = Effect.fnUntraced(function* () {
 });
 
 layer(DatabaseTestLayer)("catalog schema persistence", (it) => {
+  it.effect("stores and decodes Arc mainnet and testnet deployments after migration", () =>
+    Effect.gen(function* () {
+      const { db, input } = yield* fixture();
+      for (const chainId of ["eip155:5042", "eip155:5042002"] as const) {
+        const [deployment] = yield* db
+          .insert(addressCatalogEntry)
+          .values({
+            ...input,
+            chainId,
+            address: "0x3600000000000000000000000000000000000000",
+          })
+          .returning();
+        expect(Schema.decodeUnknownSync(AddressCatalogEntry)(deployment).chainId).toBe(chainId);
+      }
+    }),
+  );
+
   it.effect("persists contract metadata and its JSON ABI independently", () =>
     Effect.gen(function* () {
       const { db, catalog, artifact, input } = yield* fixture();

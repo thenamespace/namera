@@ -214,6 +214,7 @@ export const resolveOperationScope = Effect.fnUntraced(function* (
     (
       {
         mainnet: "eip155:1",
+        "arc-mainnet": "eip155:5042",
         arbitrum: "eip155:42161",
         optimism: "eip155:10",
         "optimism-sepolia": "eip155:11155420",

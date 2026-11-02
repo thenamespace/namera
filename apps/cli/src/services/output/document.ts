@@ -5,6 +5,8 @@ import { DateTime, Predicate } from "effect";
 import {
   arbitrum,
   arbitrumSepolia,
+  arc,
+  arcTestnet,
   base,
   baseSepolia,
   mainnet,
@@ -19,6 +21,8 @@ export type Field = readonly [label: string, value: unknown];
 const networks = [
   arbitrum,
   arbitrumSepolia,
+  arc,
+  arcTestnet,
   base,
   baseSepolia,
   mainnet,

@@ -29,11 +29,11 @@ export const coreGroupItems: SidebarGroupItemsProps = {
       },
     },
     {
-      id: "recipes",
+      id: "templates",
       icon: BookOpen01Icon,
       label: "Templates",
       textValue: "Templates",
-      href: "/recipes",
+      href: "/templates",
       tooltip: { text: "Templates" },
     },
     {

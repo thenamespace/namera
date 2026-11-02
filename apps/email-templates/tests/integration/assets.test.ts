@@ -13,7 +13,7 @@ const execute = promisify(execFile);
 const appDirectory = fileURLToPath(new URL("../../", import.meta.url));
 const uiConfig = fileURLToPath(new URL("../../../../packages/ui/tsconfig.json", import.meta.url));
 const expectedNames = [
-  ...["arbitrum", "base", "ethereum", "optimism"].map((name) => `chains/${name}.png`),
+  ...["arbitrum", "arc", "base", "ethereum", "optimism"].map((name) => `chains/${name}.png`),
   ...["light", "dark"].flatMap((theme) =>
     [
       `brand/namera-${theme}.png`,

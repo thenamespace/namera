@@ -13,9 +13,13 @@ consumes the proof and creates the session in the same transaction as user setup
 audit records, and notification delivery records.
 
 New users receive a personal organization with an Owner membership and Free
-billing account. Beta admission is enabled by default through
-`AUTH_INVITE_REQUIRED`. An invite admits a signup; it is not proof of ownership
-of the supplied email address.
+billing account. Open beta allows email and Google signup without an invite by
+default (`AUTH_INVITE_REQUIRED=false`). Email verification and Google identity
+checks still apply. Setting `AUTH_INVITE_REQUIRED=true` restores the invite gate.
+An invite admits a signup; it is not proof of ownership of the supplied email
+address. Existing beta invite links, redemption, audit records, and waitlist
+administration remain available. The legacy dashboard invite screen also links
+back to sign-in so pending visitors can restart without a code during open beta.
 
 ## Google
 

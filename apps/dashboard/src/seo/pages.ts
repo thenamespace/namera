@@ -51,8 +51,8 @@ export const pageSeo = {
   "/auth": signIn,
   "/auth/": signIn,
   "/auth/invite": {
-    title: "Enter your invite code",
-    description: "Enter your invitation code to finish setting up your Namera workspace.",
+    title: "Join Namera",
+    description: "Join Namera's open beta. No invite is required to sign up.",
   },
   "/auth/verify": {
     title: "Verify your email",
@@ -114,11 +114,11 @@ export const pageSeo = {
     description:
       "Define agent permissions, encrypt your session key, import it into the CLI, and approve network access.",
   },
-  "/_authenticated/recipes/": {
+  "/_authenticated/templates/": {
     title: "Templates",
     description: "Create session keys from ready-to-use policy templates.",
   },
-  "/_authenticated/recipes/$recipeId": {
+  "/_authenticated/templates/$templateId": {
     title: "Create from template",
     description: "Configure a template and complete session key setup in one place.",
   },

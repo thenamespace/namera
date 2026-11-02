@@ -33,9 +33,8 @@ export function LoginOptions({ onContinueWithEmail, returnTo, invite }: LoginOpt
         level={1}
         weight="medium"
       >
-        Log in to Namera
+        Welcome to Namera
       </Typography.Heading>
-
       {configuration.data?.enabled ? (
         <Button fullWidth isPending={start.isPending} onPress={continueWithGoogle}>
           <BrandGoogleIcon aria-hidden="true" className="size-4 shrink-0" />

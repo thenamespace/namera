@@ -7,7 +7,6 @@ export default defineConfig({
   envDir: false,
   plugins: [react(), tailwindcss()],
   resolve: { conditions: ["namera-source"], tsconfigPaths: true },
-  optimizeDeps: { include: ["@hookform/resolvers/standard-schema"] },
   test: {
     include: ["tests/browser/**/*.test.tsx"],
     browser: {

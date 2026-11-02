@@ -39,7 +39,7 @@
     "typecheck": "tsc -p tsconfig.json --pretty false"
   },
   "dependencies": {
-    "@1claw/sdk": "0.61.38",
+    "@1claw/sdk": "0.63.3",
     "@namera-ai/protocol": "workspace:*",
     "effect": "catalog:",
     "jose": "^6.2.12",

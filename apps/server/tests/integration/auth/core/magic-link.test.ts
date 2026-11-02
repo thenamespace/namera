@@ -90,7 +90,7 @@ layer(TestServerLayer)("magic-link routes", (it) => {
     }),
   );
 
-  it.effect("verifies a token, creates the initial account, and sets the auth cookie", () =>
+  it.effect("signs up without an invite and creates a Free workspace with an auth cookie", () =>
     Effect.gen(function* () {
       yield* resetTestState();
       const client = yield* makeTestApiClient;
@@ -108,6 +108,11 @@ layer(TestServerLayer)("magic-link routes", (it) => {
       expect(signedIn.actor.user.emailVerified).toBe(true);
       expect(signedIn.actor.organization.metadata.name).toBe("Personal");
       expect(signedIn.actor.role.key).toBe("owner");
+      expect(yield* client.billing.get()).toMatchObject({
+        organizationId: signedIn.actor.organization.id,
+        plan: "free",
+        status: "active",
+      });
     }),
   );
 

@@ -12,6 +12,7 @@ import { getAddress, toEventSelector } from "viem";
 import { UserOperationExecutionError } from "viem/account-abstraction";
 
 import { makeEvmExecutionBilling } from "../billing/execution.js";
+import { arcNativeTransferEmitter, arcUsdcAddress } from "../chains/arc.js";
 import type { ChainData } from "../chains/data.js";
 import { getChainDataByCaip2 } from "../chains/helpers.js";
 import type { ExecutionClients } from "../clients/execution.js";
@@ -26,6 +27,7 @@ const addressFromTopic = (topic: `0x${string}`): `0x${string}` =>
   getAddress(`0x${topic.slice(-40)}`);
 
 const normalizeNativeTransfers = (
+  chain: ChainData,
   results: ReadonlyArray<{
     readonly logs?:
       | ReadonlyArray<{
@@ -36,11 +38,20 @@ const normalizeNativeTransfers = (
       | undefined;
   }>,
 ) =>
-  results.flatMap((result, callIndex) =>
-    (result.logs ?? []).flatMap((log) => {
+  results.flatMap((result, callIndex) => {
+    const logs = result.logs ?? [];
+    // eth_simulateV1 may include synthetic traces alongside Arc's protocol logs.
+    // Prefer the synthetic representation when present to avoid counting both.
+    const emitter = logs.some((log) => log.address.toLowerCase() === nativeTransferEmitter)
+      ? nativeTransferEmitter
+      : chain.name === "arc"
+        ? arcNativeTransferEmitter
+        : nativeTransferEmitter;
+
+    return logs.flatMap((log) => {
       const [selector, from, to] = log.topics;
       if (
-        log.address.toLowerCase() !== nativeTransferEmitter ||
+        log.address.toLowerCase() !== emitter ||
         selector?.toLowerCase() !== transferEventSelector ||
         from === null ||
         from === undefined ||
@@ -59,8 +70,8 @@ const normalizeNativeTransfers = (
           value: BigInt(log.data).toString(),
         },
       ];
-    }),
-  );
+    });
+  });
 
 export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"], executionGas: bigint) =>
   calls.map(({ data, ...call }) => {
@@ -76,7 +87,7 @@ export const toSimulationCalls = (calls: PrepareEvmExecutionInput["calls"], exec
 
 export const makePrepareEvmExecution = (
   getClients: (chain: ChainData) => ExecutionClients,
-  getGasPrice: () => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>,
+  getGasPrice: (chain: ChainData) => Effect.Effect<EvmGasPriceQuote, EvmExecutionError>,
 ) =>
   Effect.fn("evm.execution.prepare")(function* (input: PrepareEvmExecutionInput) {
     const chain = getChainDataByCaip2(input.chainId);
@@ -119,6 +130,9 @@ export const makePrepareEvmExecution = (
         }),
       catch: (cause) => new EvmExecutionError({ code: "SIMULATION_FAILED", cause }),
     });
+    const hasNativeAssetChange = callSimulation.assetChanges.some(
+      (change) => change.token.address.toLowerCase() === nativeTransferEmitter,
+    );
     const block = callSimulation.block;
     if (block.hash === null || block.number === null) {
       return yield* new EvmExecutionError({
@@ -200,26 +214,36 @@ export const makePrepareEvmExecution = (
               returnData: result.data,
               gasUsed: result.gasUsed.toString(),
             })),
-            assetChanges: callSimulation.assetChanges.map((change) => ({
-              asset: {
-                address: change.token.address,
-                symbol:
-                  change.token.symbol !== undefined && change.token.symbol.length <= 64
-                    ? change.token.symbol
-                    : null,
-                decimals:
-                  change.token.decimals !== undefined &&
-                  Number.isInteger(change.token.decimals) &&
-                  change.token.decimals >= 0 &&
-                  change.token.decimals <= 255
-                    ? change.token.decimals
-                    : null,
-              },
-              pre: change.value.pre.toString(),
-              post: change.value.post.toString(),
-              diff: change.value.diff.toString(),
-            })),
-            transfers: normalizeNativeTransfers(callSimulation.results),
+            assetChanges: callSimulation.assetChanges
+              .filter(
+                (change) =>
+                  chain.name !== "arc" ||
+                  !hasNativeAssetChange ||
+                  (change.token.address?.toLowerCase() !== arcUsdcAddress &&
+                    change.token.address?.toLowerCase() !== arcNativeTransferEmitter),
+              )
+              .map((change) => ({
+                asset: {
+                  address: change.token.address,
+                  symbol:
+                    change.token.address.toLowerCase() === nativeTransferEmitter
+                      ? chain.chain.nativeCurrency.symbol
+                      : change.token.symbol !== undefined && change.token.symbol.length <= 64
+                        ? change.token.symbol
+                        : null,
+                  decimals:
+                    change.token.decimals !== undefined &&
+                    Number.isInteger(change.token.decimals) &&
+                    change.token.decimals >= 0 &&
+                    change.token.decimals <= 255
+                      ? change.token.decimals
+                      : null,
+                },
+                pre: change.value.pre.toString(),
+                post: change.value.post.toString(),
+                diff: change.value.diff.toString(),
+              })),
+            transfers: normalizeNativeTransfers(chain, callSimulation.results),
           },
         },
       },

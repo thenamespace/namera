@@ -11,6 +11,8 @@ const config = {
   alchemyApiKey: Redacted.make("test-api-key"),
   alchemyBsoPolicyId: Redacted.make("test-policy-id"),
 };
+const establishedChains = Object.values(chains).filter((chain) => chain.name !== "arc");
+const establishedIds = establishedChains.map((chain) => chain.chainId);
 const address = EthereumAddress.make("0x1111111111111111111111111111111111111111");
 const token = (overrides: Record<string, unknown> = {}) => ({
   network: "eth-mainnet",
@@ -76,13 +78,14 @@ it.effect("fetches eight networks in two concurrent batches and follows each bat
         );
       }),
     );
-    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({ address });
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({
+      address,
+      chainIds: establishedIds,
+    });
     const initial = requests.filter((request) => request.pageKey === undefined);
     expect(initial.map((request) => request.networks.length)).toEqual([4, 4]);
     expect(initial.flatMap((request) => request.networks).toSorted()).toEqual(
-      Object.values(chains)
-        .map((chain) => chain.alchemyChain)
-        .toSorted(),
+      establishedChains.map((chain) => chain.alchemyChain).toSorted(),
     );
     expect(requests).toHaveLength(4);
     for (const request of requests.filter((entry) => entry.pageKey !== undefined)) {
@@ -249,16 +252,17 @@ it.effect("keeps the successful batch when the other request fails", () =>
         );
       }),
     );
-    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({ address });
+    const result = yield* makeAlchemyPortfolioService(config, client).getAssets({
+      address,
+      chainIds: establishedIds,
+    });
     expect(calls).toBe(2);
     expect(result.items).toEqual([]);
     expect(result.partialFailures).toEqual(
-      Object.values(chains)
-        .slice(0, 4)
-        .map((chain) => ({
-          chainId: chain.chainId,
-          code: "PROVIDER_UNAVAILABLE",
-        })),
+      establishedChains.slice(0, 4).map((chain) => ({
+        chainId: chain.chainId,
+        code: "PROVIDER_UNAVAILABLE",
+      })),
     );
   }),
 );

@@ -3,7 +3,7 @@ title: Supported Networks
 description: Choose a mainnet or testnet for your SDK calls.
 ---
 
-Namera supports eight EVM networks. Use `namespace: "eip155"` and the full
+Namera supports ten EVM networks. Use `namespace: "eip155"` and the full
 `chainId` string when executing, simulating, or signing.
 
 ## Mainnets
@@ -14,6 +14,7 @@ Namera supports eight EVM networks. Use `namespace: "eip155"` and the full
 | Base         | `eip155:8453`  |
 | Arbitrum One | `eip155:42161` |
 | OP Mainnet   | `eip155:10`    |
+| Arc          | `eip155:5042`  |
 
 ## Testnets
 
@@ -23,9 +24,22 @@ Namera supports eight EVM networks. Use `namespace: "eip155"` and the full
 | Base Sepolia     | `eip155:84532`    |
 | Arbitrum Sepolia | `eip155:421614`   |
 | OP Sepolia       | `eip155:11155420` |
+| Arc Testnet      | `eip155:5042002`  |
 
 The [Getting Started](/docs/sdk/getting-started) walkthrough uses **Base Sepolia**.
 Fund the account with test ETH on that network before sending a transfer.
+
+## Arc amounts
+
+Arc uses USDC for native value transfers and gas. Native amounts have 18 decimals:
+`parseEther("1")` represents 1 native USDC on Arc. Its ERC-20 USDC interface uses
+6 decimals: `parseUnits("1", 6)` represents 1 USDC in a token transfer. Both
+interfaces share one balance. Use the units expected by the selected operation.
+
+Install the session key on the selected Arc network before using it. Existing
+permissions and chain allowlists do not automatically include a newly supported
+network. The USDC Spend Template grants an ERC-20 lifetime allowance per network;
+it does not grant a native-value allowance or sponsorship.
 
 ## Select a Network
 

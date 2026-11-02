@@ -40,9 +40,15 @@ uses Alchemy BSO: fee fields are zeroed in the submitted operation and the
 configured policy is carried in the bundler transport header.
 
 Sponsored mainnet preparation reserves a conservative micro-USD gas amount from
-the pre-BSO estimate and price quote. Testnet and unsponsored operations do not
+the pre-BSO estimate and native-asset price quote (ETH/USD or Arc USDC/USD). Testnet and unsponsored operations do not
 create that mainnet gas reservation. Sponsorship allowance and execution-count
-allowance are separate checks.
+allowance are separate checks. Quotes must match the selected network's native
+asset. Arc fee estimation respects its 20 Gwei minimum; the submitted BSO operation
+still follows the zero-fee format required by Alchemy.
+
+Simulation normalizes native asset symbols from chain metadata. On Arc it avoids
+duplicate native/ERC-20 USDC balance changes and prefers synthetic transfer traces
+over duplicate protocol-native Transfer logs.
 
 The identity UI retries preparation as self-funded when sponsorship allowance is
 unavailable. The API does not silently reinterpret every sponsored request as

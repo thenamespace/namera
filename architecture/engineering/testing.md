@@ -86,7 +86,8 @@ Failure screenshots are local `.vitest` artifacts, not committed fixtures.
 Admin browser tests use real mutation hooks and a scoped atom registry with a
 controlled HTTP boundary. They cover pending controls, retained drafts,
 one-time invite disclosure, catalog review, and feedback list/detail invalidation.
-Website tests exercise the waitlist form and compiled content publication dates.
+Website tests exercise open beta signup links, click analytics, pricing Markdown,
+and compiled content publication dates.
 Each application has its own browser configuration so aliases resolve within the
 owning app. Run browser suites sequentially on constrained developer machines.
 

@@ -1,5 +1,9 @@
 export const PRICING_QUESTIONS = [
   {
+    q: "Do I need an invite to get started?",
+    a: "No. Namera is in open beta. Sign up with email or Google to start on the Free plan.",
+  },
+  {
     q: "What can I do on the Free plan?",
     a: "Each workspace includes 5 members, 10 user-owned accounts, 3 managed accounts, 100 local session keys and 5 managed session keys. You also get 100 mainnet executions, 500 testnet executions, 1,000 signatures and $3 in sponsored gas each month.",
   },

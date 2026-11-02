@@ -20,6 +20,7 @@ export const emailAssets = {
   },
   chains: {
     arbitrum: emailAssetUrl("chains/arbitrum.png"),
+    arc: emailAssetUrl("chains/arc.png"),
     base: emailAssetUrl("chains/base.png"),
     ethereum: emailAssetUrl("chains/ethereum.png"),
     optimism: emailAssetUrl("chains/optimism.png"),

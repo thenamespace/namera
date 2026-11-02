@@ -80,11 +80,13 @@ export function ProductAnalytics() {
                   : "public_link_clicked",
           {
             destination,
-            placement: target?.closest("footer")
-              ? "footer"
-              : target?.closest("nav")
-                ? "navigation"
-                : "content",
+            placement:
+              link.dataset.analyticsPlacement ??
+              (target?.closest("footer")
+                ? "footer"
+                : target?.closest("nav")
+                  ? "navigation"
+                  : "content"),
           },
         );
       }

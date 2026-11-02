@@ -3,6 +3,7 @@ import type { ComponentType, SVGProps } from "react";
 import type { EvmChainName } from "@namera-ai/protocol/evm";
 
 import { ChainArbitrumIcon } from "./chain/arbitrum.js";
+import { ChainArcIcon } from "./chain/arc.js";
 import { ChainBaseIcon } from "./chain/base.js";
 import { ChainEthereumIcon } from "./chain/ethereum.js";
 import { ChainOptimismIcon } from "./chain/optimism.js";
@@ -11,6 +12,7 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 const evmChainIcons: Readonly<Record<EvmChainName, SvgIcon>> = {
   arbitrum: ChainArbitrumIcon,
+  arc: ChainArcIcon,
   base: ChainBaseIcon,
   ethereum: ChainEthereumIcon,
   optimism: ChainOptimismIcon,

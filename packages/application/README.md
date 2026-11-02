@@ -28,13 +28,13 @@ resource admission before committing the result.
 
 ## Configuration
 
-| Variable                                   | Purpose                                       |
-| ------------------------------------------ | --------------------------------------------- |
-| `AUTH_API_PUBLIC_ORIGIN`                   | Required API origin and OAuth audience.       |
-| `AUTH_DASHBOARD_PUBLIC_ORIGIN`             | Required dashboard origin and links.          |
-| `ADMIN_CORS_ORIGIN`                        | Optional admin origin and invitation links.   |
-| `AUTH_INVITE_REQUIRED`                     | Beta admission; defaults to `true`.           |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Configure together for Google authentication. |
+| Variable                                   | Purpose                                                  |
+| ------------------------------------------ | -------------------------------------------------------- |
+| `AUTH_API_PUBLIC_ORIGIN`                   | Required API origin and OAuth audience.                  |
+| `AUTH_DASHBOARD_PUBLIC_ORIGIN`             | Required dashboard origin and links.                     |
+| `ADMIN_CORS_ORIGIN`                        | Optional admin origin and invitation links.              |
+| `AUTH_INVITE_REQUIRED`                     | Optional invite gate; defaults to `false` for open beta. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Configure together for Google authentication.            |
 
 TTL and credential policies live in `src/auth/data.ts`; allowances live in
 `src/billing/data.ts`. The server supplies infrastructure layers and secrets.

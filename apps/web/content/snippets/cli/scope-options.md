@@ -22,5 +22,5 @@ With input flags, the CLI reads the account to validate your selection.
 For Base Sepolia, use `--network 'Base Sepolia'`, `--network 84532`, or
 `--network eip155:84532`. Names are case-insensitive. The supported networks are
 Ethereum, Sepolia, Base, Base Sepolia, Arbitrum One, Arbitrum Sepolia,
-OP Mainnet, and OP Sepolia. [Supported Networks](/docs/sdk/supported-networks)
+OP Mainnet, OP Sepolia, Arc, and Arc Testnet. [Supported Networks](/docs/sdk/supported-networks)
 lists their identifiers.

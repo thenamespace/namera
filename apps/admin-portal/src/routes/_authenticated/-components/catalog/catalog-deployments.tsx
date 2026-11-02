@@ -10,6 +10,8 @@ import { CatalogCopyValue, CatalogProperty } from "./catalog-property";
 const chains: Record<SupportedEvmChainId, { icon: EvmChainName; explorer: string }> = {
   "eip155:1": { icon: "ethereum", explorer: "https://etherscan.io" },
   "eip155:10": { icon: "optimism", explorer: "https://optimistic.etherscan.io" },
+  "eip155:5042": { icon: "arc", explorer: "https://explorer.arc.io" },
+  "eip155:5042002": { icon: "arc", explorer: "https://explorer.testnet.arc.io" },
   "eip155:8453": { icon: "base", explorer: "https://basescan.org" },
   "eip155:42161": { icon: "arbitrum", explorer: "https://arbiscan.io" },
   "eip155:11155111": { icon: "ethereum", explorer: "https://sepolia.etherscan.io" },

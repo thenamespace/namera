@@ -37,7 +37,11 @@ requests use conditional balance updates. Successful settlement removes the hold
 and records actual usage once. Definitive failure releases it. Pending receipts
 and uncertain broadcasts are not failures and retain their holds.
 
-Sponsored mainnet operations reserve gas separately from operation count. Receipt
+Sponsored mainnet operations reserve gas separately from operation count.
+Native gas quotes select ETH/USD on the Ethereum-family networks and USDC/USD on
+Arc, retain fresh provider pricing, and round up to integer micro-USD. Existing
+ETH quote records remain readable. Testnet execution counts and mainnet sponsored
+gas accounting retain their existing independent meters. Receipt
 confirmation and provider billing are separate: confirmation can activate a session
 or finish an execution before Alchemy's cost is available. Cost reconciliation
 binds the provider lookup to the signed operation's receipt evidence and records

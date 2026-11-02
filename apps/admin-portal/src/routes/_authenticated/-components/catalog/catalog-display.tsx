@@ -13,6 +13,8 @@ export type CatalogRecord = typeof CatalogView.Type;
 export const chainNames: Record<SupportedEvmChainId, string> = {
   "eip155:1": "Ethereum",
   "eip155:10": "OP Mainnet",
+  "eip155:5042": "Arc",
+  "eip155:5042002": "Arc Testnet",
   "eip155:8453": "Base",
   "eip155:42161": "Arbitrum One",
   "eip155:11155111": "Ethereum Sepolia",

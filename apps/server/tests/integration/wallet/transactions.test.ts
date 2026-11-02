@@ -44,73 +44,80 @@ const request = {
 const setup = setupPasskeyWalletOwner("transactions");
 
 layer(fixture.layer)("owner wallet transactions", (it) => {
-  it.effect("executes a non-ENS batch on the requested chain and exposes durable status", () =>
-    Effect.gen(function* () {
-      const { client, params, wallet } = yield* setup;
-      const execution = yield* TestEvmExecution;
-      const sendsBefore = yield* execution.submissionCount;
-      const input = { params, headers: { "idempotency-key": "batch" }, payload: request };
-      const prepared = yield* client.walletTransaction.prepare(input);
-      expect(prepared.signingKeyId).toBe(wallet.owner.signingKeyId);
-      expect(prepared.prepared.chainId).toBe(request.chainId);
-      expect(prepared.prepared.context.calls).toEqual(request.calls);
-      expect((yield* client.walletTransaction.prepare(input)).operationId).toBe(
-        prepared.operationId,
-      );
-      expect(
-        yield* client.walletTransaction
-          .prepare({
-            ...input,
-            payload: { ...request, sponsor: true },
-          })
-          .pipe(Effect.flip),
-      ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
-      const operationParams = { ...params, operationId: prepared.operationId };
-      expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
-        status: "awaiting-signature",
-        userOperationHash: null,
-        transactionHash: null,
-      });
-      expect(yield* execution.submissionCount).toBe(sendsBefore);
-      if (prepared.signing.method !== "passkey") return yield* Effect.die("Expected passkey");
-      const payload = {
-        namespace: "eip155" as const,
-        operationId: prepared.operationId,
-        response: fixture.authenticator.authenticate({
-          challenge: prepared.signing.options.challenge,
-          origin: "http://dashboard.test",
-          rpId: "dashboard.test",
-          counter: 0,
-        }),
-      };
-      const signed = yield* client.walletTransaction.complete({ params, payload });
-      expect(signed.status).toBe("signed");
-      expect(yield* client.walletTransaction.complete({ params, payload })).toEqual(signed);
-      expect(yield* execution.submissionCount).toBe(sendsBefore);
-      yield* execution.setReceiptMode("missing");
-      yield* TestClock.adjust(Duration.seconds(2));
-      yield* (yield* Application).wallet.transactions.reconcile();
-      expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
-        status: "submitted",
-        transactionHash: null,
-      });
-      yield* execution.setReceiptMode("immediate");
-      yield* TestClock.adjust(Duration.seconds(20));
-      yield* (yield* Application).wallet.transactions.reconcile();
-      expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
-        status: "confirmed",
-        userOperationHash: signed.userOperationHash,
-      });
-      const db = yield* Database;
-      const operations = yield* db.query.walletOperation.findMany();
-      expect(operations).toHaveLength(1);
-      expect(operations[0]?.kind).toBe("transaction");
-      expect(operations[0]?.data.name).toBeUndefined();
-      expect(yield* execution.submissionCount).toBe(sendsBefore + 1);
-      const events = yield* db.query.organizationEvent.findMany();
-      expect(events.filter((event) => event.event === "wallet.operation_prepared")).toHaveLength(1);
-      expect(events.filter((event) => event.event === "wallet.operation_approved")).toHaveLength(1);
-    }),
+  it.effect.each(["eip155:8453", "eip155:5042", "eip155:5042002"] as const)(
+    "executes a non-ENS batch on %s and exposes durable status",
+    (chainId) =>
+      Effect.gen(function* () {
+        const payloadRequest = { ...request, chainId };
+        const { client, params, wallet } = yield* setup;
+        const execution = yield* TestEvmExecution;
+        const sendsBefore = yield* execution.submissionCount;
+        const input = { params, headers: { "idempotency-key": "batch" }, payload: payloadRequest };
+        const prepared = yield* client.walletTransaction.prepare(input);
+        expect(prepared.signingKeyId).toBe(wallet.owner.signingKeyId);
+        expect(prepared.prepared.chainId).toBe(payloadRequest.chainId);
+        expect(prepared.prepared.context.calls).toEqual(payloadRequest.calls);
+        expect((yield* client.walletTransaction.prepare(input)).operationId).toBe(
+          prepared.operationId,
+        );
+        expect(
+          yield* client.walletTransaction
+            .prepare({
+              ...input,
+              payload: { ...payloadRequest, sponsor: true },
+            })
+            .pipe(Effect.flip),
+        ).toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
+        const operationParams = { ...params, operationId: prepared.operationId };
+        expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
+          status: "awaiting-signature",
+          userOperationHash: null,
+          transactionHash: null,
+        });
+        expect(yield* execution.submissionCount).toBe(sendsBefore);
+        if (prepared.signing.method !== "passkey") return yield* Effect.die("Expected passkey");
+        const payload = {
+          namespace: "eip155" as const,
+          operationId: prepared.operationId,
+          response: fixture.authenticator.authenticate({
+            challenge: prepared.signing.options.challenge,
+            origin: "http://dashboard.test",
+            rpId: "dashboard.test",
+            counter: 0,
+          }),
+        };
+        const signed = yield* client.walletTransaction.complete({ params, payload });
+        expect(signed.status).toBe("signed");
+        expect(yield* client.walletTransaction.complete({ params, payload })).toEqual(signed);
+        expect(yield* execution.submissionCount).toBe(sendsBefore);
+        yield* execution.setReceiptMode("missing");
+        yield* TestClock.adjust(Duration.seconds(2));
+        yield* (yield* Application).wallet.transactions.reconcile();
+        expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
+          status: "submitted",
+          transactionHash: null,
+        });
+        yield* execution.setReceiptMode("immediate");
+        yield* TestClock.adjust(Duration.seconds(20));
+        yield* (yield* Application).wallet.transactions.reconcile();
+        expect(yield* client.walletTransaction.get({ params: operationParams })).toMatchObject({
+          status: "confirmed",
+          userOperationHash: signed.userOperationHash,
+        });
+        const db = yield* Database;
+        const operations = yield* db.query.walletOperation.findMany();
+        expect(operations).toHaveLength(1);
+        expect(operations[0]?.kind).toBe("transaction");
+        expect(operations[0]?.data.name).toBeUndefined();
+        expect(yield* execution.submissionCount).toBe(sendsBefore + 1);
+        const events = yield* db.query.organizationEvent.findMany();
+        expect(events.filter((event) => event.event === "wallet.operation_prepared")).toHaveLength(
+          1,
+        );
+        expect(events.filter((event) => event.event === "wallet.operation_approved")).toHaveLength(
+          1,
+        );
+      }),
   );
 
   it.effect("rejects wrong origin and another tenant for prepare, completion and reads", () =>

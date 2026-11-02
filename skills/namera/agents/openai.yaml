@@ -1,0 +1,4 @@
+interface:
+  display_name: "Namera"
+  short_description: "Work with Namera accounts, SDK, CLI and MCP"
+  default_prompt: "Use $namera to build an integration or work with my Namera accounts."

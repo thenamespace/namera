@@ -2,7 +2,7 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { ensSubnameIssuerRecipe } from "@namera-ai/recipes";
+import { ensSubnameIssuerTemplate } from "@namera-ai/templates";
 import { useForm } from "react-hook-form";
 import { encodeAbiParameters } from "viem";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -10,8 +10,8 @@ import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
 
 import { createSessionKeyInitialValues } from "../../src/components/session-key-creation/initial-values";
-import { RecipeCreationForm } from "../../src/components/session-key-creation/recipe-form";
 import { CreateSessionKeyFormSchema } from "../../src/components/session-key-creation/schema";
+import { TemplateCreationForm } from "../../src/components/session-key-creation/template-form";
 import type {
   CreateSessionKeyFormInput,
   CreateSessionKeyFormValues,
@@ -24,8 +24,8 @@ vi.mock("../../src/env", () => ({
 
 const now = Math.floor(Date.now() / 1000);
 const registry = "0x2222222222222222222222222222222222222222";
-const recipe = {
-  ...ensSubnameIssuerRecipe,
+const template = {
+  ...ensSubnameIssuerTemplate,
   defaults: {
     networks: ["eip155:11155111"] as const,
     subregistryAddress: registry,
@@ -39,15 +39,15 @@ function TemplateHarness() {
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues: createSessionKeyInitialValues(
       wallets,
-      { initialAccountId: newestSessionAccount.id, recipe: ensSubnameIssuerRecipe },
+      { initialAccountId: newestSessionAccount.id, template: ensSubnameIssuerTemplate },
       now,
     ),
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
   return (
     <div className="mx-auto w-full max-w-2xl p-4">
-      <RecipeCreationForm
-        recipe={recipe}
+      <TemplateCreationForm
+        template={template}
         metadataForm={form}
         wallets={wallets}
         limits={{ local: false, managed: false }}

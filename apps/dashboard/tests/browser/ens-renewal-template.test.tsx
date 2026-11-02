@@ -4,15 +4,19 @@ import type { ComponentProps } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { ensRegistrationRecipe, ensRenewalRecipe, usdcAllowanceRecipe } from "@namera-ai/recipes";
+import {
+  ensRegistrationTemplate,
+  ensRenewalTemplate,
+  usdcAllowanceTemplate,
+} from "@namera-ai/templates";
 import { useForm } from "react-hook-form";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
 
 import { createSessionKeyInitialValues } from "../../src/components/session-key-creation/initial-values";
-import { RecipeCreationForm } from "../../src/components/session-key-creation/recipe-form";
 import { CreateSessionKeyFormSchema } from "../../src/components/session-key-creation/schema";
+import { TemplateCreationForm } from "../../src/components/session-key-creation/template-form";
 import type {
   CreateSessionKeyFormInput,
   CreateSessionKeyFormValues,
@@ -23,13 +27,13 @@ vi.mock("../../src/env", () => ({
   env: { backendUrl: "https://api.example.test", environment: "test" },
 }));
 
-type Template = ComponentProps<typeof RecipeCreationForm>["recipe"];
+type Template = ComponentProps<typeof TemplateCreationForm>["template"];
 const now = Math.floor(Date.now() / 1000);
 const expiresAt = new Date((now + 86_400) * 1000).toISOString();
 const ensTemplate: Template = {
-  ...ensRenewalRecipe,
+  ...ensRenewalTemplate,
   defaults: {
-    ...ensRenewalRecipe.defaults,
+    ...ensRenewalTemplate.defaults,
     networks: ["eip155:1", "eip155:11155111"],
     expiresAt,
   },
@@ -38,17 +42,17 @@ const onCreate = vi.fn();
 const wallets = [newestSessionAccount];
 
 function TemplateHarness({
-  recipe = ensTemplate,
+  template = ensTemplate,
   disabled = false,
 }: {
-  recipe?: Template;
+  template?: Template;
   disabled?: boolean;
 }) {
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues: {
       ...createSessionKeyInitialValues(
         wallets,
-        { initialAccountId: newestSessionAccount.id, recipe: ensRenewalRecipe },
+        { initialAccountId: newestSessionAccount.id, template: ensRenewalTemplate },
         now,
       ),
       metadata: { version: 1, name: "Renewal agent", logo: { type: "emoji", value: "🔑" } },
@@ -58,8 +62,8 @@ function TemplateHarness({
 
   return (
     <div className="mx-auto w-full max-w-2xl p-4">
-      <RecipeCreationForm
-        recipe={recipe}
+      <TemplateCreationForm
+        template={template}
         metadataForm={form}
         wallets={wallets}
         limits={{ local: false, managed: false }}
@@ -179,11 +183,11 @@ it("validates empty token selection and supports keyboard recovery on a narrow s
 });
 
 it("preserves the existing USDC allowance form and its exact budget", async () => {
-  const recipe: Template = {
-    ...usdcAllowanceRecipe,
+  const template: Template = {
+    ...usdcAllowanceTemplate,
     defaults: { networks: ["eip155:1"], allowance: "100.000001", expiresAt },
   };
-  await render(<TemplateHarness recipe={recipe} />);
+  await render(<TemplateHarness template={template} />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: /Payment tokens/ }))
@@ -208,16 +212,16 @@ it("keeps a disabled template from advancing or submitting", async () => {
 it.each([true, false])(
   "submits registration with factory deployment enabled: %s",
   async (allowFactoryDeployments) => {
-    const recipe: Template = {
-      ...ensRegistrationRecipe,
+    const template: Template = {
+      ...ensRegistrationTemplate,
       defaults: {
-        ...ensRegistrationRecipe.defaults,
+        ...ensRegistrationTemplate.defaults,
         networks: ["eip155:11155111"],
         tokens: ["usdc"],
         expiresAt,
       },
     };
-    await render(<TemplateHarness recipe={recipe} />);
+    await render(<TemplateHarness template={template} />);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     const factory = page.getByRole("checkbox", {
       name: "Allow resolver deployments",

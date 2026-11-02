@@ -2,15 +2,15 @@
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { uniswapV3SwapsRecipe } from "@namera-ai/recipes";
+import { uniswapV3SwapsTemplate } from "@namera-ai/templates";
 import { useForm } from "react-hook-form";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { page, userEvent } from "vitest/browser";
 
 import { createSessionKeyInitialValues } from "../../src/components/session-key-creation/initial-values";
-import { RecipeCreationForm } from "../../src/components/session-key-creation/recipe-form";
 import { CreateSessionKeyFormSchema } from "../../src/components/session-key-creation/schema";
+import { TemplateCreationForm } from "../../src/components/session-key-creation/template-form";
 import type {
   CreateSessionKeyFormInput,
   CreateSessionKeyFormValues,
@@ -32,19 +32,19 @@ function TemplateHarness({ empty = false }: { empty?: boolean }) {
   const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
     defaultValues: createSessionKeyInitialValues(
       wallets,
-      { initialAccountId: newestSessionAccount.id, recipe: uniswapV3SwapsRecipe },
+      { initialAccountId: newestSessionAccount.id, template: uniswapV3SwapsTemplate },
       now,
     ),
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
   });
-  const recipe = {
-    ...uniswapV3SwapsRecipe,
+  const template = {
+    ...uniswapV3SwapsTemplate,
     defaults: { networks: empty ? noNetworks : initialNetworks, expiresAt },
   };
   return (
     <div className="mx-auto w-full max-w-2xl p-4">
-      <RecipeCreationForm
-        recipe={recipe}
+      <TemplateCreationForm
+        template={template}
         metadataForm={form}
         wallets={wallets}
         limits={{ local: false, managed: false }}

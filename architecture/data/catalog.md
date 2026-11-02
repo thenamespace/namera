@@ -12,7 +12,12 @@ allowlist. It separates a named asset/contract from its chain deployments and AB
 Catalog and deployment payloads are versioned `erc20` or `contract` objects.
 Token decimals range from 0 to 255; contract records cannot contain token decimals.
 ABIs are referenced separately and cannot be embedded as metadata overrides.
-Deployment statuses are active, deprecated and disabled.
+Deployment statuses are active, deprecated and disabled. The chain constraint
+includes Arc mainnet and testnet. Apply the Arc constraint migration before
+importing their deployments. Arc USDC catalog entries describe its six-decimal
+ERC-20 interface, separately from the EVM registry's 18-decimal native currency.
+Local catalog sources and generated upload JSON remain in the ignored `catalog/`
+workspace; importing metadata grants no transaction permissions.
 
 Authenticated discovery exposes published metadata and appropriate deployment
 views. ABI retrieval is separate from search. Internal import validates the full

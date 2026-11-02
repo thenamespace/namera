@@ -1,0 +1,64 @@
+import { Schema } from "effect";
+
+import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
+
+import type { Template } from "#/definition";
+import { templateValidUntil } from "#/inputs/expiry";
+
+import { usdcDeployments, usdcNetworks } from "./deployments.js";
+import { UsdcAllowanceInput, usdcBaseUnits } from "./input.js";
+
+export const usdcAllowanceTemplate = {
+  id: "usdc-lifetime-allowance",
+  version: 2,
+  display: {
+    name: "USDC Spend Template",
+    description:
+      "Let an agent spend USDC with a fixed budget per network and an expiry date you choose.",
+    logo: "address-catalog/eip155/erc20/usdc.png",
+    banner: "templates/usdc-lifetime-allowance/header.webp",
+    tags: ["USDC", "Token spending", "Multi-network"],
+  },
+  inputSchema: UsdcAllowanceInput,
+  metadata: { logo: { type: "emoji", value: "💵" } },
+  defaults: { networks: [], allowance: "", expiresAt: "" },
+  fields: [
+    { name: "networks", kind: "networks", label: "Networks", chainIds: usdcNetworks },
+    {
+      name: "allowance",
+      kind: "amount",
+      label: "Lifetime allowance per network",
+      symbol: "USDC",
+      decimals: 6,
+    },
+    {
+      name: "expiresAt",
+      kind: "expiry",
+      label: "Expires on",
+    },
+  ],
+  build(input, { now }) {
+    const values = Schema.decodeUnknownSync(UsdcAllowanceInput)(input);
+    const validUntil = templateValidUntil(values.expiresAt, now);
+    return {
+      onchain: {
+        installations: values.networks.map((chainId) =>
+          CreateEvmSessionInstallation.make({
+            chainId,
+            validAfter: now,
+            validUntil,
+            allowSignatures: false,
+            permissions: [
+              {
+                type: "erc20-token-transfer",
+                address: usdcDeployments[chainId],
+                allowance: usdcBaseUnits(values.allowance),
+              },
+            ],
+          }),
+        ),
+      },
+      policies: [],
+    };
+  },
+} satisfies Template<typeof UsdcAllowanceInput>;

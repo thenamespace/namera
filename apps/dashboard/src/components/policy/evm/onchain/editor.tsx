@@ -4,6 +4,7 @@ import { useId, type FormEvent } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { getChainDataByCaip2 } from "@namera-ai/evm/chains";
 import { EvmSessionPermission, type SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import {
   Button,
@@ -49,6 +50,7 @@ export function OnchainPermissionEditor(props: OnchainPermissionEditorProps) {
 }
 
 function BasePermissionEditor({
+  chainIds,
   type,
   initialValue,
   formId,
@@ -60,6 +62,14 @@ function BasePermissionEditor({
   const generatedId = useId();
   const id = formId ?? generatedId;
   const definition = onchainPermissionCatalog[type];
+  const nativeSymbols = [
+    ...new Set(
+      chainIds
+        .map((chainId) => getChainDataByCaip2(chainId)?.chain.nativeCurrency.symbol)
+        .filter(Boolean),
+    ),
+  ];
+  const nativeExample = nativeSymbols.length === 1 ? nativeSymbols[0] : "native currency";
   const form = useForm<
     typeof OnchainPermissionForm.Encoded,
     unknown,
@@ -91,7 +101,7 @@ function BasePermissionEditor({
       ? [
           {
             name: "permission.limit" as const,
-            label: "Lifetime gas budget (wei)",
+            label: "Lifetime gas budget (native base units)",
             placeholder: "0",
           },
         ]
@@ -154,7 +164,7 @@ function BasePermissionEditor({
           <Typography.Paragraph color="muted" size="xs">
             {type === "erc20-token-transfer"
               ? "Use token base units: 1 USDC with 6 decimals is 1000000. Each network gets its own lifetime allowance for transfers and approvals."
-              : "Use whole base units: 0.01 ETH is 10000000000000000 wei. Each network gets its own lifetime allowance."}
+              : `Use whole native base units: 0.01 ${nativeExample} is 10000000000000000. Each network gets its own lifetime allowance. Arc uses native USDC; other supported networks use ETH.`}
           </Typography.Paragraph>
         ) : null}
         {"functions" in definition.initial ? (

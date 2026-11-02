@@ -67,7 +67,9 @@ namera --output json execution simulate --namespace evm \
   --network 84532 --to <recipient-address> --value 0 --data 0x
 ```
 
-Transaction values are wei. Networks accept names, numeric IDs, or CAIP-2 IDs.
+Transaction values are native base units (18 decimals): ETH on Ethereum-family
+networks and USDC on Arc. ERC-20 USDC amounts use 6 decimals. Networks accept
+names, numeric IDs, or CAIP-2 IDs, including Arc (`5042`) and Arc Testnet (`5042002`).
 Use `--params '<json>'` for batch calls using the API request shape; do not mix
 it with individual input flags. JSON mode, quiet mode, and redirected input do
 not prompt for missing values.

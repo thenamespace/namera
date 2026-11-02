@@ -22,10 +22,12 @@ export function InviteForm() {
     <AuthShell stepKey="beta-invite">
       <NameraIcon aria-hidden="true" className="fill-foreground mx-auto mb-10 h-10 w-auto" />
       <Typography.Heading level={1} className="text-center text-xl">
-        Enter your invite code
+        Join Namera
       </Typography.Heading>
       <Typography.Paragraph className="mt-3 text-center" color="muted" size="sm">
-        Namera is in private beta. Enter the code your teammate shared to continue.
+        Namera is in open beta. No invite is required.{" "}
+        <Link href="/auth">Sign in without an invite</Link> to continue, or use an existing code
+        below.
       </Typography.Paragraph>
       <form
         id="beta-invite-form"

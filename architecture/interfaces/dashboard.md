@@ -24,6 +24,11 @@ do not keep showing cached protected data; ordinary network failures may retain 
 
 ## User workflows
 
+Open beta signup uses the ordinary email or Google sign-in flow without an
+invite. The legacy invite screen retains code redemption and offers a link to
+restart sign-in without a code. Workspace invitations and platform membership
+continue to enforce their existing authority checks.
+
 Normal dashboard sign-in defaults to `/get-started`; explicit invitation and
 OAuth/CLI return paths keep their destination. The checklist links to existing
 account, session-key and MCP setup screens. The guided path focuses on AI clients,
@@ -57,7 +62,7 @@ and retains the preset in page state. It selects the newest active account that
 supports session keys and prefills a managed key on Base with a 30-day lifetime,
 message signatures, and unrestricted account access. Form defaults are applied
 once; consuming the parameter and later revalidation preserve edits. Ordinary
-creation and recipe defaults are unchanged. Creation still requires explicit
+creation and template defaults are unchanged. Creation still requires explicit
 submission and the existing owner approval for network installation. Browser
 tests cover preset consumption, validation without edits, and the submitted scope.
 The source hint stays in the URL after preset consumption and follows managed
@@ -66,8 +71,12 @@ page offers Continue setup alongside View session key. A source hint alone does
 not reapply the preset. Ordinary creation keeps its existing success actions,
 and neither navigation parameter is sent in the creation request.
 
-Progress shares the router atom registry and refreshes every 30 seconds and on
-window focus while the checklist is open. Failed checks expose retry feedback;
+Progress shares the router atom registry and refreshes immediately when the
+checklist opens, on window focus or tab visibility restoration, and every three
+seconds while the incomplete checklist is visible. Polling skips hidden tabs and
+stops on completion or leaving the checklist. OAuth approvals invalidate their
+connection lists immediately; usage from external clients and receipt-confirmed
+installations are discovered by polling. Failed checks expose retry feedback;
 denied queries revalidate session authority. The existing overview requires
 wallet, session-key, execution and billing read permissions; roles without those
 permissions keep their normal landing page and do not fetch onboarding data.
@@ -86,7 +95,7 @@ SVG/CSS textures and respect reduced motion.
 | ------------ | ---------------------------------------------------------------------------- |
 | Accounts     | Creation, owner details, portfolio, session keys, execution history          |
 | Session keys | Local/managed creation, policy composition, network installation, revocation |
-| Templates    | Recipe-driven session creation through the same approval flow                |
+| Templates    | Template-driven session creation through the same approval flow              |
 | Identity     | ENS records, primary-name transactions, avatar/header uploads                |
 | Inbox        | Cursor-paginated notifications, search, filters, read/archive actions        |
 | Settings     | Profile, sessions, workspace membership, API/OAuth access, billing           |
@@ -94,7 +103,9 @@ SVG/CSS textures and respect reduced motion.
 
 Session-key table groups use wallet IDs, not account names. Inbox defaults to a
 seven-day view; All time removes the cutoff on loaded pages, not pagination.
-Templates retain `/recipes` route paths and use the private recipes package.
+Templates use `/templates` and `/templates/$templateId` with the public
+`@namera-ai/templates` package. Banner assets resolve under the CDN's `templates/`
+prefix. Existing sessions keep their stored permissions when templates change.
 Template creation shares the session details and installation approval flow.
 The ENSv2 renewal and registration forms use an icon-backed USDC/DAI multiselect,
 networks and expiry. Token selection maps to mainnet USDC/DAI or ENS mock deployments on
@@ -171,6 +182,16 @@ secret is shown and copied only for the still-active submission; closing the
 dialog or leaving the page invalidates that response target. A late success does
 not populate a later dialog or modify the clipboard. Leaving the page does not
 cancel a creation already accepted by the server.
+
+## Networks
+
+Dashboard transaction, signature, session-installation, policy and template
+selectors derive their networks from the shared EVM registry. Arc mainnet and
+testnet appear in the existing mainnet/testnet groups with the shared Arc icon.
+Native value displays use chain metadata; policy editors distinguish native USDC
+base units from ERC-20 token units. Native Arc portfolio rows use the USDC logo.
+The admin catalog and CLI retain their own network presentation lists and include
+both Arc networks.
 
 ## Browser boundary
 

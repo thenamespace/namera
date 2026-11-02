@@ -1,0 +1,76 @@
+---
+title: Test a Custom Template
+description: Check exact spending authority and invalid inputs before creating a session.
+---
+
+Test builders locally before passing their output to the SDK. Tests should verify
+the exact permissions, network and expiry, plus important rejection cases.
+No API key, account funding or live transaction is required.
+
+## Set Up
+
+Use `native-allowance.ts` from
+[Create a Custom Template](/docs/sdk/guides/templates/create-custom-template), and install
+a TypeScript runner:
+
+```sh
+npm install --save-dev tsx
+```
+
+## Assert the Granted Authority
+
+Save this beside `native-allowance.ts` as `native-allowance.test.ts`:
+
+```ts title="native-allowance.test.ts"
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { parseEther } from "viem";
+import { nativeAllowanceTemplate } from "./native-allowance.js";
+
+const now = 1_800_000_000;
+const input = { allowanceWei: parseEther("0.001"), validUntil: now + 86_400 };
+
+test("grants only the chosen lifetime allowance on Base Sepolia", () => {
+  assert.deepEqual(nativeAllowanceTemplate.build(input, { now }), {
+    onchain: {
+      installations: [
+        {
+          chainId: "eip155:84532",
+          validAfter: now,
+          validUntil: now + 86_400,
+          allowSignatures: false,
+          permissions: [{ type: "native-token-transfer", allowance: 1_000_000_000_000_000n }],
+        },
+      ],
+    },
+    policies: [],
+  });
+});
+
+test("rejects non-positive amounts and uint256 overflow", () => {
+  for (const allowanceWei of [0n, -1n, 2n ** 256n]) {
+    assert.throws(() => nativeAllowanceTemplate.build({ ...input, allowanceWei }, { now }));
+  }
+});
+
+test("rejects an expired or equal deadline", () => {
+  for (const validUntil of [now - 1, now]) {
+    assert.throws(() => nativeAllowanceTemplate.build({ ...input, validUntil }, { now }));
+  }
+});
+```
+
+## Run the Tests
+
+```sh
+npx tsx --test native-allowance.test.ts
+```
+
+All three tests should pass. The complete output assertion catches accidental
+root authority, signature grants, extra networks and changes to the allowance.
+When adding token support, test the verified deployment address and token decimals.
+For multiple networks, assert whether budgets are independent or shared.
+
+These tests validate your builder. They do not prove deployment availability,
+onchain enforcement or successful installation. Complete the ordinary owner
+approval flow on a testnet before using a new template with real funds.

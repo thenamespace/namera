@@ -7,6 +7,7 @@ import { formatUnits } from "viem";
 
 import { chains, type ChainData } from "../chains/data.js";
 import type { EvmConfigValues } from "../config.js";
+import { makeArcNativePortfolio } from "./arc.js";
 import type { EvmPortfolioService } from "./types.js";
 
 const nullableText = Schema.optional(Schema.NullOr(Schema.String));
@@ -62,6 +63,7 @@ export const makeAlchemyPortfolioService = (
   config: EvmConfigValues,
   httpClient: HttpClient.HttpClient,
 ): EvmPortfolioService => {
+  const readArcNative = makeArcNativePortfolio(config, httpClient);
   const readBatch = Effect.fnUntraced(function* (
     address: EthereumAddress,
     batch: ReadonlyArray<ChainData>,
@@ -193,8 +195,16 @@ export const makeAlchemyPortfolioService = (
       const selected = Object.values(chains).filter(
         (chain) => !chainIds || chainIds.includes(chain.chainId),
       );
+      // Isolate Arc indexer failures from the established networks and from each other.
+      const batches = [
+        ...Array.chunksOf(
+          selected.filter((chain) => chain.name !== "arc"),
+          4,
+        ),
+        ...selected.filter((chain) => chain.name === "arc").map((chain) => [chain]),
+      ];
       const results = yield* Effect.forEach(
-        Array.chunksOf(selected, 4),
+        batches,
         (batch) =>
           readBatch(address, batch).pipe(
             Effect.timeout("30 seconds"),
@@ -209,12 +219,17 @@ export const makeAlchemyPortfolioService = (
                 })),
               }),
             ),
+            Effect.flatMap((portfolio) =>
+              batch.length === 1 && batch[0]?.name === "arc"
+                ? readArcNative(address, batch[0], portfolio)
+                : Effect.succeed(portfolio),
+            ),
           ),
         { concurrency: 2 },
       );
       const items = results.flatMap((result) => result.items);
       const partialFailures = results.flatMap((result) => result.partialFailures);
-      if (selected.length > 0 && partialFailures.length === selected.length)
+      if (selected.length > 0 && items.length === 0 && partialFailures.length === selected.length)
         return yield* new EvmPortfolioError({
           code: "PROVIDER_UNAVAILABLE",
           cause: new Error("Alchemy portfolio unavailable"),

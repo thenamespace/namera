@@ -5,6 +5,9 @@ description: Register a managed or caller-held session signer.
 
 Issue an API key with `session-key:create`, `session-key:read`, and `wallet:read`. You need an account ID in that workspace. Session custody is independent of account ownership: both signer types work with either account owner.
 
+For reusable spending permissions, use [Templates](/docs/sdk/guides/templates).
+Template output goes directly into the same `sessionKeys.create()` input.
+
 ## Create a managed session
 
 The following example deliberately requests root authority for one hour on Sepolia, with message signatures disabled. Root sessions can control the account; select narrower onchain permissions for restricted agents.

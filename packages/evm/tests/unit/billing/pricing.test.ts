@@ -4,6 +4,7 @@ import { HttpClient, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
 import { makeEvmGasPrice } from "../../../src/billing/pricing.js";
+import { chains } from "../../../src/chains/data.js";
 
 const config = {
   alchemyApiKey: Redacted.make("test-key"),
@@ -30,7 +31,7 @@ const lookup = (response: unknown, status = 200) =>
         ),
       ),
     ),
-  )();
+  )(chains["ethereum-mainnet"]);
 
 it.effect("accepts a fresh positive quote and rounds upward without floating point", () =>
   Effect.gen(function* () {
@@ -86,8 +87,55 @@ it.effect("bounds unresponsive quote requests with a typed failure", () =>
     const fiber = yield* makeEvmGasPrice(
       config,
       HttpClient.make(() => Effect.never),
-    )().pipe(Effect.flip, Effect.forkChild);
+    )(chains["ethereum-mainnet"]).pipe(Effect.flip, Effect.forkChild);
     yield* TestClock.adjust("5 seconds");
     expect(yield* Fiber.join(fiber)).toMatchObject({ code: "PREPARATION_FAILED" });
+  }),
+);
+
+it.effect("uses USDC/USD for Arc and rejects an ETH quote for that network", () =>
+  Effect.gen(function* () {
+    const requests: string[] = [];
+    const price = makeEvmGasPrice(
+      config,
+      HttpClient.make((request) => {
+        requests.push(request.url);
+        return Effect.succeed(
+          HttpClientResponse.fromWeb(
+            request,
+            new Response(
+              JSON.stringify({
+                data: [
+                  ...body("3000").data,
+                  {
+                    symbol: "USDC",
+                    prices: [
+                      {
+                        currency: "usd",
+                        value: "0.9999991",
+                        lastUpdatedAt: "1970-01-01T00:00:00.000Z",
+                      },
+                    ],
+                  },
+                ],
+              }),
+            ),
+          ),
+        );
+      }),
+    );
+    const quote = yield* price(chains["arc-mainnet"]);
+    expect(quote).toMatchObject({ nativeAsset: "USDC", nativePriceMicroUsd: 1_000_000n });
+    expect(requests[0]).toContain("symbols=USDC");
+
+    const missing = makeEvmGasPrice(
+      config,
+      HttpClient.make((request) =>
+        Effect.succeed(HttpClientResponse.fromWeb(request, new Response(JSON.stringify(body())))),
+      ),
+    );
+    expect(yield* missing(chains["arc-mainnet"]).pipe(Effect.flip)).toMatchObject({
+      code: "PREPARATION_FAILED",
+    });
   }),
 );

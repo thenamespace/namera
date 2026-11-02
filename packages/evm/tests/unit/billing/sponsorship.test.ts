@@ -48,6 +48,15 @@ const page = (sponsorships: ReadonlyArray<unknown>, after: string | null = null)
   data: { sponsorships, after },
 });
 
+it.effect("settles Arc mainnet using the matching confirmed sponsorship total", () =>
+  Effect.gen(function* () {
+    const { lookup } = makeLookup([page([{ ...record, network: "ARC_MAINNET" }])]);
+    expect(yield* lookup({ ...receipt, chainId: "eip155:5042" })).toEqual(
+      Option.some({ amountMicroUsd: 9644n, confirmedTotalUsd: "0.0096432" }),
+    );
+  }),
+);
+
 it.effect("paginates and uses the exact provider total, rounded up without another surcharge", () =>
   Effect.gen(function* () {
     const { lookup, requests } = makeLookup([page([], "next-page"), page([record])]);

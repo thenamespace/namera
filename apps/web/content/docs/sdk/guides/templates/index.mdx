@@ -1,0 +1,152 @@
+---
+title: Overview
+icon: BookOpen01Icon
+description: Build a USDC allowance and register a session through the existing SDK.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+`@namera-ai/templates` turns a spending budget, network selection and expiry into
+session permissions. The dashboard and your application use the same built-in
+definitions. Build permissions locally, inspect the output, then pass it to the
+SDK's existing `sessionKeys.create()` method.
+
+Use Node.js 24.14+ or a modern browser with native `bigint` support. Building
+permissions is synchronous and needs no account, API key or network connection.
+Keep API keys on your backend when creating sessions.
+
+Create a managed session that can transfer up to 100 USDC on Arc testnet for
+seven days. Registration creates the session; onchain activation requires the
+account owner's approval.
+
+## Install
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+<Tab value="npm">
+
+```sh
+npm install @namera-ai/templates @namera-ai/sdk
+```
+
+</Tab>
+<Tab value="pnpm">
+
+```sh
+pnpm add @namera-ai/templates @namera-ai/sdk
+```
+
+</Tab>
+<Tab value="yarn">
+
+```sh
+yarn add @namera-ai/templates @namera-ai/sdk
+```
+
+</Tab>
+<Tab value="bun">
+
+```sh
+bun add @namera-ai/templates @namera-ai/sdk
+```
+
+</Tab>
+</Tabs>
+
+## Prepare Your Workspace
+
+In the [dashboard](https://dashboard.namera.ai), create or choose an account and
+issue a workspace API key with `wallet:read`, `session-key:create` and
+`session-key:read`. Add `session-key:install` if the integration will manage
+installation. Set `NAMERA_API_KEY` and `NAMERA_WALLET_ID` in your backend environment.
+
+<Callout type="warn" title="Provisioning permissions">
+  Session creation and installation permissions apply across the workspace. Give restricted
+  execution agents access to approved sessions instead of these management permissions.
+</Callout>
+
+## Build and Create the Session
+
+Save this as `index.ts`. The amount is a decimal string in USDC units.
+
+```ts title="index.ts"
+import { NameraClient } from "@namera-ai/sdk";
+import { usdcAllowanceTemplate } from "@namera-ai/templates";
+
+const namera = new NameraClient({ apiKey: process.env.NAMERA_API_KEY! });
+const now = Math.floor(Date.now() / 1000);
+const permissions = usdcAllowanceTemplate.build(
+  {
+    networks: ["eip155:5042002"],
+    allowance: "100",
+    expiresAt: new Date((now + 7 * 86_400) * 1000).toISOString(),
+  },
+  { now },
+);
+
+const session = await namera.sessionKeys.create({
+  namespace: "eip155",
+  walletId: process.env.NAMERA_WALLET_ID!,
+  metadata: { version: 1, name: "USDC test agent" },
+  signer: {
+    custody: "namera-managed",
+    provider: "1claw",
+    algorithm: "secp256k1",
+  },
+  ...permissions,
+});
+if (!session.success) throw new Error(session.error.message);
+
+console.log(session.data);
+```
+
+Run `node --env-file=.env index.ts` on Node.js 24.14+. The SDK returns the complete
+registered session, including its per-network installation state. See
+[session creation](/docs/sdk/reference/session-keys/create-session-key) for the response shape.
+Local signers use the same permissions; pass their public key with
+`custody: "local"` as shown in the
+[local session guide](/docs/sdk/guides/accounts/create-session-keys#create-a-local-session).
+Never send a local private key to Namera.
+
+## Install and Confirm
+
+Registration leaves the installation pending. For every selected network:
+
+1. Call `sessionKeys.prepareOperation()` with the returned session ID, network
+   and `kind: "install"`.
+2. Review the prepared operation against your chosen account, permissions and gas consent.
+3. Call `sessionKeys.approveOperation()` using the account owner's managed
+   approval or passkey assertion.
+4. Poll `sessionKeys.getOperation()` until confirmation before executing with the session.
+
+Follow [Install Session Keys](/docs/sdk/guides/accounts/install-session-keys) for
+the complete review and approval flow. The signer custody selected above does
+not change the account owner's approval requirements.
+
+## Use the Granted Authority
+
+The template allows ERC-20 USDC transfers to any recipient, up to the lifetime
+budget. It grants no message signatures, general contract access or native-value
+transfers. Fund the account with test USDC before sending a transfer.
+Sponsorship covers gas independently of this spending permission.
+
+The [USDC template reference](/docs/sdk/guides/templates/usdc-allowance) documents exact units,
+multiple-network budgets and validation errors. Build failures throw locally;
+SDK calls return the usual [result envelope](/docs/sdk/handling-results-and-errors).
+
+## Discover Built-in Templates
+
+```ts title="discovery.ts"
+import { getTemplate, templates } from "@namera-ai/templates";
+
+console.log(templates.map(({ id, display }) => ({ id, name: display.name })));
+console.log(getTemplate("usdc-lifetime-allowance")?.version);
+```
+
+The registry currently contains one built-in template. `getTemplate(id)` returns
+`undefined` for an unknown ID. Each template's page documents its inputs,
+permissions and supported networks.
+
+To define permissions in your own application, follow
+[Create a Custom Template](/docs/sdk/guides/templates/create-custom-template) and
+[Test a Custom Template](/docs/sdk/guides/templates/test-custom-template).
