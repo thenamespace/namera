@@ -58,9 +58,8 @@ determine available input tokens; the template does not constrain recipients,
 output tokens, routes, amounts or slippage. SwapRouter02's swap tuples have no
 deadline field; session expiry bounds this key's authority.
 
-Optional `approval` metadata provides a prerequisite message and per-chain spender
-addresses. The dashboard shows these addresses only for selected networks, with
-copy controls. This metadata does not add permissions or submit approvals.
+Optional `approvalNote` metadata provides a single prerequisite text line beneath
+the form. It does not add permissions or submit approvals.
 
 ## Adding a template
 

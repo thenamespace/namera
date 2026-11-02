@@ -31,11 +31,8 @@ export const uniswapV3SwapsRecipe = {
     { name: "networks", kind: "networks", label: "Networks", chainIds: uniswapV3Networks },
     { name: "expiresAt", kind: "expiry", label: "Expires on" },
   ],
-  approval: {
-    message:
-      "Before swapping, approve the input token to the Uniswap router on the selected network.",
-    spenders: uniswapV3Networks.map((chainId) => ({ chainId, address: uniswapV3Routers[chainId] })),
-  },
+  approvalNote:
+    "Before swapping, approve the input token to the Uniswap router on the selected network.",
   build(input, { now }) {
     const values = Schema.decodeUnknownSync(UniswapV3SwapsInput)(input);
     const validUntil = recipeValidUntil(values.expiresAt, now);

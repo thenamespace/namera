@@ -100,11 +100,11 @@ Input-token allowances must be established separately by the owner or another
 authorized key. Existing allowances can make any approved token spendable;
 recipient, output token, route, amounts and slippage are not constrained. Router02
 tuples omit the original router's deadline field; session validity still applies.
-The browser offers networks and expiry plus an approval prerequisite and copyable
-selected-network router addresses. It does not check allowances or execute swaps.
+The browser offers networks and expiry plus a single approval prerequisite line.
+It does not check allowances or execute swaps.
 The existing session creation/owner approval flow owns persistence and audit;
 there is no new backend workflow or audit event. Unit/browser tests verify exact
-deployments/selectors, no approvals, expiry, validation and address synchronization.
+deployments/selectors, no approvals, expiry, validation and selection retention.
 
 ## Code
 

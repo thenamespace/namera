@@ -43,9 +43,6 @@ describe("Uniswap v3 swaps", () => {
     for (const installation of output.onchain.installations)
       expect(Schema.is(CreateEvmSessionInstallation)(installation)).toBe(true);
     expect(getRecipe("uniswap-v3-swaps")).toBe(uniswapV3SwapsRecipe);
-    expect(uniswapV3SwapsRecipe.approval.spenders).toEqual(
-      deployments.map(([chainId, address]) => ({ chainId, address })),
-    );
   });
 
   it("creates only the selected installations without token approval permissions", () => {

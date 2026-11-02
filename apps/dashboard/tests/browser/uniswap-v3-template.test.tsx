@@ -61,8 +61,7 @@ beforeEach(async () => {
   await page.viewport(1280, 960);
 });
 
-it("shows the approval prerequisite and copies the selected router without granting approvals", async () => {
-  const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+it("shows just the approval note and submits swap-only permissions", async () => {
   await render(<TemplateHarness />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect
@@ -74,17 +73,9 @@ it("shows the approval prerequisite and copies the selected router without grant
       "Before swapping, approve the input token to the Uniswap router on the selected network.",
     );
 
-  await page.getByRole("button", { name: "Router addresses", exact: true }).click();
-  const routers = page.getByRole("list", { name: "Router addresses" });
-  await expect.poll(() => routers.element().textContent).toContain("Base");
-  await expect.poll(() => routers.element().textContent).toContain("Arbitrum Sepolia");
   await expect
-    .poll(() => routers.element().textContent)
-    .not.toContain("0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45");
-  await page.getByRole("button", { name: "Copy base router address", exact: true }).click();
-  await expect
-    .poll(() => writeText.mock.calls[0]?.[0])
-    .toBe("0x2626664c2603336e57b271c5c0b26f421741e481");
+    .element(page.getByRole("button", { name: "Router addresses", exact: true }))
+    .not.toBeInTheDocument();
   expect(onCreate).not.toHaveBeenCalled();
 
   await page.getByRole("button", { name: "Create session key", exact: true }).click();
@@ -109,13 +100,13 @@ it("shows the approval prerequisite and copies the selected router without grant
   );
 });
 
-it("requires a network and keeps the address note synchronized on a narrow screen", async () => {
+it("requires a network and preserves selection on a narrow screen", async () => {
   await page.viewport(375, 900);
   await render(<TemplateHarness empty />);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect
     .element(page.getByRole("button", { name: "Router addresses", exact: true }))
-    .toBeDisabled();
+    .not.toBeInTheDocument();
   await page.getByRole("button", { name: "Create session key", exact: true }).click();
   await expect
     .element(page.getByText("Choose at least one network.", { exact: true }))
@@ -126,22 +117,10 @@ it("requires a network and keeps the address note synchronized on a narrow scree
   await networks.click();
   await page.getByRole("option", { name: "Base", exact: true }).click();
   await userEvent.keyboard("{Escape}");
-  await page.getByRole("button", { name: "Router addresses", exact: true }).click();
-  const routers = page.getByRole("list", { name: "Router addresses" });
-  await expect
-    .poll(() => routers.element().textContent)
-    .toContain("0x2626664c2603336e57b271c5c0b26f421741e481");
-
   await networks.click();
   await page.getByRole("option", { name: "Base", exact: true }).click();
   await page.getByRole("option", { name: "Ethereum", exact: true }).click();
   await userEvent.keyboard("{Escape}");
-  await expect
-    .poll(() => routers.element().textContent)
-    .toContain("0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45");
-  await expect
-    .poll(() => routers.element().textContent)
-    .not.toContain("0x2626664c2603336e57b271c5c0b26f421741e481");
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
   await page.getByRole("button", { name: "Back to details", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();

@@ -4,13 +4,7 @@ import { ensSubnameIssuerRecipe } from "./recipes/ens-subname-issuer/index.js";
 import { uniswapV3SwapsRecipe } from "./recipes/uniswap-v3-swaps/index.js";
 import { usdcAllowanceRecipe } from "./recipes/usdc-allowance/index.js";
 
-export type {
-  Recipe,
-  RecipeApproval,
-  RecipeField,
-  RecipeOutput,
-  RecipeToken,
-} from "./definition.js";
+export type { Recipe, RecipeField, RecipeOutput, RecipeToken } from "./definition.js";
 export {
   ensRegistrationRecipe,
   ensRenewalRecipe,

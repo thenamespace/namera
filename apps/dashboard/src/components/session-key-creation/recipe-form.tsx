@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@namera-ai/ui";
 import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
-import { Controller, useForm, useWatch, type UseFormReturn } from "react-hook-form";
+import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 
 import {
   DashboardCardRoot,
@@ -33,7 +33,6 @@ import { showErrorToast } from "@/lib/toasts";
 
 import type { CustodyLimits } from "./custody-field";
 import { SessionKeyDetailsCard } from "./details-card";
-import { RecipeApprovalNote } from "./recipe-approval-note";
 import { RecipeNetworkSelect } from "./recipe-network-select";
 import { RecipeTokenSelect } from "./recipe-token-select";
 import { subregistryInputError } from "./subregistry-review";
@@ -87,7 +86,6 @@ export function RecipeCreationForm({
     mode: "onChange",
   });
   const configurationDisabled = disabled || form.formState.isSubmitting;
-  const networks = useWatch({ control: form.control, name: "networks" });
 
   return (
     <form
@@ -352,8 +350,10 @@ export function RecipeCreationForm({
               </FieldGroup>
             </DashboardCardContent>
           </DashboardCardRoot>
-          {recipe.approval ? (
-            <RecipeApprovalNote approval={recipe.approval} networks={networks} />
+          {recipe.approvalNote ? (
+            <Typography.Paragraph role="note" aria-label="Token approval" size="xs" color="muted">
+              {recipe.approvalNote}
+            </Typography.Paragraph>
           ) : null}
         </section>
       )}

@@ -120,12 +120,11 @@ registries, role denials, network changes and RPC failure recovery.
 
 The Uniswap v3 swaps template uses the standard metadata step followed by networks
 and expiry. It has no token picker or approval action. A compact note explains
-the owner's prior-approval requirement; an expandable list shows copyable
-SwapRouter02 addresses for the selected networks. Address metadata is local to
-the recipe and does not trigger RPC or catalog requests. The banner and official
+the owner's prior-approval requirement. It shows no router-address section and
+does not trigger RPC or catalog requests. The banner and official
 Uniswap icon use WebP assets under `templates/uniswap-v3-swaps/`. Browser tests
-cover the exact submitted permissions, network validation, copy behavior,
-address updates and narrow-screen overflow.
+cover the exact submitted permissions, network validation, selection retention
+and narrow-screen overflow.
 
 ## Forms and confirmations
 
