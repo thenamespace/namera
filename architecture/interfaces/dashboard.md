@@ -95,6 +95,12 @@ SVG/CSS textures and respect reduced motion.
 Session-key table groups use wallet IDs, not account names. Inbox defaults to a
 seven-day view; All time removes the cutoff on loaded pages, not pagination.
 Templates retain `/recipes` route paths and use the private recipes package.
+Template creation shares the session details and installation approval flow.
+The ENSv2 renewal form adds an icon-backed USDC/DAI multiselect, networks and
+expiry, with an explicit notice about unrestricted token approvals. Token
+selection maps to mainnet USDC/DAI or ENS mock deployments on Sepolia; it does
+not offer arbitrary addresses or Circle test USDC. Template banners and logos
+use CDN-relative assets; uploadable artwork stays in the ignored `assets` folder.
 
 ## Forms and confirmations
 

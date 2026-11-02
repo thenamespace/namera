@@ -52,6 +52,17 @@ using native Circle USDC deployments. Each network receives the full allowance;
 there is no cross-chain pool or periodic reset. Signatures are disabled. The
 generated immutable authorization is persisted, not a recipe version reference.
 
+The ENSv2 renewal template selects Ethereum mainnet and/or Sepolia, payment
+tokens and an expiry. It grants only the registrar's `renew` selector plus
+`approve` on selected USDC/DAI deployments. Sepolia uses ENS mock tokens, not
+Circle test USDC. A zero native-token allowance blocks attached ETH, and
+signature authority is disabled. It does not grant batch renewal or registration.
+Approval spender and amount, renewal label and duration are not constrained.
+Approvals survive session expiry; there is no session spending budget. The
+dashboard displays this authority before creation and uses the normal owner
+installation approval flow. Template tests verify exact deployments/selectors,
+token subsets, expiry and rejection of unsupported networks/tokens.
+
 ## Code
 
 - [Permission mapping](../../packages/evm/src/sessions/permissions.ts)

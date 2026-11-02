@@ -5,7 +5,7 @@ import { DateTime, Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { CreateEvmSessionKeyRequest, type ListWalletsResponse } from "@namera-ai/protocol/dto";
-import type { RegisteredRecipe } from "@namera-ai/recipes";
+import type { Recipe, RegisteredRecipe } from "@namera-ai/recipes";
 import {
   Button,
   Field,
@@ -30,6 +30,7 @@ import { showErrorToast } from "@/lib/toasts";
 
 import type { CustodyLimits } from "./custody-field";
 import { SessionKeyDetailsCard } from "./details-card";
+import { RecipeTokenSelect } from "./recipe-token-select";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 type RecipeInput = RegisteredRecipe["inputSchema"]["Encoded"];
@@ -49,7 +50,7 @@ export function RecipeCreationForm({
   disabled,
   onCreate,
 }: {
-  recipe: RegisteredRecipe;
+  recipe: Recipe<Schema.Codec<RecipeInput>>;
   metadataForm: UseFormReturn<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>;
   wallets: ListWalletsResponse;
   limits: CustodyLimits;
@@ -59,21 +60,21 @@ export function RecipeCreationForm({
 }) {
   const id = useId();
   const [step, setStep] = useState<"details" | "configuration">("details");
-  const schema = useMemo(
-    () =>
-      recipe.inputSchema.check(
-        futureExpiry,
-        Schema.makeFilter((input) =>
-          input.networks.every(isChainOperationEnabled)
-            ? undefined
-            : {
-                path: ["networks"],
-                issue: "Choose networks that are not paused.",
-              },
-        ),
+  const schema = useMemo(() => {
+    const inputSchema: Schema.Codec<RecipeInput> = recipe.inputSchema;
+
+    return inputSchema.check(
+      futureExpiry,
+      Schema.makeFilter((input) =>
+        input.networks.every(isChainOperationEnabled)
+          ? undefined
+          : {
+              path: ["networks"],
+              issue: "Choose networks that are not paused.",
+            },
       ),
-    [recipe],
-  );
+    );
+  }, [recipe]);
   const form = useForm<RecipeInput>({
     defaultValues: recipe.defaults,
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
@@ -166,6 +167,19 @@ export function RecipeCreationForm({
                                   isDisabled={disabled}
                                   operationalOnly
                                 />
+                              ) : definition.kind === "tokens" ? (
+                                <RecipeTokenSelect
+                                  aria-labelledby={`${fieldId}-label`}
+                                  aria-describedby={`${fieldId}-feedback`}
+                                  name={field.name}
+                                  options={definition.options}
+                                  value={Array.isArray(field.value) ? field.value : emptyNetworks}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  triggerRef={field.ref}
+                                  isInvalid={fieldState.invalid}
+                                  isDisabled={disabled}
+                                />
                               ) : definition.kind === "expiry" ? (
                                 <DateTimePolicyField
                                   label={definition.label}
@@ -221,6 +235,19 @@ export function RecipeCreationForm({
               </FieldGroup>
             </DashboardCardContent>
           </DashboardCardRoot>
+          {recipe.notice ? (
+            <aside
+              aria-labelledby={`${id}-notice`}
+              className="grid gap-2 rounded-xl border border-warning/30 bg-warning/5 px-5 py-4"
+            >
+              <Typography.Heading id={`${id}-notice`} level={3} className="text-sm">
+                {recipe.notice.title}
+              </Typography.Heading>
+              <Typography.Paragraph size="sm" color="muted">
+                {recipe.notice.description}
+              </Typography.Paragraph>
+            </aside>
+          ) : null}
         </section>
       )}
       {metadataForm.formState.errors.onchain || metadataForm.formState.errors.policies ? (

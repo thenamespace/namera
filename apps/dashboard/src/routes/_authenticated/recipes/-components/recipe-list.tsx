@@ -53,6 +53,8 @@ export function RecipeList() {
             <img
               src={`https://cdn.namera.ai/${recipe.display.banner}`}
               alt=""
+              width={2048}
+              height={683}
               className="h-36 w-full bg-surface object-cover"
               loading="lazy"
             />
@@ -62,6 +64,8 @@ export function RecipeList() {
                   <img
                     src={`https://cdn.namera.ai/${recipe.display.logo}`}
                     alt=""
+                    width={48}
+                    height={48}
                     className="size-12 rounded-full object-cover"
                   />
                 </div>

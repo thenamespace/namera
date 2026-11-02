@@ -116,6 +116,26 @@ function SessionKeyForm({
         />
       ) : null}
       <div hidden={completed}>
+        {recipe && !registration ? (
+          <div className="relative mb-8">
+            <img
+              src={`https://cdn.namera.ai/${recipe.display.banner}`}
+              alt=""
+              width={2048}
+              height={683}
+              className="aspect-[3/1] w-full rounded-xl bg-surface object-cover"
+            />
+            <div className="absolute -bottom-4 left-5 rounded-full bg-background p-1">
+              <img
+                src={`https://cdn.namera.ai/${recipe.display.logo}`}
+                alt=""
+                width={48}
+                height={48}
+                className="size-12 rounded-full object-cover"
+              />
+            </div>
+          </div>
+        ) : null}
         <HeadingGroup className="mb-6">
           <HeadingGroup.Title level={1} size="lg">
             {registration

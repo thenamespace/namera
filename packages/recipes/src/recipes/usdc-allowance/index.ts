@@ -1,8 +1,9 @@
-import { DateTime, Schema } from "effect";
+import { Schema } from "effect";
 
 import { CreateEvmSessionInstallation } from "@namera-ai/protocol/dto";
 
 import type { Recipe } from "#/definition";
+import { recipeValidUntil } from "#/inputs/expiry";
 
 import { usdcDeployments, usdcNetworks } from "./deployments.js";
 import { UsdcAllowanceInput, usdcBaseUnits } from "./input.js";
@@ -38,10 +39,7 @@ export const usdcAllowanceRecipe = {
   ],
   build(input, { now }) {
     const values = Schema.decodeUnknownSync(UsdcAllowanceInput)(input);
-    const validUntil = Math.floor(
-      DateTime.toEpochMillis(DateTime.makeUnsafe(values.expiresAt)) / 1000,
-    );
-    if (validUntil <= now) throw new Error("Choose an expiry date in the future.");
+    const validUntil = recipeValidUntil(values.expiresAt, now);
     return {
       onchain: {
         installations: values.networks.map((chainId) =>
