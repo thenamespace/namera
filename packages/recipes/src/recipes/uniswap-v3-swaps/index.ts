@@ -5,9 +5,8 @@ import { Hex } from "@namera-ai/protocol/evm";
 
 import type { Recipe } from "#/definition";
 import { recipeValidUntil } from "#/inputs/expiry";
-
-import { uniswapV3Networks, uniswapV3Routers } from "./deployments.js";
-import { UniswapV3SwapsInput } from "./input.js";
+import { uniswapV3Networks, uniswapV3Routers } from "#/uniswap/deployments";
+import { UniswapSessionInput } from "#/uniswap/input";
 
 // SwapRouter02's IV3SwapRouter tuples omit the original SwapRouter's deadline.
 // exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))
@@ -24,7 +23,7 @@ export const uniswapV3SwapsRecipe = {
     banner: "templates/uniswap-v3-swaps/header.webp",
     tags: ["Uniswap v3", "Swaps", "DeFi"],
   },
-  inputSchema: UniswapV3SwapsInput,
+  inputSchema: UniswapSessionInput,
   metadata: { name: "Uniswap swaps", logo: { type: "emoji", value: "🦄" } },
   defaults: { networks: [], expiresAt: "" },
   fields: [
@@ -34,7 +33,7 @@ export const uniswapV3SwapsRecipe = {
   approvalNote:
     "Before swapping, approve the input token to the Uniswap router on the selected network.",
   build(input, { now }) {
-    const values = Schema.decodeUnknownSync(UniswapV3SwapsInput)(input);
+    const values = Schema.decodeUnknownSync(UniswapSessionInput)(input);
     const validUntil = recipeValidUntil(values.expiresAt, now);
 
     return {
@@ -59,4 +58,4 @@ export const uniswapV3SwapsRecipe = {
       policies: [],
     };
   },
-} satisfies Recipe<typeof UniswapV3SwapsInput>;
+} satisfies Recipe<typeof UniswapSessionInput>;

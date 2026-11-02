@@ -126,6 +126,16 @@ Uniswap icon use WebP assets under `templates/uniswap-v3-swaps/`. Browser tests
 cover the exact submitted permissions, network validation, selection retention
 and narrow-screen overflow.
 
+The Uniswap v3 liquidity manager adds four operation checkboxes between networks
+and expiry. Each uses a compact keyboard-accessible info trigger beside its label
+and a checkbox aligned right. Collection starts enabled; other operations start
+disabled. At least one operation is required. The prior-approval note appears
+only when Create positions or Add liquidity is selected. There is no token picker
+or position/address section. It reuses the swaps logo and has its own abstract
+WebP header under `templates/uniswap-v3-liquidity/`. Browser tests verify exact
+permission scopes, concise tooltip copy, conditional notes, validation, edit
+retention and narrow-screen overflow.
+
 ## Forms and confirmations
 
 Forms use React Hook Form with Effect Schema through the Standard Schema resolver.

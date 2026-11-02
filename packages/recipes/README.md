@@ -59,7 +59,21 @@ output tokens, routes, amounts or slippage. SwapRouter02's swap tuples have no
 deadline field; session expiry bounds this key's authority.
 
 Optional `approvalNote` metadata provides a single prerequisite text line beneath
-the form. It does not add permissions or submit approvals.
+the form. Optional `approvalNoteWhen` names boolean fields; the note appears when
+any named field is enabled. Without it, the note is always shown. Neither field
+adds permissions or submits approvals.
+
+The Uniswap v3 liquidity manager offers `mint`, `increaseLiquidity`,
+`decreaseLiquidity` and `collect` on the reviewed NonfungiblePositionManager for
+each selected network. Only collection is enabled by default; at least one
+operation is required. Creating positions or adding liquidity shows the prior
+token-approval note. There is no token picker, approval permission, NFT transfer,
+multicall, pool initialization, native value or signature authority. Position IDs,
+recipients, tokens, pools, ticks and amounts remain execution arguments. Collection
+can include principal already withdrawn from a position, and decreasing liquidity
+does not collect the resulting tokens. Shared Uniswap network/expiry validation
+and deployment maps live under `src/uniswap`; OP Sepolia uses the SDK-Core position
+manager deployment rather than the alternative entry in the documentation.
 
 ## Adding a template
 

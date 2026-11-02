@@ -4,7 +4,7 @@ import { RecipeExpiry } from "#/inputs/expiry";
 
 import { uniswapV3Networks } from "./deployments.js";
 
-export const UniswapV3SwapsInput = Schema.Struct({
+export const UniswapSessionInput = Schema.Struct({
   networks: Schema.Array(Schema.Literals(uniswapV3Networks)).check(
     Schema.isMinLength(1, { message: "Choose at least one network." }),
     Schema.makeFilter((networks) =>

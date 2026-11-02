@@ -106,6 +106,23 @@ The existing session creation/owner approval flow owns persistence and audit;
 there is no new backend workflow or audit event. Unit/browser tests verify exact
 deployments/selectors, no approvals, expiry, validation and selection retention.
 
+The Uniswap v3 liquidity template enables selected NonfungiblePositionManager
+selectors: `mint` (`0x88316456`), `increaseLiquidity` (`0x219f5d17`),
+`decreaseLiquidity` (`0x0c49ccbe`) and `collect` (`0xfc6f7865`). It defaults to
+collection only and rejects an empty operation selection. The eight reviewed
+network deployments share metadata with the swaps template; OP Sepolia uses
+the SDK-Core position manager at `0xda75cef1c93078e8b736fca5d5a30adb97c8957d`.
+Native value and signatures are disabled. No token approvals, NFT transfers,
+multicall or pool creation are granted. The owner establishes token allowances
+separately. Position IDs, recipients, token amounts, pools, ticks and slippage
+arguments are unrestricted; Uniswap enforces position authority where required.
+The browser shows an approval prerequisite only when creating positions or adding
+liquidity is enabled. This is another deterministic session builder using the
+existing creation, persistence, audit and owner-installation flow, with no new
+backend workflow. Unit tests cover exact selector subsets, all deployments,
+collect-only defaults and invalid configuration. Browser tests cover tooltip
+access, conditional notes, empty-operation validation and retained edits.
+
 ## Code
 
 - [Permission mapping](../../packages/evm/src/sessions/permissions.ts)

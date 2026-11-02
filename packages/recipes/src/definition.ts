@@ -51,5 +51,6 @@ export type Recipe<S extends Schema.Top> = {
   readonly defaults: S["Encoded"];
   readonly fields: readonly RecipeInputField<S["Encoded"]>[];
   readonly approvalNote?: string;
+  readonly approvalNoteWhen?: readonly RecipeInputField<S["Encoded"]>["name"][];
   readonly build: (input: unknown, context: { readonly now: number }) => RecipeOutput;
 };

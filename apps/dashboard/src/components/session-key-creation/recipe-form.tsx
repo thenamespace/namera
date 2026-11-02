@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@namera-ai/ui";
 import { HugeiconsIcon, InformationCircleIcon } from "@namera-ai/ui/icons";
-import { Controller, useForm, type UseFormReturn } from "react-hook-form";
+import { Controller, useForm, useWatch, type UseFormReturn } from "react-hook-form";
 
 import {
   DashboardCardRoot,
@@ -86,6 +86,10 @@ export function RecipeCreationForm({
     mode: "onChange",
   });
   const configurationDisabled = disabled || form.formState.isSubmitting;
+  const inputs: Readonly<Record<string, unknown>> = useWatch({ control: form.control });
+  const showApprovalNote =
+    recipe.approvalNote &&
+    (!recipe.approvalNoteWhen || recipe.approvalNoteWhen.some((name) => inputs[name] === true));
 
   return (
     <form
@@ -350,7 +354,7 @@ export function RecipeCreationForm({
               </FieldGroup>
             </DashboardCardContent>
           </DashboardCardRoot>
-          {recipe.approvalNote ? (
+          {showApprovalNote ? (
             <Typography.Paragraph role="note" aria-label="Token approval" size="xs" color="muted">
               {recipe.approvalNote}
             </Typography.Paragraph>
