@@ -49,6 +49,19 @@ The registry still enforces current authority at execution. The template does no
 grant the account any ENS roles or constrain labels, owners, resolvers,
 subregistries, child role bitmaps or name expiries.
 
+The Uniswap v3 swaps template selects networks and a session expiry. It grants
+only SwapRouter02's `exactInputSingle` and `exactInput` selectors on reviewed
+Ethereum, Base, Arbitrum and Optimism mainnet/Sepolia deployments. It grants no
+token approvals, multicall, exact-output swaps, native value or signatures.
+The owner must separately approve input tokens to the router. Existing allowances
+determine available input tokens; the template does not constrain recipients,
+output tokens, routes, amounts or slippage. SwapRouter02's swap tuples have no
+deadline field; session expiry bounds this key's authority.
+
+Optional `approval` metadata provides a prerequisite message and per-chain spender
+addresses. The dashboard shows these addresses only for selected networks, with
+copy controls. This metadata does not add permissions or submit approvals.
+
 ## Adding a template
 
 Add a focused directory under `src/recipes`, define its schema and fields, then

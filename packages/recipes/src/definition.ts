@@ -1,10 +1,18 @@
 import type { Schema } from "effect";
 
 import type { CreateEvmSessionKeyRequest } from "@namera-ai/protocol/dto";
-import type { SupportedEvmChainId } from "@namera-ai/protocol/evm";
+import type { EthereumAddress, SupportedEvmChainId } from "@namera-ai/protocol/evm";
 import type { MetadataIcon } from "@namera-ai/protocol/model";
 
 export type RecipeOutput = Pick<CreateEvmSessionKeyRequest, "onchain" | "policies">;
+
+export type RecipeApproval = {
+  readonly message: string;
+  readonly spenders: readonly {
+    readonly chainId: SupportedEvmChainId;
+    readonly address: EthereumAddress;
+  }[];
+};
 
 export type RecipeToken = {
   readonly id: string;
@@ -50,5 +58,6 @@ export type Recipe<S extends Schema.Top> = {
   };
   readonly defaults: S["Encoded"];
   readonly fields: readonly RecipeInputField<S["Encoded"]>[];
+  readonly approval?: RecipeApproval;
   readonly build: (input: unknown, context: { readonly now: number }) => RecipeOutput;
 };

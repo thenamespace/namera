@@ -91,6 +91,21 @@ event; the normal session creation and installation workflow owns persistence,
 audit and owner approval. ENS enforces its current roles at execution. Tests
 cover exact scope, invalid addresses/networks, role denials and RPC recovery.
 
+The Uniswap v3 swaps template grants only SwapRouter02 selectors `0x04e45aaf`
+(`exactInputSingle`) and `0xb858183f` (`exactInput`) on its eight reviewed Ethereum,
+Base, Arbitrum and Optimism mainnet/Sepolia deployments. A zero native-value
+allowance and disabled signatures keep the template to ERC20 swaps. There are no
+approval permissions, multicall, native wrapping or exact-output functions.
+Input-token allowances must be established separately by the owner or another
+authorized key. Existing allowances can make any approved token spendable;
+recipient, output token, route, amounts and slippage are not constrained. Router02
+tuples omit the original router's deadline field; session validity still applies.
+The browser offers networks and expiry plus an approval prerequisite and copyable
+selected-network router addresses. It does not check allowances or execute swaps.
+The existing session creation/owner approval flow owns persistence and audit;
+there is no new backend workflow or audit event. Unit/browser tests verify exact
+deployments/selectors, no approvals, expiry, validation and address synchronization.
+
 ## Code
 
 - [Permission mapping](../../packages/evm/src/sessions/permissions.ts)
