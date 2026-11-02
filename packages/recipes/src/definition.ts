@@ -19,6 +19,8 @@ export type RecipeField<Name extends string = string> = {
   readonly description?: string;
 } & (
   | { readonly kind: "networks"; readonly chainIds: readonly SupportedEvmChainId[] }
+  | { readonly kind: "network"; readonly chainIds: readonly SupportedEvmChainId[] }
+  | { readonly kind: "address"; readonly placeholder: string }
   | { readonly kind: "amount"; readonly symbol: string; readonly decimals: number }
   | { readonly kind: "tokens"; readonly options: readonly RecipeToken[] }
   | { readonly kind: "expiry" }

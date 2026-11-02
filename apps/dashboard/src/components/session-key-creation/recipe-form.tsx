@@ -30,7 +30,9 @@ import { showErrorToast } from "@/lib/toasts";
 
 import type { CustodyLimits } from "./custody-field";
 import { SessionKeyDetailsCard } from "./details-card";
+import { RecipeNetworkSelect } from "./recipe-network-select";
 import { RecipeTokenSelect } from "./recipe-token-select";
+import { subregistryInputError } from "./subregistry-review";
 import type { CreateSessionKeyFormInput, CreateSessionKeyFormValues } from "./types";
 
 type RecipeInput = RegisteredRecipe["inputSchema"]["Encoded"];
@@ -80,15 +82,17 @@ export function RecipeCreationForm({
     resolver: standardSchemaResolver(Schema.toStandardSchemaV1(schema)),
     mode: "onChange",
   });
+  const configurationDisabled = disabled || form.formState.isSubmitting;
 
   return (
     <form
       id={id}
       noValidate
+      aria-busy={form.formState.isSubmitting}
       className="grid gap-6"
       onSubmit={(event) => {
         event.preventDefault();
-        if (disabled) return;
+        if (configurationDisabled) return;
         if (step === "details") {
           void metadataForm
             .trigger(["metadata", "walletId", "custody"], { shouldFocus: true })
@@ -100,6 +104,36 @@ export function RecipeCreationForm({
         }
         void form
           .handleSubmit(async (input) => {
+            if (recipe.id === "ens-subname-issuer" && "subregistryAddress" in input) {
+              const selectedWallet = wallets.find(
+                (wallet) => wallet.id === metadataForm.getValues("walletId"),
+              );
+              const chainId = input.networks[0];
+              if (!selectedWallet || selectedWallet.namespace !== "eip155" || !chainId) {
+                setStep("details");
+                return;
+              }
+
+              let reviewError: string | undefined;
+              try {
+                reviewError = await subregistryInputError({
+                  chainId,
+                  registry: input.subregistryAddress as `0x${string}`,
+                  account: selectedWallet.address,
+                });
+              } catch {
+                reviewError = "Couldn’t check this registry. Check your connection and try again.";
+              }
+              if (reviewError) {
+                form.setError(
+                  "subregistryAddress",
+                  { type: "validate", message: reviewError },
+                  { shouldFocus: true },
+                );
+                return;
+              }
+            }
+
             const generated = recipe.build(input, { now: Math.floor(Date.now() / 1000) });
             metadataForm.setValue(
               "onchain",
@@ -164,8 +198,21 @@ export function RecipeCreationForm({
                                   onBlur={field.onBlur}
                                   triggerRef={field.ref}
                                   isInvalid={fieldState.invalid}
-                                  isDisabled={disabled}
+                                  isDisabled={configurationDisabled}
                                   operationalOnly
+                                />
+                              ) : definition.kind === "network" ? (
+                                <RecipeNetworkSelect
+                                  aria-labelledby={`${fieldId}-label`}
+                                  aria-describedby={`${fieldId}-feedback`}
+                                  name={field.name}
+                                  chainIds={definition.chainIds}
+                                  value={Array.isArray(field.value) ? field.value : emptyNetworks}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  triggerRef={field.ref}
+                                  isInvalid={fieldState.invalid}
+                                  isDisabled={configurationDisabled}
                                 />
                               ) : definition.kind === "tokens" ? (
                                 <RecipeTokenSelect
@@ -178,7 +225,7 @@ export function RecipeCreationForm({
                                   onBlur={field.onBlur}
                                   triggerRef={field.ref}
                                   isInvalid={fieldState.invalid}
-                                  isDisabled={disabled}
+                                  isDisabled={configurationDisabled}
                                 />
                               ) : definition.kind === "expiry" ? (
                                 <DateTimePolicyField
@@ -191,11 +238,27 @@ export function RecipeCreationForm({
                                   onBlur={field.onBlur}
                                   error={fieldState.error}
                                   isRequired
-                                  isDisabled={disabled}
+                                  isDisabled={configurationDisabled}
                                   hideLabel
                                   hideError
                                   aria-describedby={`${fieldId}-feedback`}
                                 />
+                              ) : definition.kind === "address" ? (
+                                <InputGroup fullWidth variant="secondary">
+                                  <InputGroup.Input
+                                    {...field}
+                                    id={fieldId}
+                                    aria-describedby={`${fieldId}-feedback`}
+                                    aria-invalid={fieldState.invalid}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                    autoComplete="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    placeholder={definition.placeholder}
+                                    readOnly={form.formState.isSubmitting}
+                                    disabled={disabled}
+                                  />
+                                </InputGroup>
                               ) : (
                                 <InputGroup fullWidth variant="secondary">
                                   <InputGroup.Input
@@ -207,7 +270,7 @@ export function RecipeCreationForm({
                                     inputMode="decimal"
                                     autoComplete="off"
                                     placeholder="100"
-                                    disabled={disabled}
+                                    disabled={configurationDisabled}
                                   />
                                   <InputGroup.Suffix>
                                     <span className="text-xs text-muted">{definition.symbol}</span>
@@ -262,7 +325,11 @@ export function RecipeCreationForm({
             Back to details
           </Button>
           <Button type="submit" form={id} isDisabled={disabled || form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Creating…" : "Create session key"}
+            {form.formState.isSubmitting
+              ? recipe.id === "ens-subname-issuer"
+                ? "Checking registry…"
+                : "Creating…"
+              : "Create session key"}
           </Button>
         </div>
       )}

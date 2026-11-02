@@ -23,6 +23,8 @@ import { reconstructEvmAccount } from "../accounts/reconstruct.js";
 import { createPublicKeyWebAuthnAccount } from "../accounts/webauthn.js";
 import { primaryNameCall } from "./call.js";
 
+export { reviewSubregistry, type SubregistryReview } from "./subregistry-review.js";
+
 const cannotSign = async (): Promise<never> => {
   throw new Error("Public review cannot sign");
 };

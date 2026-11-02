@@ -96,11 +96,21 @@ Session-key table groups use wallet IDs, not account names. Inbox defaults to a
 seven-day view; All time removes the cutoff on loaded pages, not pagination.
 Templates retain `/recipes` route paths and use the private recipes package.
 Template creation shares the session details and installation approval flow.
-The ENSv2 renewal form adds an icon-backed USDC/DAI multiselect, networks and
-expiry. Token selection maps to mainnet USDC/DAI or ENS mock deployments on
+The ENSv2 renewal and registration forms use an icon-backed USDC/DAI multiselect,
+networks and expiry. Token selection maps to mainnet USDC/DAI or ENS mock deployments on
 Sepolia; it does not offer arbitrary addresses or Circle test USDC. Template
 banners and logos use CDN-relative assets; uploadable artwork stays in the
 ignored `assets` folder.
+
+The ENSv2 subname issuer form uses a single network, registry address and expiry.
+Before creation, it reads the registry's code, permissioned-registry interface
+support and the selected account's root registrar role through the existing
+server RPC proxy. It disables configuration while checking, displays failures
+on the address field and retries with fresh reads on submission. This is
+preflight feedback, not an authorization grant; ENS verifies its roles when the
+agent calls `register`. The form uses the ordinary session installation approval
+flow. Browser tests cover the exact submitted scope, malformed/unsupported
+registries, role denials, network changes and RPC failure recovery.
 
 ## Forms and confirmations
 

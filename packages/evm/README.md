@@ -11,11 +11,16 @@ contains chain behavior; application owns authorization, custody and persistence
 | `@namera-ai/evm`                  | Backend service, account/signature adapters and test layers |
 | `@namera-ai/evm/chains`           | Browser-safe chain metadata                                 |
 | `@namera-ai/evm/session-review`   | Independent installation/removal review                     |
-| `@namera-ai/evm/identity-review`  | Primary-name call and envelope review                       |
+| `@namera-ai/evm/identity-review`  | Primary-name review and ENSv2 subregistry preflight         |
 | `@namera-ai/evm/signature-review` | Owner-signature challenge review                            |
 
 Browser entry points do not load provider credentials or the backend layer.
 Exports support the workspace `namera-source` condition and built ESM.
+
+`reviewSubregistry` reads deployed code, `IPermissionedRegistry` ERC-165 support
+and the selected account's root registrar role at one block. It returns an
+expected readiness result and propagates RPC errors. This is a read-only
+preflight; registry authorization is checked again by ENS at execution.
 
 ## Responsibilities
 

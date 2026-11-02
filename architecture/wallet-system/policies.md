@@ -70,6 +70,20 @@ of `renew`. Names, owners, resolvers, subregistries and registration durations
 are supplied at execution; selector permissions do not constrain them. Agents
 coordinate commit/reveal and its secret; no registration worker was added.
 
+The ENSv2 subname issuer selects one Ethereum mainnet or Sepolia network and a
+permissioned registry address. It grants only that registry's
+`register(string,address,address,address,uint256,uint64)` selector, with zero
+native value and signatures disabled. There are no token approvals or new
+policies. Registration arguments, including child owners, roles and name expiry,
+remain unrestricted. Creating a session does not grant ENS registrar authority.
+Dashboard preflight uses the existing RPC proxy and EVM identity-review entry to
+check deployed code, `IPermissionedRegistry` support and the selected account's
+root registrar role at a single block. It blocks creation on a failed check or
+RPC error and rechecks on each submission. These reads create no state or audit
+event; the normal session creation and installation workflow owns persistence,
+audit and owner approval. ENS enforces its current roles at execution. Tests
+cover exact scope, invalid addresses/networks, role denials and RPC recovery.
+
 ## Code
 
 - [Permission mapping](../../packages/evm/src/sessions/permissions.ts)

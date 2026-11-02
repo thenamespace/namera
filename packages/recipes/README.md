@@ -32,6 +32,15 @@ The template does not restrict the registered name, owner, resolver or duration,
 and does not grant renewal. Both registrar templates share reviewed deployments
 and payment validation under `src/ens`.
 
+The ENSv2 subname issuer template takes one network, a nonzero permissioned
+registry address and a session expiry. It grants only
+`register(string,address,address,address,uint256,uint64)` on that registry, with
+zero native value and no signatures or token approvals. The dashboard checks
+deployment, ERC-165 support and the account's root registrar role before creation.
+The registry still enforces current authority at execution. The template does not
+grant the account any ENS roles or constrain labels, owners, resolvers,
+subregistries, child role bitmaps or name expiries.
+
 ## Adding a template
 
 Add a focused directory under `src/recipes`, define its schema and fields, then
@@ -39,8 +48,8 @@ register it in `src/index.ts`. Verify the generated authority and invalid inputs
 Increment the version when input or authority semantics change. Generated session
 configuration is persisted; recipe versions are not stored as runtime references.
 
-Fields support networks, amounts, expiry and token selection with CDN-relative
-icons.
+Fields support single or multiple networks, contract addresses, amounts, expiry
+and token selection with CDN-relative icons.
 
 Display images are CDN-relative slugs, resolved by the dashboard against
 `https://cdn.namera.ai/`. Keep image generation and upload outside the package.
