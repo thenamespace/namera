@@ -113,8 +113,11 @@ Store it in your own application or publish it in your own package.
 
 The example's `fields: []` means it supplies no generic form controls. Render your
 own UI for its bigint amount and Unix expiry, or adapt your schema to the exported
-`TemplateField` network, decimal amount and ISO expiry controls. Display image
-paths are relative to Namera's CDN; use an existing asset or coordinate a new upload.
+`TemplateField` controls for single or multiple networks, decimal amounts, ISO
+expiry, contract addresses, token selections and checkboxes. Field `tooltip` text
+appears beside its label. Optional `approvalNote` adds a prerequisite line;
+`approvalNoteWhen` limits it to when any named boolean field is enabled.
+Display image paths are relative to Namera's CDN; use an existing asset or coordinate a new upload.
 They do not upload an image automatically.
 
 Increment your template version when its inputs or granted authority change.

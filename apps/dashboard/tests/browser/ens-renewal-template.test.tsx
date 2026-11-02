@@ -1,0 +1,300 @@
+// oxlint-disable react-perf/jsx-no-new-object-as-prop
+import type { ComponentProps } from "react";
+
+import { Schema } from "effect";
+
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import {
+  ensRegistrationTemplate,
+  ensRenewalTemplate,
+  usdcAllowanceTemplate,
+} from "@namera-ai/templates";
+import { useForm } from "react-hook-form";
+import { beforeEach, expect, it, vi } from "vitest";
+import { render } from "vitest-browser-react";
+import { page, userEvent } from "vitest/browser";
+
+import { createSessionKeyInitialValues } from "../../src/components/session-key-creation/initial-values";
+import { CreateSessionKeyFormSchema } from "../../src/components/session-key-creation/schema";
+import { TemplateCreationForm } from "../../src/components/session-key-creation/template-form";
+import type {
+  CreateSessionKeyFormInput,
+  CreateSessionKeyFormValues,
+} from "../../src/components/session-key-creation/types";
+import { newestSessionAccount } from "../fixtures/session-key-preset";
+
+vi.mock("../../src/env", () => ({
+  env: { backendUrl: "https://api.example.test", environment: "test" },
+}));
+
+type Template = ComponentProps<typeof TemplateCreationForm>["template"];
+const now = Math.floor(Date.now() / 1000);
+const expiresAt = new Date((now + 86_400) * 1000).toISOString();
+const ensTemplate: Template = {
+  ...ensRenewalTemplate,
+  defaults: {
+    ...ensRenewalTemplate.defaults,
+    networks: ["eip155:1", "eip155:11155111"],
+    expiresAt,
+  },
+};
+const onCreate = vi.fn();
+const wallets = [newestSessionAccount];
+
+function TemplateHarness({
+  template = ensTemplate,
+  disabled = false,
+}: {
+  template?: Template;
+  disabled?: boolean;
+}) {
+  const form = useForm<CreateSessionKeyFormInput, unknown, CreateSessionKeyFormValues>({
+    defaultValues: {
+      ...createSessionKeyInitialValues(
+        wallets,
+        { initialAccountId: newestSessionAccount.id, template: ensRenewalTemplate },
+        now,
+      ),
+      metadata: { version: 1, name: "Renewal agent", logo: { type: "emoji", value: "🔑" } },
+    },
+    resolver: standardSchemaResolver(Schema.toStandardSchemaV1(CreateSessionKeyFormSchema)),
+  });
+
+  return (
+    <div className="mx-auto w-full max-w-2xl p-4">
+      <TemplateCreationForm
+        template={template}
+        metadataForm={form}
+        wallets={wallets}
+        limits={{ local: false, managed: false }}
+        custodyLocked={false}
+        disabled={disabled}
+        onCreate={onCreate}
+      />
+    </div>
+  );
+}
+
+beforeEach(async () => {
+  onCreate.mockReset();
+  await page.viewport(1280, 960);
+});
+
+it("submits only the selected payment-token approvals on both networks", async () => {
+  await render(<TemplateHarness />);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect.element(page.getByRole("note", { name: "Approval access" })).not.toBeInTheDocument();
+  await expect
+    .element(
+      page.getByText("Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.", {
+        exact: true,
+      }),
+    )
+    .not.toBeInTheDocument();
+
+  const tokens = page.getByRole("button", { name: /Payment tokens/ });
+  await tokens.click();
+  expect(page.getByRole("option", { name: /^USDC/ }).element().textContent?.trim()).toBe("USDC");
+  expect(page.getByRole("option", { name: /^DAI/ }).element().textContent?.trim()).toBe("DAI");
+  await page.getByRole("option", { name: /^USDC/ }).click();
+  await userEvent.keyboard("{Escape}");
+  await expect.element(tokens).toHaveTextContent("DAI");
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+
+  await expect.poll(() => onCreate.mock.calls.length).toBe(1);
+  const submitted = onCreate.mock.calls[0]?.[0] as CreateSessionKeyFormValues;
+  expect(
+    submitted.onchain.installations.map(({ chainId, permissions, allowSignatures }) => ({
+      chainId,
+      permissions,
+      allowSignatures,
+    })),
+  ).toEqual([
+    {
+      chainId: "eip155:1",
+      allowSignatures: false,
+      permissions: [
+        {
+          type: "functions-on-contract",
+          address: "0xd6d8369e55c94ae8afa714e6cf7ab5be54d5cc81",
+          functions: ["0x2d06649b"],
+        },
+        {
+          type: "functions-on-contract",
+          address: "0x6b175474e89094c44da98b954eedeac495271d0f",
+          functions: ["0x095ea7b3"],
+        },
+        { type: "native-token-transfer", allowance: 0n },
+      ],
+    },
+    {
+      chainId: "eip155:11155111",
+      allowSignatures: false,
+      permissions: [
+        {
+          type: "functions-on-contract",
+          address: "0xf633e7fc17e2bbe0d0965d18ec1821dcb754a3d3",
+          functions: ["0x2d06649b"],
+        },
+        {
+          type: "functions-on-contract",
+          address: "0xf6fac8a58a0be13b9197f27c41b73162fe32572b",
+          functions: ["0x095ea7b3"],
+        },
+        { type: "native-token-transfer", allowance: 0n },
+      ],
+    },
+  ]);
+  expect(submitted.policies).toEqual([]);
+});
+
+it("validates empty token selection and supports keyboard recovery on a narrow screen", async () => {
+  await page.viewport(375, 900);
+  await render(<TemplateHarness />);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+  const tokens = page.getByRole("button", { name: /Payment tokens/ });
+  await tokens.click();
+  await page.getByRole("option", { name: /^USDC/ }).click();
+  await page.getByRole("option", { name: /^DAI/ }).click();
+  await userEvent.keyboard("{Escape}");
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+  await expect
+    .element(page.getByText("Choose at least one payment token.", { exact: true }))
+    .toBeVisible();
+  expect(onCreate).not.toHaveBeenCalled();
+
+  tokens.element().focus();
+  await userEvent.keyboard("{ArrowDown}");
+  await expect.element(page.getByRole("listbox")).toBeVisible();
+  const usdc = page.getByRole("option", { name: /^USDC/ });
+  usdc.element().focus();
+  await expect.element(usdc).toHaveFocus();
+  await userEvent.keyboard("{Enter}");
+  await expect.element(usdc).toHaveAttribute("aria-selected", "true");
+  await userEvent.keyboard("{Escape}");
+  await expect.element(tokens).toHaveTextContent("USDC");
+  await page.getByRole("button", { name: "Back to details", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect.element(tokens).toHaveTextContent("USDC");
+  expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+  await expect.poll(() => onCreate.mock.calls.length).toBe(1);
+});
+
+it("preserves the existing USDC allowance form and its exact budget", async () => {
+  const template: Template = {
+    ...usdcAllowanceTemplate,
+    defaults: { networks: ["eip155:1"], allowance: "100.000001", expiresAt },
+  };
+  await render(<TemplateHarness template={template} />);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: /Payment tokens/ }))
+    .not.toBeInTheDocument();
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+  await expect.poll(() => onCreate.mock.calls.length).toBe(1);
+  expect(onCreate.mock.calls[0]?.[0].onchain.installations[0].permissions).toEqual([
+    {
+      type: "erc20-token-transfer",
+      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      allowance: 100_000_001n,
+    },
+  ]);
+});
+
+it("keeps a disabled template from advancing or submitting", async () => {
+  await render(<TemplateHarness disabled />);
+  await expect.element(page.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
+  expect(onCreate).not.toHaveBeenCalled();
+});
+
+it.each([true, false])(
+  "submits registration with factory deployment enabled: %s",
+  async (allowFactoryDeployments) => {
+    const template: Template = {
+      ...ensRegistrationTemplate,
+      defaults: {
+        ...ensRegistrationTemplate.defaults,
+        networks: ["eip155:11155111"],
+        tokens: ["usdc"],
+        expiresAt,
+      },
+    };
+    await render(<TemplateHarness template={template} />);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    const factory = page.getByRole("checkbox", {
+      name: "Allow resolver deployments",
+      exact: true,
+    });
+    await expect.element(factory).toBeChecked();
+    await expect
+      .element(
+        page.getByText(
+          "Choose which tokens this agent can approve. Sepolia uses ENS mock tokens.",
+          { exact: true },
+        ),
+      )
+      .not.toBeInTheDocument();
+    const explanation =
+      "Allows proxy deployments with any implementation and initialization data, including Permissioned Resolvers.";
+    await expect.element(page.getByText(explanation, { exact: true })).not.toBeInTheDocument();
+    const information = page.getByRole("button", {
+      name: "Allow resolver deployments information",
+      exact: true,
+    });
+    page
+      .getByRole("button", { name: /Payment tokens/ })
+      .element()
+      .focus();
+    await userEvent.keyboard("{Tab}");
+    await expect.element(information).toHaveFocus();
+    await expect.element(page.getByRole("tooltip")).toHaveTextContent(explanation);
+    expect(onCreate).not.toHaveBeenCalled();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("tooltip")).not.toBeInTheDocument();
+    if (!allowFactoryDeployments) {
+      await page.getByText("Allow resolver deployments", { exact: true }).click();
+      await expect.element(factory).not.toBeChecked();
+      await page.getByRole("button", { name: "Back to details", exact: true }).click();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await expect.element(factory).not.toBeChecked();
+    }
+    await expect
+      .element(page.getByRole("button", { name: /Payment tokens/ }))
+      .toHaveTextContent("USDC");
+    await page.getByRole("button", { name: "Create session key", exact: true }).click();
+
+    await expect.poll(() => onCreate.mock.calls.length).toBe(1);
+    expect(onCreate.mock.calls[0]?.[0].onchain.installations).toEqual([
+      {
+        chainId: "eip155:11155111",
+        validAfter: expect.any(Number),
+        validUntil: now + 86_400,
+        allowSignatures: false,
+        permissions: [
+          {
+            type: "functions-on-contract",
+            address: "0xf633e7fc17e2bbe0d0965d18ec1821dcb754a3d3",
+            functions: ["0xf14fcbc8", "0xcff3e7c2"],
+          },
+          {
+            type: "functions-on-contract",
+            address: "0x240b0316df57887dbbe58b586508b19e633a14aa",
+            functions: ["0x095ea7b3"],
+          },
+          { type: "native-token-transfer", allowance: 0n },
+          ...(allowFactoryDeployments
+            ? [
+                {
+                  type: "functions-on-contract",
+                  address: "0xda70306c98e97ece36f997a21368e53298572991",
+                  functions: ["0x5d84121a"],
+                },
+              ]
+            : []),
+        ],
+      },
+    ]);
+  },
+);

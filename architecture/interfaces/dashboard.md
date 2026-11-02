@@ -106,6 +106,46 @@ seven-day view; All time removes the cutoff on loaded pages, not pagination.
 Templates use `/templates` and `/templates/$templateId` with the public
 `@namera-ai/templates` package. Banner assets resolve under the CDN's `templates/`
 prefix. Existing sessions keep their stored permissions when templates change.
+Template creation shares the session details and installation approval flow.
+The ENSv2 renewal and registration forms use an icon-backed USDC/DAI multiselect,
+networks and expiry. Token selection maps to mainnet USDC/DAI or ENS mock deployments on
+Sepolia; it does not offer arbitrary addresses or Circle test USDC. Template
+banners and logos use CDN-relative assets; uploadable artwork stays in the
+ignored `assets` folder.
+Registration also includes "Allow resolver deployments", checked by default.
+An info tooltip beside its label explains that implementations and initialization data are unrestricted;
+clearing it removes factory access from every selected network. Browser tests
+cover both submitted scopes and retention of the choice when returning to details.
+Token and registry-role helper paragraphs are omitted from the ENS forms; inline
+validation and registry preflight errors remain visible when needed.
+
+The ENSv2 subname issuer form uses a single network, registry address and expiry.
+Before creation, it reads the registry's code, permissioned-registry interface
+support and the selected account's root registrar role through the existing
+server RPC proxy. It disables configuration while checking, displays failures
+on the address field and retries with fresh reads on submission. This is
+preflight feedback, not an authorization grant; ENS verifies its roles when the
+agent calls `register`. The form uses the ordinary session installation approval
+flow. Browser tests cover the exact submitted scope, malformed/unsupported
+registries, role denials, network changes and RPC failure recovery.
+
+The Uniswap v3 swaps template uses the standard metadata step followed by networks
+and expiry. It has no token picker or approval action. A compact note explains
+the owner's prior-approval requirement. It shows no router-address section and
+does not trigger RPC or catalog requests. The banner and official
+Uniswap icon use WebP assets under `templates/uniswap-v3-swaps/`. Browser tests
+cover the exact submitted permissions, network validation, selection retention
+and narrow-screen overflow.
+
+The Uniswap v3 liquidity manager adds four operation checkboxes between networks
+and expiry. Each uses a compact keyboard-accessible info trigger beside its label
+and a checkbox aligned right. Collection starts enabled; other operations start
+disabled. At least one operation is required. The prior-approval note appears
+only when Create positions or Add liquidity is selected. There is no token picker
+or position/address section. It reuses the swaps logo and has its own abstract
+WebP header under `templates/uniswap-v3-liquidity/`. Browser tests verify exact
+permission scopes, concise tooltip copy, conditional notes, validation, edit
+retention and narrow-screen overflow.
 
 ## Forms and confirmations
 

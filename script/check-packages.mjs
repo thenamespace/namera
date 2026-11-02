@@ -169,7 +169,11 @@ try {
     assert.ok(import.meta.resolve('@namera-ai/sdk').endsWith('/dist/index.node.js'));
     assert.equal(typeof getSessionKeystore, 'function');
     assert.equal(getTemplate('usdc-lifetime-allowance'), usdcAllowanceTemplate);
-    assert.equal(templates.length, 1);
+    assert.deepEqual(templates.map(({ id }) => id), [
+      'usdc-lifetime-allowance', 'ens-renewal', 'ens-registration',
+      'ens-subname-issuer', 'uniswap-v3-swaps', 'uniswap-v3-liquidity',
+    ]);
+    for (const template of templates) assert.equal(getTemplate(template.id), template);
     const permissions = usdcAllowanceTemplate.build({
       networks: ['eip155:5042002'],
       allowance: '100.000001',

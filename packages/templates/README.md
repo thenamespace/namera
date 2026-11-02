@@ -93,6 +93,17 @@ uses 18 decimals separately. Transfers may go to any recipient. The template
 grants no signatures, approvals or unrestricted contract access. Gas sponsorship
 depends on the workspace's billing limits, separately from spending permissions.
 
+Additional built-ins provide ENSv2 renewal, registration and subname issuance,
+plus Uniswap v3 swaps and liquidity management. ENS registrar templates use
+mainnet USDC/DAI or ENS mock tokens on Sepolia and grant token approvals.
+Registration optionally permits resolver factory deployments, enabled by default.
+The subname issuer requires an existing registrar role on the selected registry.
+Uniswap templates grant selected functions on reviewed deployments across eight
+networks; owners establish token approvals separately. Liquidity defaults to
+collecting proceeds, with optional position creation, deposits and withdrawals.
+Native value and signatures are disabled for all five templates. Function
+arguments, including recipients and amounts, remain unrestricted.
+
 `templates` lists built-in definitions. `getTemplate(id)` returns a definition or
 `undefined`; the USDC template ID is `usdc-lifetime-allowance`.
 

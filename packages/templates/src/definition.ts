@@ -11,15 +11,31 @@ export type TemplateContext = { readonly now: number };
 export type TemplateInput<T extends { readonly inputSchema: Schema.Top }> =
   T["inputSchema"]["Type"];
 
+export type TemplateToken = {
+  readonly id: string;
+  readonly name: string;
+  readonly symbol: string;
+  readonly logo: string;
+};
+
 export type TemplateField<Name extends string = string> = {
   readonly name: Name;
   readonly label: string;
   readonly description?: string;
+  readonly tooltip?: string;
 } & (
   | { readonly kind: "networks"; readonly chainIds: readonly SupportedEvmChainId[] }
+  | { readonly kind: "network"; readonly chainIds: readonly SupportedEvmChainId[] }
+  | { readonly kind: "address"; readonly placeholder: string }
+  | { readonly kind: "checkbox" }
   | { readonly kind: "amount"; readonly symbol: string; readonly decimals: number }
+  | { readonly kind: "tokens"; readonly options: readonly TemplateToken[] }
   | { readonly kind: "expiry" }
 );
+
+type TemplateInputField<Input> = Input extends unknown
+  ? TemplateField<Extract<keyof Input, string>>
+  : never;
 
 export type Template<S extends Schema.Top> = {
   readonly id: string;
@@ -38,6 +54,8 @@ export type Template<S extends Schema.Top> = {
     readonly logo?: MetadataIcon;
   };
   readonly defaults: S["Encoded"];
-  readonly fields: readonly TemplateField<Extract<keyof S["Encoded"], string>>[];
+  readonly fields: readonly TemplateInputField<S["Encoded"]>[];
+  readonly approvalNote?: string;
+  readonly approvalNoteWhen?: readonly TemplateInputField<S["Encoded"]>["name"][];
   readonly build: (input: S["Type"], context: TemplateContext) => TemplateOutput;
 };
