@@ -184,7 +184,13 @@ export function RecipeCreationForm({
                     render={({ field, fieldState }) => {
                       const fieldId = `${id}-${definition.name}`;
                       return (
-                        <DashboardCardRow>
+                        <DashboardCardRow
+                          className={
+                            definition.kind === "checkbox"
+                              ? "grid-cols-[minmax(0,1fr)_auto]"
+                              : undefined
+                          }
+                        >
                           <Field className="contents" data-invalid={fieldState.invalid}>
                             <div className="flex items-center gap-1">
                               <FieldLabel
@@ -196,18 +202,16 @@ export function RecipeCreationForm({
                               </FieldLabel>
                               {"tooltip" in definition && typeof definition.tooltip === "string" ? (
                                 <Tooltip delay={0}>
-                                  <Button
-                                    type="button"
-                                    variant="tertiary"
-                                    size="sm"
-                                    isIconOnly
+                                  <Tooltip.Trigger
+                                    className="inline-flex size-4 shrink-0 items-center justify-center text-muted"
                                     aria-label={`${definition.label} information`}
                                   >
                                     <HugeiconsIcon
                                       icon={InformationCircleIcon}
-                                      className="size-4 text-muted"
+                                      className="size-3.5"
+                                      aria-hidden
                                     />
-                                  </Button>
+                                  </Tooltip.Trigger>
                                   <Tooltip.Content className="max-w-xs">
                                     {definition.tooltip}
                                   </Tooltip.Content>
@@ -217,6 +221,7 @@ export function RecipeCreationForm({
                             <div className="grid w-full min-w-0 gap-2">
                               {definition.kind === "checkbox" ? (
                                 <Checkbox
+                                  className="justify-self-end"
                                   id={fieldId}
                                   aria-labelledby={`${fieldId}-label`}
                                   aria-describedby={`${fieldId}-feedback`}
