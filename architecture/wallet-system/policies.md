@@ -63,6 +63,13 @@ dashboard uses the normal owner installation approval flow to review permissions
 Template tests verify exact deployments/selectors, token subsets, expiry and
 rejection of unsupported networks/tokens.
 
+The ENSv2 registration template shares renewal's payment-token configuration but
+grants `commit(bytes32)` and
+`register(string,address,bytes32,address,address,uint64,address,bytes32)` instead
+of `renew`. Names, owners, resolvers, subregistries and registration durations
+are supplied at execution; selector permissions do not constrain them. Agents
+coordinate commit/reveal and its secret; no registration worker was added.
+
 ## Code
 
 - [Permission mapping](../../packages/evm/src/sessions/permissions.ts)

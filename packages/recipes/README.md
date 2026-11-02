@@ -25,6 +25,13 @@ transfers and signatures are disabled. Approvals are unrestricted by spender or
 amount, survive session expiry and do not constitute a spending budget. Names
 and renewal durations are chosen at execution, not restricted by the template.
 
+The ENSv2 registration template uses the same networks, payment tokens and expiry
+but grants only the registrar's `commit` and `register` functions. The agent owns
+availability checks, commitment-secret storage, the commitment wait and reveal.
+The template does not restrict the registered name, owner, resolver or duration,
+and does not grant renewal. Both registrar templates share reviewed deployments
+and payment validation under `src/ens`.
+
 ## Adding a template
 
 Add a focused directory under `src/recipes`, define its schema and fields, then

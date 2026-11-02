@@ -3,9 +3,9 @@ import { EthereumAddress } from "@namera-ai/protocol/evm";
 // Verified against ENS deployment artifacts and active payment oracles on 2026-11-03:
 // https://docs.ens.domains/learn/deployments/
 // https://docs.ens.domains/ensv2/eth-registrar/
-export const ensRenewalNetworks = ["eip155:1", "eip155:11155111"] as const;
+export const ensNetworks = ["eip155:1", "eip155:11155111"] as const;
 
-export const ensRenewalDeployments = {
+export const ensDeployments = {
   "eip155:1": {
     registrar: EthereumAddress.make("0xd6d8369e55c94ae8afa714e6cf7ab5be54d5cc81"),
     tokens: {

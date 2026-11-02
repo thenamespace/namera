@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 import { Schema } from "effect";
 
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { ensRenewalRecipe, usdcAllowanceRecipe } from "@namera-ai/recipes";
+import { ensRegistrationRecipe, ensRenewalRecipe, usdcAllowanceRecipe } from "@namera-ai/recipes";
 import { useForm } from "react-hook-form";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-react";
@@ -196,4 +196,40 @@ it("keeps a disabled template from advancing or submitting", async () => {
   await render(<TemplateHarness disabled />);
   await expect.element(page.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
   expect(onCreate).not.toHaveBeenCalled();
+});
+
+it("uses the existing form for registration and submits commit/register without renewal", async () => {
+  const recipe: Template = {
+    ...ensRegistrationRecipe,
+    defaults: { networks: ["eip155:11155111"], tokens: ["usdc"], expiresAt },
+  };
+  await render(<TemplateHarness recipe={recipe} />);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect
+    .element(page.getByRole("button", { name: /Payment tokens/ }))
+    .toHaveTextContent("USDC");
+  await page.getByRole("button", { name: "Create session key", exact: true }).click();
+
+  await expect.poll(() => onCreate.mock.calls.length).toBe(1);
+  expect(onCreate.mock.calls[0]?.[0].onchain.installations).toEqual([
+    {
+      chainId: "eip155:11155111",
+      validAfter: expect.any(Number),
+      validUntil: now + 86_400,
+      allowSignatures: false,
+      permissions: [
+        {
+          type: "functions-on-contract",
+          address: "0xf633e7fc17e2bbe0d0965d18ec1821dcb754a3d3",
+          functions: ["0xf14fcbc8", "0xcff3e7c2"],
+        },
+        {
+          type: "functions-on-contract",
+          address: "0x240b0316df57887dbbe58b586508b19e633a14aa",
+          functions: ["0x095ea7b3"],
+        },
+        { type: "native-token-transfer", allowance: 0n },
+      ],
+    },
+  ]);
 });
