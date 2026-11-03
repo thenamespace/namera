@@ -1,5 +1,12 @@
 # @namera-ai/cli
 
+## 1.8.0
+
+### Patch Changes
+
+- @namera-ai/protocol@1.8.0
+  - @namera-ai/sdk@1.8.0
+
 ## 1.7.0
 
 ### Minor Changes
