@@ -67,7 +67,7 @@ catalog:
   "tsx": 4.23.15
   "typescript": 7.0.2
   "ua-parser-js": 2.0.10
-  "vite": 8.3.2
+  "vite": 8.3.3
   "vitest": 5.0.3
   "@alchemy/aa-infra": 5.2.7
   "@alchemy/common": 5.2.7
@@ -78,7 +78,7 @@ catalogs:
     "@tanstack/react-router": 1.170.41
     "@tanstack/router-cli": 1.167.40
     "@vitejs/plugin-react": 6.1.1
-    "vite": 8.3.2
+    "vite": 8.3.3
 
 minimumReleaseAgeExclude:
   - "effect"
