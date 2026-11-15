@@ -1,6 +1,0 @@
-@import "@fontsource-variable/inter";
-@import "@namera-ai/ui/styles.css";
-
-@theme inline {
-  --font-inter: "Inter Variable", sans-serif;
-}

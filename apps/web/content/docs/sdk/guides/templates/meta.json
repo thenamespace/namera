@@ -1,5 +1,0 @@
-{
-  "title": "Templates",
-  "collapsible": true,
-  "pages": ["index", "usdc-allowance", "create-custom-template", "test-custom-template"]
-}
