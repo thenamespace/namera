@@ -1,13 +1,6 @@
 version = 2
 
 [[dependencies]]
-name = "eth-infinitism-account-abstraction"
-version = "0.7"
-url = "https://soldeer-revisions.s3.amazonaws.com/eth-infinitism-account-abstraction/0_7_29-06-2024_08:28:06_eth-infinitism-account-abstraction-0.7.zip"
-checksum = "c102194147224fa5081c78c88af01ee148ea7d799990d98ebbe043c3fc168006"
-integrity = "5a359d8124f0fc9a454310d86b10f3eff96d4d1d0090bcdd85af9ba3a92d030b"
-
-[[dependencies]]
 name = "forge-std"
 version = "1.17.0"
 url = "https://soldeer-revisions.s3.amazonaws.com/forge-std/1_17_0_01-10-2026_10:59:49_forge-std-1.17.zip"

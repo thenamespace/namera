@@ -60,6 +60,7 @@ broadcast/
 dependencies/
 gas-report.*
 lcov.info
+mutation-report.json
 
 # -------------------------------------
 # Local working state

@@ -19,6 +19,7 @@ ignored_warnings_from = ["dependencies"]
 gas_reports = ["*"]
 fs_permissions = [
   { access = "read", path = "./chains" },
+  { access = "read", path = "./test/fixtures" },
   { access = "read-write", path = "./deployments" },
   { access = "read", path = "./out" },
 ]
@@ -73,4 +74,3 @@ recursive_deps = false
 [dependencies]
 forge-std = "1.17.0"
 solady = "0.1.26"
-eth-infinitism-account-abstraction = "0.7"
