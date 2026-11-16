@@ -1,0 +1,49 @@
+{
+  "name": "@namera-ai/contracts",
+  "version": "0.0.0",
+  "description": "ABIs and deployment addresses of Namera's Smart Sessions contracts.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera.git",
+    "directory": "packages/contracts"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "workspace-source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "generate": "node scripts/generate-abis.ts && oxfmt -c ../../.config/oxfmt.config.ts --write src/abis",
+    "generate:check": "pnpm generate && git diff --exit-code -- src/abis",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "klarity": "catalog:",
+    "oxfmt": "catalog:",
+    "publint": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "viem": "catalog:",
+    "vitest": "catalog:"
+  }
+}
