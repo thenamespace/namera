@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import "../DataTypes.sol";
 import { LibZip } from "solady/utils/LibZip.sol";
-import { PackedUserOperation } from "modulekit/external/ERC4337.sol";
+import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
 import { SmartSessionModeLib } from "./SmartSessionModeLib.sol";
 
 library EncodeLib {

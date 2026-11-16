@@ -6,7 +6,7 @@ import { IRegistry, ModuleType } from "./interfaces/IRegistry.sol";
 import "./interfaces/ISessionValidator.sol";
 import { EnumerableSet } from "./utils/EnumerableSet4337.sol";
 import { EnumerableMap } from "./utils/EnumerableMap4337.sol";
-import { FlatBytesLib } from "flatbytes/BytesLib.sol";
+import { FlatBytesLib } from "../libraries/FlatBytesLib.sol";
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                       Parameters                           */

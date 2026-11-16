@@ -57,7 +57,8 @@ ignore = ["dependencies/**", "src/smart-sessions/**"]
 
 [lint]
 severity = ["high", "medium", "low"]
-ignore = ["dependencies/**"]
+# Ported upstream code is reviewed through Slither (triaged findings in slither.db.json) and audit.
+ignore = ["dependencies/**", "src/smart-sessions/**"]
 lint_on_build = false
 
 [soldeer]

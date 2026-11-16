@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Execution } from "erc7579/interfaces/IERC7579Account.sol";
-import { CallType, ExecType, ModeCode as ExecutionMode } from "erc7579/lib/ModeLib.sol";
+import { Execution, CallType, ExecType, ModeCode as ExecutionMode } from "../../interfaces/IERC7579.sol";
 
 /**
  * Helper Library for decoding Execution calldata

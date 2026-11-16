@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "../DataTypes.sol";
-import { FlatBytesLib } from "flatbytes/BytesLib.sol";
+import { FlatBytesLib } from "../../libraries/FlatBytesLib.sol";
 import { ISessionValidator } from "../interfaces/ISessionValidator.sol";
 
 library SignerLib {

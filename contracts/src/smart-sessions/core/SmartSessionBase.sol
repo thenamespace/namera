@@ -12,7 +12,7 @@ import { IdLib } from "../lib/IdLib.sol";
 import { HashLib } from "../lib/HashLib.sol";
 import { SmartSessionModeLib } from "../lib/SmartSessionModeLib.sol";
 import { NonceManager } from "./NonceManager.sol";
-import { FlatBytesLib } from "flatbytes/BytesLib.sol";
+import { FlatBytesLib } from "../../libraries/FlatBytesLib.sol";
 
 abstract contract SmartSessionBase is ISmartSession, NonceManager {
     using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;

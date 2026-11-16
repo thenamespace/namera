@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import "../DataTypes.sol";
 import { EfficientHashLib } from "solady/utils/EfficientHashLib.sol";
-import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 ///////  Custom EIP712 types  ////
 //  to keep the documentation of nested EIP712 hashes readable, we trunkated the EIP712 definitions of nested structs.
@@ -106,7 +105,7 @@ library HashLib {
         bytes32 structHash =
             keccak256(abi.encode(MULTICHAIN_SESSION_TYPEHASH, hashesAndChainIds.hashChainDigestArray()));
 
-        return MessageHashUtils.toTypedDataHash(_MULTICHAIN_DOMAIN_SEPARATOR, structHash);
+        return keccak256(abi.encodePacked(hex"1901", _MULTICHAIN_DOMAIN_SEPARATOR, structHash));
     }
 
     /**

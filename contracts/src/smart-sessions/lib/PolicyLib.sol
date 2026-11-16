@@ -11,9 +11,9 @@ import { IdLib } from "./IdLib.sol";
 import { EncodeLib } from "./EncodeLib.sol";
 import { EnumerableSet } from "../utils/EnumerableSet4337.sol";
 
-import { PackedUserOperation } from "modulekit/external/ERC4337.sol";
-import { IERC7579Account } from "erc7579/interfaces/IERC7579Account.sol";
-import { ExcessivelySafeCall } from "excessively-safe-call/ExcessivelySafeCall.sol";
+import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
+import { IERC7579Account } from "../../interfaces/IERC7579.sol";
+import { LibCall } from "solady/utils/LibCall.sol";
 
 library PolicyLib {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -22,7 +22,6 @@ library PolicyLib {
     using PolicyLib for *;
     using EncodeLib for *;
     using ValidationDataLib for ValidationData;
-    using ExcessivelySafeCall for address;
 
     /**
      * Helper function to evaluate the ValidationData result of a policy check.
@@ -132,15 +131,16 @@ library PolicyLib {
         returns (ValidationData _vd)
     {
         // Call the policy contract with the provided calldata
-        (bool success, bytes memory returnDataFromPolicy) = policy.excessivelySafeCall({
+        (bool success,, bytes memory returnDataFromPolicy) = LibCall.tryCall({
+            target: policy,
+            value: 0,
             // To better align with the ERC-4337 validation rules, we replaced gasleft() with type(uint256).max.
             // This will accomplish the same result of forwarding all remaining gas.
             // Note that there is no error for attempting to use more gas than is currently available, as this has been
             // allowed since https://eips.ethereum.org/EIPS/eip-150#specification
-            _gas: type(uint256).max,
-            _value: 0,
-            _maxCopy: 32,
-            _calldata: callOnIPolicy
+            gasStipend: type(uint256).max,
+            maxCopy: 32,
+            data: callOnIPolicy
         });
         uint256 validationDataFromPolicy;
         assembly {

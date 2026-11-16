@@ -2,8 +2,8 @@
 pragma solidity ^0.8.4;
 
 import "./DataTypes.sol";
-import { PackedUserOperation } from "modulekit/external/ERC4337.sol";
-import { CallType, ExecType, ModeCode as ExecutionMode } from "erc7579/lib/ModeLib.sol";
+import { PackedUserOperation } from "../interfaces/IERC4337.sol";
+import { CallType, ExecType, ModeCode as ExecutionMode } from "../interfaces/IERC7579.sol";
 
 /**
  * @title ISmartSession

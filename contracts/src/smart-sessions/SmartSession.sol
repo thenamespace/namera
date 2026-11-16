@@ -3,11 +3,9 @@ pragma solidity ^0.8.25;
 
 import "./DataTypes.sol";
 
-import { IERC7579Account } from "erc7579/interfaces/IERC7579Account.sol";
-import { IAccountExecute } from "modulekit/external/ERC4337.sol";
-import { PackedUserOperation } from "modulekit/external/ERC4337.sol";
-import { EIP1271_MAGIC_VALUE, IERC1271 } from "module-bases/interfaces/IERC1271.sol";
-import { ExecType, CallType, CALLTYPE_BATCH, CALLTYPE_SINGLE, EXECTYPE_DEFAULT } from "erc7579/lib/ModeLib.sol";
+import { IERC7579Account, ExecType, CallType, CALLTYPE_BATCH, CALLTYPE_SINGLE, EXECTYPE_DEFAULT } from "../interfaces/IERC7579.sol";
+import { IAccountExecute, PackedUserOperation } from "../interfaces/IERC4337.sol";
+import { EIP1271_MAGIC_VALUE, IERC1271 } from "../interfaces/IERC1271.sol";
 
 import { ISmartSession } from "./ISmartSession.sol";
 import { SmartSessionBase } from "./core/SmartSessionBase.sol";

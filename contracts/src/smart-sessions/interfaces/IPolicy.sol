@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.23;
 
-import { PackedUserOperation, _packValidationData } from "modulekit/external/ERC4337.sol";
-import { IModule as IERC7579Module, VALIDATION_SUCCESS, VALIDATION_FAILED } from "erc7579/interfaces/IERC7579Module.sol";
+import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
+import { IModule as IERC7579Module, VALIDATION_SUCCESS, VALIDATION_FAILED } from "../../interfaces/IERC7579.sol";
 import "../DataTypes.sol";
-import "forge-std/interfaces/IERC165.sol";
+import { IERC165 } from "../../interfaces/IERC165.sol";
 
 /**
  * IPolicy are external contracts that enforce policies / permission on 4337/7579 executions

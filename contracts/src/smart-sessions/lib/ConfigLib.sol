@@ -9,7 +9,7 @@ import { EnumerableMap } from "../utils/EnumerableMap4337.sol";
 import { IdLib } from "./IdLib.sol";
 import { HashLib } from "./HashLib.sol";
 import { EnumerableSet } from "../utils/EnumerableSet4337.sol";
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ERC165Checker } from "../../libraries/ERC165Checker.sol";
 
 library ConfigLib {
     using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
