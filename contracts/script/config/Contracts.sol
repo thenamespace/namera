@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
 /// @param artifact Foundry artifact identifier, e.g. "SessionValidator.sol:SessionValidator".

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
 /// @notice CREATE2 deployments through the Arachnid deterministic deployer, which exists at the same
