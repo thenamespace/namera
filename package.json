@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "check": "oxfmt --check . && oxlint --deny-warnings . && turbo run typecheck test build",
+    "check": "oxfmt -c .config/oxfmt.config.ts --check . && oxlint -c .config/oxlint.config.ts --deny-warnings . && turbo run typecheck test build",
     "dev": "turbo run dev",
-    "format": "oxfmt --write .",
-    "format:check": "oxfmt --check .",
-    "lint": "oxlint --deny-warnings .",
-    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt -c .config/oxfmt.config.ts --write .",
+    "format:check": "oxfmt -c .config/oxfmt.config.ts --check .",
+    "lint": "oxlint -c .config/oxlint.config.ts --deny-warnings .",
+    "lint:fix": "oxlint -c .config/oxlint.config.ts --fix .",
     "prepare": "lefthook install",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
