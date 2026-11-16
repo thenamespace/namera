@@ -35,7 +35,7 @@ struct ChainDigest {
 /// @param erc7739Policies ERC-7739 contents and ERC-1271 policies for session-key signatures.
 /// @param actions Per target-and-selector policies for executions.
 /// @param permitERC4337Paymaster Whether user operations of this session may use a paymaster.
-/// @param validAfter Session start; valid when `validAfter < block.timestamp` (0 = no start bound).
+/// @param validAfter Session start; valid when `validAfter <= block.timestamp` (0 = no start bound).
 /// @param validUntil Session end; valid when `block.timestamp <= validUntil` (0 = no expiry).
 struct Session {
     ISessionValidator sessionValidator;
