@@ -337,7 +337,7 @@ abstract contract SmartSessionBase is ISmartSession {
         );
     }
 
-    /// @dev Same bounds as the EntryPoint: `validAfter < block.timestamp <= validUntil`, `0` = unbounded.
+    /// @dev Same bounds as the EntryPoint: `validAfter <= block.timestamp <= validUntil`, `validUntil = 0` = unbounded.
     // slither-disable-next-line timestamp
     function _isWithinSessionValidity(PermissionId permissionId, address account)
         internal
@@ -347,7 +347,7 @@ abstract contract SmartSessionBase is ISmartSession {
         SessionValidity memory validity = $sessionValidity[permissionId][account];
         // Session expiry is time-based by design.
         // forge-lint: disable-next-item(block-timestamp)
-        if (block.timestamp <= validity.validAfter) return false;
+        if (block.timestamp < validity.validAfter) return false;
         // forge-lint: disable-next-item(block-timestamp)
         return validity.validUntil == 0 || block.timestamp <= validity.validUntil;
     }

@@ -101,7 +101,7 @@ contract SessionHandler is CommonBase, StdUtils {
             signatureAcceptedForOtherHash = true;
         }
         bool insideWindow =
-            block.timestamp > tracked.validAfter && block.timestamp <= tracked.validUntil;
+            block.timestamp >= tracked.validAfter && block.timestamp <= tracked.validUntil;
         if (!insideWindow && _isMagic(tracked.account, signedHash, signature)) {
             signatureAcceptedOutsideWindow = true;
         }

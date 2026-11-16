@@ -7,7 +7,7 @@ import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 import {ERC7739Signer} from "../../utils/ERC7739Signer.sol";
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
-import {MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
+import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 
 /// @notice Session-key ERC-1271 signatures (ERC-7739), checked through the account like a dapp would.
 contract ERC1271Test is SmartSessionTestBase {
@@ -105,6 +105,26 @@ contract ERC1271Test is SmartSessionTestBase {
         assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
     }
 
+    /// @dev Same bounds as the EntryPoint: valid from `validAfter` through `validUntil`, both inclusive.
+    function test_windowBounds_matchTheEntryPoint() public {
+        uint48 start = uint48(block.timestamp + 1 hours);
+        uint48 end = start + 1 hours;
+        Session memory session = _signingSession().withValidity(start, end);
+        session.salt = keccak256("bounded");
+        PermissionId boundedId = enableSession(session);
+        bytes memory signature = ERC7739Signer.sign(mail, address(account), boundedId, sessionKey);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        vm.warp(start - 1);
+        assertEq(_isValidSignature(hash, signature), INVALID);
+        vm.warp(start);
+        assertEq(_isValidSignature(hash, signature), EIP1271_MAGIC);
+        vm.warp(end);
+        assertEq(_isValidSignature(hash, signature), EIP1271_MAGIC);
+        vm.warp(end + 1);
+        assertEq(_isValidSignature(hash, signature), INVALID);
+    }
+
     function test_unknownPermission_isRejected() public view {
         bytes memory signature = ERC7739Signer.sign(
             mail, address(account), PermissionId.wrap(keccak256("unknown")), sessionKey
@@ -143,6 +163,57 @@ contract ERC1271Test is SmartSessionTestBase {
             smartSession.isValidSignatureWithSender(address(smartSession), hash, signature);
 
         assertEq(result, INVALID);
+    }
+
+    function testFuzz_anyOtherRequester_isAccepted(address requester) public {
+        vm.assume(requester != address(smartSession));
+        bytes memory signature = _sign(mail, sessionKey);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        vm.prank(requester);
+        bytes4 result =
+            account.isValidSignature(hash, abi.encodePacked(address(smartSession), signature));
+
+        assertEq(result, EIP1271_MAGIC);
+    }
+
+    function test_everyERC1271PolicyIsChecked() public {
+        MockPolicy secondPolicy = new MockPolicy(true);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        Session memory approved =
+            _signingSession().withERC1271Policy(address(secondPolicy), MockPolicyConfig.allow());
+        approved.salt = keccak256("both approve");
+        PermissionId approvedId = enableSession(approved);
+        assertEq(
+            _isValidSignature(
+                hash, ERC7739Signer.sign(mail, address(account), approvedId, sessionKey)
+            ),
+            EIP1271_MAGIC
+        );
+
+        Session memory rejected =
+            _signingSession().withERC1271Policy(address(secondPolicy), MockPolicyConfig.deny());
+        rejected.salt = keccak256("second rejects");
+        PermissionId rejectedId = enableSession(rejected);
+        assertEq(
+            _isValidSignature(
+                hash, ERC7739Signer.sign(mail, address(account), rejectedId, sessionKey)
+            ),
+            INVALID
+        );
+    }
+
+    function test_removedSessionContent_isNotRestoredByReenabling() public {
+        vm.prank(address(account));
+        smartSession.removeSession(permissionId);
+        Session memory withoutContent = defaultSession()
+            .withERC7739Content(keccak256("other app"), MAIL)
+            .withERC1271Policy(address(policy), MockPolicyConfig.allow());
+        // Same validator, config and salt, so the same permission ID as the removed session.
+        enableSession(withoutContent);
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), _sign(mail, sessionKey)), INVALID);
     }
 
     function test_erc6492WrappedSignature_isUnwrapped() public view {
