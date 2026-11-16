@@ -70,6 +70,16 @@ ERC-1271 signature format; `test/accounts/RealAccountTestBase.sol` holds the sha
   checked on the real node via `eth_call`) and skips contracts that are already deployed, so re-running
   is safe.
 
+Managed contracts (`script/config/Contracts.sol`):
+
+| Label                               | Contract                                         |
+| ----------------------------------- | ------------------------------------------------ |
+| `namera.smart-session.v1`           | `SmartSession` (ERC-7579 validator)              |
+| `namera.ecdsa-session-validator.v1` | `ECDSASessionValidator` (k-of-n session signers) |
+
+`pnpm chains:status` prints each contract's address. To simulate a deploy without sending transactions:
+`forge script script/Deploy.s.sol --rpc-url <url>`.
+
 ### Adding a chain
 
 1. Add it to `chains/chains.json` (id, slug, RPC env name, public RPC, verifiers).

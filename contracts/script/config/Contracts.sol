@@ -12,7 +12,14 @@ struct ContractSpec {
 /// @notice Every contract the deploy pipeline manages, in deployment order.
 library Contracts {
     function all() internal pure returns (ContractSpec[] memory specs) {
-        specs = new ContractSpec[](0);
+        specs = new ContractSpec[](2);
+        specs[0] = ContractSpec({
+            artifact: "SmartSession.sol:SmartSession", label: "namera.smart-session.v1"
+        });
+        specs[1] = ContractSpec({
+            artifact: "ECDSASessionValidator.sol:ECDSASessionValidator",
+            label: "namera.ecdsa-session-validator.v1"
+        });
     }
 
     function salt(ContractSpec memory spec) internal pure returns (bytes32) {

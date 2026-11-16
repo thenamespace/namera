@@ -4,6 +4,7 @@ pragma solidity 0.8.38;
 import {Test} from "forge-std/Test.sol";
 
 import {DeterministicDeployer} from "../../script/lib/DeterministicDeployer.sol";
+import {Create2FactoryFixture} from "../utils/Create2FactoryFixture.sol";
 
 contract Deployable {
     uint256 public constant VALUE = 42;
@@ -16,14 +17,10 @@ contract DeployerHarness {
 }
 
 contract DeterministicDeployerTest is Test {
-    /// Runtime code of the Arachnid deployer, read from Base Sepolia and Ethereum (identical).
-    bytes internal constant FACTORY_RUNTIME =
-        hex"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3";
-
     DeployerHarness internal harness = new DeployerHarness();
 
     function setUp() public {
-        vm.etch(DeterministicDeployer.FACTORY, FACTORY_RUNTIME);
+        Create2FactoryFixture.install();
     }
 
     function test_deploy_landsAtComputedAddress(bytes32 salt) public {
