@@ -59,6 +59,30 @@ ExcessivelySafeCall and Solady 0.0.240. This version depends only on **Solady 0.
 Batches are still decoded into `Execution[] calldata` (typed) so Solidity validates `target`; Solady's
 `getExecution` does not clean upper address bits.
 
+## Security fixes
+
+- **ERC-7739 hash binding.** Upstream `_erc1271IsValidSignatureViaNestedEIP712` rebuilt the hash from
+  the signature and never compared it with the requested `hash`, so one session-key signature validated
+  for any hash. It now requires `keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents) == hash` and,
+  as in Solady, that the appended data fits in the signature and is non-empty; otherwise the signature
+  is invalid. The ERC-7739 support probe returns `0x77390002` (upstream `0x77390001`).
+- **FlatBytes.** Upstream wrote `length / 32 + 1` slots, one past its 10-slot struct for a 320-byte
+  value. Slots are now exact, unused tail bytes are zeroed, and capacity is 16 slots (512 bytes) so
+  P-256/WebAuthn session validator configs fit.
+
+## Additions
+
+- **Session validity window.** `Session` has `uint48 validAfter, uint48 validUntil` (owner-signed; part of
+  the `SignedSession` EIP-712 type, so `SESSION_TYPEHASH`, `CHAIN_SESSION_TYPEHASH` and
+  `MULTICHAIN_SESSION_TYPEHASH` differ from upstream). The window is stored per permission and account
+  (`getSessionValidity`, `SessionValiditySet`), intersected into the validation data of every user
+  operation (enforced by the EntryPoint), and checked with `block.timestamp` for ERC-1271 signatures
+  (`validAfter < block.timestamp <= validUntil`, `0` = unbounded). Because the ERC-1271 path reads
+  `TIMESTAMP`, a session-key ERC-1271 signature cannot be verified inside another user operation's
+  validation phase (ERC-7562); it works in execution and off-chain.
+- This changes the `Session` ABI and EIP-712 hashes; upstream SmartSession tooling cannot build Namera
+  sessions.
+
 ## Behaviour changes
 
 - **Enable order (checks-effects-interactions).** After the enable signature is verified, the session

@@ -43,6 +43,10 @@ struct ChainDigest {
  *         A common use case of session keys is to scope access to a specific target and function
  *         selector. SmartSession calls this "Action". With ActionData, we can specify policies
  *         that are only run if a 7579 execution contains a specific action.
+ *
+ *     validAfter / validUntil (uint48): Namera addition. The session is valid when
+ *         validAfter < block.timestamp <= validUntil (ERC-4337 semantics; 0 means no bound). Enforced for
+ *         user operations through validation data and for ERC-1271 signatures directly.
  */
 struct Session {
     ISessionValidator sessionValidator;
@@ -52,6 +56,8 @@ struct Session {
     ERC7739Data erc7739Policies;
     ActionData[] actions;
     bool permitERC4337Paymaster;
+    uint48 validAfter;
+    uint48 validUntil;
 }
 
 // Policy data is a struct that contains the policy address and the initialization data for the policy.
@@ -94,6 +100,11 @@ struct ERC7739ContextHashes {
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                         Storage                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+struct SessionValidity {
+    uint48 validAfter;
+    uint48 validUntil;
+}
 
 struct SignerConf {
     ISessionValidator sessionValidator;

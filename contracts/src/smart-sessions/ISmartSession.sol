@@ -44,6 +44,7 @@ interface ISmartSession {
     error UnsupportedSmartSessionMode(SmartSessionMode mode);
     error ForbiddenValidationData();
     error PaymasterValidationNotEnabled(PermissionId permissionId);
+    error InvalidSessionValidity(uint48 validAfter, uint48 validUntil);
 
     event NonceIterated(PermissionId permissionId, address account, uint256 newValue);
     event SessionValidatorEnabled(
@@ -61,6 +62,10 @@ interface ISmartSession {
     );
     event SessionCreated(PermissionId permissionId, address account);
     event SessionRemoved(PermissionId permissionId, address smartAccount);
+
+    event SessionValiditySet(
+        PermissionId permissionId, address smartAccount, uint48 validAfter, uint48 validUntil
+    );
 
     event PermissionIdPermit4337Paymaster(
         PermissionId permissionId, address smartAccount, bool enabled
@@ -157,6 +162,11 @@ interface ISmartSession {
         external
         view
         returns (bool);
+
+    function getSessionValidity(PermissionId permissionId, address account)
+        external
+        view
+        returns (uint48 validAfter, uint48 validUntil);
 
     function getPermissionIDs(address account)
         external

@@ -153,6 +153,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         // slither-disable-next-line unused-return
         $enabledSessions.add(msg.sender, PermissionId.unwrap(permissionId));
         _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
+        _setSessionValidity(permissionId, session.validAfter, session.validUntil);
 
         // Enable mode can involve enabling ISessionValidator (new Permission)
         // or just adding policies (existing permission)
@@ -333,8 +334,9 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (!validSig) return ERC4337_VALIDATION_FAILED;
 
         // In every Policy check, the ERC4337.ValidationData sigFailed required to be false, SmartSession validation
-        // flow will only reach to this line, if all Policies return valid and ISessionValidator signature is valid
-        return vd;
+        // flow will only reach to this line, if all Policies return valid and ISessionValidator signature is valid.
+        // Namera: the owner-signed session validity window bounds every user operation.
+        return vd.intersect(_sessionValidityData(permissionId, account));
     }
 
     /**
@@ -393,6 +395,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
      * @param contents The ERC-7739 content to be validated
      * @return valid Boolean indicating whether the signature is valid
      */
+    // Session expiry is time-based by design (see _isWithinSessionValidity).
+    // slither-disable-next-line timestamp
     function _erc1271IsValidSignatureNowCalldata(
         address sender,
         bytes32 hash,
@@ -409,6 +413,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (
             // return false if the permissionId is not enabled
             !$enabledSessions.contains(msg.sender, PermissionId.unwrap(permissionId))
+            // Namera: return false outside the owner-signed session validity window
+            || !_isWithinSessionValidity(permissionId, msg.sender)
             // return false if the content is not enabled
             || !$enabledERC7739.enabledContentNames[permissionId][appDomainSeparator].contains(msg.sender, contentHash)
         ) return false;

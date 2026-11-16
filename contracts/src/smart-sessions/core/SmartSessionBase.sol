@@ -37,6 +37,9 @@ abstract contract SmartSessionBase is ISmartSession {
     mapping(
         PermissionId permissionId => mapping(address smartAccount => bool permitERC4337Paymaster)
     ) internal $permitERC4337Paymaster;
+    mapping(
+        PermissionId permissionId => mapping(address smartAccount => SessionValidity validity)
+    ) internal $sessionValidity;
     /// @dev Enable-signature nonce per permission and account; bumping it revokes unused enable signatures.
     mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
         $signerNonce;
@@ -116,6 +119,58 @@ abstract contract SmartSessionBase is ISmartSession {
     function setPermit4337Paymaster(PermissionId permissionId, bool enabled) external {
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _setPermit4337Paymaster(permissionId, enabled);
+    }
+
+    /// @dev Stores the owner-signed validity window. `validUntil == 0` means no expiry.
+    function _setSessionValidity(PermissionId permissionId, uint48 validAfter, uint48 validUntil)
+        internal
+    {
+        if (validUntil != 0 && validAfter >= validUntil) {
+            revert InvalidSessionValidity(validAfter, validUntil);
+        }
+        $sessionValidity[permissionId][msg.sender] =
+            SessionValidity({validAfter: validAfter, validUntil: validUntil});
+        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+        // change this account's state.
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit SessionValiditySet(permissionId, msg.sender, validAfter, validUntil);
+    }
+
+    /// @dev The validity window as ERC-4337 validation data (`validUntil << 160 | validAfter << 208`), so the
+    /// EntryPoint enforces it without reading the timestamp during validation (ERC-7562).
+    function _sessionValidityData(PermissionId permissionId, address account)
+        internal
+        view
+        returns (ValidationData)
+    {
+        SessionValidity memory validity = $sessionValidity[permissionId][account];
+        return ValidationData.wrap(
+            (uint256(validity.validUntil) << 160) | (uint256(validity.validAfter) << 208)
+        );
+    }
+
+    /// @dev Same bounds as the EntryPoint: `validAfter < block.timestamp <= validUntil`.
+    // slither-disable-next-line timestamp
+    function _isWithinSessionValidity(PermissionId permissionId, address account)
+        internal
+        view
+        returns (bool)
+    {
+        SessionValidity memory validity = $sessionValidity[permissionId][account];
+        // Session expiry is time-based by design; second-level validator drift is irrelevant here.
+        // forge-lint: disable-next-item(block-timestamp)
+        if (block.timestamp <= validity.validAfter) return false;
+        // forge-lint: disable-next-item(block-timestamp)
+        return validity.validUntil == 0 || block.timestamp <= validity.validUntil;
+    }
+
+    function getSessionValidity(PermissionId permissionId, address account)
+        external
+        view
+        returns (uint48 validAfter, uint48 validUntil)
+    {
+        SessionValidity memory validity = $sessionValidity[permissionId][account];
+        return (validity.validAfter, validity.validUntil);
     }
 
     function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {
@@ -274,6 +329,7 @@ abstract contract SmartSessionBase is ISmartSession {
             // forge-lint: disable-next-line(reentrancy-events)
             emit SessionCreated(permissionId, msg.sender);
             _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
+            _setSessionValidity(permissionId, session.validAfter, session.validUntil);
 
             if (!_isISessionValidatorSet(permissionId, msg.sender)) {
                 $sessionValidators.enable({
@@ -327,6 +383,7 @@ abstract contract SmartSessionBase is ISmartSession {
 
         $sessionValidators.disable({permissionId: permissionId, smartAccount: msg.sender});
         delete $permitERC4337Paymaster[permissionId][msg.sender];
+        delete $sessionValidity[permissionId][msg.sender];
 
         // Remove all ERC1271 policies for this session
         // slither-disable-next-line unused-return
