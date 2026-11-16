@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import "../DataTypes.sol";
@@ -10,6 +11,9 @@ import {IdLib} from "../lib/IdLib.sol";
 import {PolicyLib} from "../lib/PolicyLib.sol";
 import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
 
+/// @notice Session storage, session management, module lifecycle and views.
+/// @dev All storage is keyed by the account (`msg.sender` for writes), so reads during ERC-4337 validation stay
+/// within ERC-7562 associated storage.
 abstract contract SmartSessionBase is ISmartSession {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -19,14 +23,6 @@ abstract contract SmartSessionBase is ISmartSession {
     using IdLib for *;
     using FlatBytesLib for FlatBytesLib.Bytes;
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                    SmartSession Storage                    */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    /**
-     * In order to comply with ERC-4337 storage restrictions, every storage in smart session is using associated
-     * storage.
-     */
     Policy internal $userOpPolicies;
     Policy internal $erc1271Policies;
     EnumerableActionPolicy internal $actionPolicies;
@@ -40,56 +36,40 @@ abstract contract SmartSessionBase is ISmartSession {
     mapping(
         PermissionId permissionId => mapping(address smartAccount => SessionValidity validity)
     ) internal $sessionValidity;
-    /// @dev Enable-signature nonce per permission and account; bumping it revokes unused enable signatures.
+    /// @dev Enable-signature nonce; incrementing it invalidates signed but unused enable data.
     mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
         $signerNonce;
 
-    /**
-     * Before enabling policies, we need to check if the session is enabled for the caller and the given permission
-     * after enabling policies, we need to check if the session is still enabled for the caller and the given
-     * permission. This is to ensure that the session is still enabled after the operation and no re-entrancy is
-     * possible
-     */
+    /// @dev Requires the session to be enabled before and after the call, so policy initialization cannot remove
+    /// it in between.
     modifier enableWithPermissionId(PermissionId permissionId) {
-        // Check if the session is enabled for the caller and the given permission before enabling policies on it
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _;
-        // Check if the session is enabled for the caller and the given permission after enabling policies on it
-        // this is to ensure that the session is still enabled after the operation and no re-entrancy is possible
         $enabledSessions.requirePermissionIdEnabled(permissionId);
     }
 
-    /**
-     * Before disabling policies, we need to check if the session is enabled for the caller and the given permission
-     */
     modifier disableWithPermissionId(PermissionId permissionId) {
-        // Check if the session is enabled for the caller and the given permission before enabling policies on it
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _;
     }
 
-    function getPermissionIDs(address account)
+    // -----------------------------------------------------------------------------------------------------------------
+    // Session management
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// @notice Enables sessions for the calling account and returns their permission IDs.
+    function enableSessions(Session[] calldata sessions)
         external
-        view
         returns (PermissionId[] memory permissionIds)
     {
-        bytes32[] memory _permissionIds = $enabledSessions.values(account);
-        assembly {
-            permissionIds := _permissionIds
-        }
+        return _enableSessions(sessions);
     }
 
-    /**
-     * @notice Enable user operation policies for a specific permission
-     * @dev This function allows adding or updating user operation policies
-     * @param permissionId The unique identifier for the permission
-     * @param userOpPolicies An array of PolicyData structures containing policy information
-     */
+    /// @notice Adds or reconfigures user operation policies of an enabled session.
     function enableUserOpPolicies(PermissionId permissionId, PolicyData[] memory userOpPolicies)
-        public
+        external
         enableWithPermissionId(permissionId)
     {
-        // Enable the specified user operation policies
         $userOpPolicies.enable({
             policyType: PolicyType.USER_OP,
             permissionId: permissionId,
@@ -98,16 +78,10 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
-    /**
-     * @notice Disable specific user operation policies for a given permission
-     * @param permissionId The unique identifier for the permission
-     * @param policies An array of policy addresses to be disabled
-     */
     function disableUserOpPolicies(PermissionId permissionId, address[] calldata policies)
-        public
+        external
         disableWithPermissionId(permissionId)
     {
-        // Disable the specified user operation policies
         $userOpPolicies.disable({
             policyType: PolicyType.USER_OP,
             smartAccount: msg.sender,
@@ -116,12 +90,226 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
+    /// @notice Adds ERC-7739 contents and ERC-1271 policies to an enabled session.
+    function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies)
+        external
+        enableWithPermissionId(permissionId)
+    {
+        $enabledERC7739.enable({
+            contexts: erc1271Policies.allowedERC7739Content, permissionId: permissionId
+        });
+        $erc1271Policies.enable({
+            policyType: PolicyType.ERC1271,
+            permissionId: permissionId,
+            configId: permissionId.toErc1271PolicyId().toConfigId(),
+            policyDatas: erc1271Policies.erc1271Policies
+        });
+    }
+
+    function disableERC1271Policies(
+        PermissionId permissionId,
+        address[] calldata policies,
+        ERC7739Context[] calldata contexts
+    ) external disableWithPermissionId(permissionId) {
+        $enabledERC7739.disable(contexts, permissionId, msg.sender);
+        $erc1271Policies.disable({
+            policyType: PolicyType.ERC1271,
+            smartAccount: msg.sender,
+            permissionId: permissionId,
+            policies: policies
+        });
+    }
+
+    /// @notice Adds or reconfigures action policies of an enabled session.
+    function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies)
+        external
+        enableWithPermissionId(permissionId)
+    {
+        $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: actionPolicies});
+    }
+
+    /// @notice Disables an action and all of its policies.
+    function disableActionId(PermissionId permissionId, ActionId actionId)
+        external
+        disableWithPermissionId(permissionId)
+    {
+        $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
+        // slither-disable-next-line unused-return
+        $actionPolicies.enabledActionIds[permissionId].remove(msg.sender, ActionId.unwrap(actionId));
+        emit ActionIdDisabled(permissionId, actionId, msg.sender);
+    }
+
+    /// @notice Disables some policies of an action; the action is disabled when none remain.
+    function disableActionPolicies(
+        PermissionId permissionId,
+        ActionId actionId,
+        address[] calldata policies
+    ) external disableWithPermissionId(permissionId) {
+        EnumerableSet.AddressSet storage $policies = $actionPolicies.actionPolicies[actionId]
+            .policyList[permissionId];
+        $actionPolicies.actionPolicies[actionId].disable({
+            policyType: PolicyType.ACTION,
+            smartAccount: msg.sender,
+            permissionId: permissionId,
+            policies: policies
+        });
+
+        if ($policies.length(msg.sender) == 0) {
+            // slither-disable-next-line unused-return
+            $actionPolicies.enabledActionIds[permissionId].remove(
+                msg.sender, ActionId.unwrap(actionId)
+            );
+            emit ActionIdDisabled(permissionId, actionId, msg.sender);
+        }
+    }
+
     function setPermit4337Paymaster(PermissionId permissionId, bool enabled) external {
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _setPermit4337Paymaster(permissionId, enabled);
     }
 
-    /// @dev Stores the owner-signed validity window. `validUntil == 0` means no expiry.
+    /// @notice Removes a session with its validator, policies, contents, paymaster flag and validity window.
+    /// @dev Policy state is not wiped: re-enabling a policy re-initializes it (`initializeWithMultiplexer`).
+    function removeSession(PermissionId permissionId) public {
+        if (permissionId == EMPTY_PERMISSIONID) revert InvalidSession(permissionId);
+
+        $userOpPolicies.policyList[permissionId].removeAll(msg.sender);
+        $erc1271Policies.policyList[permissionId].removeAll(msg.sender);
+
+        EnumerableSet.Bytes32Set storage $actionIds = $actionPolicies.enabledActionIds[permissionId];
+        bytes32[] memory actionIds = $actionIds.values(msg.sender);
+        for (uint256 i; i < actionIds.length; ++i) {
+            $actionPolicies.actionPolicies[ActionId.wrap(
+                    actionIds[i]
+                )].policyList[permissionId].removeAll(msg.sender);
+        }
+        $actionIds.removeAll(msg.sender);
+
+        $sessionValidators.disable({permissionId: permissionId, smartAccount: msg.sender});
+        delete $permitERC4337Paymaster[permissionId][msg.sender];
+        delete $sessionValidity[permissionId][msg.sender];
+
+        // slither-disable-next-line unused-return
+        $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
+        $enabledERC7739.removeAll({permissionId: permissionId, smartAccount: msg.sender});
+        emit SessionRemoved(permissionId, msg.sender);
+    }
+
+    /// @notice Increments the enable nonce, invalidating signed but unused enable data for this permission.
+    function revokeEnableSignature(PermissionId permissionId) external {
+        uint256 nonce = $signerNonce[permissionId][msg.sender]++;
+        emit NonceIterated(permissionId, msg.sender, nonce + 1);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Module lifecycle
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// @notice Installs the module, optionally enabling sessions.
+    /// @param data Empty, or `abi.encodePacked(enableMode, abi.encode(Session[]))`.
+    function onInstall(bytes calldata data) external override {
+        // Sessions left over from an earlier installation must be removed explicitly first; reinstalling must not
+        // silently reactivate them.
+        if ($enabledSessions.length(msg.sender) != 0) {
+            revert SmartSessionModuleAlreadyInstalled(msg.sender);
+        }
+        if (data.length == 0) return;
+
+        SmartSessionMode mode = SmartSessionMode(uint8(bytes1(data[:1])));
+        if (!mode.isEnableMode()) revert InvalidMode();
+        data = data[1:];
+
+        // abi.decode(data, (Session[])) without copying to memory.
+        Session[] calldata sessions;
+        assembly ("memory-safe") {
+            let dataPointer := add(data.offset, calldataload(data.offset))
+            sessions.offset := add(dataPointer, 32)
+            sessions.length := calldataload(dataPointer)
+        }
+        _enableSessions(sessions);
+    }
+
+    /// @notice Removes every session of the calling account.
+    function onUninstall(bytes calldata) external override {
+        uint256 count = $enabledSessions.length(msg.sender);
+        for (uint256 i; i < count; ++i) {
+            // removeSession shifts the set, so always remove the first entry.
+            removeSession(PermissionId.wrap($enabledSessions.valueAt(msg.sender, 0)));
+        }
+    }
+
+    function isInitialized(address smartAccount) external view override returns (bool) {
+        return $enabledSessions.length(smartAccount) != 0;
+    }
+
+    function isModuleType(uint256 typeID) external pure override returns (bool) {
+        return typeID == ERC7579_MODULE_TYPE_VALIDATOR;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Internal
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // Policies run with msg.sender = policy, so reentrancy from them cannot change this account's state.
+    // slither-disable-next-line reentrancy-benign,reentrancy-events
+    function _enableSessions(Session[] calldata sessions)
+        internal
+        returns (PermissionId[] memory permissionIds)
+    {
+        uint256 length = sessions.length;
+        if (length == 0) revert InvalidData();
+
+        permissionIds = new PermissionId[](length);
+        for (uint256 i; i < length; ++i) {
+            PermissionId permissionId = sessions[i].toPermissionId();
+            permissionIds[i] = permissionId;
+            // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+            // change this account's state.
+            // forge-lint: disable-next-line(reentrancy-events)
+            emit SessionCreated(permissionId, msg.sender);
+            _enableSession(permissionId, sessions[i]);
+        }
+    }
+
+    /// @dev Records `session` for the calling account, then calls into its policies (checks-effects-interactions).
+    /// An already set session validator is kept; policies that are enabled again are re-initialized.
+    function _enableSession(PermissionId permissionId, Session memory session) internal {
+        // slither-disable-next-line unused-return
+        $enabledSessions.add(msg.sender, PermissionId.unwrap(permissionId));
+        _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
+        _setSessionValidity(permissionId, session.validAfter, session.validUntil);
+        if (!_isISessionValidatorSet(permissionId, msg.sender)) {
+            $sessionValidators.enable({
+                permissionId: permissionId,
+                sessionValidator: session.sessionValidator,
+                sessionValidatorConfig: session.sessionValidatorInitData
+            });
+        }
+        $enabledERC7739.enable(session.erc7739Policies.allowedERC7739Content, permissionId);
+
+        $userOpPolicies.enable({
+            policyType: PolicyType.USER_OP,
+            permissionId: permissionId,
+            configId: permissionId.toUserOpPolicyId().toConfigId(),
+            policyDatas: session.userOpPolicies
+        });
+        $erc1271Policies.enable({
+            policyType: PolicyType.ERC1271,
+            permissionId: permissionId,
+            configId: permissionId.toErc1271PolicyId().toConfigId(),
+            policyDatas: session.erc7739Policies.erc1271Policies
+        });
+        $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
+    }
+
+    function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {
+        $permitERC4337Paymaster[permissionId][msg.sender] = enabled;
+        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+        // change this account's state.
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit PermissionIdPermit4337Paymaster(permissionId, msg.sender, enabled);
+    }
+
     function _setSessionValidity(PermissionId permissionId, uint48 validAfter, uint48 validUntil)
         internal
     {
@@ -136,8 +324,8 @@ abstract contract SmartSessionBase is ISmartSession {
         emit SessionValiditySet(permissionId, msg.sender, validAfter, validUntil);
     }
 
-    /// @dev The validity window as ERC-4337 validation data (`validUntil << 160 | validAfter << 208`), so the
-    /// EntryPoint enforces it without reading the timestamp during validation (ERC-7562).
+    /// @dev The validity window as ERC-4337 validation data, so the EntryPoint enforces it without this contract
+    /// reading `TIMESTAMP` during validation (banned by ERC-7562).
     function _sessionValidityData(PermissionId permissionId, address account)
         internal
         view
@@ -149,7 +337,7 @@ abstract contract SmartSessionBase is ISmartSession {
         );
     }
 
-    /// @dev Same bounds as the EntryPoint: `validAfter < block.timestamp <= validUntil`.
+    /// @dev Same bounds as the EntryPoint: `validAfter < block.timestamp <= validUntil`, `0` = unbounded.
     // slither-disable-next-line timestamp
     function _isWithinSessionValidity(PermissionId permissionId, address account)
         internal
@@ -157,11 +345,42 @@ abstract contract SmartSessionBase is ISmartSession {
         returns (bool)
     {
         SessionValidity memory validity = $sessionValidity[permissionId][account];
-        // Session expiry is time-based by design; second-level validator drift is irrelevant here.
+        // Session expiry is time-based by design.
         // forge-lint: disable-next-item(block-timestamp)
         if (block.timestamp <= validity.validAfter) return false;
         // forge-lint: disable-next-item(block-timestamp)
         return validity.validUntil == 0 || block.timestamp <= validity.validUntil;
+    }
+
+    function _isISessionValidatorSet(PermissionId permissionId, address account)
+        internal
+        view
+        returns (bool)
+    {
+        return address($sessionValidators[permissionId][account].sessionValidator) != address(0);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Views
+    // -----------------------------------------------------------------------------------------------------------------
+
+    function getSessionDigest(
+        PermissionId permissionId,
+        address account,
+        Session memory data,
+        SmartSessionMode mode
+    ) external view returns (bytes32) {
+        return data.sessionDigest({
+            account: account, mode: mode, nonce: $signerNonce[permissionId][account]
+        });
+    }
+
+    function getPermissionId(Session calldata session) external pure returns (PermissionId) {
+        return session.toPermissionId();
+    }
+
+    function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
+        return $signerNonce[permissionId][account];
     }
 
     function getSessionValidity(PermissionId permissionId, address account)
@@ -173,340 +392,15 @@ abstract contract SmartSessionBase is ISmartSession {
         return (validity.validAfter, validity.validUntil);
     }
 
-    function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {
-        $permitERC4337Paymaster[permissionId][msg.sender] = enabled;
-        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
-        // change this account's state.
-        // forge-lint: disable-next-line(reentrancy-events)
-        emit PermissionIdPermit4337Paymaster(permissionId, msg.sender, enabled);
-    }
-
-    /**
-     * @notice Enable ERC1271 policies for a specific permission
-     * @param permissionId The unique identifier for the permission
-     * @param erc1271Policies An array of PolicyData structures containing ERC1271 policy information
-     */
-    function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies)
-        public
-        enableWithPermissionId(permissionId)
-    {
-        // Enable the ERC1271 policies
-        $enabledERC7739.enable({
-            contexts: erc1271Policies.allowedERC7739Content, permissionId: permissionId
-        });
-        $erc1271Policies.enable({
-            policyType: PolicyType.ERC1271,
-            permissionId: permissionId,
-            configId: permissionId.toErc1271PolicyId().toConfigId(),
-            policyDatas: erc1271Policies.erc1271Policies
-        });
-    }
-
-    /**
-     * @notice Disable specific ERC1271 policies and contents for a given permission
-     * @param permissionId The unique identifier for the permission
-     * @param policies An array of policy addresses to be disabled
-     * @param contexts An array of 7739 contents to be disabled
-     */
-    function disableERC1271Policies(
-        PermissionId permissionId,
-        address[] calldata policies,
-        ERC7739Context[] calldata contexts
-    ) public disableWithPermissionId(permissionId) {
-        // Check if the session is enabled for the caller and the given permission
-        // forgefmt: disable-next-item
-        if (!$enabledSessions.contains(msg.sender, PermissionId.unwrap(permissionId))) revert InvalidSession(permissionId);
-
-        $enabledERC7739.disable(contexts, permissionId, msg.sender);
-
-        // Disable the specified ERC1271 policies
-        $erc1271Policies.disable({
-            policyType: PolicyType.ERC1271,
-            smartAccount: msg.sender,
-            permissionId: permissionId,
-            policies: policies
-        });
-    }
-
-    /**
-     * @notice Enable action policies for a specific permission
-     * @param permissionId The unique identifier for the permission
-     * @param actionPolicies An array of ActionData structures containing action policy information
-     */
-    function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies)
-        public
-        enableWithPermissionId(permissionId)
-    {
-        // Enable the action policies
-        $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: actionPolicies});
-    }
-
-    /**
-     * @notice Disable specific action policies for a given permission and action ID
-     * @param permissionId The unique identifier for the permission
-     * @param actionId The specific action identifier
-     */
-    function disableActionId(PermissionId permissionId, ActionId actionId)
-        public
-        disableWithPermissionId(permissionId)
-    {
-        // Disable all action policies for the given action ID
-        // No need to emit events here, as unlike with 7739contents and 1271 policies,
-        // here disabling the actionId means all action policies are also disabled
-        $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
-
-        // remove action Id from enabledActionIds
-        // slither-disable-next-line unused-return
-        $actionPolicies.enabledActionIds[permissionId].remove(msg.sender, ActionId.unwrap(actionId));
-        emit ISmartSession.ActionIdDisabled(permissionId, actionId, msg.sender);
-    }
-
-    /**
-     * @notice Disable action id for a given permission and action ID
-     * @param permissionId The unique identifier for the permission
-     * @param actionId The specific action identifier
-     * @param policies An array of policy addresses to be disabled
-     */
-    function disableActionPolicies(
-        PermissionId permissionId,
-        ActionId actionId,
-        address[] calldata policies
-    ) public disableWithPermissionId(permissionId) {
-        // Disable the specified action policies for the given action ID
-        $actionPolicies.actionPolicies[actionId].disable({
-            policyType: PolicyType.ACTION,
-            smartAccount: msg.sender,
-            permissionId: permissionId,
-            policies: policies
-        });
-
-        // remove the actionId from the enabledActionIds if no policies are left
-        if (
-            $actionPolicies.actionPolicies[actionId].policyList[permissionId].length(msg.sender)
-                == 0
-        ) {
-            // slither-disable-next-line unused-return
-            $actionPolicies.enabledActionIds[permissionId].remove(
-                msg.sender, ActionId.unwrap(actionId)
-            );
-            emit ISmartSession.ActionIdDisabled(permissionId, actionId, msg.sender);
-        }
-    }
-
-    /**
-     * @notice Enable multiple sessions with their associated policies
-     * @param sessions An array of Session structures to be enabled
-     * @return permissionIds An array of PermissionId values corresponding to the enabled sessions
-     */
-    function enableSessions(Session[] calldata sessions)
+    function getPermissionIDs(address account)
         external
+        view
         returns (PermissionId[] memory permissionIds)
     {
-        return _enableSessions(sessions);
-    }
-
-    // Policies run with msg.sender = policy, so reentrancy from them cannot change this account's state.
-    // slither-disable-next-line reentrancy-benign,reentrancy-events
-    function _enableSessions(Session[] calldata sessions)
-        internal
-        returns (PermissionId[] memory permissionIds)
-    {
-        uint256 length = sessions.length;
-        if (length == 0) revert InvalidData();
-
-        permissionIds = new PermissionId[](length);
-
-        for (uint256 i; i < length; ++i) {
-            Session calldata session = sessions[i];
-            PermissionId permissionId = session.toPermissionId();
-            permissionIds[i] = permissionId;
-
-            // Record the session before calling into policies (checks-effects-interactions).
-            // slither-disable-next-line unused-return
-            $enabledSessions.add({account: msg.sender, value: PermissionId.unwrap(permissionId)});
-            // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
-            // change this account's state.
-            // forge-lint: disable-next-line(reentrancy-events)
-            emit SessionCreated(permissionId, msg.sender);
-            _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
-            _setSessionValidity(permissionId, session.validAfter, session.validUntil);
-
-            if (!_isISessionValidatorSet(permissionId, msg.sender)) {
-                $sessionValidators.enable({
-                    permissionId: permissionId,
-                    sessionValidator: session.sessionValidator,
-                    sessionValidatorConfig: session.sessionValidatorInitData
-                });
-            }
-            $enabledERC7739.enable(session.erc7739Policies.allowedERC7739Content, permissionId);
-
-            $userOpPolicies.enable({
-                policyType: PolicyType.USER_OP,
-                permissionId: permissionId,
-                configId: permissionId.toUserOpPolicyId().toConfigId(),
-                policyDatas: session.userOpPolicies
-            });
-            $erc1271Policies.enable({
-                policyType: PolicyType.ERC1271,
-                permissionId: permissionId,
-                configId: permissionId.toErc1271PolicyId().toConfigId(),
-                policyDatas: session.erc7739Policies.erc1271Policies
-            });
-            $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
-        }
-    }
-
-    /**
-     * @notice Remove a session and all its associated policies
-     * @param permissionId The unique identifier for the session to be removed
-     */
-    function removeSession(PermissionId permissionId) public {
-        if (permissionId == EMPTY_PERMISSIONID) revert InvalidSession(permissionId);
-
-        // Remove all UserOp policies for this session
-        $userOpPolicies.policyList[permissionId].removeAll(msg.sender);
-
-        // Remove all ERC1271 policies for this session
-        $erc1271Policies.policyList[permissionId].removeAll(msg.sender);
-
-        // Remove all Action policies for this session
-        uint256 actionLength = $actionPolicies.enabledActionIds[permissionId].length(msg.sender);
-        for (uint256 i; i < actionLength; ++i) {
-            ActionId actionId = ActionId.wrap(
-                $actionPolicies.enabledActionIds[permissionId].valueAt(msg.sender, i)
-            );
-            $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
-        }
-
-        // removing all stored actionIds
-        $actionPolicies.enabledActionIds[permissionId].removeAll(msg.sender);
-
-        $sessionValidators.disable({permissionId: permissionId, smartAccount: msg.sender});
-        delete $permitERC4337Paymaster[permissionId][msg.sender];
-        delete $sessionValidity[permissionId][msg.sender];
-
-        // Remove all ERC1271 policies for this session
-        // slither-disable-next-line unused-return
-        $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
-        $enabledERC7739.removeAll({permissionId: permissionId, smartAccount: msg.sender});
-        emit SessionRemoved(permissionId, msg.sender);
-    }
-
-    /**
-     * Initialize the module with the given data
-     *
-     * @param data The data to initialize the module with
-     *         data is expected to be in the format of: abi.encode(SmartSessionMode, abi.encode(Session[]))
-     *         if no data is provided, the module will be installed without any sessions
-     */
-    function onInstall(bytes calldata data) external override {
-        // Its possible that the module was installed before and when uninstalling the module, the smart session storage
-        // for that smart account was not zero'ed correctly. In such cases, we need to check if the smart account has
-        // still some enabled permissions / sessions set.
-        // re-enabling these sessions will cause the smart account to be in the same state as before, potentially
-        // activating sessions that the user thought were terminated. This MUST be avoided.
-        // if this case happens, it's not possible for the account to install the module again, unless the account calls
-        // into the removreSession functions to disable all dangling permissions
-        // forgefmt: disable-next-item
-        if ($enabledSessions.length({ account: msg.sender }) != 0) revert SmartSessionModuleAlreadyInstalled(msg.sender);
-        // It's allowed to install smartsessions on a ERC7579 account without any params
-        if (data.length == 0) return;
-
-        // data is expected to be in the format of:
-        //    abi.encodePacked(SmartSessionMode, abi.encode(Session[]))
-        SmartSessionMode mode = SmartSessionMode(uint8(bytes1(data[:1])));
-        // ensure that the mode provided is a valid ENABLE mode
-        if (!mode.isEnableMode()) revert InvalidMode();
-        // nudge the data pointer to the next byte to make decoding easier
-        data = data[1:];
-        Session[] calldata sessions;
-
-        // equivalent of abi.decode(data,Session[])
+        bytes32[] memory ids = $enabledSessions.values(account);
         assembly ("memory-safe") {
-            let dataPointer := add(data.offset, calldataload(data.offset))
-
-            sessions.offset := add(dataPointer, 32)
-            sessions.length := calldataload(dataPointer)
+            permissionIds := ids
         }
-        _enableSessions(sessions);
-    }
-
-    /**
-     * De-initialize the module with the given data.
-     * All PermissionIds will be wiped from storage
-     */
-    function onUninstall(
-        bytes calldata /*data*/
-    )
-        external
-        override
-    {
-        uint256 configIdsCnt = $enabledSessions.length({account: msg.sender});
-
-        for (uint256 i; i < configIdsCnt; ++i) {
-            // always remove index 0 since the array is shifted down when the first item is removed
-            PermissionId configId =
-                PermissionId.wrap($enabledSessions.valueAt({account: msg.sender, index: 0}));
-            removeSession(configId);
-        }
-    }
-
-    /**
-     * @notice Get the current enable-signature nonce for a given permission ID and account
-     */
-    function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
-        return $signerNonce[permissionId][account];
-    }
-
-    /**
-     * @notice Revoke the current enable signature by incrementing the nonce
-     * @param permissionId The permission ID to revoke the signature for
-     */
-    function revokeEnableSignature(PermissionId permissionId) external {
-        uint256 nonce = $signerNonce[permissionId][msg.sender]++;
-        emit NonceIterated(permissionId, msg.sender, nonce + 1);
-    }
-
-    function isInitialized(address smartAccount) external view override returns (bool) {
-        return $enabledSessions.length({account: smartAccount}) != 0;
-    }
-
-    function isModuleType(uint256 typeID) external pure override returns (bool) {
-        return typeID == ERC7579_MODULE_TYPE_VALIDATOR;
-    }
-
-    function getSessionDigest(
-        PermissionId permissionId,
-        address account,
-        Session memory data,
-        SmartSessionMode mode
-    ) public view returns (bytes32) {
-        uint256 nonce = $signerNonce[permissionId][account];
-        return data.sessionDigest({account: account, mode: mode, nonce: nonce});
-    }
-
-    function getPermissionId(Session calldata session)
-        public
-        pure
-        returns (PermissionId permissionId)
-    {
-        permissionId = session.toPermissionId();
-    }
-
-    function _isISessionValidatorSet(PermissionId permissionId, address account)
-        internal
-        view
-        returns (bool)
-    {
-        return address($sessionValidators[permissionId][account].sessionValidator) != address(0);
-    }
-
-    function isISessionValidatorSet(PermissionId permissionId, address account)
-        external
-        view
-        returns (bool)
-    {
-        return _isISessionValidatorSet(permissionId, account);
     }
 
     function isPermissionEnabled(PermissionId permissionId, address account)
@@ -517,9 +411,25 @@ abstract contract SmartSessionBase is ISmartSession {
         return $enabledSessions.contains(account, PermissionId.unwrap(permissionId));
     }
 
-    // This function accepts not the array of policies, but full PolicyData,
-    // So it is easier to use it with an EnableSessions object
-    // If you just need to check array of addresses, use is____PolicyEnabled methods in a loop
+    function isISessionValidatorSet(PermissionId permissionId, address account)
+        external
+        view
+        returns (bool)
+    {
+        return _isISessionValidatorSet(permissionId, account);
+    }
+
+    function getSessionValidatorAndConfig(address account, PermissionId permissionId)
+        external
+        view
+        returns (address sessionValidator, bytes memory sessionValidatorData)
+    {
+        SignerConf storage $conf = $sessionValidators[permissionId][account];
+        sessionValidator = address($conf.sessionValidator);
+        sessionValidatorData = $conf.config.load();
+    }
+
+    /// @dev Takes full `PolicyData` (not addresses) so a `Session` can be checked directly.
     function areUserOpPoliciesEnabled(
         address account,
         PermissionId permissionId,
@@ -530,8 +440,6 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
-    // This function accepts not the array of policies, but full PolicyData,
-    // So it is easier to use it with an EnableSessions object
     function areERC1271PoliciesEnabled(
         address account,
         PermissionId permissionId,
@@ -542,8 +450,6 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
-    // This function accepts not the array of policies, but full ActionData,
-    // So it is easier to use it with an EnableSessions object
     function areActionsEnabled(
         address account,
         PermissionId permissionId,
@@ -570,7 +476,6 @@ abstract contract SmartSessionBase is ISmartSession {
         return $erc1271Policies.policyList[permissionId].contains(account, policy);
     }
 
-    // for action policies
     function isActionPolicyEnabled(
         address account,
         PermissionId permissionId,
@@ -582,7 +487,6 @@ abstract contract SmartSessionBase is ISmartSession {
         );
     }
 
-    // for actionIds
     function isActionIdEnabled(address account, PermissionId permissionId, ActionId actionId)
         external
         view
@@ -640,26 +544,16 @@ abstract contract SmartSessionBase is ISmartSession {
     function getEnabledERC7739Content(address account, PermissionId permissionId)
         external
         view
-        returns (ERC7739ContextHashes[] memory enabledERC7739ContentHashes)
+        returns (ERC7739ContextHashes[] memory contents)
     {
-        uint256 length = $enabledERC7739.enabledDomainSeparators[permissionId].length(account);
-        enabledERC7739ContentHashes = new ERC7739ContextHashes[](length);
-        for (uint256 i; i < length; ++i) {
-            enabledERC7739ContentHashes[i].appDomainSeparator =
-                $enabledERC7739.enabledDomainSeparators[permissionId].valueAt(account, i);
-            enabledERC7739ContentHashes[i].contentNameHashes = $enabledERC7739.enabledContentNames[permissionId][enabledERC7739ContentHashes[i].appDomainSeparator].values(
+        bytes32[] memory domainSeparators =
+            $enabledERC7739.enabledDomainSeparators[permissionId].values(account);
+        contents = new ERC7739ContextHashes[](domainSeparators.length);
+        for (uint256 i; i < domainSeparators.length; ++i) {
+            contents[i].appDomainSeparator = domainSeparators[i];
+            contents[i].contentNameHashes = $enabledERC7739.enabledContentNames[permissionId][domainSeparators[i]].values(
                 account
             );
         }
-    }
-
-    function getSessionValidatorAndConfig(address account, PermissionId permissionId)
-        external
-        view
-        returns (address sessionValidator, bytes memory sessionValidatorData)
-    {
-        SignerConf storage $s = $sessionValidators[permissionId][account];
-        sessionValidator = address($s.sessionValidator);
-        sessionValidatorData = $s.config.load();
     }
 }

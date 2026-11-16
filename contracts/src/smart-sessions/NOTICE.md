@@ -8,7 +8,9 @@ This directory is derived from **SmartSession** in
 
 The unmodified upstream files are in the commit
 `chore(contracts): vendor erc7579/smartsessions f5aaf86 core verbatim`; `git diff` against it shows
-every change.
+every change. Comments were rewritten throughout; upstream authorship is kept in each derived file's
+header (`Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera`) and
+here. The ERC-7739 assembly in `core/SmartSessionERC7739.sol` is derived from Solady's `ERC1271` (MIT).
 
 ## Licences
 
@@ -17,7 +19,7 @@ every change.
 | `SmartSession.sol`, `core/*`, `DataTypes.sol`, `lib/{ConfigLib,EncodeLib,HashLib,IdLib,PolicyLib}.sol` | AGPL-3.0-only (upstream licence; see `LICENSE`)                                                                       |
 | `ISmartSession.sol`                                                                                    | AGPL-3.0-only — upstream marks it `UNLICENSED`; this version is regenerated from the AGPL implementation              |
 | `interfaces/IPolicy.sol`, `interfaces/ISessionValidator.sol`                                           | LGPL-3.0-only (upstream licence)                                                                                      |
-| `lib/ExecutionLib.sol`, `lib/ValidationDataLib.sol`, `utils/*`                                         | Apache-2.0; derived from MIT-licensed upstream code (notice below)                                                    |
+| `lib/ExecutionLib.sol`, `lib/ValidationDataLib.sol`, `utils/EnumerableSet4337.sol`                     | Apache-2.0; derived from MIT-licensed upstream code (notice below)                                                    |
 | `lib/FlatBytesLib.sol`                                                                                 | Apache-2.0; derived from MIT-licensed [rhinestonewtf/flatbytes](https://github.com/rhinestonewtf/flatbytes) `bb0859e` |
 
 AGPL/LGPL files cannot be relicensed without the copyright holders' permission.
@@ -38,6 +40,7 @@ MIT notice for the MIT-derived files:
 `external/policies/` (Namera ships its own policies), `interfaces/IRegistry.sol` (registry checks are
 disabled upstream), `utils/EnumerableMap4337.sol` (unused), the `UintSet`, `AddressArray` and
 `UintArray` types (unused), and unused helpers, errors, constants and operators.
+`utils/AssociatedArrayLib.sol` is merged into `utils/EnumerableSet4337.sol` (same storage layout).
 
 ## Dependency changes
 
@@ -95,6 +98,15 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - **Enable signature check.** An account whose `isValidSignature` reverts now fails with
   `InvalidEnableSignature` instead of bubbling the revert.
 - **Renames.** `EnumerableSet.at` → `valueAt` (`at` becomes a reserved word).
+
+## Simplifications (no ABI change)
+
+- One `_enableSession` routine shared by `enableSessions`/`onInstall` and the ENABLE mode (upstream
+  repeated it). `PolicyLib.check` reuses `tryCheck`. Small hash helpers are inlined in `HashLib`.
+- `EnumerableSet.removeAll` clears the array in one pass instead of swap-and-pop per element.
+- `disableERC1271Policies` drops a duplicate enabled-check (its modifier already reverts).
+- `FlatBytesLib.store` no longer clears first; configs are only stored on cleared storage.
+- Externally-only functions are `external`. The full ABI (74 entries) is unchanged by these steps.
 
 ## Static analysis
 

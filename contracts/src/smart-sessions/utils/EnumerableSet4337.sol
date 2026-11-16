@@ -1,170 +1,38 @@
 // SPDX-License-Identifier: Apache-2.0
-
+// Derived from erc7579/smartsessions@f5aaf86 (MIT; Rhinestone): EnumerableSet4337 and AssociatedArrayLib, themselves
+// forked from OpenZeppelin's EnumerableSet (MIT). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
-import "./AssociatedArrayLib.sol";
-
-/**
- * Fork of OZ's EnumerableSet that makes all storage access ERC-4337 compliant via associated storage
- * @author zeroknots.eth (rhinestone)
- */
+/// @notice Enumerable sets kept per account in ERC-7562 associated storage.
+/// @dev Each set stores, per account, an array at `keccak256(account ‖ set.slot)`: the length at that slot and
+/// element `i` at `slot + 1 + i`, plus a position map `value => account => index + 1`. Every slot is derived
+/// from the account, so validation-time reads are allowed by ERC-7562 as long as a set holds at most 127 values.
 library EnumerableSet {
-    using AssociatedArrayLib for AssociatedArrayLib.Bytes32Array;
-    // To implement this library for multiple types with as little code
-    // repetition as possible, we write it in terms of a generic Set type with
-    // bytes32 values.
-    // The Set implementation uses private functions, and user-facing
-    // implementations (such as AddressSet) are just wrappers around the
-    // underlying Set.
-    // This means that we can only create new EnumerableSets for types that fit
-    // in bytes32.
+    error AssociatedArray_OutOfBounds(uint256 index);
 
     struct Set {
-        // Storage of set values
-        AssociatedArrayLib.Bytes32Array _values;
-        // Position is the index of the value in the `values` array plus 1.
-        // Position 0 is used to mean a value is not in the set.
+        uint256 _array; // base slot only; data lives at keccak256(account ‖ this slot)
         mapping(bytes32 value => mapping(address account => uint256)) _positions;
     }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function _add(Set storage set, address account, bytes32 value) private returns (bool) {
-        if (!_contains(set, account, value)) {
-            set._values.push(account, value);
-            // The value is stored at length-1, but we add 1 to all indexes
-            // and use 0 as a sentinel value
-            set._positions[value][account] = set._values.length(account);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function _remove(Set storage set, address account, bytes32 value) private returns (bool) {
-        // We cache the value's position to prevent multiple reads from the same storage slot
-        uint256 position = set._positions[value][account];
-
-        if (position != 0) {
-            // Equivalent to contains(set, value)
-            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
-            // the array, and then remove the last element (sometimes called as 'swap and pop').
-            // This modifies the order of the array, as noted in {at}.
-
-            uint256 valueIndex = position - 1;
-            uint256 lastIndex = set._values.length(account) - 1;
-
-            if (valueIndex != lastIndex) {
-                bytes32 lastValue = set._values.get(account, lastIndex);
-
-                // Move the lastValue to the index where the value to delete is
-                set._values.set(account, valueIndex, lastValue);
-                // Update the tracked position of the lastValue (that was just moved)
-                set._positions[lastValue][account] = position;
-            }
-
-            // Delete the slot where the moved value was stored
-            set._values.pop(account);
-
-            // Delete the tracked position for the deleted slot
-            delete set._positions[value][account];
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function _removeAll(Set storage set, address account) internal {
-        // get length of the array
-        uint256 len = _length(set, account);
-        for (uint256 i = 1; i <= len; i++) {
-            // get last value
-            bytes32 value = _valueAt(set, account, len - i);
-            _remove(set, account, value);
-        }
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function _contains(Set storage set, address account, bytes32 value)
-        private
-        view
-        returns (bool)
-    {
-        return set._positions[value][account] != 0;
-    }
-
-    /**
-     * @dev Returns the number of values on the set. O(1).
-     */
-    function _length(Set storage set, address account) private view returns (uint256) {
-        return set._values.length(account);
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function _valueAt(Set storage set, address account, uint256 index)
-        private
-        view
-        returns (bytes32)
-    {
-        return set._values.get(account, index);
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function _values(Set storage set, address account) private view returns (bytes32[] memory) {
-        return set._values.getAll(account);
-    }
-
-    // Bytes32Set
 
     struct Bytes32Set {
         Set _inner;
     }
 
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
+    struct AddressSet {
+        Set _inner;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Bytes32Set
+    // -----------------------------------------------------------------------------------------------------------------
+
+    /// @dev Returns true if `value` was added (not already present).
     function add(Bytes32Set storage set, address account, bytes32 value) internal returns (bool) {
         return _add(set._inner, account, value);
     }
 
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
+    /// @dev Returns true if `value` was removed (was present). Does not preserve order.
     function remove(Bytes32Set storage set, address account, bytes32 value)
         internal
         returns (bool)
@@ -173,37 +41,21 @@ library EnumerableSet {
     }
 
     function removeAll(Bytes32Set storage set, address account) internal {
-        return _removeAll(set._inner, account);
+        _removeAll(set._inner, account);
     }
 
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
     function contains(Bytes32Set storage set, address account, bytes32 value)
         internal
         view
         returns (bool)
     {
-        return _contains(set._inner, account, value);
+        return set._inner._positions[value][account] != 0;
     }
 
-    /**
-     * @dev Returns the number of values in the set. O(1).
-     */
     function length(Bytes32Set storage set, address account) internal view returns (uint256) {
         return _length(set._inner, account);
     }
 
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
     function valueAt(Bytes32Set storage set, address account, uint256 index)
         internal
         view
@@ -212,52 +64,22 @@ library EnumerableSet {
         return _valueAt(set._inner, account, index);
     }
 
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
     function values(Bytes32Set storage set, address account)
         internal
         view
         returns (bytes32[] memory)
     {
-        bytes32[] memory store = _values(set._inner, account);
-        bytes32[] memory result;
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            result := store
-        }
-
-        return result;
+        return _values(set._inner, account);
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
     // AddressSet
+    // -----------------------------------------------------------------------------------------------------------------
 
-    struct AddressSet {
-        Set _inner;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
     function add(AddressSet storage set, address account, address value) internal returns (bool) {
         return _add(set._inner, account, bytes32(uint256(uint160(value))));
     }
 
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
     function remove(AddressSet storage set, address account, address value)
         internal
         returns (bool)
@@ -266,66 +88,144 @@ library EnumerableSet {
     }
 
     function removeAll(AddressSet storage set, address account) internal {
-        return _removeAll(set._inner, account);
+        _removeAll(set._inner, account);
     }
 
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
     function contains(AddressSet storage set, address account, address value)
         internal
         view
         returns (bool)
     {
-        return _contains(set._inner, account, bytes32(uint256(uint160(value))));
+        return set._inner._positions[bytes32(uint256(uint160(value)))][account] != 0;
     }
 
-    /**
-     * @dev Returns the number of values in the set. O(1).
-     */
     function length(AddressSet storage set, address account) internal view returns (uint256) {
         return _length(set._inner, account);
     }
 
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function valueAt(AddressSet storage set, address account, uint256 index)
-        internal
-        view
-        returns (address)
-    {
-        return address(uint160(uint256(_valueAt(set._inner, account, index))));
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
     function values(AddressSet storage set, address account)
         internal
         view
-        returns (address[] memory)
+        returns (address[] memory result)
     {
-        bytes32[] memory store = _values(set._inner, account);
-        address[] memory result;
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            result := store
+        bytes32[] memory words = _values(set._inner, account);
+        // Elements were stored from addresses, so the words are clean.
+        assembly ("memory-safe") {
+            result := words
         }
+    }
 
-        return result;
+    // -----------------------------------------------------------------------------------------------------------------
+    // Implementation
+    // -----------------------------------------------------------------------------------------------------------------
+
+    function _arraySlot(Set storage set, address account) private pure returns (uint256 slot) {
+        assembly ("memory-safe") {
+            mstore(0x00, account)
+            mstore(0x20, set.slot)
+            slot := keccak256(0x00, 0x40)
+        }
+    }
+
+    function _length(Set storage set, address account) private view returns (uint256 n) {
+        uint256 slot = _arraySlot(set, account);
+        assembly ("memory-safe") {
+            n := sload(slot)
+        }
+    }
+
+    function _valueAt(Set storage set, address account, uint256 index)
+        private
+        view
+        returns (bytes32 value)
+    {
+        uint256 slot = _arraySlot(set, account);
+        assembly ("memory-safe") {
+            if iszero(lt(index, sload(slot))) {
+                mstore(0x00, 0x8277484f) // `AssociatedArray_OutOfBounds(uint256)`
+                mstore(0x20, index)
+                revert(0x1c, 0x24)
+            }
+            value := sload(add(slot, add(index, 1)))
+        }
+    }
+
+    function _values(Set storage set, address account)
+        private
+        view
+        returns (bytes32[] memory result)
+    {
+        uint256 slot = _arraySlot(set, account);
+        uint256 n;
+        assembly ("memory-safe") {
+            n := sload(slot)
+        }
+        result = new bytes32[](n);
+        for (uint256 i; i < n; ++i) {
+            bytes32 value;
+            assembly ("memory-safe") {
+                value := sload(add(slot, add(i, 1)))
+            }
+            result[i] = value;
+        }
+    }
+
+    function _add(Set storage set, address account, bytes32 value) private returns (bool) {
+        if (set._positions[value][account] != 0) return false;
+        uint256 slot = _arraySlot(set, account);
+        uint256 n;
+        assembly ("memory-safe") {
+            n := sload(slot)
+            sstore(add(slot, add(n, 1)), value)
+            sstore(slot, add(n, 1))
+        }
+        set._positions[value][account] = n + 1;
+        return true;
+    }
+
+    /// @dev Swap-and-pop: the last element moves into the removed element's place.
+    function _remove(Set storage set, address account, bytes32 value) private returns (bool) {
+        uint256 position = set._positions[value][account];
+        if (position == 0) return false;
+
+        uint256 slot = _arraySlot(set, account);
+        uint256 n;
+        assembly ("memory-safe") {
+            n := sload(slot)
+        }
+        // Element with 1-based position `p` is stored at `slot + p`.
+        if (position != n) {
+            bytes32 last;
+            assembly ("memory-safe") {
+                last := sload(add(slot, n))
+                sstore(add(slot, position), last)
+            }
+            set._positions[last][account] = position;
+        }
+        assembly ("memory-safe") {
+            sstore(add(slot, n), 0)
+            sstore(slot, sub(n, 1))
+        }
+        delete set._positions[value][account];
+        return true;
+    }
+
+    function _removeAll(Set storage set, address account) private {
+        uint256 slot = _arraySlot(set, account);
+        uint256 n;
+        assembly ("memory-safe") {
+            n := sload(slot)
+        }
+        for (uint256 i = 1; i <= n; ++i) {
+            bytes32 value;
+            assembly ("memory-safe") {
+                value := sload(add(slot, i))
+                sstore(add(slot, i), 0)
+            }
+            delete set._positions[value][account];
+        }
+        assembly ("memory-safe") {
+            sstore(slot, 0)
+        }
     }
 }

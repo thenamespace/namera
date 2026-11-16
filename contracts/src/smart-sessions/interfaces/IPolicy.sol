@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {ConfigId} from "../DataTypes.sol";
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
-/**
- * IPolicy are external contracts that enforce policies / permission on 4337/7579 executions
- * Since it's not the account calling into this contract, and check functions are called during the ERC4337 validation
- * phase, IPolicy implementations MUST follow ERC4337 storage and opcode restructions
- * A recommend storage layout to store policy related data:
- *      mapping(id   =>   msg.sender   =>   userOp.sender(account) => state)
- *                        ^ smartSession    ^ smart account (associated storage)
- */
+/// @notice A policy contract enforcing limits for Smart Sessions.
+/// @dev Checks run during ERC-4337 validation, so policies must follow ERC-7562 storage and opcode rules. Keep
+/// state as `configId => multiplexer (msg.sender) => account => state`, so it is associated with the account.
 interface IPolicy {
     event PolicySet(ConfigId id, address multiplexer, address account);
 
@@ -20,40 +16,22 @@ interface IPolicy {
     /// @dev ERC-165. Policies report support for the policy type interfaces below.
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 
-    /**
-     * This function may be called by the multiplexer (SmartSessions) without deinitializing first.
-     * Policies MUST overwrite the current state when this happens
-     * @notice ATTENTION: This method is called during permission installation as part of the enabling policies flow.
-     * A secure policy would minimize external calls from this method (ideally, to 0) to prevent passing control flow to
-     * external contracts.
-     */
+    /// @notice Configures the policy for `account` and `configId`, overwriting any previous configuration.
+    /// @dev Called while a session is enabled, possibly inside user operation validation; avoid external calls.
     function initializeWithMultiplexer(address account, ConfigId configId, bytes calldata initData)
         external;
 }
 
-/**
- * IUserOpPolicy is a policy that enforces restrictions on user operations. It is called during the validation phase
- * of the ERC4337 execution.
- * Use this policy to enforce restrictions on user operations (userOp.gas, Time based restrictions).
- * The checkUserOpPolicy function returns ERC-4337 validation data: 0 allows the user operation, 1 rejects it.
- * While it is possible to return values that pack validUntil and validAfter timestamps, SmartSession Policies can not
- * utilize aggregator addresses (PolicyLib.isFailed() will prevent this).
- */
+/// @notice Policy run on every user operation of a session (e.g. gas or time limits).
+/// @dev Returns ERC-4337 validation data: 0 (valid), 1 (invalid), or time bounds. Aggregator values are rejected.
 interface IUserOpPolicy is IPolicy {
     function checkUserOpPolicy(ConfigId id, ERC4337.PackedUserOperation calldata userOp)
         external
         returns (uint256);
 }
 
-/**
- * IActionPolicy is a policy that enforces restrictions on actions. It is called during the validation phase
- * of the ERC4337 execution.
- * ERC7579 accounts natively support batched executions. So in one userOp, multiple actions can be executed.
- * SmartSession will destruct the execution batch, and call the policy for each action, if the policy is installed for
- * the actionId for the account.
- * Use this policy to enforce restrictions on individual actions (i.e. transfers, approvals, etc).
- * The checkAction function returns ERC-4337 validation data: 0 allows the action, 1 rejects it.
- */
+/// @notice Policy run on each matching action (target and selector), including each call of a batch.
+/// @dev Returns ERC-4337 validation data: 0 (valid), 1 (invalid), or time bounds.
 interface IActionPolicy is IPolicy {
     function checkAction(
         ConfigId id,
@@ -64,12 +42,8 @@ interface IActionPolicy is IPolicy {
     ) external returns (uint256);
 }
 
-/**
- * I1271Policy is a policy that enforces restrictions on 1271 signed actions. It is called during an ERC1271 signature
- * validation
- */
+/// @notice Policy run when a session key signs an ERC-1271 request; `requestSender` is the verifying contract.
 interface I1271Policy is IPolicy {
-    // request sender is probably protocol, so can introduce policies based on it.
     function check1271SignedAction(
         ConfigId id,
         address requestSender,

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// Derived from erc7579/smartsessions@f5aaf86 (MIT; Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 /// @dev ERC-7579 batch execution entry.
@@ -8,12 +9,10 @@ struct Execution {
     bytes callData;
 }
 
-/**
- * Decodes ERC-7579 `execute(bytes32 mode, bytes executionCalldata)` user operation calldata.
- * Single executions and execution modes are decoded with Solady's LibERC7579. Batches are decoded into a typed
- * `Execution[] calldata` so Solidity validates every field on access: SmartSession compares `target` against
- * `msg.sender` and `address(this)`, which must not see dirty upper address bits.
- */
+/// @notice Decodes ERC-7579 `execute(bytes32 mode, bytes executionCalldata)` user operation calldata.
+/// Single executions and execution modes are decoded with Solady's LibERC7579. Batches are decoded into a typed
+/// `Execution[] calldata` so Solidity validates every field on access: SmartSession compares `target` against
+/// `msg.sender` and `address(this)`, which must not see dirty upper address bits.
 library ExecutionLib {
     /// @dev Returns `executionCalldata` from `execute(bytes32,bytes)` calldata, with bounds checks.
     function decodeUserOpCallData(bytes calldata userOpCallData)

@@ -1,24 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import "./DataTypes.sol";
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
-/**
- * @title ISmartSession
- * @author Filipp Makarov (Biconomy) & zeroknots.eth (Rhinestone)
- * @dev A collaborative effort between Rhinestone and Biconomy to create a powerful
- *      and flexible session key management system for ERC-4337 and ERC-7579 accounts.
- * SmartSession is an advanced module for ERC-4337 and ERC-7579 compatible smart contract wallets, enabling granular
- * control over session keys. It allows users to create and manage temporary, limited-permission access to their
- * accounts through configurable policies. The module supports various policy types, including user operation
- * validation, action-specific policies, and ERC-1271 signature validation. SmartSession implements a unique "enable
- * flow" that allows session keys to be created within the first user operation, enhancing security and user experience.
- * It uses a nested EIP-712 approach for signature validation, providing phishing resistance and compatibility with
- * existing wallet interfaces. The module also supports batched executions and integrates with external policy contracts
- * for flexible permission management. Overall, SmartSession offers a comprehensive solution for secure, temporary
- * account access in the evolving landscape of account abstraction.
- */
+/// @title ISmartSession
+/// @notice ERC-7579 validator module for session keys. A session (identified by its `PermissionId`) pairs a
+/// session validator, which checks the session key's signature, with policies that bound what the key may do:
+/// user-operation policies, per-action policies and ERC-1271 policies. Sessions can be enabled by the account
+/// directly or inside the first user operation that uses them, with an owner signature (ENABLE mode).
 interface ISmartSession {
     error AssociatedArray_OutOfBounds(uint256 index);
     error ChainIdMismatch(uint64 providedChainId);
@@ -62,90 +53,83 @@ interface ISmartSession {
     );
     event SessionCreated(PermissionId permissionId, address account);
     event SessionRemoved(PermissionId permissionId, address smartAccount);
-
     event SessionValiditySet(
         PermissionId permissionId, address smartAccount, uint48 validAfter, uint48 validUntil
     );
-
     event PermissionIdPermit4337Paymaster(
         PermissionId permissionId, address smartAccount, bool enabled
     );
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                           ERC7579                          */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    // -----------------------------------------------------------------------------------------------------------------
+    // ERC-7579 validator
+    // -----------------------------------------------------------------------------------------------------------------
 
-    /**
-     * ERC4337/ERC7579 validation function
-     * the primary purpose of this function, is to validate if a userOp forwarded by a 7579 account is valid.
-     * This function will dissect the userop.signature field, and parse out the provided PermissionId, which identifies
-     * a
-     * unique ID of a dapp for a specific user. n Policies and one Signer contract are mapped to this Id and will be
-     * checked. Only UserOps that pass policies and signer checks, are considered valid.
-     * Enable Flow:
-     *     SmartSessions allows session keys to be created within the "first" UserOp. If the enable flow is chosen, the
-     *     EnableSession data, which is packed in userOp.signature is parsed, and stored in the SmartSession storage.
-     *
-     */
+    /// @notice Validates a user operation of the calling account against a session.
+    /// @dev `userOp.signature` is `mode ‖ data`. In USE mode `data` is `permissionId ‖ sessionKeySignature`; in the
+    /// enable modes it is the FastLZ-compressed `abi.encode(EnableSession, sessionKeySignature)`.
     function validateUserOp(ERC4337.PackedUserOperation memory userOp, bytes32 userOpHash)
         external
         returns (ValidationData vd);
-    /**
-     * ERC7579 compliant onInstall function.
-     * expected to abi.encode(Session[]) for the enable data
-     *
-     * Note: It's possible to install the smartsession module with data = ""
-     */
+
+    /// @notice Installs the module. `data` is empty or `abi.encodePacked(enableMode, abi.encode(Session[]))`.
     function onInstall(bytes memory data) external;
 
-    /**
-     * ERC7579 compliant uninstall function.
-     * will wipe all configIds and associated Policies / Signers
-     */
+    /// @notice Removes every session of the calling account.
     function onUninstall(bytes memory) external;
 
-    /**
-     * ERC7579 compliant ERC1271 function
-     * this function allows session keys to sign ERC1271 requests.
-     */
+    /// @notice ERC-7579 ERC-1271 forwarding: validates a session-key signature wrapped in ERC-7739.
     function isValidSignatureWithSender(address sender, bytes32 hash, bytes memory signature)
         external
         view
         returns (bytes4 result);
 
     function isInitialized(address smartAccount) external view returns (bool);
+
     function isModuleType(uint256 typeID) external pure returns (bool);
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      Manage Sessions                       */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Session management (called by the account)
+    // -----------------------------------------------------------------------------------------------------------------
+
     function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies)
         external;
+
     function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies)
         external;
+
     function enableSessions(Session[] memory sessions)
         external
         returns (PermissionId[] memory permissionIds);
+
     function enableUserOpPolicies(PermissionId permissionId, PolicyData[] memory userOpPolicies)
         external;
+
     function disableActionPolicies(
         PermissionId permissionId,
         ActionId actionId,
         address[] memory policies
     ) external;
+
     function disableActionId(PermissionId permissionId, ActionId actionId) external;
+
     function disableERC1271Policies(
         PermissionId permissionId,
         address[] memory policies,
         ERC7739Context[] calldata contexts
     ) external;
+
     function disableUserOpPolicies(PermissionId permissionId, address[] memory policies) external;
+
     function removeSession(PermissionId permissionId) external;
+
+    /// @notice Invalidates enable signatures that have not been used yet.
     function revokeEnableSignature(PermissionId permissionId) external;
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      View Functions                        */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    // -----------------------------------------------------------------------------------------------------------------
+    // Views
+    // -----------------------------------------------------------------------------------------------------------------
 
+    /// @notice The digest the owner signs (per chain) to enable `data` for `account`.
     function getSessionDigest(
         PermissionId permissionId,
         address account,
@@ -154,10 +138,12 @@ interface ISmartSession {
     ) external view returns (bytes32);
 
     function getNonce(PermissionId permissionId, address account) external view returns (uint256);
+
     function getPermissionId(Session memory session)
         external
         pure
         returns (PermissionId permissionId);
+
     function isPermissionEnabled(PermissionId permissionId, address account)
         external
         view

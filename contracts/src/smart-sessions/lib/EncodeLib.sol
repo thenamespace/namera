@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {EnableSession, PermissionId, SmartSessionMode} from "../DataTypes.sol";
 import {LibZip} from "solady/utils/LibZip.sol";
 
+/// @notice Decoding of `userOp.signature`.
 library EncodeLib {
     using LibZip for bytes;
 

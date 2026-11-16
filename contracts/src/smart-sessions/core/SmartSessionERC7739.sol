@@ -1,18 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
+// Nested EIP-712 (ERC-7739) assembly derived from Solady's ERC1271 (MIT).
 pragma solidity 0.8.38;
 
 import {ISmartSession} from "../ISmartSession.sol";
 import {EIP712} from "solady/utils/EIP712.sol";
 
-/// @notice ERC1271 mixin with nested EIP-712 approach.
-/// @author Solady (https://github.com/vectorized/solady/blob/main/src/accounts/ERC1271.sol)
+/// @notice ERC-7739 (nested EIP-712) unwrapping for session-key ERC-1271 signatures.
+/// @dev A session key signs the app's typed data wrapped in `TypedDataSign`, bound to the account's EIP-712
+/// domain, so one session key cannot replay a signature across accounts and wallets still show the app's data:
+///
+///     keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ hashStruct(TypedDataSign({
+///         contents: hashStruct(appStruct),
+///         name, version, chainId, verifyingContract, salt   // the account's eip712Domain()
+///     })))
+///
+/// The signature is `sessionKeySignature ‖ APP_DOMAIN_SEPARATOR ‖ contents ‖ contentsDescription ‖
+/// uint16(contentsDescription.length)`. `keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents)` must equal the
+/// requested hash. Only the `TypedDataSign` workflow is supported (no `PersonalSign`).
 abstract contract SmartSessionERC7739 is ISmartSession {
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                     ERC1271 OPERATIONS                     */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    /// @dev Returns whether the `hash` and `signature` are valid.
-    /// Override if you need non-ECDSA logic.
+    /// @dev Validates the unwrapped signature for the final nested hash; implemented by SmartSession.
     function _erc1271IsValidSignatureNowCalldata(
         address sender,
         bytes32 hash,
@@ -21,11 +28,11 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         bytes calldata contents
     ) internal view virtual returns (bool);
 
-    // Reviewed false positives on Solady's assembly: `0x6492` marker built as `mul(0x6492, div(...))`, and
-    // `result` reassigned on purpose when the ERC-6492 wrapper is present.
+    // Reviewed false positives: the `0x6492...` marker is built as `mul(0x6492, div(...))`, and `result` is
+    // reassigned on purpose when the wrapper is present.
     // slither-disable-start divide-before-multiply,write-after-write
     // forge-lint: disable-start(divide-before-multiply)
-    /// @dev Unwraps and returns the signature.
+    /// @dev Removes an ERC-6492 wrapper (counterfactual accounts) if present.
     function _erc1271UnwrapSignature(bytes calldata signature)
         internal
         view
@@ -33,10 +40,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         returns (bytes calldata result)
     {
         result = signature;
-        /// @solidity memory-safe-assembly
-        assembly {
-            // Unwraps the ERC6492 wrapper if it exists.
-            // See: https://eips.ethereum.org/EIPS/eip-6492
+        assembly ("memory-safe") {
             if eq(
                 calldataload(add(result.offset, sub(result.length, 0x20))),
                 mul(0x6492, div(not(mload(0x60)), 0xffff)) // `0x6492...6492`.
@@ -51,74 +55,13 @@ abstract contract SmartSessionERC7739 is ISmartSession {
     // forge-lint: disable-end(divide-before-multiply)
     // slither-disable-end divide-before-multiply,write-after-write
 
-    /// @dev ERC1271 signature validation (Nested EIP-712 workflow).
-    /// @dev Currently known as ERC-7739
-    /// https://ethereum-magicians.org/t/erc-7739-readable-typed-signatures-for-smart-accounts/20513
-    /// This forwards signature verification to an appropriate ISessionValidator
-    /// see: `_erc1271IsValidSignatureNowCalldata`.
-    /// It also uses a nested EIP-712 approach to prevent signature replays when a single EOA
-    /// owns multiple smart contract accounts,
-    /// while still enabling wallet UIs (e.g. Metamask) to show the EIP-712 values.
-    ///
-    /// Crafted for phishing resistance, efficiency, flexibility.
-    /// __________________________________________________________________________________________
-    ///
-    /// Glossary:
-    ///
-    /// - `APP_DOMAIN_SEPARATOR`: The domain separator of the `hash` passed in by the application.
-    ///   Provided by the front end. Intended to be the domain separator of the contract
-    ///   that will call `isValidSignature` on this account.
-    ///
-    /// - `ACCOUNT_DOMAIN_SEPARATOR`: The domain separator of this account.
-    ///   See: `EIP712._domainSeparator()`.
-    /// __________________________________________________________________________________________
-    ///
-    /// For the `TypedDataSign` workflow, the final hash will be:
-    /// ```
-    ///     keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖
-    ///         hashStruct(TypedDataSign({
-    ///             contents: hashStruct(originalStruct),
-    ///             name: keccak256(bytes(eip712Domain().name)),
-    ///             version: keccak256(bytes(eip712Domain().version)),
-    ///             chainId: eip712Domain().chainId,
-    ///             verifyingContract: eip712Domain().verifyingContract,
-    ///             salt: eip712Domain().salt,
-    ///             extensions: keccak256(abi.encodePacked(eip712Domain().extensions))
-    ///         }))
-    ///     )
-    /// ```
-    /// where `‖` denotes the concatenation operator for bytes.
-    /// The order of the fields is important: `contents` comes before `name`.
-    ///
-    /// The signature will be `r ‖ s ‖ v ‖
-    ///     APP_DOMAIN_SEPARATOR ‖ contents ‖ contentsType ‖ uint16(contentsType.length)`,
-    /// where `contents` is the bytes32 struct hash of the original struct.
-    ///
-    /// The `APP_DOMAIN_SEPARATOR` and `contents` are used to verify that `hash` is indeed correct; a signature
-    /// whose `keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents)` differs from `hash` is rejected.
-    /// __________________________________________________________________________________________
-    ///
-    /// `PersonalSign` is not supported.
-    /// __________________________________________________________________________________________
-    ///
-    /// For demo and typescript code, see:
-    /// - https://github.com/junomonster/nested-eip-712
-    /// - https://github.com/frangio/eip712-wrapper-for-eip1271
-    ///
-    /// Their nomenclature may differ from ours, although the high-level idea is similar.
-    ///
-    /// Of course, if you have control over the codebase of the wallet client(s) too,
-    /// you can choose a more minimalistic signature scheme like
-    /// `keccak256(abi.encode(address(this), hash))` instead of all these acrobatics.
-    /// All these are just for widespread out-of-the-box compatibility with other wallet clients.
-    /// We want to create bazaars, not walled castles.
-    /// And we'll use push the Turing Completeness of the EVM to the limits to do so.
-
-    // Reviewed false positives on Solady's assembly: shifting constant bitmaps by a byte value is intended
-    // (`incorrect-shift`), `contents` is a calldata slice reassigned in assembly, `appDomainSeparator` is assigned
-    // in assembly, unused `eip712Domain()` fields are not needed, and the literals are character bitmaps.
+    // Reviewed false positives: shifting constant character bitmaps by a byte value is intended
+    // (`incorrect-shift`, `too-many-digits`), `contents` is a calldata slice and `appDomainSeparator` is set in
+    // assembly, and the unused `eip712Domain()` fields are not needed.
     // slither-disable-start incorrect-shift,write-after-write,unused-return,too-many-digits
     // forge-lint: disable-start(incorrect-shift,uninitialized-local,unused-return)
+    /// @dev Rebuilds the nested hash from `signature` and the caller's (account's) EIP-712 domain, then forwards
+    /// to `_erc1271IsValidSignatureNowCalldata`. Returns false if the signature is not bound to `hash`.
     function _erc1271IsValidSignatureViaNestedEIP712(
         address sender,
         bytes32 hash,
@@ -128,7 +71,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         bytes32 appDomainSeparator;
         bool unbound;
         uint256 t = uint256(uint160(address(this)));
-        // Forces the compiler to pop the variables after the scope, avoiding stack-too-deep.
+        // The scope lets the compiler pop the domain fields again (stack depth).
         if (t != uint256(0)) {
             (
                 ,
@@ -138,81 +81,73 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 address verifyingContract,
                 bytes32 salt,
             ) = EIP712(msg.sender).eip712Domain();
-            /// @solidity memory-safe-assembly
-            assembly {
-                t := mload(0x40) // Grab the free memory pointer.
-                // Skip 2 words for the `typedDataSignTypehash` and `contents` struct hash.
+            assembly ("memory-safe") {
+                t := mload(0x40)
+                // Leave two words for the TypedDataSign typehash and `contents`.
                 mstore(add(t, 0x40), keccak256(add(name, 0x20), mload(name)))
                 mstore(add(t, 0x60), keccak256(add(version, 0x20), mload(version)))
                 mstore(add(t, 0x80), chainId)
                 mstore(add(t, 0xa0), shr(96, shl(96, verifyingContract)))
                 mstore(add(t, 0xc0), salt)
-                mstore(0x40, add(t, 0xe0)) // Allocate the memory.
+                mstore(0x40, add(t, 0xe0))
             }
         }
-        /// @solidity memory-safe-assembly
-        assembly {
-            let m := mload(0x40) // Cache the free memory pointer.
-            // `c` is `contentsDescription.length`, which is stored in the last 2 bytes of the signature.
+        assembly ("memory-safe") {
+            let m := mload(0x40)
+            // `c`: length of `contentsDescription`, from the last two bytes of the signature.
             let c := shr(240, calldataload(add(signature.offset, sub(signature.length, 2))))
             for {} 1 {} {
-                let l := add(0x42, c) // Total length of appended data (32 + 32 + c + 2).
-                let o := add(signature.offset, sub(signature.length, l)) // Offset of appended data.
-                mstore(0x00, 0x1901) // Store the "\x19\x01" prefix.
-                calldatacopy(0x20, o, 0x40) // Copy the `APP_DOMAIN_SEPARATOR` and `contents` struct hash.
+                let l := add(0x42, c) // appended data: 32 + 32 + c + 2 bytes
+                let o := add(signature.offset, sub(signature.length, l))
+                mstore(0x00, 0x1901)
+                calldatacopy(0x20, o, 0x40) // APP_DOMAIN_SEPARATOR, contents
                 // Namera fix: the signed `\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents` must be the requested
                 // `hash`, and the appended data must fit in the signature and be non-empty (as in Solady).
-                // Upstream rebuilt `hash` from the signature alone, so one session signature validated for
-                // any hash. PersonalSign is not supported, so an unbound signature is invalid.
+                // Upstream rebuilt `hash` from the signature alone, so one signature validated for any hash.
                 if or(xor(keccak256(0x1e, 0x42), hash), or(lt(signature.length, l), iszero(c))) {
                     unbound := 1
                     break
                 }
-                // Only use the `TypedDataSign` workflow.
-                // `TypedDataSign({ContentsName} contents,string name,...){ContentsType}`.
-                mstore(m, "TypedDataSign(") // Store the start of `TypedDataSign`'s type encoding.
-                let p := add(m, 0x0e) // Advance 14 bytes to skip "TypedDataSign(".
-                calldatacopy(p, add(o, 0x40), c) // Copy `contentsName`, optimistically.
-
-                contents.offset := add(o, 0x40) // Set the offset of `contents`.
-                contents.length := c // Set the length of `contents`.
-                mstore(add(p, c), 40) // Store a '(' after the end.
+                // TypedDataSign type: `TypedDataSign({ContentsName} contents,string name,...){ContentsType}`.
+                mstore(m, "TypedDataSign(")
+                let p := add(m, 0x0e)
+                calldatacopy(p, add(o, 0x40), c) // `contentsName`, assuming implicit mode
+                contents.offset := add(o, 0x40)
+                contents.length := c
+                mstore(add(p, c), 40) // '('
+                // Explicit mode (description does not end with ')'): the name is the trailing part.
                 if iszero(eq(byte(0, mload(sub(add(p, c), 1))), 41)) {
-                    let e := 0 // Length of `contentsName` in explicit mode.
+                    let e := 0
                     for { let q := sub(add(p, c), 1) } 1 {} {
-                        e := add(e, 1) // Scan backwards until we encounter a ')'.
+                        e := add(e, 1)
                         if iszero(gt(lt(e, c), eq(byte(0, mload(sub(q, e))), 41))) {
                             break
                         }
                     }
-                    c := sub(c, e) // Truncate `contentsDescription` to `contentsType`.
-                    calldatacopy(p, add(add(o, 0x40), c), e) // Copy `contentsName`.
-                    mstore8(add(p, e), 40) // Store a '(' exactly right after the end.
+                    c := sub(c, e) // truncate the description to `contentsType`
+                    calldatacopy(p, add(add(o, 0x40), c), e)
+                    mstore8(add(p, e), 40)
                 }
-                // `d & 1 == 1` means that `contentsName` is invalid.
-                let d := shr(byte(0, mload(p)), 0x7fffffe000000000000010000000000) // Starts with `[a-z(]`.
-                // Advance `p` until we encounter '('.
+                // `d & 1 == 1` marks an invalid `contentsName`: must start with [a-z(] and contain none of ", )\x00".
+                let d := shr(byte(0, mload(p)), 0x7fffffe000000000000010000000000)
                 for {} iszero(eq(byte(0, mload(p)), 40)) { p := add(p, 1) } {
-                    d := or(shr(byte(0, mload(p)), 0x120100000001), d) // Has a byte in ", )\x00".
+                    d := or(shr(byte(0, mload(p)), 0x120100000001), d)
                 }
-                mstore(p, " contents,string name,string") // Store the rest of the encoding.
+                mstore(p, " contents,string name,string")
                 mstore(add(p, 0x1c), " version,uint256 chainId,address")
                 mstore(add(p, 0x3c), " verifyingContract,bytes32 salt)")
                 p := add(p, 0x5c)
-                calldatacopy(p, add(o, 0x40), c) // Copy `contentsType`.
-                // Fill in the missing fields of the `TypedDataSign`.
-                calldatacopy(t, o, 0x40) // Copy the `contents` struct hash to `add(t, 0x20)`.
-                mstore(t, keccak256(m, sub(add(p, c), m))) // Store `typedDataSignTypehash`.
-                // The "\x19\x01" prefix is already at 0x00.
-                // `APP_DOMAIN_SEPARATOR` is already at 0x20.
-                appDomainSeparator := mload(0x20) // Load the `APP_DOMAIN_SEPARATOR`.
-                mstore(0x40, keccak256(t, 0xe0)) // `hashStruct(typedDataSign)`.
-                // Compute the final hash, corrupted if `contentsName` is invalid.
+                calldatacopy(p, add(o, 0x40), c) // `contentsType`
+                calldatacopy(t, o, 0x40) // `contents` lands at t + 0x20
+                mstore(t, keccak256(m, sub(add(p, c), m))) // TypedDataSign typehash
+                appDomainSeparator := mload(0x20)
+                mstore(0x40, keccak256(t, 0xe0)) // hashStruct(TypedDataSign)
+                // Final hash; corrupted (one extra byte hashed) if `contentsName` is invalid.
                 hash := keccak256(0x1e, add(0x42, and(1, d)))
-                signature.length := sub(signature.length, l) // Truncate the signature.
+                signature.length := sub(signature.length, l)
                 break
             }
-            mstore(0x40, m) // Restore the free memory pointer.
+            mstore(0x40, m)
         }
         if (unbound) return false;
         result = _erc1271IsValidSignatureNowCalldata(

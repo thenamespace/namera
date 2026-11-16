@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {
@@ -11,7 +12,9 @@ import {
     UserOpPolicyId
 } from "../DataTypes.sol";
 
+/// @notice Identifier derivations. Config IDs include the account so policy state is account-associated.
 library IdLib {
+    /// @dev Selector used for actions with less than four bytes of calldata (plain value transfers).
     bytes4 internal constant VALUE_SELECTOR = 0xFFFFFFFF;
 
     function toUserOpPolicyId(PermissionId permissionId) internal pure returns (UserOpPolicyId) {
@@ -52,6 +55,7 @@ library IdLib {
         return ConfigId.wrap(keccak256(abi.encodePacked(msg.sender, erc1271PolicyId)));
     }
 
+    /// @dev A session is identified by its validator, validator config and salt.
     function toPermissionIdMemory(Session memory session) internal pure returns (PermissionId) {
         return PermissionId.wrap(
             keccak256(

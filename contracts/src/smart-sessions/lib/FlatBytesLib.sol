@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+// Derived from rhinestonewtf/flatbytes@bb0859e (MIT; Rhinestone). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 /// @notice Stores `bytes` in consecutive storage slots after a length slot, so validation-time reads stay
 /// within ERC-7562 associated storage (Solidity's and Solady's bytes storage use `keccak256(slot)`).
-/// @dev Derived from rhinestonewtf/flatbytes@bb0859e (MIT). Changes: capacity raised from 10 to 16 slots
-/// (512 bytes, room for P-256/WebAuthn session validator configs), exact slot count (upstream wrote
-/// `length / 32 + 1` slots, one past the struct for a full 320-byte value), unused tail bytes zeroed, and
-/// `clear` only touches slots in use.
+/// @dev Holds up to 512 bytes (room for P-256/WebAuthn session validator configs). `store` expects cleared
+/// storage: SmartSession only stores a validator config when none is set, and `clear`s it on removal.
 library FlatBytesLib {
     uint256 internal constant MAX_SLOTS = 16;
     uint256 internal constant MAX_LENGTH = MAX_SLOTS * 32;
@@ -22,7 +21,6 @@ library FlatBytesLib {
         uint256 length = data.length;
         if (length > MAX_LENGTH) revert DataTooLong(length);
 
-        clear(self);
         self.totalLength = length;
         uint256 slots = (length + 31) / 32;
         for (uint256 i; i < slots; ++i) {

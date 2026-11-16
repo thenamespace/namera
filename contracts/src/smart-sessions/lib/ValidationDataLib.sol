@@ -1,24 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
+// Derived from erc7579/smartsessions@f5aaf86 (MIT; Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {ValidationData} from "../DataTypes.sol";
-// @author zeroknots rhinestone
 
+/// @notice Intersection of ERC-4337 validation data from several policies.
 library ValidationDataLib {
+    /// @dev Returns the narrowest time window (latest `validAfter`, earliest non-zero `validUntil`). Returns 1
+    /// (failed) if the aggregator fields differ and neither side is zero.
     function intersect(ValidationData a, ValidationData b)
         internal
         pure
         returns (ValidationData validationData)
     {
         assembly {
-            // xor(a,b) == shows only matching bits
-            // and(xor(a,b), 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff) ==
-            // filters out the validAfter and validUntil bits
-            // if the result is not zero, then aggregator part is not matching
-            // validCase :
-            // a == 0 || b == 0 || xor(a,b) == 0
-            // invalidCase :
-            // a mul b != 0 && xor(a,b) != 0
+            // Valid when the aggregator fields are equal, or one side is entirely time bounds.
             let sum := shl(96, add(a, b))
             switch or(
                 iszero(

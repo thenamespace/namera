@@ -1,19 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {ISessionValidator} from "./interfaces/ISessionValidator.sol";
 import {FlatBytesLib} from "./lib/FlatBytesLib.sol";
 import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
 
-/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-/*                       Parameters                           */
-/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+// ---------------------------------------------------------------------------------------------------------------------
+// Session parameters
+// ---------------------------------------------------------------------------------------------------------------------
 
+/// @notice A session to enable inside a user operation (ENABLE / UNSAFE_ENABLE modes).
+/// @param chainDigestIndex Index of this chain's entry in `hashesAndChainIds`.
+/// @param hashesAndChainIds Session digest per chain; the owner signs all of them at once.
+/// @param sessionToEnable The session for this chain.
+/// @param permissionEnableSig The account's ERC-1271 signature over the multichain digest.
 struct EnableSession {
     uint8 chainDigestIndex;
     ChainDigest[] hashesAndChainIds;
     Session sessionToEnable;
-    // in order to enable a session, the smart account has to sign a digest. The signature for this is stored here.
     bytes permissionEnableSig;
 }
 
@@ -22,32 +27,16 @@ struct ChainDigest {
     bytes32 sessionDigest;
 }
 
-/**
- * Represents a Session structure with various attributes for managing user operations and policies.
- *
- * Attributes:
- *     sessionValidator (ISessionValidator): The validator contract for signing user operations.
- *         Every userOp must be signed by the session key "owner". The signature is validated
- *         via a stateless external contract (ISessionValidator) that can implement different
- *         means of validation.
- *
- *     sessionValidatorInitData (bytes): Initialization data for the ISessionValidator contract.
- *
- *     salt (bytes32): A unique identifier to prevent collision between sessions.
- *
- *     userOpPolicies (PolicyData[]): An array of policy data for user operations.
- *
- *     erc7739Policies (ERC7739Data): ERC1271 Policies specific to the ERC7739 standard.
- *
- *     actions (ActionData[]): An array of action data for specifying function-specific policies.
- *         A common use case of session keys is to scope access to a specific target and function
- *         selector. SmartSession calls this "Action". With ActionData, we can specify policies
- *         that are only run if a 7579 execution contains a specific action.
- *
- *     validAfter / validUntil (uint48): Namera addition. The session is valid when
- *         validAfter < block.timestamp <= validUntil (ERC-4337 semantics; 0 means no bound). Enforced for
- *         user operations through validation data and for ERC-1271 signatures directly.
- */
+/// @notice A session key permission.
+/// @param sessionValidator Stateless validator (ERC-7579 type 7) that checks the session key's signatures.
+/// @param sessionValidatorInitData Validator config, e.g. the session key's signers and threshold.
+/// @param salt Distinguishes otherwise identical sessions.
+/// @param userOpPolicies Policies run on every user operation.
+/// @param erc7739Policies ERC-7739 contents and ERC-1271 policies for session-key signatures.
+/// @param actions Per target-and-selector policies for executions.
+/// @param permitERC4337Paymaster Whether user operations of this session may use a paymaster.
+/// @param validAfter Session start; valid when `validAfter < block.timestamp` (0 = no start bound).
+/// @param validUntil Session end; valid when `block.timestamp <= validUntil` (0 = no expiry).
 struct Session {
     ISessionValidator sessionValidator;
     bytes sessionValidatorInitData;
@@ -60,23 +49,22 @@ struct Session {
     uint48 validUntil;
 }
 
-// Policy data is a struct that contains the policy address and the initialization data for the policy.
+/// @notice A policy contract and its per-session initialization data.
 struct PolicyData {
     address policy;
     bytes initData;
 }
 
-// Action data is a struct that contains the actionId and the policies that are associated with this action.
+/// @notice Policies that apply to calls of `actionTargetSelector` on `actionTarget`.
 struct ActionData {
     bytes4 actionTargetSelector;
     address actionTarget;
     PolicyData[] actionPolicies;
 }
 
+/// @notice ERC-7739 contents a session key may sign for one app domain.
+/// Only the domain separator is stored, as EIP-712 lets apps omit unused domain fields.
 struct ERC7739Context {
-    // we can not use a detailed EIP712Domain struct here.
-    // EIP712 specifies: Protocol designers only need to include the fields that make sense for their signing domain.
-    // Unused fields are left out of the struct type.
     bytes32 appDomainSeparator;
     string[] contentNames;
 }
@@ -86,6 +74,8 @@ struct ERC7739Data {
     PolicyData[] erc1271Policies;
 }
 
+/// @notice How `userOp.signature` is interpreted.
+/// USE: an enabled session; ENABLE / UNSAFE_ENABLE: enable a session first, then use it.
 enum SmartSessionMode {
     USE,
     ENABLE,
@@ -97,9 +87,9 @@ struct ERC7739ContextHashes {
     bytes32[] contentNameHashes;
 }
 
-/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-/*                         Storage                            */
-/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+// ---------------------------------------------------------------------------------------------------------------------
+// Storage (account-associated, so validation-time reads satisfy ERC-7562)
+// ---------------------------------------------------------------------------------------------------------------------
 
 struct SessionValidity {
     uint48 validAfter;
@@ -108,7 +98,7 @@ struct SessionValidity {
 
 struct SignerConf {
     ISessionValidator sessionValidator;
-    FlatBytesLib.Bytes config; // using FlatBytes to get around storage slot limitations
+    FlatBytesLib.Bytes config;
 }
 
 struct Policy {
@@ -126,9 +116,9 @@ struct EnumerableERC7739Config {
     mapping(PermissionId => EnumerableSet.Bytes32Set) enabledDomainSeparators;
 }
 
-/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-/*                 Custom Types & Constants                   */
-/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+// ---------------------------------------------------------------------------------------------------------------------
+// Types and constants
+// ---------------------------------------------------------------------------------------------------------------------
 
 type PermissionId is bytes32;
 
@@ -142,6 +132,7 @@ type Erc1271PolicyId is bytes32;
 
 type ConfigId is bytes32;
 
+/// @dev ERC-4337 validation data: `aggregator | validUntil << 160 | validAfter << 208`.
 type ValidationData is uint256;
 
 ActionId constant EMPTY_ACTIONID = ActionId.wrap(bytes32(0));
@@ -165,22 +156,21 @@ enum PolicyType {
     ERC1271
 }
 
-// ActionId for a fallback action policy. This id will be used if both action
-// target and selector are set to 1. During validation if the current target and
-// selector does not have a set action policy, then the fallback will be used if
-// enabled.
+/// @dev Action target that marks a fallback action. With `FALLBACK_TARGET_SELECTOR_FLAG` its policies apply to
+/// every action without its own policies; with `FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION`
+/// they apply to calls into this module.
 address constant FALLBACK_TARGET_FLAG = address(1);
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG = 0x00000001;
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION = 0x00000002;
-// keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG))
+/// @dev keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG))
 ActionId constant FALLBACK_ACTIONID =
     ActionId.wrap(0xd884b6afa19f8ace90a388daca691e4e28f20cdac5aeefd46ad8bd1c074d28cf);
-
-// keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION))
+/// @dev keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION))
 ActionId constant FALLBACK_ACTIONID_SMARTSESSION_CALL =
     ActionId.wrap(0x986126569d6396d837d7adeb3ca726199afaf83546f38726e6f331bb92d8e9d6);
 
-// A unique ValidationData value to retry a policy check with the FALLBACK_ACTIONID.
+/// @dev Sentinel returned by `PolicyLib.tryCheck` when an action has too few policies, so the caller falls back
+/// to `FALLBACK_ACTIONID`. Policies may not return it.
 ValidationData constant RETRY_WITH_FALLBACK = ValidationData.wrap(uint256(0x50FFBAAD));
 
 using {isUseMode, isEnableMode} for SmartSessionMode global;

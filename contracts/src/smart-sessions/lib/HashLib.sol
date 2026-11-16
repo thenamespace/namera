@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {
@@ -59,94 +60,66 @@ bytes32 constant CHAIN_SESSION_TYPEHASH =
 bytes32 constant MULTICHAIN_SESSION_TYPEHASH =
     0x88e4631f2dca0065122e90ca335755f770f098f3fd3f4bfad24bc6c083c3c839;
 
-// keccak256("EIP712Domain(string name,string version)");
+// keccak256("EIP712Domain(string name,string version)")
 bytes32 constant _MULTICHAIN_DOMAIN_TYPEHASH =
     0xb03948446334eb9b2196d5eb166f69b9d49403eb4a12f36de8d3f9f3cb8e15c3;
 
-// One should use the domain separator below where possible
-// or provide the following EIP712Domain struct to the signTypedData() function
-// { Name: "SmartSession" (string),
-//   Version: "1" (string) }
-// Name and version are consistent with what is returned by _domainNameAndVersion()
-// Empty fields: version, chainId, verifyingContract are omitted as per EIP-712
-// it is introduced for compatibility with signTypedData()
-// all the critical data such as chainId and verifyingContract is included
-// in session hashes, so here the mock data compatible accross chains is used
-// see https://docs.metamask.io/wallet/reference/eth_signtypeddata_v4 for details
-
-// keccak256(abi.encode(_MULTICHAIN_DOMAIN_TYPEHASH, keccak256("SmartSession"), keccak256("1")));
+// Domain of the multichain digest the owner signs: { name: "SmartSession", version: "1" }. Chain ID and verifying
+// contract are omitted so one signature covers several chains; both are bound inside each session digest
+// (`smartSession`) and its ChainSession entry (`chainId`).
+// keccak256(abi.encode(_MULTICHAIN_DOMAIN_TYPEHASH, keccak256("SmartSession"), keccak256("1")))
 bytes32 constant _MULTICHAIN_DOMAIN_SEPARATOR =
     0x057501e891776d1482927e5f094ae44049a4d893ba2d7b334dd7db8d38d3a0e1;
 
+/// @notice EIP-712 hashing of sessions, so owners can sign them with `eth_signTypedData`.
 library HashLib {
     using EfficientHashLib for bytes32[];
     using HashLib for *;
 
-    /**
-     * Mimics SignTypedData() behavior
-     * 1. hashStruct(Session)
-     * 2. hashStruct(ChainSession)
-     * 3. abi.encodePacked hashStruct's for 2) together
-     * 4. Hash it together with MULTI_CHAIN_SESSION_TYPEHASH
-     * as it was MultiChainSession struct
-     * 5. Add multichain domain separator
-     * This method doest same, just w/o 1. as it is already provided to us as a digest
-     */
+    /// @dev Checks that `enableData.sessionToEnable` (with `nonce`) is this chain's entry of the signed
+    /// multichain list, and returns the multichain digest the owner signed.
+    function getAndVerifyDigest(
+        EnableSession memory enableData,
+        address account,
+        uint256 nonce,
+        SmartSessionMode mode
+    ) internal view returns (bytes32) {
+        ChainDigest memory entry = enableData.hashesAndChainIds[enableData.chainDigestIndex];
+        if (entry.chainId != block.chainid) revert ISmartSession.ChainIdMismatch(entry.chainId);
+
+        bytes32 computedHash = enableData.sessionToEnable.sessionDigest(account, mode, nonce);
+        if (entry.sessionDigest != computedHash) {
+            revert ISmartSession.HashMismatch(entry.sessionDigest, computedHash);
+        }
+        return enableData.hashesAndChainIds.multichainDigest();
+    }
+
+    /// @dev `hashTypedData` of `MultiChainSession`, built from per-chain session digests rather than full
+    /// sessions; matches what `eth_signTypedData` produces for the full structure.
     function multichainDigest(ChainDigest[] memory hashesAndChainIds)
         internal
         pure
         returns (bytes32)
     {
-        bytes32 structHash = keccak256(
-            abi.encode(MULTICHAIN_SESSION_TYPEHASH, hashesAndChainIds.hashChainDigestArray())
-        );
-
+        uint256 length = hashesAndChainIds.length;
+        bytes32[] memory a = EfficientHashLib.malloc(length);
+        for (uint256 i; i < length; ++i) {
+            a.set(
+                i,
+                keccak256(
+                    abi.encode(
+                        CHAIN_SESSION_TYPEHASH,
+                        hashesAndChainIds[i].chainId,
+                        hashesAndChainIds[i].sessionDigest
+                    )
+                )
+            );
+        }
+        bytes32 structHash = keccak256(abi.encode(MULTICHAIN_SESSION_TYPEHASH, a.hash()));
         return keccak256(abi.encodePacked(hex"1901", _MULTICHAIN_DOMAIN_SEPARATOR, structHash));
     }
 
-    /**
-     * Hash array of ChainDigest structs
-     */
-    function hashChainDigestArray(ChainDigest[] memory chainDigestArray)
-        internal
-        pure
-        returns (bytes32)
-    {
-        uint256 length = chainDigestArray.length;
-
-        bytes32[] memory a = EfficientHashLib.malloc(length);
-        for (uint256 i; i < length; i++) {
-            a.set(i, chainDigestArray[i].hashChainDigestMimicRPC());
-        }
-        return a.hash();
-    }
-
-    /**
-     * We have session digests, not full Session structs
-     * However to mimic signTypedData() behavior, we need to use CHAIN_SESSION_TYPEHASH
-     * not CHAIN_DIGEST_TYPEHASH. We just use the ready session digest instead of rebuilding it
-     */
-    function hashChainDigestMimicRPC(ChainDigest memory chainDigest)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encode(
-                CHAIN_SESSION_TYPEHASH,
-                chainDigest.chainId,
-                chainDigest.sessionDigest // this is the digest obtained using sessionDigest()
-                // we just do not rebuild it here for all sessions, but receive it from off-chain
-            )
-        );
-    }
-
-    /**
-     * Hashes the data from the Session struct with some security critical data
-     * such as nonce, account address, smart session address, and mode.
-     * It is exactly how signTypedData hashes the object as an inner struct (no EIP-712 domain).
-     * chainId is not included as it is part of the ChainSession.
-     */
+    /// @dev `hashStruct(SignedSession)` for `session` on this module. The chain ID lives in `ChainSession`.
     function sessionDigest(
         Session memory session,
         address account,
@@ -172,156 +145,113 @@ library HashLib {
         return a.hash();
     }
 
+    /// @dev `hashStruct(SignedPermissions)`. The fallback flags are derived from the actions so wallets show
+    /// them explicitly; `ignoreSecurityAttestations` is set for UNSAFE_ENABLE (kept from upstream; registry
+    /// checks are not performed).
     function hashPermissions(Session memory session, bool ignoreSecurityAttestations)
         internal
         pure
         returns (bytes32)
     {
-        (bool permitFallback, bool permitUnsafeFallback, bytes32 actionDataArrayHash) =
+        (bool permitFallback, bool permitUnsafeFallback, bytes32 actionsHash) =
             session.actions.hashActionDataArray();
         return keccak256(
             abi.encode(
                 SIGNED_PERMISSIONS_TYPEHASH,
-                permitFallback, // permitGenericPolicy
-                permitUnsafeFallback, // permitAdminAccess
-                ignoreSecurityAttestations, // ignoreSecurityAttestations
-                session.permitERC4337Paymaster, // permitERC4337Paymaster
-                session.userOpPolicies.hashPolicyDataArray(), // userOpPolicies
-                session.erc7739Policies.hashERC7739Data(), // erc7739Policies
-                actionDataArrayHash // actions
+                permitFallback,
+                permitUnsafeFallback,
+                ignoreSecurityAttestations,
+                session.permitERC4337Paymaster,
+                session.userOpPolicies.hashPolicyDataArray(),
+                session.erc7739Policies.hashERC7739Data(),
+                actionsHash
             )
         );
     }
 
-    function hashPolicyData(PolicyData memory policyData) internal pure returns (bytes32) {
-        return keccak256(
-            abi.encode(POLICY_DATA_TYPEHASH, policyData.policy, keccak256(policyData.initData))
-        );
-    }
-
-    function hashPolicyDataArray(PolicyData[] memory policyDataArray)
-        internal
-        pure
-        returns (bytes32)
-    {
-        uint256 length = policyDataArray.length;
-
+    function hashPolicyDataArray(PolicyData[] memory policyDatas) internal pure returns (bytes32) {
+        uint256 length = policyDatas.length;
         bytes32[] memory a = EfficientHashLib.malloc(length);
-        for (uint256 i; i < length; i++) {
-            a.set(i, policyDataArray[i].hashPolicyData());
+        for (uint256 i; i < length; ++i) {
+            a.set(
+                i,
+                keccak256(
+                    abi.encode(
+                        POLICY_DATA_TYPEHASH,
+                        policyDatas[i].policy,
+                        keccak256(policyDatas[i].initData)
+                    )
+                )
+            );
         }
         return a.hash();
     }
 
-    function hashActionData(ActionData memory actionData) internal pure returns (bytes32 digest) {
-        digest = keccak256(
-            abi.encode(
-                ACTION_DATA_TYPEHASH,
-                actionData.actionTargetSelector,
-                actionData.actionTarget,
-                hashPolicyDataArray(actionData.actionPolicies)
-            )
-        );
-    }
-
-    function hashActionDataArray(ActionData[] memory actionDataArray)
+    /// @dev Hashes the actions and reports whether they include the fallback action and the fallback action
+    /// for calls into this module.
+    function hashActionDataArray(ActionData[] memory actions)
         internal
         pure
-        returns (bool permitFallback, bool permitUnsafeFallback, bytes32 _hash)
+        returns (bool permitFallback, bool permitUnsafeFallback, bytes32 actionsHash)
     {
-        uint256 length = actionDataArray.length;
+        uint256 length = actions.length;
         bytes32[] memory a = EfficientHashLib.malloc(length);
-
-        for (uint256 i; i < length; i++) {
-            ActionData memory actionData = actionDataArray[i];
-            // if this action policy is a fallback action policy
-            if (actionData.actionTarget == FALLBACK_TARGET_FLAG) {
-                // only set the permitFallbackFlag if not previously set to true
-                permitFallback = permitFallback
-                    || (actionData.actionTargetSelector == FALLBACK_TARGET_SELECTOR_FLAG);
-
-                // only set the permitUnsafeFallbackFlag if not previously set to true
+        for (uint256 i; i < length; ++i) {
+            ActionData memory action = actions[i];
+            if (action.actionTarget == FALLBACK_TARGET_FLAG) {
+                permitFallback =
+                    permitFallback || action.actionTargetSelector == FALLBACK_TARGET_SELECTOR_FLAG;
                 permitUnsafeFallback = permitUnsafeFallback
-                    || actionData.actionTargetSelector
+                    || action.actionTargetSelector
                         == FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION;
             }
-
-            a.set(i, actionData.hashActionData());
+            a.set(
+                i,
+                keccak256(
+                    abi.encode(
+                        ACTION_DATA_TYPEHASH,
+                        action.actionTargetSelector,
+                        action.actionTarget,
+                        action.actionPolicies.hashPolicyDataArray()
+                    )
+                )
+            );
         }
-        _hash = a.hash();
+        actionsHash = a.hash();
     }
 
-    function hashERC7739Context(ERC7739Context memory erc7739Context)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function hashERC7739Data(ERC7739Data memory data) internal pure returns (bytes32) {
+        ERC7739Context[] memory contexts = data.allowedERC7739Content;
+        uint256 length = contexts.length;
+        bytes32[] memory a = EfficientHashLib.malloc(length);
+        for (uint256 i; i < length; ++i) {
+            a.set(
+                i,
+                keccak256(
+                    abi.encode(
+                        ERC7739_CONTEXT_TYPEHASH,
+                        contexts[i].appDomainSeparator,
+                        hashStringArray(contexts[i].contentNames)
+                    )
+                )
+            );
+        }
         return keccak256(
-            abi.encode(
-                ERC7739_CONTEXT_TYPEHASH,
-                erc7739Context.appDomainSeparator,
-                hashStringArray(erc7739Context.contentNames)
-            )
+            abi.encode(ERC7739_DATA_TYPEHASH, a.hash(), data.erc1271Policies.hashPolicyDataArray())
         );
     }
 
-    function hashERC7739ContextArray(ERC7739Context[] memory erc7739Context)
-        internal
-        pure
-        returns (bytes32)
-    {
-        uint256 length = erc7739Context.length;
+    function hashStringArray(string[] memory strings) internal pure returns (bytes32) {
+        uint256 length = strings.length;
         bytes32[] memory a = EfficientHashLib.malloc(length);
-
-        for (uint256 i; i < length; i++) {
-            a.set(i, erc7739Context[i].hashERC7739Context());
+        for (uint256 i; i < length; ++i) {
+            a.set(i, keccak256(bytes(strings[i])));
         }
         return a.hash();
     }
 
-    function hashERC7739Data(ERC7739Data memory erc7739Data) internal pure returns (bytes32) {
-        bytes32[] memory a = EfficientHashLib.malloc(3);
-        a.set(0, ERC7739_DATA_TYPEHASH);
-        a.set(1, erc7739Data.allowedERC7739Content.hashERC7739ContextArray());
-        a.set(2, erc7739Data.erc1271Policies.hashPolicyDataArray());
-        return a.hash();
-    }
-
-    function hashStringArray(string[] memory stringArray) internal pure returns (bytes32) {
-        uint256 length = stringArray.length;
-        bytes32[] memory a = EfficientHashLib.malloc(length);
-        for (uint256 i; i < length; i++) {
-            a.set(i, keccak256(abi.encodePacked(stringArray[i])));
-        }
-        return a.hash();
-    }
-
+    /// @dev Key under which an ERC-7739 content name is stored.
     function hashERC7739Content(string memory content) internal pure returns (bytes32) {
         return keccak256(bytes(content));
-    }
-
-    function getAndVerifyDigest(
-        EnableSession memory enableData,
-        address account,
-        uint256 nonce,
-        SmartSessionMode mode
-    ) internal view returns (bytes32 digest) {
-        bytes32 computedHash = enableData.sessionToEnable.sessionDigest(account, mode, nonce);
-
-        uint64 providedChainId = enableData.hashesAndChainIds[enableData.chainDigestIndex].chainId;
-        bytes32 providedHash =
-            enableData.hashesAndChainIds[enableData.chainDigestIndex].sessionDigest;
-
-        if (providedChainId != block.chainid) {
-            revert ISmartSession.ChainIdMismatch(providedChainId);
-        }
-
-        // ensure digest we've built from the sessionToEnable is included into
-        // the list of digests that were signed
-        if (providedHash != computedHash) {
-            revert ISmartSession.HashMismatch(providedHash, computedHash);
-        }
-
-        digest = enableData.hashesAndChainIds.multichainDigest();
     }
 }

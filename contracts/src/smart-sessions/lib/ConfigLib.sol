@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+// Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
 import {
@@ -47,9 +48,7 @@ library ConfigLib {
         }
     }
 
-    /**
-     * Helper function that ensures that the provided permission ID is enabled for the calling account.
-     */
+    /// @dev Reverts unless `permissionId` is enabled for the calling account.
     function requirePermissionIdEnabled(
         EnumerableSet.Bytes32Set storage set,
         PermissionId permissionId
@@ -59,16 +58,13 @@ library ConfigLib {
         }
     }
 
-    /**
-     * Enables policies for a given permission ID: checks the policy interface, adds it to the policy list,
-     * initializes it (overwriting any previous configuration) and emits an event.
-     *
-     * @param $policy The storage reference to the Policy struct.
-     * @param policyType The type of policy being enabled.
-     * @param permissionId The identifier of the permission for which policies are being enabled.
-     * @param configId The configuration ID associated with the permission and policy type.
-     * @param policyDatas Policy addresses and initialization data.
-     */
+    /// @dev Enables policies for a given permission ID: checks the policy interface, adds it to the policy list,
+    /// initializes it (overwriting any previous configuration) and emits an event.
+    /// @param $policy The storage reference to the Policy struct.
+    /// @param policyType The type of policy being enabled.
+    /// @param permissionId The identifier of the permission for which policies are being enabled.
+    /// @param configId The configuration ID associated with the permission and policy type.
+    /// @param policyDatas Policy addresses and initialization data.
     function enable(
         Policy storage $policy,
         PolicyType policyType,
@@ -95,13 +91,10 @@ library ConfigLib {
         }
     }
 
-    /**
-     * Enables action policies for a given permission ID and records every enabled action ID.
-     *
-     * @param $self The storage reference to the EnumerableActionPolicy struct.
-     * @param permissionId The identifier of the permission for which action policies are being enabled.
-     * @param actionPolicyDatas Action targets, selectors and their policies.
-     */
+    /// @dev Enables action policies for a given permission ID and records every enabled action ID.
+    /// @param $self The storage reference to the EnumerableActionPolicy struct.
+    /// @param permissionId The identifier of the permission for which action policies are being enabled.
+    /// @param actionPolicyDatas Action targets, selectors and their policies.
     function enable(
         EnumerableActionPolicy storage $self,
         PermissionId permissionId,
@@ -134,9 +127,7 @@ library ConfigLib {
         }
     }
 
-    /**
-     * Enables ERC-7739 contents (per app domain separator) for a permission of the calling account.
-     */
+    /// @dev Enables ERC-7739 contents (per app domain separator) for a permission of the calling account.
     function enable(
         EnumerableERC7739Config storage $enabledERC7739,
         ERC7739Context[] memory contexts,
@@ -161,9 +152,7 @@ library ConfigLib {
         }
     }
 
-    /**
-     * Sets the ISessionValidator and its configuration for a permission of the calling account.
-     */
+    /// @dev Sets the ISessionValidator and its configuration for a permission of the calling account.
     function enable(
         mapping(
             PermissionId permissionId => mapping(address smartAccount => SignerConf conf)
@@ -187,11 +176,9 @@ library ConfigLib {
         );
     }
 
-    /**
-     * Disables policies for a given permission ID and smart account.
-     * @notice Cleaning state on policies is not required as on enable, initializeWithMultiplexer is called which MUST
-     *       overwrite the current state.
-     */
+    /// @dev Disables policies for a given permission ID and smart account.
+    /// @notice Cleaning state on policies is not required as on enable, initializeWithMultiplexer is called which MUST
+    ///       overwrite the current state.
     function disable(
         Policy storage $policy,
         PolicyType policyType,
@@ -265,10 +252,8 @@ library ConfigLib {
         $enabledERC7739.enabledDomainSeparators[permissionId].removeAll(smartAccount);
     }
 
-    /**
-     * Validates `signature` over `hash` with the session validator of `permissionId` for `account`.
-     * Reverts if no session validator is set.
-     */
+    /// @dev Validates `signature` over `hash` with the session validator of `permissionId` for `account`.
+    /// Reverts if no session validator is set.
     function isValidISessionValidator(
         mapping(PermissionId => mapping(address => SignerConf)) storage $sessionValidators,
         bytes32 hash,
