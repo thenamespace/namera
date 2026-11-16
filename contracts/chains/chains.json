@@ -117,7 +117,7 @@
       "network": "mainnet",
       "testnet": "monad-testnet",
       "rpcEnv": "RPC_MONAD",
-      "publicRpc": "https://rpc.monad.xyz",
+      "publicRpc": "https://rpc3.monad.xyz",
       "verifiers": ["sourcify", "etherscan"]
     },
     {
