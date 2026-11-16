@@ -1,151 +1,59 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
-// Copied from rhinestonewtf/flatbytes@bb0859e85ef2213d08d6280c8af9a7da4596b30f (src/BytesLib.sol),
-// the version used by erc7579/smartsessions. Stores bytes in consecutive slots so validation-time
-// reads stay within ERC-7562 associated storage.
-
-/**
- * @title FlatBytesLib
- * @dev Library for storing bytes data in consecutive storage slots
- * @dev This is useful in the context of the ERC-4337 validation rules
- * @dev Be careful that this does not override existing data in the next slots and ideally use this
- * data as the value of a struct
- * @author Rhinestone
- */
+/// @notice Stores `bytes` in consecutive storage slots after a length slot, so validation-time reads stay
+/// within ERC-7562 associated storage (Solidity's and Solady's bytes storage use `keccak256(slot)`).
+/// @dev Derived from rhinestonewtf/flatbytes@bb0859e (MIT). Changes: capacity raised from 10 to 16 slots
+/// (512 bytes, room for P-256/WebAuthn session validator configs), exact slot count (upstream wrote
+/// `length / 32 + 1` slots, one past the struct for a full 320-byte value), unused tail bytes zeroed, and
+/// `clear` only touches slots in use.
 library FlatBytesLib {
-    using FlatBytesLib for *;
+    uint256 internal constant MAX_SLOTS = 16;
+    uint256 internal constant MAX_LENGTH = MAX_SLOTS * 32;
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                    DATA STRUCTURES
-    //////////////////////////////////////////////////////////////////////////*/
+    error DataTooLong(uint256 length);
 
-    // Data structure to store bytes in consecutive slots using an array
-    struct Data {
-        bytes32[10] slot1;
-    }
-
-    // Store the length of the data and the data itself in consecutive slots
     struct Bytes {
         uint256 totalLength;
-        Data data;
+        bytes32[MAX_SLOTS] data;
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                    FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * Store the data in storage
-     *
-     * @param self The storage to store the data in
-     * @param data The data to store
-     */
     function store(Bytes storage self, bytes memory data) internal {
-        if (data.length > 32 * 10) revert();
-        bytes32[] memory entries;
-        (self.totalLength, entries) = data.toArray();
+        uint256 length = data.length;
+        if (length > MAX_LENGTH) revert DataTooLong(length);
 
-        uint256 length = entries.length;
-
-        Data storage _data = self.data;
-
-        for (uint256 i; i < length; i++) {
-            bytes32 value = entries[i];
-            assembly {
-                sstore(add(_data.slot, i), value)
+        clear(self);
+        self.totalLength = length;
+        uint256 slots = (length + 31) / 32;
+        for (uint256 i; i < slots; ++i) {
+            bytes32 word;
+            assembly ("memory-safe") {
+                word := mload(add(data, shl(5, add(i, 1))))
             }
+            // Zero the bytes past `length` in the last word.
+            uint256 used = length - i * 32;
+            if (used < 32) word &= ~bytes32(type(uint256).max >> (used * 8));
+            self.data[i] = word;
         }
     }
 
-    /**
-     * Clear the data in storage
-     *
-     * @param self The storage to clear the data in
-     */
     function clear(Bytes storage self) internal {
+        uint256 slots = (self.totalLength + 31) / 32;
+        for (uint256 i; i < slots; ++i) {
+            delete self.data[i];
+        }
         self.totalLength = 0;
-        Data storage _data = self.data;
-        for (uint256 i; i < 10; i++) {
-            assembly {
-                sstore(add(_data.slot, i), 0)
-            }
-        }
     }
 
-    /**
-     * Load the data from storage
-     *
-     * @param self The storage to load the data from
-     *
-     * @return data The data loaded from storage
-     */
     function load(Bytes storage self) internal view returns (bytes memory data) {
-        return self.toBytes();
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                    INTERNAL
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /**
-     * Convert bytes to an array of bytes32
-     *
-     * @param data The data to convert
-     * @return totalLength The total length of the data
-     *
-     * @return dataList The data as an array of bytes32
-     */
-    function toArray(bytes memory data)
-        internal
-        pure
-        returns (uint256 totalLength, bytes32[] memory dataList)
-    {
-        // Find 32 bytes segments nb
-        totalLength = data.length;
-        if (totalLength > 32 * 10) revert();
-        uint256 dataNb = totalLength / 32 + 1;
-
-        // Create an array of dataNb elements
-        dataList = new bytes32[](dataNb);
-
-        // Loop all 32 bytes segments
-        for (uint256 i = 0; i < dataNb; i++) {
-            bytes32 temp;
-            // Get 32 bytes from data
-            assembly {
-                temp := mload(add(data, mul(add(i, 1), 32)))
+        uint256 length = self.totalLength;
+        data = new bytes(length);
+        uint256 slots = (length + 31) / 32;
+        for (uint256 i; i < slots; ++i) {
+            bytes32 word = self.data[i];
+            assembly ("memory-safe") {
+                mstore(add(data, shl(5, add(i, 1))), word)
             }
-            // Add extracted 32 bytes to list
-            dataList[i] = temp;
-        }
-    }
-
-    /**
-     * Convert an array of bytes32 to bytes
-     *
-     * @param self The array of bytes32 to convert
-     *
-     * @return data The data as bytes
-     */
-    function toBytes(Bytes storage self) internal view returns (bytes memory data) {
-        uint256 totalLength = self.totalLength;
-        uint256 slotsCnt = totalLength / 32 + 1;
-
-        Data storage _data = self.data;
-
-        bytes32[] memory entries = new bytes32[](slotsCnt);
-        for (uint256 i; i < slotsCnt; i++) {
-            bytes32 tmp;
-            assembly {
-                tmp := sload(add(_data.slot, i))
-            }
-            entries[i] = tmp;
-        }
-
-        data = abi.encodePacked(entries);
-        assembly {
-            mstore(data, totalLength)
         }
     }
 }

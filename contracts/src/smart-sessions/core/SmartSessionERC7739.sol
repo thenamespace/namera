@@ -94,7 +94,8 @@ abstract contract SmartSessionERC7739 is ISmartSession {
     ///     APP_DOMAIN_SEPARATOR ‖ contents ‖ contentsType ‖ uint16(contentsType.length)`,
     /// where `contents` is the bytes32 struct hash of the original struct.
     ///
-    /// The `APP_DOMAIN_SEPARATOR` and `contents` will be used to verify if `hash` is indeed correct.
+    /// The `APP_DOMAIN_SEPARATOR` and `contents` are used to verify that `hash` is indeed correct; a signature
+    /// whose `keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents)` differs from `hash` is rejected.
     /// __________________________________________________________________________________________
     ///
     /// `PersonalSign` is not supported.
@@ -125,6 +126,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
     ) internal view virtual returns (bool result) {
         bytes calldata contents = signature;
         bytes32 appDomainSeparator;
+        bool unbound;
         uint256 t = uint256(uint160(address(this)));
         // Forces the compiler to pop the variables after the scope, avoiding stack-too-deep.
         if (t != uint256(0)) {
@@ -158,6 +160,14 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 let o := add(signature.offset, sub(signature.length, l)) // Offset of appended data.
                 mstore(0x00, 0x1901) // Store the "\x19\x01" prefix.
                 calldatacopy(0x20, o, 0x40) // Copy the `APP_DOMAIN_SEPARATOR` and `contents` struct hash.
+                // Namera fix: the signed `\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents` must be the requested
+                // `hash`, and the appended data must fit in the signature and be non-empty (as in Solady).
+                // Upstream rebuilt `hash` from the signature alone, so one session signature validated for
+                // any hash. PersonalSign is not supported, so an unbound signature is invalid.
+                if or(xor(keccak256(0x1e, 0x42), hash), or(lt(signature.length, l), iszero(c))) {
+                    unbound := 1
+                    break
+                }
                 // Only use the `TypedDataSign` workflow.
                 // `TypedDataSign({ContentsName} contents,string name,...){ContentsType}`.
                 mstore(m, "TypedDataSign(") // Store the start of `TypedDataSign`'s type encoding.
@@ -204,6 +214,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             }
             mstore(0x40, m) // Restore the free memory pointer.
         }
+        if (unbound) return false;
         result = _erc1271IsValidSignatureNowCalldata(
             sender, hash, signature, appDomainSeparator, contents
         );
