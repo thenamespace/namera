@@ -120,4 +120,31 @@ contract ExecutionLibTest is Test {
         vm.expectRevert();
         harness.batch(encoded);
     }
+
+    function test_RevertWhen_batchOffsetHasUpperBits() public {
+        _expectCorruptedBatchToRevert(0x00, (uint256(1) << 64) | 0x20);
+    }
+
+    function test_RevertWhen_executionCalldataOffsetHasUpperBits() public {
+        _expectCorruptedBatchToRevert(0xa0, (uint256(1) << 64) | 0x60);
+    }
+
+    function test_RevertWhen_executionCalldataLengthExceedsBatch() public {
+        _expectCorruptedBatchToRevert(0xc0, 0x1000);
+    }
+
+    /// @dev Encodes a one-execution batch and overwrites the word at `position` (byte offset in the encoding):
+    /// 0x00 array offset, 0x20 length, 0x40 entry pointer, 0x60 target, 0x80 value, 0xa0 calldata offset,
+    /// 0xc0 calldata length.
+    function _expectCorruptedBatchToRevert(uint256 position, uint256 word) internal {
+        Execution[] memory executions = new Execution[](1);
+        executions[0] = Execution(address(1), 0, hex"aabbcc");
+        bytes memory encoded = abi.encode(executions);
+        assembly ("memory-safe") {
+            mstore(add(add(encoded, 0x20), position), word)
+        }
+
+        vm.expectRevert(DECODING_ERROR);
+        harness.batch(encoded);
+    }
 }

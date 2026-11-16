@@ -7,7 +7,32 @@ import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 import {ERC7739Signer} from "../../utils/ERC7739Signer.sol";
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
+import {MockAccount} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
+
+/// @dev An account whose EIP-712 domain has a salt, to check the module binds every domain field.
+contract MockSaltedAccount is MockAccount {
+    constructor(address owner_) MockAccount(owner_) {}
+
+    function eip712Domain()
+        public
+        view
+        override
+        returns (
+            bytes1 fields,
+            string memory name,
+            string memory version,
+            uint256 chainId,
+            address verifyingContract,
+            bytes32 salt,
+            uint256[] memory extensions
+        )
+    {
+        (fields, name, version, chainId, verifyingContract,, extensions) = super.eip712Domain();
+        fields |= 0x10;
+        salt = keccak256("account salt");
+    }
+}
 
 /// @notice Session-key ERC-1271 signatures (ERC-7739), checked through the account like a dapp would.
 contract ERC1271Test is SmartSessionTestBase {
@@ -251,6 +276,56 @@ contract ERC1271Test is SmartSessionTestBase {
         );
 
         assertEq(_isValidSignature(ERC7739Signer.appHash(app), explicitSignature), EIP1271_MAGIC);
+    }
+
+    function test_contentsNameWithForbiddenCharacter_isRejected() public {
+        string memory spaced = "Ma il(address to)";
+        Session memory session = _signingSession().withERC7739Content(APP_DOMAIN, spaced);
+        session.salt = keccak256("spaced");
+        PermissionId spacedId = enableSession(session);
+        ERC7739Signer.AppData memory app = mail;
+        app.contentsType = spaced;
+        app.contentsName = "Ma il";
+        bytes memory signature = ERC7739Signer.sign(app, address(account), spacedId, sessionKey);
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(app), signature), INVALID);
+    }
+
+    /// @dev Long types such as Permit2's must not overlap the account domain fields in memory.
+    function test_longContentsType_isAccepted() public {
+        string memory longType =
+            "PermitBatchTransferFrom(TokenPermissions[] permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)";
+        Session memory session = _signingSession().withERC7739Content(APP_DOMAIN, longType);
+        session.salt = keccak256("long type");
+        PermissionId longId = enableSession(session);
+        ERC7739Signer.AppData memory app = ERC7739Signer.AppData({
+            appDomainSeparator: APP_DOMAIN,
+            contents: keccak256("permit struct hash"),
+            contentsType: longType,
+            contentsName: "PermitBatchTransferFrom"
+        });
+        bytes memory signature = ERC7739Signer.sign(app, address(account), longId, sessionKey);
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(app), signature), EIP1271_MAGIC);
+    }
+
+    function test_accountDomainSalt_isBound() public {
+        MockSaltedAccount salted = new MockSaltedAccount(owner);
+        installSmartSession(address(salted), "");
+        PermissionId saltedId = enableSession(address(salted), _signingSession());
+        bytes32 hash = ERC7739Signer.appHash(mail);
+        bytes memory signature = ERC7739Signer.sign(mail, address(salted), saltedId, sessionKey);
+        // Signed for the unsalted domain of an otherwise identical account.
+        bytes memory unsalted = ERC7739Signer.sign(mail, address(account), saltedId, sessionKey);
+
+        assertEq(
+            salted.isValidSignature(hash, abi.encodePacked(address(smartSession), signature)),
+            EIP1271_MAGIC
+        );
+        assertEq(
+            salted.isValidSignature(hash, abi.encodePacked(address(smartSession), unsalted)),
+            INVALID
+        );
     }
 
     function test_appendixLongerThanSignature_isRejected() public view {
