@@ -11,6 +11,11 @@ pre-commit:
     - name: lint
       glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
       run: pnpm exec oxlint -c .config/oxlint.config.ts --deny-warnings {staged_files}
+    - name: solidity
+      root: contracts/
+      glob: "*.sol"
+      run: forge fmt {staged_files}
+      stage_fixed: true
 
 commit-msg:
   jobs:

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "check": "oxfmt -c .config/oxfmt.config.ts --check . && oxlint -c .config/oxlint.config.ts --deny-warnings . && turbo run typecheck test build",
+    "check": "oxfmt -c .config/oxfmt.config.ts --check . && oxlint -c .config/oxlint.config.ts --deny-warnings . && turbo run lint typecheck test build",
     "dev": "turbo run dev",
     "format": "oxfmt -c .config/oxfmt.config.ts --write .",
     "format:check": "oxfmt -c .config/oxfmt.config.ts --check .",

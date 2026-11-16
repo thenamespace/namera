@@ -1,0 +1,7 @@
+{
+  "extends": "klarity/tsconfig/app/node",
+  "compilerOptions": {
+    "erasableSyntaxOnly": true
+  },
+  "include": ["script/**/*.ts"]
+}

@@ -1,0 +1,7 @@
+{
+  "filter_paths": "(dependencies/|test/|script/)",
+  "exclude_dependencies": true,
+  "compile_force_framework": "foundry",
+  "fail_on": "medium",
+  "foundry_compile_all": true
+}

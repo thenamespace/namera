@@ -56,7 +56,8 @@ pnpm-debug.log*
 # -------------------------------------
 out/
 cache/
-broadcast/**/31337/
+broadcast/
+dependencies/
 gas-report.*
 lcov.info
 

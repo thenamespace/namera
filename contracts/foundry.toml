@@ -1,0 +1,71 @@
+# Compiler settings determine the bytecode and therefore every CREATE2 address. They live only in
+# [profile.default] and no other profile may override them. Freeze `via_ir` and `optimizer_runs`
+# before the first real deployment.
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["dependencies"]
+solc_version = "0.8.38"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+bytecode_hash = "none"
+cbor_metadata = false
+auto_detect_remappings = false
+gas_reports = ["*"]
+fs_permissions = [
+  { access = "read", path = "./chains" },
+  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./out" },
+]
+
+[profile.default.fuzz]
+runs = 256
+
+[profile.default.invariant]
+runs = 256
+depth = 100
+
+[profile.ci.fuzz]
+runs = 10_000
+
+[profile.ci.invariant]
+runs = 1_000
+depth = 200
+
+[profile.deep.fuzz]
+runs = 100_000
+
+[profile.deep.invariant]
+runs = 10_000
+depth = 500
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "thousands"
+sort_imports = true
+ignore = ["dependencies/**"]
+
+[lint]
+severity = ["high", "medium", "low"]
+ignore = ["dependencies/**"]
+lint_on_build = false
+
+[soldeer]
+remappings_generate = true
+remappings_regenerate = false
+remappings_version = false
+remappings_location = "txt"
+recursive_deps = false
+
+[dependencies]
+forge-std = "1.17.0"
+solady = "0.1.26"

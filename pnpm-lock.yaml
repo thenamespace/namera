@@ -233,6 +233,18 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  contracts:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      klarity:
+        specifier: 'catalog:'
+        version: 0.3.0(@commitlint/cli@21.2.4(conventional-commits-parser@7.1.4)(typescript@7.0.2))(@commitlint/config-conventional@21.2.4)(lefthook@2.2.2)(oxfmt@0.78.0)(oxlint@1.93.0)(turbo@2.11.11)(typescript@7.0.2)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
 packages:
 
   '@babel/code-frame@7.29.7':
