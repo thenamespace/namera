@@ -168,7 +168,8 @@ abstract contract SmartSessionBase is ISmartSession {
         _setPermit4337Paymaster(permissionId, enabled);
     }
 
-    /// @notice Removes a session with its validator, policies, contents, paymaster flag and validity window.
+    /// @notice Removes a session with its validator, policies, contents, paymaster flag and validity window, and
+    /// revokes unused owner enable signatures for it on this chain.
     /// @dev Policy state is not wiped: re-enabling a policy re-initializes it (`initializeWithMultiplexer`).
     function removeSession(PermissionId permissionId) public {
         if (permissionId == EMPTY_PERMISSIONID) revert InvalidSession(permissionId);
@@ -192,13 +193,14 @@ abstract contract SmartSessionBase is ISmartSession {
         // slither-disable-next-line unused-return
         $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
         $enabledERC7739.removeAll({permissionId: permissionId, smartAccount: msg.sender});
+        // Otherwise an unused ENABLE signature for this session could enable it again.
+        _revokeEnableSignature(permissionId);
         emit SessionRemoved(permissionId, msg.sender);
     }
 
     /// @notice Increments the enable nonce, invalidating signed but unused enable data for this permission.
     function revokeEnableSignature(PermissionId permissionId) external {
-        uint256 nonce = $signerNonce[permissionId][msg.sender]++;
-        emit NonceIterated(permissionId, msg.sender, nonce + 1);
+        _revokeEnableSignature(permissionId);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -300,6 +302,11 @@ abstract contract SmartSessionBase is ISmartSession {
             policyDatas: session.erc7739Policies.erc1271Policies
         });
         $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
+    }
+
+    function _revokeEnableSignature(PermissionId permissionId) internal {
+        uint256 nonce = $signerNonce[permissionId][msg.sender]++;
+        emit NonceIterated(permissionId, msg.sender, nonce + 1);
     }
 
     function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {

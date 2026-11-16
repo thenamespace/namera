@@ -191,6 +191,7 @@ contract SessionManagementTest is SmartSessionTestBase {
         (uint48 validAfter, uint48 validUntil) =
             smartSession.getSessionValidity(permissionId, address(account));
         assertEq(validAfter + validUntil, 0);
+        assertEq(smartSession.getNonce(permissionId, address(account)), 1);
     }
 
     function test_removedSession_cannotValidate() public {

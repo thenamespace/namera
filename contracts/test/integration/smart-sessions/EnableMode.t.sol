@@ -117,6 +117,27 @@ contract EnableModeTest is SmartSessionTestBase {
         validate(op);
     }
 
+    /// @dev Removing a session revokes owner enable signatures that were never used.
+    function test_RevertWhen_removedSessionIsEnabledWithAnUnusedSignature() public {
+        Session memory session = defaultSession();
+        EnableSession memory data = enableData(address(account), session, SmartSessionMode.ENABLE);
+        PermissionId permissionId = enableSession(session);
+        vm.prank(address(account));
+        smartSession.removeSession(permissionId);
+        ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
+        op.signature = _encode(data, op);
+        bytes32 currentDigest = sessionDigest(address(account), session, SmartSessionMode.ENABLE);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.HashMismatch.selector,
+                data.hashesAndChainIds[0].sessionDigest,
+                currentDigest
+            )
+        );
+        validate(op);
+    }
+
     function testFuzz_RevertWhen_chainIdDoesNotMatch(uint64 chainId) public {
         vm.assume(chainId != block.chainid);
         Session memory session = defaultSession();
