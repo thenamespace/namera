@@ -6,7 +6,7 @@ import {ERC4337} from "solady/accounts/ERC4337.sol";
 import {ConfigId, PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 
-import {IEntryPoint} from "../../utils/EntryPoint.sol";
+import {EntryPointFixture, IEntryPoint} from "../../utils/EntryPoint.sol";
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
@@ -19,6 +19,10 @@ contract UserOpValidationTest is SmartSessionTestBase {
         op.paymasterAndData = hex"1234";
 
         assertEq(userOpHash(op), entryPoint.getUserOpHash(op));
+    }
+
+    function test_entryPointDeploysSenderCreatorAtCanonicalAddress() public view {
+        assertGt(EntryPointFixture.SENDER_CREATOR.code.length, 0);
     }
 
     function test_executesCallThroughEntryPoint() public {

@@ -74,3 +74,5 @@ recursive_deps = false
 [dependencies]
 forge-std = "1.17.0"
 solady = "0.1.26"
+eth-infinitism-account-abstraction = "0.7"
+"@openzeppelin-contracts" = "5.0.2"

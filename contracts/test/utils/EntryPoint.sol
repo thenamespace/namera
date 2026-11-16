@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
+import {EntryPoint} from "account-abstraction/core/EntryPoint.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
-/// @notice The parts of the EntryPoint v0.7 interface the tests use.
+/// @notice The parts of the EntryPoint v0.7 interface the tests use, on Solady's (ABI-identical)
+/// `PackedUserOperation`.
 interface IEntryPoint {
     error FailedOp(uint256 opIndex, string reason);
     error FailedOpWithRevert(uint256 opIndex, string reason, bytes inner);
@@ -22,7 +24,7 @@ interface IEntryPoint {
     function depositTo(address account) external payable;
 }
 
-/// @notice Installs the canonical EntryPoint v0.7 (and its SenderCreator) from deployed bytecode.
+/// @notice Deploys EntryPoint v0.7 (eth-infinitism/account-abstraction v0.7.0) at its canonical address.
 library EntryPointFixture {
     Vm private constant VM = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
@@ -31,12 +33,15 @@ library EntryPointFixture {
     address internal constant SENDER_CREATOR = 0xEFC2c1444eBCC4Db75e7613d20C6a62fF67A167C;
 
     function install() internal {
-        VM.etch(address(ENTRY_POINT), readCode("test/fixtures/entrypoint-v0.7.hex"));
-        VM.etch(SENDER_CREATOR, readCode("test/fixtures/sender-creator-v0.7.hex"));
-        VM.label(address(ENTRY_POINT), "EntryPoint");
-    }
-
-    function readCode(string memory path) internal view returns (bytes memory) {
-        return VM.parseBytes(VM.trim(VM.readFile(path)));
+        address entryPoint = address(ENTRY_POINT);
+        // Run the constructor at the canonical address. With nonce 1, the SenderCreator it creates lands at
+        // its canonical address too.
+        VM.etch(entryPoint, type(EntryPoint).creationCode);
+        VM.setNonce(entryPoint, 1);
+        (bool success, bytes memory runtimeCode) = entryPoint.call("");
+        require(success, "EntryPoint constructor failed");
+        VM.etch(entryPoint, runtimeCode);
+        VM.label(entryPoint, "EntryPoint");
+        VM.label(SENDER_CREATOR, "SenderCreator");
     }
 }
