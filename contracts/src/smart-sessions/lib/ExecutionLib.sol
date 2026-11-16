@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Execution, CallType, ExecType, ModeCode as ExecutionMode } from "../../interfaces/IERC7579.sol";
+import {
+    CallType,
+    ExecType,
+    Execution,
+    ModeCode as ExecutionMode
+} from "../../interfaces/IERC7579.sol";
 
 /**
  * Helper Library for decoding Execution calldata
@@ -22,18 +27,27 @@ library ExecutionLib {
             // check for potential overflow in calldataLoadOffset
             if gt(calldataLoadOffset, 0xffffffffffffffff) { revert(0, 0) }
             erc7579ExecutionCalldata.offset := add(baseOffset, calldataLoadOffset)
-            erc7579ExecutionCalldata.length := calldataload(sub(erc7579ExecutionCalldata.offset, 0x20))
+            erc7579ExecutionCalldata.length := calldataload(
+                sub(erc7579ExecutionCalldata.offset, 0x20)
+            )
             if gt(erc7579ExecutionCalldata.length, 0xffffffffffffffff) { revert(0, 0) }
 
             let calldataBound := add(userOpCallData.offset, userOpCallData.length)
             // revert if erc7579ExecutionCalldata starts after userOp finishes and if erc7579ExecutionCalldata ends
             // after userOp finishes
             if gt(erc7579ExecutionCalldata.offset, calldataBound) { revert(0, 0) }
-            if gt(add(erc7579ExecutionCalldata.offset, erc7579ExecutionCalldata.length), calldataBound) { revert(0, 0) }
+            if gt(
+                add(erc7579ExecutionCalldata.offset, erc7579ExecutionCalldata.length),
+                calldataBound
+            ) { revert(0, 0) }
         }
     }
 
-    function get7579ExecutionMode(bytes calldata userOpCallData) internal pure returns (ExecutionMode mode) {
+    function get7579ExecutionMode(bytes calldata userOpCallData)
+        internal
+        pure
+        returns (ExecutionMode mode)
+    {
         mode = ExecutionMode.wrap(bytes32(userOpCallData[4:36]));
     }
 
@@ -76,7 +90,7 @@ library ExecutionLib {
             if executionBatch.length {
                 // Perform bounds checks on the decoded `executionBatch`.
                 // Loop runs out-of-gas if `executionBatch.length` is big enough to cause overflows.
-                for { let i := executionBatch.length } 1 { } {
+                for { let i := executionBatch.length } 1 {} {
                     i := sub(i, 1)
                     let p := calldataload(add(executionBatch.offset, shl(5, i)))
                     let c := add(executionBatch.offset, p)
@@ -94,7 +108,11 @@ library ExecutionLib {
         }
     }
 
-    function encodeBatch(Execution[] memory executions) internal pure returns (bytes memory callData) {
+    function encodeBatch(Execution[] memory executions)
+        internal
+        pure
+        returns (bytes memory callData)
+    {
         callData = abi.encode(executions);
     }
 
@@ -108,11 +126,7 @@ library ExecutionLib {
         callData = executionCalldata[52:];
     }
 
-    function encodeSingle(
-        address target,
-        uint256 value,
-        bytes memory callData
-    )
+    function encodeSingle(address target, uint256 value, bytes memory callData)
         internal
         pure
         returns (bytes memory userOpCalldata)

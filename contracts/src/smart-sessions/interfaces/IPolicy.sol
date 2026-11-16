@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.23;
 
-import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
-import { IModule as IERC7579Module, VALIDATION_SUCCESS, VALIDATION_FAILED } from "../../interfaces/IERC7579.sol";
+import {IERC165} from "../../interfaces/IERC165.sol";
+import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
+import {
+    IModule as IERC7579Module,
+    VALIDATION_FAILED,
+    VALIDATION_SUCCESS
+} from "../../interfaces/IERC7579.sol";
 import "../DataTypes.sol";
-import { IERC165 } from "../../interfaces/IERC165.sol";
 
 /**
  * IPolicy are external contracts that enforce policies / permission on 4337/7579 executions
@@ -26,7 +30,8 @@ interface IPolicy is IERC165 {
      * external contracts.
      */
 
-    function initializeWithMultiplexer(address account, ConfigId configId, bytes calldata initData) external;
+    function initializeWithMultiplexer(address account, ConfigId configId, bytes calldata initData)
+        external;
 }
 
 /**
@@ -41,7 +46,9 @@ interface IPolicy is IERC165 {
  *   SmartSession Policies can not utilize aggregator addresses. (PolicyLib.isFailed() will prevent this)
  */
 interface IUserOpPolicy is IPolicy {
-    function checkUserOpPolicy(ConfigId id, PackedUserOperation calldata userOp) external returns (uint256);
+    function checkUserOpPolicy(ConfigId id, PackedUserOperation calldata userOp)
+        external
+        returns (uint256);
 }
 
 /**
@@ -63,9 +70,7 @@ interface IActionPolicy is IPolicy {
         address target,
         uint256 value,
         bytes calldata data
-    )
-        external
-        returns (uint256);
+    ) external returns (uint256);
 }
 
 /**
@@ -80,8 +85,5 @@ interface I1271Policy is IPolicy {
         address account,
         bytes32 hash,
         bytes calldata signature
-    )
-        external
-        view
-        returns (bool);
+    ) external view returns (bool);
 }

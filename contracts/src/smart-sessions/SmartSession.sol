@@ -3,24 +3,31 @@ pragma solidity ^0.8.25;
 
 import "./DataTypes.sol";
 
-import { IERC7579Account, ExecType, CallType, CALLTYPE_BATCH, CALLTYPE_SINGLE, EXECTYPE_DEFAULT } from "../interfaces/IERC7579.sol";
-import { IAccountExecute, PackedUserOperation } from "../interfaces/IERC4337.sol";
-import { EIP1271_MAGIC_VALUE, IERC1271 } from "../interfaces/IERC1271.sol";
+import {EIP1271_MAGIC_VALUE, IERC1271} from "../interfaces/IERC1271.sol";
+import {IAccountExecute, PackedUserOperation} from "../interfaces/IERC4337.sol";
+import {
+    CALLTYPE_BATCH,
+    CALLTYPE_SINGLE,
+    CallType,
+    EXECTYPE_DEFAULT,
+    ExecType,
+    IERC7579Account
+} from "../interfaces/IERC7579.sol";
 
-import { ISmartSession } from "./ISmartSession.sol";
-import { SmartSessionBase } from "./core/SmartSessionBase.sol";
-import { SmartSessionERC7739 } from "./core/SmartSessionERC7739.sol";
-import { EnumerableSet } from "./utils/EnumerableSet4337.sol";
-import { ExecutionLib as ExecutionLib } from "./lib/ExecutionLib.sol";
-import { IUserOpPolicy, IActionPolicy } from "./interfaces/IPolicy.sol";
-import { PolicyLib } from "./lib/PolicyLib.sol";
-import { SignerLib } from "./lib/SignerLib.sol";
-import { ConfigLib } from "./lib/ConfigLib.sol";
-import { EncodeLib } from "./lib/EncodeLib.sol";
-import { HashLib } from "./lib/HashLib.sol";
-import { ValidationDataLib } from "./lib/ValidationDataLib.sol";
-import { IdLib } from "./lib/IdLib.sol";
-import { SmartSessionModeLib } from "./lib/SmartSessionModeLib.sol";
+import {ISmartSession} from "./ISmartSession.sol";
+import {SmartSessionBase} from "./core/SmartSessionBase.sol";
+import {SmartSessionERC7739} from "./core/SmartSessionERC7739.sol";
+import {IActionPolicy, IUserOpPolicy} from "./interfaces/IPolicy.sol";
+import {ConfigLib} from "./lib/ConfigLib.sol";
+import {EncodeLib} from "./lib/EncodeLib.sol";
+import {ExecutionLib as ExecutionLib} from "./lib/ExecutionLib.sol";
+import {HashLib} from "./lib/HashLib.sol";
+import {IdLib} from "./lib/IdLib.sol";
+import {PolicyLib} from "./lib/PolicyLib.sol";
+import {SignerLib} from "./lib/SignerLib.sol";
+import {SmartSessionModeLib} from "./lib/SmartSessionModeLib.sol";
+import {ValidationDataLib} from "./lib/ValidationDataLib.sol";
+import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
 
 /**
  * @title SmartSession
@@ -64,10 +71,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
      * @param userOpHash The hash of the user operation
      * @return vd ValidationData containing the validation result
      */
-    function validateUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash
-    )
+    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash)
         external
         override
         returns (ValidationData vd)
@@ -79,7 +83,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (account != msg.sender) revert InvalidUserOpSender(account);
 
         // unpacking data packed in userOp.signature
-        (SmartSessionMode mode, PermissionId permissionId, bytes calldata packedSig) = userOp.signature.unpackMode();
+        (SmartSessionMode mode, PermissionId permissionId, bytes calldata packedSig) =
+            userOp.signature.unpackMode();
 
         // If the SmartSession.USE mode was selected, no further policies have to be enabled.
         // We can go straight to userOp validation
@@ -108,7 +113,9 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             permissionId = enableData.sessionToEnable.toPermissionIdMemory();
 
             // ENABLE mode: Enable new policies and then enforce them
-            _enablePolicies({ enableData: enableData, permissionId: permissionId, account: account, mode: mode });
+            _enablePolicies({
+                enableData: enableData, permissionId: permissionId, account: account, mode: mode
+            });
 
             vd = _enforcePolicies({
                 permissionId: permissionId,
@@ -137,9 +144,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         PermissionId permissionId,
         address account,
         SmartSessionMode mode
-    )
-        internal
-    {
+    ) internal {
         // Increment nonce to prevent replay attacks
         uint256 nonce = $signerNonce[permissionId][account]++;
         bytes32 hash = enableData.getAndVerifyDigest(account, nonce, mode);
@@ -149,7 +154,10 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         // NOTE: although SmartSession implements a ERC1271 feature,
         // it CAN NOT be used as a valid ERC1271 validator for
         // this step. SmartSessions ERC1271 function must prevent this
-        if (IERC1271(account).isValidSignature(hash, enableData.permissionEnableSig) != EIP1271_MAGIC_VALUE) {
+        if (
+            IERC1271(account).isValidSignature(hash, enableData.permissionEnableSig)
+                != EIP1271_MAGIC_VALUE
+        ) {
             revert InvalidEnableSignature(account, hash);
         }
 
@@ -221,12 +229,11 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         PackedUserOperation calldata userOp,
         bytes memory decompressedSignature,
         address account
-    )
-        internal
-        returns (ValidationData vd)
-    {
+    ) internal returns (ValidationData vd) {
         // ensure that the permissionId is enabled
-        if (!$enabledSessions.contains({ account: account, value: PermissionId.unwrap(permissionId) })) {
+        if (!$enabledSessions.contains({
+                account: account, value: PermissionId.unwrap(permissionId)
+            })) {
             revert InvalidPermissionId(permissionId);
         }
 
@@ -253,7 +260,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             vd = $userOpPolicies.check({
                 permissionId: permissionId,
                 callOnIPolicy: abi.encodeCall(
-                    IUserOpPolicy.checkUserOpPolicy, (permissionId.toUserOpPolicyId().toConfigId(), userOp)
+                    IUserOpPolicy.checkUserOpPolicy,
+                    (permissionId.toUserOpPolicyId().toConfigId(), userOp)
                 ),
                 minPolicies: minPolicies
             });
@@ -277,11 +285,12 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             // DEFAULT EXEC & BATCH CALL
             else if (callType == CALLTYPE_BATCH) {
                 vd = vd.intersect(
-                    $actionPolicies.actionPolicies.checkBatch7579Exec({
-                        userOp: userOp,
-                        permissionId: permissionId,
-                        minPolicies: 1 // minimum of one actionPolicy must be set.
-                     })
+                    $actionPolicies.actionPolicies
+                        .checkBatch7579Exec({
+                            userOp: userOp,
+                            permissionId: permissionId,
+                            minPolicies: 1 // minimum of one actionPolicy must be set.
+                        })
                 );
             }
             // DEFAULT EXEC & SINGLE CALL
@@ -289,13 +298,14 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
                 (address target, uint256 value, bytes calldata callData) =
                     userOp.callData.decodeUserOpCallData().decodeSingle();
                 vd = vd.intersect(
-                    $actionPolicies.actionPolicies.checkSingle7579Exec({
-                        permissionId: permissionId,
-                        target: target,
-                        value: value,
-                        callData: callData,
-                        minPolicies: 1 // minimum of one actionPolicy must be set.
-                     })
+                    $actionPolicies.actionPolicies
+                        .checkSingle7579Exec({
+                            permissionId: permissionId,
+                            target: target,
+                            value: value,
+                            callData: callData,
+                            minPolicies: 1 // minimum of one actionPolicy must be set.
+                        })
                 );
             }
             // DelegateCalls are not supported by SmartSession
@@ -330,7 +340,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
                         )
                     ),
                     minPolicies: 1 // minimum of one actionPolicy must be set.
-                 })
+                })
             );
         }
 
@@ -370,22 +380,22 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
      *                                    contentsType,
      *                                    uint16(contentsType.length))
      */
-    function isValidSignatureWithSender(
-        address sender,
-        bytes32 hash,
-        bytes calldata signature
-    )
+    function isValidSignatureWithSender(address sender, bytes32 hash, bytes calldata signature)
         external
         view
         override
         returns (bytes4 result)
     {
         // ERC-7739 support detection
-        if (hash == 0x7739773977397739773977397739773977397739773977397739773977397739) return bytes4(0x77390001);
+        if (hash == 0x7739773977397739773977397739773977397739773977397739773977397739) {
+            return bytes4(0x77390001);
+        }
         // disallow that session can be authorized by other sessions
         if (sender == address(this)) return EIP1271_FAILED;
 
-        bool success = _erc1271IsValidSignatureViaNestedEIP712(sender, hash, _erc1271UnwrapSignature(signature));
+        bool success = _erc1271IsValidSignatureViaNestedEIP712(
+            sender, hash, _erc1271UnwrapSignature(signature)
+        );
         /// @solidity memory-safe-assembly
         assembly {
             // `success ? bytes4(keccak256("isValidSignature(bytes32,bytes)")) : 0xffffffff`.
@@ -415,13 +425,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         bytes calldata signature,
         bytes32 appDomainSeparator,
         bytes calldata contents
-    )
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    ) internal view virtual override returns (bool) {
         bytes32 contentHash = string(contents).hashERC7739Content();
         // isolate the PermissionId and actual signature from the supplied signature param
         PermissionId permissionId = PermissionId.wrap(bytes32(signature[0:32]));
@@ -450,10 +454,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (!valid) return valid;
         // this call reverts if the ISessionValidator is not set
         return $sessionValidators.isValidISessionValidator({
-            hash: hash,
-            account: msg.sender,
-            permissionId: permissionId,
-            signature: signature
+            hash: hash, account: msg.sender, permissionId: permissionId, signature: signature
         });
     }
 }

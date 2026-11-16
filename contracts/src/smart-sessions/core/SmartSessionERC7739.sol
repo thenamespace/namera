@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.25;
 
-import { EIP712 } from "solady/utils/EIP712.sol";
-import { ISmartSession } from "../ISmartSession.sol";
+import {ISmartSession} from "../ISmartSession.sol";
+import {EIP712} from "solady/utils/EIP712.sol";
 
 /// @notice ERC1271 mixin with nested EIP-712 approach.
 /// @author Solady (https://github.com/vectorized/solady/blob/main/src/accounts/ERC1271.sol)
@@ -19,14 +19,15 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         bytes calldata signature,
         bytes32 appDomainSeparator,
         bytes calldata contents
-    )
+    ) internal view virtual returns (bool);
+
+    /// @dev Unwraps and returns the signature.
+    function _erc1271UnwrapSignature(bytes calldata signature)
         internal
         view
         virtual
-        returns (bool);
-
-    /// @dev Unwraps and returns the signature.
-    function _erc1271UnwrapSignature(bytes calldata signature) internal view virtual returns (bytes calldata result) {
+        returns (bytes calldata result)
+    {
         result = signature;
         /// @solidity memory-safe-assembly
         assembly {
@@ -109,19 +110,20 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         address sender,
         bytes32 hash,
         bytes calldata signature
-    )
-        internal
-        view
-        virtual
-        returns (bool result)
-    {
+    ) internal view virtual returns (bool result) {
         bytes calldata contents = signature;
         bytes32 appDomainSeparator;
         uint256 t = uint256(uint160(address(this)));
         // Forces the compiler to pop the variables after the scope, avoiding stack-too-deep.
         if (t != uint256(0)) {
-            (, string memory name, string memory version, uint256 chainId, address verifyingContract, bytes32 salt,) =
-                EIP712(msg.sender).eip712Domain();
+            (
+                ,
+                string memory name,
+                string memory version,
+                uint256 chainId,
+                address verifyingContract,
+                bytes32 salt,
+            ) = EIP712(msg.sender).eip712Domain();
             /// @solidity memory-safe-assembly
             assembly {
                 t := mload(0x40) // Grab the free memory pointer.
@@ -139,7 +141,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             let m := mload(0x40) // Cache the free memory pointer.
             // `c` is `contentsDescription.length`, which is stored in the last 2 bytes of the signature.
             let c := shr(240, calldataload(add(signature.offset, sub(signature.length, 2))))
-            for { } 1 { } {
+            for {} 1 {} {
                 let l := add(0x42, c) // Total length of appended data (32 + 32 + c + 2).
                 let o := add(signature.offset, sub(signature.length, l)) // Offset of appended data.
                 mstore(0x00, 0x1901) // Store the "\x19\x01" prefix.
@@ -155,9 +157,11 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 mstore(add(p, c), 40) // Store a '(' after the end.
                 if iszero(eq(byte(0, mload(sub(add(p, c), 1))), 41)) {
                     let e := 0 // Length of `contentsName` in explicit mode.
-                    for { let q := sub(add(p, c), 1) } 1 { } {
+                    for { let q := sub(add(p, c), 1) } 1 {} {
                         e := add(e, 1) // Scan backwards until we encounter a ')'.
-                        if iszero(gt(lt(e, c), eq(byte(0, mload(sub(q, e))), 41))) { break }
+                        if iszero(gt(lt(e, c), eq(byte(0, mload(sub(q, e))), 41))) {
+                            break
+                        }
                     }
                     c := sub(c, e) // Truncate `contentsDescription` to `contentsType`.
                     calldatacopy(p, add(add(o, 0x40), c), e) // Copy `contentsName`.
@@ -166,7 +170,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 // `d & 1 == 1` means that `contentsName` is invalid.
                 let d := shr(byte(0, mload(p)), 0x7fffffe000000000000010000000000) // Starts with `[a-z(]`.
                 // Advance `p` until we encounter '('.
-                for { } iszero(eq(byte(0, mload(p)), 40)) { p := add(p, 1) } {
+                for {} iszero(eq(byte(0, mload(p)), 40)) { p := add(p, 1) } {
                     d := or(shr(byte(0, mload(p)), 0x120100000001), d) // Has a byte in ", )\x00".
                 }
                 mstore(p, " contents,string name,string") // Store the rest of the encoding.
@@ -188,6 +192,8 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             }
             mstore(0x40, m) // Restore the free memory pointer.
         }
-        result = _erc1271IsValidSignatureNowCalldata(sender, hash, signature, appDomainSeparator, contents);
+        result = _erc1271IsValidSignatureNowCalldata(
+            sender, hash, signature, appDomainSeparator, contents
+        );
     }
 }

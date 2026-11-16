@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.25;
 
-import { PermissionId } from "../DataTypes.sol";
-import { ISmartSession } from "../ISmartSession.sol";
+import {PermissionId} from "../DataTypes.sol";
+import {ISmartSession} from "../ISmartSession.sol";
 /**
  * @title NonceManager
  * @dev Abstract contract for managing nonces for smart sessions
@@ -10,7 +10,8 @@ import { ISmartSession } from "../ISmartSession.sol";
 
 abstract contract NonceManager is ISmartSession {
     /// @dev Mapping to store nonces for each permission ID and smart account
-    mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal $signerNonce;
+    mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
+        $signerNonce;
 
     /**
      * @notice Get the current nonce for a given permission ID and account

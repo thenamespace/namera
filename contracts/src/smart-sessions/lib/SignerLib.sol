@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.25;
 
+import {FlatBytesLib} from "../../libraries/FlatBytesLib.sol";
 import "../DataTypes.sol";
-import { FlatBytesLib } from "../../libraries/FlatBytesLib.sol";
-import { ISessionValidator } from "../interfaces/ISessionValidator.sol";
+import {ISessionValidator} from "../interfaces/ISessionValidator.sol";
 
 library SignerLib {
     using FlatBytesLib for *;
@@ -16,12 +16,9 @@ library SignerLib {
         address account,
         PermissionId permissionId,
         bytes memory signature
-    )
-        internal
-        view
-        returns (bool)
-    {
-        ISessionValidator sessionValidator = $sessionValidators[permissionId][account].sessionValidator;
+    ) internal view returns (bool) {
+        ISessionValidator sessionValidator =
+        $sessionValidators[permissionId][account].sessionValidator;
         if (address(sessionValidator) == address(0)) revert SignerNotFound(permissionId, account);
 
         // check signature of ISessionValidator first.

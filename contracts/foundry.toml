@@ -52,13 +52,11 @@ multiline_func_header = "attributes_first"
 quote_style = "double"
 number_underscore = "thousands"
 sort_imports = true
-# Ported upstream code keeps upstream formatting so diffs against erc7579/smartsessions stay readable.
-ignore = ["dependencies/**", "src/smart-sessions/**"]
+ignore = ["dependencies/**"]
 
 [lint]
 severity = ["high", "medium", "low"]
-# Ported upstream code is reviewed through Slither (triaged findings in slither.db.json) and audit.
-ignore = ["dependencies/**", "src/smart-sessions/**"]
+ignore = ["dependencies/**"]
 lint_on_build = false
 
 [soldeer]

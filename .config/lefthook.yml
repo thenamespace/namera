@@ -14,9 +14,6 @@ pre-commit:
     - name: solidity
       root: contracts/
       glob: "*.sol"
-      # Ported upstream code keeps upstream formatting (see contracts/foundry.toml [fmt]).
-      exclude:
-        - "contracts/src/smart-sessions/**"
       run: forge fmt {staged_files}
       stage_fixed: true
 

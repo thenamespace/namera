@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.25;
 
+import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
 import "../DataTypes.sol";
-import { LibZip } from "solady/utils/LibZip.sol";
-import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
-import { SmartSessionModeLib } from "./SmartSessionModeLib.sol";
+import {SmartSessionModeLib} from "./SmartSessionModeLib.sol";
+import {LibZip} from "solady/utils/LibZip.sol";
 
 library EncodeLib {
     using LibZip for bytes;
@@ -36,19 +36,22 @@ library EncodeLib {
         }
     }
 
-    function encodeUse(PermissionId permissionId, bytes memory sig) internal pure returns (bytes memory userOpSig) {
+    function encodeUse(PermissionId permissionId, bytes memory sig)
+        internal
+        pure
+        returns (bytes memory userOpSig)
+    {
         userOpSig = abi.encodePacked(SmartSessionMode.USE, permissionId, sig);
     }
 
-    function encodeUnsafeEnable(
-        bytes memory sig,
-        EnableSession memory enableData
-    )
+    function encodeUnsafeEnable(bytes memory sig, EnableSession memory enableData)
         internal
         pure
         returns (bytes memory packedSig)
     {
-        packedSig = abi.encodePacked(SmartSessionMode.UNSAFE_ENABLE, abi.encode(enableData, sig).flzCompress());
+        packedSig = abi.encodePacked(
+            SmartSessionMode.UNSAFE_ENABLE, abi.encode(enableData, sig).flzCompress()
+        );
     }
 
     function decodeEnable(bytes calldata packedSig)

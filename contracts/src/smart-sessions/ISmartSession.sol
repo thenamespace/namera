@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+import {PackedUserOperation} from "../interfaces/IERC4337.sol";
+import {CallType, ExecType, ModeCode as ExecutionMode} from "../interfaces/IERC7579.sol";
 import "./DataTypes.sol";
-import { PackedUserOperation } from "../interfaces/IERC4337.sol";
-import { CallType, ExecType, ModeCode as ExecutionMode } from "../interfaces/IERC7579.sol";
 
 /**
  * @title ISmartSession
@@ -54,15 +54,25 @@ interface ISmartSession {
     error PaymasterValidationNotEnabled(PermissionId permissionId);
 
     event NonceIterated(PermissionId permissionId, address account, uint256 newValue);
-    event SessionValidatorEnabled(PermissionId permissionId, address sessionValidator, address smartAccount);
-    event SessionValidatorDisabled(PermissionId permissionId, address sessionValidator, address smartAccount);
-    event PolicyDisabled(PermissionId permissionId, PolicyType policyType, address policy, address smartAccount);
+    event SessionValidatorEnabled(
+        PermissionId permissionId, address sessionValidator, address smartAccount
+    );
+    event SessionValidatorDisabled(
+        PermissionId permissionId, address sessionValidator, address smartAccount
+    );
+    event PolicyDisabled(
+        PermissionId permissionId, PolicyType policyType, address policy, address smartAccount
+    );
     event ActionIdDisabled(PermissionId permissionId, ActionId actionId, address smartAccount);
-    event PolicyEnabled(PermissionId permissionId, PolicyType policyType, address policy, address smartAccount);
+    event PolicyEnabled(
+        PermissionId permissionId, PolicyType policyType, address policy, address smartAccount
+    );
     event SessionCreated(PermissionId permissionId, address account);
     event SessionRemoved(PermissionId permissionId, address smartAccount);
 
-    event PermissionIdPermit4337Paymaster(PermissionId permissionId, address smartAccount, bool enabled);
+    event PermissionIdPermit4337Paymaster(
+        PermissionId permissionId, address smartAccount, bool enabled
+    );
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           ERC7579                          */
@@ -80,10 +90,7 @@ interface ISmartSession {
      *     EnableSession data, which is packed in userOp.signature is parsed, and stored in the SmartSession storage.
      *
      */
-    function validateUserOp(
-        PackedUserOperation memory userOp,
-        bytes32 userOpHash
-    )
+    function validateUserOp(PackedUserOperation memory userOp, bytes32 userOpHash)
         external
         returns (ValidationData vd);
     /**
@@ -104,11 +111,7 @@ interface ISmartSession {
      * ERC7579 compliant ERC1271 function
      * this function allows session keys to sign ERC1271 requests.
      */
-    function isValidSignatureWithSender(
-        address sender,
-        bytes32 hash,
-        bytes memory signature
-    )
+    function isValidSignatureWithSender(address sender, bytes32 hash, bytes memory signature)
         external
         view
         returns (bytes4 result);
@@ -118,18 +121,26 @@ interface ISmartSession {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                      Manage Sessions                       */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-    function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies) external;
-    function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies) external;
-    function enableSessions(Session[] memory sessions) external returns (PermissionId[] memory permissionIds);
-    function enableUserOpPolicies(PermissionId permissionId, PolicyData[] memory userOpPolicies) external;
-    function disableActionPolicies(PermissionId permissionId, ActionId actionId, address[] memory policies) external;
+    function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies)
+        external;
+    function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies)
+        external;
+    function enableSessions(Session[] memory sessions)
+        external
+        returns (PermissionId[] memory permissionIds);
+    function enableUserOpPolicies(PermissionId permissionId, PolicyData[] memory userOpPolicies)
+        external;
+    function disableActionPolicies(
+        PermissionId permissionId,
+        ActionId actionId,
+        address[] memory policies
+    ) external;
     function disableActionId(PermissionId permissionId, ActionId actionId) external;
     function disableERC1271Policies(
         PermissionId permissionId,
         address[] memory policies,
         ERC7739Context[] calldata contexts
-    )
-        external;
+    ) external;
     function disableUserOpPolicies(PermissionId permissionId, address[] memory policies) external;
     function removeSession(PermissionId permissionId) external;
     function revokeEnableSignature(PermissionId permissionId) external;
@@ -143,14 +154,20 @@ interface ISmartSession {
         address account,
         Session memory data,
         SmartSessionMode mode
-    )
-        external
-        view
-        returns (bytes32);
+    ) external view returns (bytes32);
 
     function getNonce(PermissionId permissionId, address account) external view returns (uint256);
-    function getPermissionId(Session memory session) external pure returns (PermissionId permissionId);
-    function isPermissionEnabled(PermissionId permissionId, address account) external view returns (bool);
+    function getPermissionId(Session memory session)
+        external
+        pure
+        returns (PermissionId permissionId);
+    function isPermissionEnabled(PermissionId permissionId, address account)
+        external
+        view
+        returns (bool);
 
-    function getPermissionIDs(address account) external view returns (PermissionId[] memory permissionIds);
+    function getPermissionIDs(address account)
+        external
+        view
+        returns (PermissionId[] memory permissionIds);
 }

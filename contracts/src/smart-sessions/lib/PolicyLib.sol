@@ -2,18 +2,18 @@
 pragma solidity ^0.8.25;
 
 import "../DataTypes.sol";
-import { ISmartSession } from "../ISmartSession.sol";
-import { IPolicy, IActionPolicy, I1271Policy } from "../interfaces/IPolicy.sol";
+import {ISmartSession} from "../ISmartSession.sol";
+import {I1271Policy, IActionPolicy, IPolicy} from "../interfaces/IPolicy.sol";
 
-import { Execution, ExecutionLib as ExecutionLib } from "./ExecutionLib.sol";
-import { ValidationDataLib } from "./ValidationDataLib.sol";
-import { IdLib } from "./IdLib.sol";
-import { EncodeLib } from "./EncodeLib.sol";
-import { EnumerableSet } from "../utils/EnumerableSet4337.sol";
+import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
+import {EncodeLib} from "./EncodeLib.sol";
+import {Execution, ExecutionLib as ExecutionLib} from "./ExecutionLib.sol";
+import {IdLib} from "./IdLib.sol";
+import {ValidationDataLib} from "./ValidationDataLib.sol";
 
-import { PackedUserOperation } from "../../interfaces/IERC4337.sol";
-import { IERC7579Account } from "../../interfaces/IERC7579.sol";
-import { LibCall } from "solady/utils/LibCall.sol";
+import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
+import {IERC7579Account} from "../../interfaces/IERC7579.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
 
 library PolicyLib {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -28,9 +28,9 @@ library PolicyLib {
      * To prevent Policies from returning a packed aggregator value, we use this bitmask.
      */
     function isFailed(ValidationData packedData) internal pure returns (bool sigFailed) {
-        sigFailed = (
-            ValidationData.unwrap(packedData) & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
-        ) != 0;
+        sigFailed =
+            (ValidationData.unwrap(packedData)
+                        & 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff) != 0;
     }
 
     /**
@@ -54,12 +54,9 @@ library PolicyLib {
         PermissionId permissionId,
         bytes memory callOnIPolicy,
         uint256 minPolicies
-    )
-        internal
-        returns (ValidationData vd)
-    {
+    ) internal returns (ValidationData vd) {
         // Get the list of policies for the given permissionId and account
-        address[] memory policies = $self.policyList[permissionId].values({ account: msg.sender });
+        address[] memory policies = $self.policyList[permissionId].values({account: msg.sender});
         uint256 length = policies.length;
 
         // Ensure the minimum number of policies is met.
@@ -95,12 +92,9 @@ library PolicyLib {
         PermissionId permissionId,
         bytes memory callOnIPolicy,
         uint256 minPolicies
-    )
-        internal
-        returns (ValidationData vd)
-    {
+    ) internal returns (ValidationData vd) {
         // Get the list of policies for the given permissionId and account
-        address[] memory policies = $self.policyList[permissionId].values({ account: msg.sender });
+        address[] memory policies = $self.policyList[permissionId].values({account: msg.sender});
         uint256 length = policies.length;
 
         // Ensure the minimum number of policies is met. I.e. there are enough policies configured for given ActionId
@@ -122,11 +116,7 @@ library PolicyLib {
         if (vd == RETRY_WITH_FALLBACK) revert ISmartSession.ForbiddenValidationData();
     }
 
-    function callPolicy(
-        address policy,
-        PermissionId permissionId,
-        bytes memory callOnIPolicy
-    )
+    function callPolicy(address policy, PermissionId permissionId, bytes memory callOnIPolicy)
         internal
         returns (ValidationData _vd)
     {
@@ -180,10 +170,7 @@ library PolicyLib {
         uint256 value,
         bytes calldata callData,
         uint256 minPolicies
-    )
-        internal
-        returns (ValidationData vd)
-    {
+    ) internal returns (ValidationData vd) {
         // Extract the function selector from the call data
         bytes4 targetSig;
         if (callData.length < 4) {
@@ -217,7 +204,8 @@ library PolicyLib {
             vd = $policies[actionId].tryCheck({
                 permissionId: permissionId,
                 callOnIPolicy: abi.encodeCall(
-                    IActionPolicy.checkAction, (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
+                    IActionPolicy.checkAction,
+                    (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
                 ),
                 minPolicies: minPolicies
             });
@@ -233,7 +221,8 @@ library PolicyLib {
         vd = $policies[actionId].check({
             permissionId: permissionId,
             callOnIPolicy: abi.encodeCall(
-                IActionPolicy.checkAction, (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
+                IActionPolicy.checkAction,
+                (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
             ),
             minPolicies: minPolicies
         });
@@ -260,10 +249,7 @@ library PolicyLib {
         PackedUserOperation calldata userOp,
         PermissionId permissionId,
         uint256 minPolicies
-    )
-        internal
-        returns (ValidationData vd)
-    {
+    ) internal returns (ValidationData vd) {
         // Decode the batch of 7579 executions from the user operation's call data
         Execution[] calldata executions = userOp.callData.decodeUserOpCallData().decodeBatch();
         uint256 length = executions.length;
@@ -314,12 +300,8 @@ library PolicyLib {
         PermissionId permissionId,
         ConfigId configId,
         uint256 minPoliciesToEnforce
-    )
-        internal
-        view
-        returns (bool valid)
-    {
-        address[] memory policies = $self.policyList[permissionId].values({ account: account });
+    ) internal view returns (bool valid) {
+        address[] memory policies = $self.policyList[permissionId].values({account: account});
         uint256 length = policies.length;
         if (minPoliciesToEnforce > length) revert ISmartSession.NoPoliciesSet(permissionId);
 
@@ -356,11 +338,7 @@ library PolicyLib {
         PermissionId permissionId,
         address smartAccount,
         PolicyData[] calldata policyDatas
-    )
-        internal
-        view
-        returns (bool enabled)
-    {
+    ) internal view returns (bool enabled) {
         uint256 length = policyDatas.length;
         enabled = true;
         if (length == 0) return enabled; // 0 policies are always enabled lol
@@ -392,20 +370,18 @@ library PolicyLib {
         PermissionId permissionId,
         address smartAccount,
         ActionData[] calldata actionPolicyDatas
-    )
-        internal
-        view
-        returns (bool enabled)
-    {
+    ) internal view returns (bool enabled) {
         uint256 length = actionPolicyDatas.length;
         enabled = true;
         if (length == 0) return enabled; // 0 actions are always enabled
         for (uint256 i; i < length; i++) {
             ActionData calldata actionPolicyData = actionPolicyDatas[i];
-            ActionId actionId = actionPolicyData.actionTarget.toActionId(actionPolicyData.actionTargetSelector);
+            ActionId actionId =
+                actionPolicyData.actionTarget.toActionId(actionPolicyData.actionTargetSelector);
             // Check if the action policy is enabled
-            if (!$self.actionPolicies[actionId].areEnabled(permissionId, smartAccount, actionPolicyData.actionPolicies))
-            {
+            if (!$self.actionPolicies[actionId].areEnabled(
+                    permissionId, smartAccount, actionPolicyData.actionPolicies
+                )) {
                 return false;
             }
         }

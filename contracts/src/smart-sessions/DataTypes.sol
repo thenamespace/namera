@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.25;
 
-import "./utils/AssociatedArrayLib.sol";
-import { IRegistry, ModuleType } from "./interfaces/IRegistry.sol";
+import {FlatBytesLib} from "../libraries/FlatBytesLib.sol";
+import {IRegistry, ModuleType} from "./interfaces/IRegistry.sol";
 import "./interfaces/ISessionValidator.sol";
-import { EnumerableSet } from "./utils/EnumerableSet4337.sol";
-import { EnumerableMap } from "./utils/EnumerableMap4337.sol";
-import { FlatBytesLib } from "../libraries/FlatBytesLib.sol";
+import "./utils/AssociatedArrayLib.sol";
+import {EnumerableMap} from "./utils/EnumerableMap4337.sol";
+import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                       Parameters                           */
@@ -135,7 +135,8 @@ struct EnumerableActionPolicy {
 }
 
 struct EnumerableERC7739Config {
-    mapping(PermissionId => mapping(bytes32 appDomainSeparator => EnumerableSet.Bytes32Set)) enabledContentNames;
+    mapping(PermissionId => mapping(bytes32 appDomainSeparator => EnumerableSet.Bytes32Set))
+        enabledContentNames;
     mapping(PermissionId => EnumerableSet.Bytes32Set) enabledDomainSeparators;
 }
 
@@ -198,7 +199,8 @@ address constant FALLBACK_TARGET_FLAG = address(1);
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG = 0x00000001;
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION = 0x00000002;
 // keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG))
-ActionId constant FALLBACK_ACTIONID = ActionId.wrap(0xd884b6afa19f8ace90a388daca691e4e28f20cdac5aeefd46ad8bd1c074d28cf);
+ActionId constant FALLBACK_ACTIONID =
+    ActionId.wrap(0xd884b6afa19f8ace90a388daca691e4e28f20cdac5aeefd46ad8bd1c074d28cf);
 
 // keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION))
 ActionId constant FALLBACK_ACTIONID_SMARTSESSION_CALL =
@@ -207,8 +209,8 @@ ActionId constant FALLBACK_ACTIONID_SMARTSESSION_CALL =
 // A unique ValidationData value to retry a policy check with the FALLBACK_ACTIONID.
 ValidationData constant RETRY_WITH_FALLBACK = ValidationData.wrap(uint256(0x50FFBAAD));
 
-using { validationDataEq as == } for ValidationData global;
-using { validationDataNeq as != } for ValidationData global;
+using {validationDataEq as ==} for ValidationData global;
+using {validationDataNeq as !=} for ValidationData global;
 
 function validationDataEq(ValidationData uid1, ValidationData uid2) pure returns (bool) {
     return ValidationData.unwrap(uid1) == ValidationData.unwrap(uid2);
@@ -218,8 +220,8 @@ function validationDataNeq(ValidationData uid1, ValidationData uid2) pure return
     return ValidationData.unwrap(uid1) != ValidationData.unwrap(uid2);
 }
 
-using { permissionIdEq as == } for PermissionId global;
-using { permissionIdNeq as != } for PermissionId global;
+using {permissionIdEq as ==} for PermissionId global;
+using {permissionIdNeq as !=} for PermissionId global;
 
 function permissionIdEq(PermissionId uid1, PermissionId uid2) pure returns (bool) {
     return PermissionId.unwrap(uid1) == PermissionId.unwrap(uid2);
@@ -230,8 +232,8 @@ function permissionIdNeq(PermissionId uid1, PermissionId uid2) pure returns (boo
 }
 
 // ActionId
-using { actionIdEq as == } for ActionId global;
-using { actionIdNeq as != } for ActionId global;
+using {actionIdEq as ==} for ActionId global;
+using {actionIdNeq as !=} for ActionId global;
 
 function actionIdEq(ActionId id1, ActionId id2) pure returns (bool) {
     return ActionId.unwrap(id1) == ActionId.unwrap(id2);
@@ -242,8 +244,8 @@ function actionIdNeq(ActionId id1, ActionId id2) pure returns (bool) {
 }
 
 // UserOpPolicyId
-using { userOpPolicyIdEq as == } for UserOpPolicyId global;
-using { userOpPolicyIdNeq as != } for UserOpPolicyId global;
+using {userOpPolicyIdEq as ==} for UserOpPolicyId global;
+using {userOpPolicyIdNeq as !=} for UserOpPolicyId global;
 
 function userOpPolicyIdEq(UserOpPolicyId id1, UserOpPolicyId id2) pure returns (bool) {
     return UserOpPolicyId.unwrap(id1) == UserOpPolicyId.unwrap(id2);
@@ -254,8 +256,8 @@ function userOpPolicyIdNeq(UserOpPolicyId id1, UserOpPolicyId id2) pure returns 
 }
 
 // ActionPolicyId
-using { actionPolicyIdEq as == } for ActionPolicyId global;
-using { actionPolicyIdNeq as != } for ActionPolicyId global;
+using {actionPolicyIdEq as ==} for ActionPolicyId global;
+using {actionPolicyIdNeq as !=} for ActionPolicyId global;
 
 function actionPolicyIdEq(ActionPolicyId id1, ActionPolicyId id2) pure returns (bool) {
     return ActionPolicyId.unwrap(id1) == ActionPolicyId.unwrap(id2);
@@ -266,8 +268,8 @@ function actionPolicyIdNeq(ActionPolicyId id1, ActionPolicyId id2) pure returns 
 }
 
 // Erc1271PolicyId
-using { erc1271PolicyIdEq as == } for Erc1271PolicyId global;
-using { erc1271PolicyIdNeq as != } for Erc1271PolicyId global;
+using {erc1271PolicyIdEq as ==} for Erc1271PolicyId global;
+using {erc1271PolicyIdNeq as !=} for Erc1271PolicyId global;
 
 function erc1271PolicyIdEq(Erc1271PolicyId id1, Erc1271PolicyId id2) pure returns (bool) {
     return Erc1271PolicyId.unwrap(id1) == Erc1271PolicyId.unwrap(id2);
@@ -278,8 +280,8 @@ function erc1271PolicyIdNeq(Erc1271PolicyId id1, Erc1271PolicyId id2) pure retur
 }
 
 // ConfigId
-using { configIdEq as == } for ConfigId global;
-using { configIdNeq as != } for ConfigId global;
+using {configIdEq as ==} for ConfigId global;
+using {configIdNeq as !=} for ConfigId global;
 
 function configIdEq(ConfigId id1, ConfigId id2) pure returns (bool) {
     return ConfigId.unwrap(id1) == ConfigId.unwrap(id2);

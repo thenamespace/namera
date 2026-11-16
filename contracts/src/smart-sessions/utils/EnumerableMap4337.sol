@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.20;
 
-import { EnumerableSet } from "./EnumerableSet4337.sol";
+import {EnumerableSet} from "./EnumerableSet4337.sol";
 
 /**
  * Fork of OZ's EnumerableSet that makes all storage access ERC-4337 compliant via associated storage
@@ -73,12 +73,7 @@ library EnumerableMap {
      * Returns true if the key was added to the map, that is if it was not
      * already present.
      */
-    function set(
-        Bytes32ToBytes32Map storage map,
-        address account,
-        bytes32 key,
-        bytes32 value
-    )
+    function set(Bytes32ToBytes32Map storage map, address account, bytes32 key, bytes32 value)
         internal
         returns (bool)
     {
@@ -91,7 +86,10 @@ library EnumerableMap {
      *
      * Returns true if the key was removed from the map, that is if it was present.
      */
-    function remove(Bytes32ToBytes32Map storage map, address account, bytes32 key) internal returns (bool) {
+    function remove(Bytes32ToBytes32Map storage map, address account, bytes32 key)
+        internal
+        returns (bool)
+    {
         delete map._values[key][account];
         return map._keys.remove(account, key);
     }
@@ -99,14 +97,22 @@ library EnumerableMap {
     /**
      * @dev Returns true if the key is in the map. O(1).
      */
-    function contains(Bytes32ToBytes32Map storage map, address account, bytes32 key) internal view returns (bool) {
+    function contains(Bytes32ToBytes32Map storage map, address account, bytes32 key)
+        internal
+        view
+        returns (bool)
+    {
         return map._keys.contains(account, key);
     }
 
     /**
      * @dev Returns the number of key-value pairs in the map. O(1).
      */
-    function length(Bytes32ToBytes32Map storage map, address account) internal view returns (uint256) {
+    function length(Bytes32ToBytes32Map storage map, address account)
+        internal
+        view
+        returns (uint256)
+    {
         return map._keys.length(account);
     }
 
@@ -120,11 +126,7 @@ library EnumerableMap {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(
-        Bytes32ToBytes32Map storage map,
-        address account,
-        uint256 index
-    )
+    function at(Bytes32ToBytes32Map storage map, address account, uint256 index)
         internal
         view
         returns (bytes32, bytes32)
@@ -137,11 +139,7 @@ library EnumerableMap {
      * @dev Tries to returns the value associated with `key`. O(1).
      * Does not revert if `key` is not in the map.
      */
-    function tryGet(
-        Bytes32ToBytes32Map storage map,
-        address account,
-        bytes32 key
-    )
+    function tryGet(Bytes32ToBytes32Map storage map, address account, bytes32 key)
         internal
         view
         returns (bool, bytes32)
@@ -161,7 +159,11 @@ library EnumerableMap {
      *
      * - `key` must be in the map.
      */
-    function get(Bytes32ToBytes32Map storage map, address account, bytes32 key) internal view returns (bytes32) {
+    function get(Bytes32ToBytes32Map storage map, address account, bytes32 key)
+        internal
+        view
+        returns (bytes32)
+    {
         bytes32 value = map._values[key][account];
         if (value == 0 && !contains(map, account, key)) {
             revert EnumerableMapNonexistentKey(key);
@@ -177,7 +179,11 @@ library EnumerableMap {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the map grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function keys(Bytes32ToBytes32Map storage map, address account) internal view returns (bytes32[] memory) {
+    function keys(Bytes32ToBytes32Map storage map, address account)
+        internal
+        view
+        returns (bytes32[] memory)
+    {
         return map._keys.values(account);
     }
 
@@ -194,7 +200,10 @@ library EnumerableMap {
      * Returns true if the key was added to the map, that is if it was not
      * already present.
      */
-    function set(UintToUintMap storage map, address account, uint256 key, uint256 value) internal returns (bool) {
+    function set(UintToUintMap storage map, address account, uint256 key, uint256 value)
+        internal
+        returns (bool)
+    {
         return set(map._inner, account, bytes32(key), bytes32(value));
     }
 
@@ -203,14 +212,21 @@ library EnumerableMap {
      *
      * Returns true if the key was removed from the map, that is if it was present.
      */
-    function remove(UintToUintMap storage map, address account, uint256 key) internal returns (bool) {
+    function remove(UintToUintMap storage map, address account, uint256 key)
+        internal
+        returns (bool)
+    {
         return remove(map._inner, account, bytes32(key));
     }
 
     /**
      * @dev Returns true if the key is in the map. O(1).
      */
-    function contains(UintToUintMap storage map, address account, uint256 key) internal view returns (bool) {
+    function contains(UintToUintMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (bool)
+    {
         return contains(map._inner, account, bytes32(key));
     }
 
@@ -230,7 +246,11 @@ library EnumerableMap {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(UintToUintMap storage map, address account, uint256 index) internal view returns (uint256, uint256) {
+    function at(UintToUintMap storage map, address account, uint256 index)
+        internal
+        view
+        returns (uint256, uint256)
+    {
         (bytes32 key, bytes32 value) = at(map._inner, account, index);
         return (uint256(key), uint256(value));
     }
@@ -239,7 +259,11 @@ library EnumerableMap {
      * @dev Tries to returns the value associated with `key`. O(1).
      * Does not revert if `key` is not in the map.
      */
-    function tryGet(UintToUintMap storage map, address account, uint256 key) internal view returns (bool, uint256) {
+    function tryGet(UintToUintMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (bool, uint256)
+    {
         (bool success, bytes32 value) = tryGet(map._inner, account, bytes32(key));
         return (success, uint256(value));
     }
@@ -251,7 +275,11 @@ library EnumerableMap {
      *
      * - `key` must be in the map.
      */
-    function get(UintToUintMap storage map, address account, uint256 key) internal view returns (uint256) {
+    function get(UintToUintMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (uint256)
+    {
         return uint256(get(map._inner, account, bytes32(key)));
     }
 
@@ -263,7 +291,11 @@ library EnumerableMap {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the map grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function keys(UintToUintMap storage map, address account) internal view returns (uint256[] memory) {
+    function keys(UintToUintMap storage map, address account)
+        internal
+        view
+        returns (uint256[] memory)
+    {
         bytes32[] memory store = keys(map._inner, account);
         uint256[] memory result;
 
@@ -288,7 +320,10 @@ library EnumerableMap {
      * Returns true if the key was added to the map, that is if it was not
      * already present.
      */
-    function set(UintToAddressMap storage map, address account, uint256 key, address value) internal returns (bool) {
+    function set(UintToAddressMap storage map, address account, uint256 key, address value)
+        internal
+        returns (bool)
+    {
         return set(map._inner, account, bytes32(key), bytes32(uint256(uint160(value))));
     }
 
@@ -297,14 +332,21 @@ library EnumerableMap {
      *
      * Returns true if the key was removed from the map, that is if it was present.
      */
-    function remove(UintToAddressMap storage map, address account, uint256 key) internal returns (bool) {
+    function remove(UintToAddressMap storage map, address account, uint256 key)
+        internal
+        returns (bool)
+    {
         return remove(map._inner, account, bytes32(key));
     }
 
     /**
      * @dev Returns true if the key is in the map. O(1).
      */
-    function contains(UintToAddressMap storage map, address account, uint256 key) internal view returns (bool) {
+    function contains(UintToAddressMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (bool)
+    {
         return contains(map._inner, account, bytes32(key));
     }
 
@@ -324,11 +366,7 @@ library EnumerableMap {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(
-        UintToAddressMap storage map,
-        address account,
-        uint256 index
-    )
+    function at(UintToAddressMap storage map, address account, uint256 index)
         internal
         view
         returns (uint256, address)
@@ -341,7 +379,11 @@ library EnumerableMap {
      * @dev Tries to returns the value associated with `key`. O(1).
      * Does not revert if `key` is not in the map.
      */
-    function tryGet(UintToAddressMap storage map, address account, uint256 key) internal view returns (bool, address) {
+    function tryGet(UintToAddressMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (bool, address)
+    {
         (bool success, bytes32 value) = tryGet(map._inner, account, bytes32(key));
         return (success, address(uint160(uint256(value))));
     }
@@ -353,7 +395,11 @@ library EnumerableMap {
      *
      * - `key` must be in the map.
      */
-    function get(UintToAddressMap storage map, address account, uint256 key) internal view returns (address) {
+    function get(UintToAddressMap storage map, address account, uint256 key)
+        internal
+        view
+        returns (address)
+    {
         return address(uint160(uint256(get(map._inner, account, bytes32(key)))));
     }
 
@@ -365,7 +411,11 @@ library EnumerableMap {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the map grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function keys(UintToAddressMap storage map, address account) internal view returns (uint256[] memory) {
+    function keys(UintToAddressMap storage map, address account)
+        internal
+        view
+        returns (uint256[] memory)
+    {
         bytes32[] memory store = keys(map._inner, account);
         uint256[] memory result;
 
@@ -390,7 +440,10 @@ library EnumerableMap {
      * Returns true if the key was added to the map, that is if it was not
      * already present.
      */
-    function set(AddressToUintMap storage map, address account, address key, uint256 value) internal returns (bool) {
+    function set(AddressToUintMap storage map, address account, address key, uint256 value)
+        internal
+        returns (bool)
+    {
         return set(map._inner, account, bytes32(uint256(uint160(key))), bytes32(value));
     }
 
@@ -399,14 +452,21 @@ library EnumerableMap {
      *
      * Returns true if the key was removed from the map, that is if it was present.
      */
-    function remove(AddressToUintMap storage map, address account, address key) internal returns (bool) {
+    function remove(AddressToUintMap storage map, address account, address key)
+        internal
+        returns (bool)
+    {
         return remove(map._inner, account, bytes32(uint256(uint160(key))));
     }
 
     /**
      * @dev Returns true if the key is in the map. O(1).
      */
-    function contains(AddressToUintMap storage map, address account, address key) internal view returns (bool) {
+    function contains(AddressToUintMap storage map, address account, address key)
+        internal
+        view
+        returns (bool)
+    {
         return contains(map._inner, account, bytes32(uint256(uint160(key))));
     }
 
@@ -426,11 +486,7 @@ library EnumerableMap {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(
-        AddressToUintMap storage map,
-        address account,
-        uint256 index
-    )
+    function at(AddressToUintMap storage map, address account, uint256 index)
         internal
         view
         returns (address, uint256)
@@ -443,7 +499,11 @@ library EnumerableMap {
      * @dev Tries to returns the value associated with `key`. O(1).
      * Does not revert if `key` is not in the map.
      */
-    function tryGet(AddressToUintMap storage map, address account, address key) internal view returns (bool, uint256) {
+    function tryGet(AddressToUintMap storage map, address account, address key)
+        internal
+        view
+        returns (bool, uint256)
+    {
         (bool success, bytes32 value) = tryGet(map._inner, account, bytes32(uint256(uint160(key))));
         return (success, uint256(value));
     }
@@ -455,7 +515,11 @@ library EnumerableMap {
      *
      * - `key` must be in the map.
      */
-    function get(AddressToUintMap storage map, address account, address key) internal view returns (uint256) {
+    function get(AddressToUintMap storage map, address account, address key)
+        internal
+        view
+        returns (uint256)
+    {
         return uint256(get(map._inner, account, bytes32(uint256(uint160(key)))));
     }
 
@@ -467,7 +531,11 @@ library EnumerableMap {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the map grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function keys(AddressToUintMap storage map, address account) internal view returns (address[] memory) {
+    function keys(AddressToUintMap storage map, address account)
+        internal
+        view
+        returns (address[] memory)
+    {
         bytes32[] memory store = keys(map._inner, account);
         address[] memory result;
 
@@ -492,7 +560,10 @@ library EnumerableMap {
      * Returns true if the key was added to the map, that is if it was not
      * already present.
      */
-    function set(Bytes32ToUintMap storage map, address account, bytes32 key, uint256 value) internal returns (bool) {
+    function set(Bytes32ToUintMap storage map, address account, bytes32 key, uint256 value)
+        internal
+        returns (bool)
+    {
         return set(map._inner, account, key, bytes32(value));
     }
 
@@ -501,14 +572,21 @@ library EnumerableMap {
      *
      * Returns true if the key was removed from the map, that is if it was present.
      */
-    function remove(Bytes32ToUintMap storage map, address account, bytes32 key) internal returns (bool) {
+    function remove(Bytes32ToUintMap storage map, address account, bytes32 key)
+        internal
+        returns (bool)
+    {
         return remove(map._inner, account, key);
     }
 
     /**
      * @dev Returns true if the key is in the map. O(1).
      */
-    function contains(Bytes32ToUintMap storage map, address account, bytes32 key) internal view returns (bool) {
+    function contains(Bytes32ToUintMap storage map, address account, bytes32 key)
+        internal
+        view
+        returns (bool)
+    {
         return contains(map._inner, account, key);
     }
 
@@ -528,11 +606,7 @@ library EnumerableMap {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(
-        Bytes32ToUintMap storage map,
-        address account,
-        uint256 index
-    )
+    function at(Bytes32ToUintMap storage map, address account, uint256 index)
         internal
         view
         returns (bytes32, uint256)
@@ -545,7 +619,11 @@ library EnumerableMap {
      * @dev Tries to returns the value associated with `key`. O(1).
      * Does not revert if `key` is not in the map.
      */
-    function tryGet(Bytes32ToUintMap storage map, address account, bytes32 key) internal view returns (bool, uint256) {
+    function tryGet(Bytes32ToUintMap storage map, address account, bytes32 key)
+        internal
+        view
+        returns (bool, uint256)
+    {
         (bool success, bytes32 value) = tryGet(map._inner, account, key);
         return (success, uint256(value));
     }
@@ -557,7 +635,11 @@ library EnumerableMap {
      *
      * - `key` must be in the map.
      */
-    function get(Bytes32ToUintMap storage map, address account, bytes32 key) internal view returns (uint256) {
+    function get(Bytes32ToUintMap storage map, address account, bytes32 key)
+        internal
+        view
+        returns (uint256)
+    {
         return uint256(get(map._inner, account, key));
     }
 
@@ -569,7 +651,11 @@ library EnumerableMap {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the map grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function keys(Bytes32ToUintMap storage map, address account) internal view returns (bytes32[] memory) {
+    function keys(Bytes32ToUintMap storage map, address account)
+        internal
+        view
+        returns (bytes32[] memory)
+    {
         bytes32[] memory store = keys(map._inner, account);
         bytes32[] memory result;
 

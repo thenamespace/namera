@@ -15,7 +15,9 @@ interface IRegistry {
 
     function check(address module, ModuleType moduleType) external view;
 
-    function checkForAccount(address smartAccount, address module, ModuleType moduleType) external view;
+    function checkForAccount(address smartAccount, address module, ModuleType moduleType)
+        external
+        view;
 
     /**
      * Allows Smart Accounts - the end users of the registry - to appoint
@@ -39,7 +41,5 @@ interface IRegistry {
         ModuleType moduleType,
         address[] calldata attesters,
         uint256 threshold
-    )
-        external
-        view;
+    ) external view;
 }

@@ -30,7 +30,11 @@ library AssociatedArrayLib {
         }
     }
 
-    function _get(Array storage s, address account, uint256 index) private view returns (bytes32 value) {
+    function _get(Array storage s, address account, uint256 index)
+        private
+        view
+        returns (bytes32 value)
+    {
         return _get(_slot(s, account), index);
     }
 
@@ -46,7 +50,11 @@ library AssociatedArrayLib {
         }
     }
 
-    function _getAll(Array storage s, address account) private view returns (bytes32[] memory values) {
+    function _getAll(Array storage s, address account)
+        private
+        view
+        returns (bytes32[] memory values)
+    {
         bytes32 slot = _slot(s, account);
         uint256 __length;
         assembly {
@@ -61,7 +69,11 @@ library AssociatedArrayLib {
     // inefficient. complexity = O(n)
     // use with caution
     // in case of large arrays, consider using EnumerableSet4337 instead
-    function _contains(Array storage s, address account, bytes32 value) private view returns (bool) {
+    function _contains(Array storage s, address account, bytes32 value)
+        private
+        view
+        returns (bool)
+    {
         bytes32 slot = _slot(s, account);
         uint256 __length;
         assembly {
@@ -146,15 +158,27 @@ library AssociatedArrayLib {
         return _length(s._inner, account);
     }
 
-    function get(Bytes32Array storage s, address account, uint256 index) internal view returns (bytes32) {
+    function get(Bytes32Array storage s, address account, uint256 index)
+        internal
+        view
+        returns (bytes32)
+    {
         return _get(s._inner, account, index);
     }
 
-    function getAll(Bytes32Array storage s, address account) internal view returns (bytes32[] memory) {
+    function getAll(Bytes32Array storage s, address account)
+        internal
+        view
+        returns (bytes32[] memory)
+    {
         return _getAll(s._inner, account);
     }
 
-    function contains(Bytes32Array storage s, address account, bytes32 value) internal view returns (bool) {
+    function contains(Bytes32Array storage s, address account, bytes32 value)
+        internal
+        view
+        returns (bool)
+    {
         return _contains(s._inner, account, value);
     }
 
@@ -188,11 +212,19 @@ library AssociatedArrayLib {
         return _length(s._inner, account);
     }
 
-    function get(AddressArray storage s, address account, uint256 index) internal view returns (address) {
+    function get(AddressArray storage s, address account, uint256 index)
+        internal
+        view
+        returns (address)
+    {
         return address(uint160(uint256(_get(s._inner, account, index))));
     }
 
-    function getAll(AddressArray storage s, address account) internal view returns (address[] memory) {
+    function getAll(AddressArray storage s, address account)
+        internal
+        view
+        returns (address[] memory)
+    {
         bytes32[] memory bytes32Array = _getAll(s._inner, account);
         address[] memory addressArray;
 
@@ -203,7 +235,11 @@ library AssociatedArrayLib {
         return addressArray;
     }
 
-    function contains(AddressArray storage s, address account, address value) internal view returns (bool) {
+    function contains(AddressArray storage s, address account, address value)
+        internal
+        view
+        returns (bool)
+    {
         return _contains(s._inner, account, bytes32(uint256(uint160(value))));
     }
 
@@ -237,7 +273,11 @@ library AssociatedArrayLib {
         return _length(s._inner, account);
     }
 
-    function get(UintArray storage s, address account, uint256 index) internal view returns (uint256) {
+    function get(UintArray storage s, address account, uint256 index)
+        internal
+        view
+        returns (uint256)
+    {
         return uint256(_get(s._inner, account, index));
     }
 
@@ -252,7 +292,11 @@ library AssociatedArrayLib {
         return uintArray;
     }
 
-    function contains(UintArray storage s, address account, uint256 value) internal view returns (bool) {
+    function contains(UintArray storage s, address account, uint256 value)
+        internal
+        view
+        returns (bool)
+    {
         return _contains(s._inner, account, bytes32(value));
     }
 
