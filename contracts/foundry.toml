@@ -1,6 +1,6 @@
 # Compiler settings determine the bytecode and therefore every CREATE2 address. They live only in
-# [profile.default] and no other profile may override them. Freeze `via_ir` and `optimizer_runs`
-# before the first real deployment.
+# [profile.default] and no other profile may override them. Frozen: the legacy pipeline at 200 runs has
+# the lowest validateUserOp gas of the settings that keep SmartSession under the 24,576-byte limit.
 [profile.default]
 src = "src"
 test = "test"
