@@ -13,12 +13,26 @@
   ],
   "type": "module",
   "sideEffects": false,
+  "imports": {
+    "#/*": "./src/*.ts"
+  },
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "workspace-source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public"
+    "imports": {
+      "#/*": "./dist/*.js"
+    },
+    "exports": {
+      ".": "./dist/index.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",
@@ -29,11 +43,19 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@effect/vitest": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "effect": "catalog:",
     "klarity": "catalog:",
     "publint": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
+    "viem": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "^4.1.0",
+    "viem": "^2.57.0"
   }
 }

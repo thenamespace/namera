@@ -1,1 +1,1 @@
-export const version = "0.0.0";
+export { defineAction, type Action, type ActionEffect } from "#/action/index";
