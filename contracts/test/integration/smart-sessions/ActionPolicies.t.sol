@@ -219,14 +219,20 @@ contract ActionPoliciesTest is SmartSessionTestBase {
 
     /// @dev Only `execute` on the account itself is a nested execution; either part alone is a normal action.
     function test_executeSelectorOnOtherTarget_isANormalAction() public {
+        // A target below the account's address as well, so ordering comparisons cannot pass for equality.
+        address lowTarget = address(0x1234);
         Session memory session = _emptySession()
-            .withAction(address(target), EXECUTE, address(policy), MockPolicyConfig.allow());
+            .withAction(address(target), EXECUTE, address(policy), MockPolicyConfig.allow())
+            .withAction(lowTarget, EXECUTE, address(policy), MockPolicyConfig.allow());
         PermissionId permissionId = enableSession(session);
         bytes memory callData = abi.encodeWithSelector(EXECUTE, bytes32(0), "");
 
         assertEq(
             validate(signUse(userOp(executeSingle(address(target), 0, callData)), permissionId)),
             VALID
+        );
+        assertEq(
+            validate(signUse(userOp(executeSingle(lowTarget, 0, callData)), permissionId)), VALID
         );
     }
 

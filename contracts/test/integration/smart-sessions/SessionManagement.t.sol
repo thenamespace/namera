@@ -176,6 +176,14 @@ contract SessionManagementTest is SmartSessionTestBase {
         assertEq(smartSession.getUserOpPolicies(address(account), permissionId).length, 0);
         assertEq(smartSession.getERC1271Policies(address(account), permissionId).length, 0);
         assertEq(smartSession.getEnabledActions(address(account), permissionId).length, 0);
+        assertFalse(
+            smartSession.isActionPolicyEnabled(
+                address(account),
+                permissionId,
+                IdLib.toActionId(address(target), SET_VALUE),
+                address(policy)
+            )
+        );
         assertEq(smartSession.getEnabledERC7739Content(address(account), permissionId).length, 0);
         (, bytes memory config) =
             smartSession.getSessionValidatorAndConfig(address(account), permissionId);
@@ -220,11 +228,11 @@ contract SessionManagementTest is SmartSessionTestBase {
     function test_revokeEnableSignature_incrementsNonce() public {
         PermissionId permissionId = smartSession.getPermissionId(defaultSession());
         vm.startPrank(address(account));
-        smartSession.revokeEnableSignature(permissionId);
-
-        vm.expectEmit(address(smartSession));
-        emit ISmartSession.NonceIterated(permissionId, address(account), 2);
-        smartSession.revokeEnableSignature(permissionId);
+        for (uint256 expected = 1; expected <= 2; ++expected) {
+            vm.expectEmit(address(smartSession));
+            emit ISmartSession.NonceIterated(permissionId, address(account), expected);
+            smartSession.revokeEnableSignature(permissionId);
+        }
         vm.stopPrank();
 
         assertEq(smartSession.getNonce(permissionId, address(account)), 2);
