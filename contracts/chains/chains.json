@@ -1,5 +1,4 @@
 {
-  "$comment": "Launch chains (research: Chain selection v2.0). Single source for the deploy runner; RPC from the env var named by rpcEnv, else publicRpc.",
   "chains": [
     {
       "id": 1,
