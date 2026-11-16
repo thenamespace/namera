@@ -105,6 +105,15 @@ contract FlatBytesLibTest is Test {
         assertEq(harness.load().length, 0);
     }
 
+    function test_clear_atFullCapacity() public {
+        harness.store(_filled(FlatBytesLib.MAX_LENGTH));
+
+        harness.clear();
+
+        assertEq(harness.load().length, 0);
+        assertEq(_slot(FlatBytesLib.MAX_SLOTS), bytes32(0));
+    }
+
     function _slot(uint256 index) internal view returns (bytes32) {
         return vm.load(address(harness), bytes32(index));
     }

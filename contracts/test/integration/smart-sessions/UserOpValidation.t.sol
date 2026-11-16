@@ -58,12 +58,13 @@ contract UserOpValidationTest is SmartSessionTestBase {
         validate(op);
     }
 
-    function test_RevertWhen_callerIsNotTheSender() public {
+    function testFuzz_RevertWhen_callerIsNotTheSender(address caller) public {
+        vm.assume(caller != address(account));
         PermissionId permissionId = enableSession(defaultSession());
         ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
         bytes32 opHash = userOpHash(op);
 
-        vm.prank(makeAddr("stranger"));
+        vm.prank(caller);
         vm.expectRevert(
             abi.encodeWithSelector(ISmartSession.InvalidUserOpSender.selector, address(account))
         );

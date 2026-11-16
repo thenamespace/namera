@@ -26,6 +26,7 @@ contract ECDSASessionValidatorTest is Test {
     function test_isStatelessValidatorModule() public view {
         assertTrue(validator.isModuleType(7));
         assertFalse(validator.isModuleType(1));
+        assertFalse(validator.isModuleType(8));
     }
 
     function test_oneOfOne_isValid() public view {
@@ -89,6 +90,10 @@ contract ECDSASessionValidatorTest is Test {
         bytes memory signature = abi.encodePacked(_sign(0), bytes1(0));
 
         assertFalse(validator.validateSignatureWithData(HASH, signature, _config(1, signers)));
+    }
+
+    function test_fewerSignaturesThanThreshold_areInvalid() public view {
+        assertFalse(validator.validateSignatureWithData(HASH, _sign(0), _config(2, signers)));
     }
 
     function test_malformedSignature_isInvalid() public view {

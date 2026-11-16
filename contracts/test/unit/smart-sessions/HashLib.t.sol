@@ -5,6 +5,7 @@ import {
     ActionData,
     ChainDigest,
     ERC7739Data,
+    FALLBACK_TARGET_FLAG,
     PermissionId,
     PolicyData,
     Session,
@@ -19,7 +20,9 @@ import {
     MULTICHAIN_SESSION_TYPEHASH,
     POLICY_DATA_TYPEHASH,
     SESSION_TYPEHASH,
-    SIGNED_PERMISSIONS_TYPEHASH
+    SIGNED_PERMISSIONS_TYPEHASH,
+    _MULTICHAIN_DOMAIN_SEPARATOR,
+    _MULTICHAIN_DOMAIN_TYPEHASH
 } from "src/smart-sessions/lib/HashLib.sol";
 
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
@@ -89,6 +92,44 @@ contract HashLibTest is SmartSessionTestBase {
         );
 
         assertEq(sessionDigest(address(account), session, SmartSessionMode.ENABLE), expected);
+    }
+
+    function test_sessionDigest_flagsEachFallbackKindSeparately() public view {
+        Session memory generic =
+            defaultSession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        Session memory admin =
+            defaultSession().withModuleCallAction(address(policy), MockPolicyConfig.allow());
+        Session memory neither = defaultSession()
+            .withAction(FALLBACK_TARGET_FLAG, SET_VALUE, address(policy), MockPolicyConfig.allow());
+
+        assertEq(
+            sessionDigest(address(account), generic, SmartSessionMode.ENABLE),
+            vm.eip712HashStruct(
+                SessionTypes.signedSession(), abi.encode(_signed(generic, true, false, false))
+            )
+        );
+        assertEq(
+            sessionDigest(address(account), admin, SmartSessionMode.ENABLE),
+            vm.eip712HashStruct(
+                SessionTypes.signedSession(), abi.encode(_signed(admin, false, true, false))
+            )
+        );
+        assertEq(
+            sessionDigest(address(account), neither, SmartSessionMode.ENABLE),
+            vm.eip712HashStruct(
+                SessionTypes.signedSession(), abi.encode(_signed(neither, false, false, false))
+            )
+        );
+    }
+
+    function test_multichainDomain_matchesItsDefinition() public pure {
+        bytes32 typehash = keccak256("EIP712Domain(string name,string version)");
+
+        assertEq(_MULTICHAIN_DOMAIN_TYPEHASH, typehash);
+        assertEq(
+            _MULTICHAIN_DOMAIN_SEPARATOR,
+            keccak256(abi.encode(typehash, keccak256("SmartSession"), keccak256("1")))
+        );
     }
 
     function test_unsafeEnable_setsIgnoreSecurityAttestations() public view {

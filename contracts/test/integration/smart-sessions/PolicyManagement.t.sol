@@ -23,6 +23,7 @@ contract PolicyManagementTest is SmartSessionTestBase {
 
     bytes32 internal constant APP_DOMAIN = keccak256("app domain");
     string internal constant CONTENT = "Mail(address to)";
+    string internal constant OTHER_CONTENT = "Note(string text)";
 
     PermissionId internal permissionId;
     MockPolicy internal secondPolicy;
@@ -169,6 +170,34 @@ contract PolicyManagementTest is SmartSessionTestBase {
         );
         assertEq(smartSession.getEnabledERC7739Content(address(account), permissionId).length, 0);
         assertEq(smartSession.getERC1271Policies(address(account), permissionId).length, 0);
+    }
+
+    function test_disablingOneContent_keepsTheOthersOfThatDomain() public {
+        ERC7739Data memory data = _erc7739Data();
+        string[] memory names = new string[](2);
+        names[0] = CONTENT;
+        names[1] = OTHER_CONTENT;
+        data.allowedERC7739Content[0].contentNames = names;
+        ERC7739Context[] memory removed = new ERC7739Context[](1);
+        removed[0] = ERC7739Context(APP_DOMAIN, new string[](1));
+        removed[0].contentNames[0] = CONTENT;
+
+        vm.startPrank(address(account));
+        smartSession.enableERC1271Policies(permissionId, data);
+        smartSession.disableERC1271Policies(permissionId, new address[](0), removed);
+        vm.stopPrank();
+
+        assertFalse(
+            smartSession.isERC7739ContentEnabled(
+                address(account), permissionId, APP_DOMAIN, CONTENT
+            )
+        );
+        assertTrue(
+            smartSession.isERC7739ContentEnabled(
+                address(account), permissionId, APP_DOMAIN, OTHER_CONTENT
+            )
+        );
+        assertEq(smartSession.getEnabledERC7739Content(address(account), permissionId).length, 1);
     }
 
     function test_setPermit4337Paymaster_togglesPermission() public {

@@ -4,6 +4,8 @@ pragma solidity 0.8.38;
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
 import {
+    ActionId,
+    ERC7739Context,
     ERC7739ContextHashes,
     PermissionId,
     PolicyData,
@@ -12,6 +14,7 @@ import {
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 import {ISessionValidator} from "src/smart-sessions/interfaces/ISessionValidator.sol";
 import {FlatBytesLib} from "src/smart-sessions/lib/FlatBytesLib.sol";
+import {IdLib} from "src/smart-sessions/lib/IdLib.sol";
 
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
@@ -216,13 +219,15 @@ contract SessionManagementTest is SmartSessionTestBase {
 
     function test_revokeEnableSignature_incrementsNonce() public {
         PermissionId permissionId = smartSession.getPermissionId(defaultSession());
-
-        vm.expectEmit(address(smartSession));
-        emit ISmartSession.NonceIterated(permissionId, address(account), 1);
-        vm.prank(address(account));
+        vm.startPrank(address(account));
         smartSession.revokeEnableSignature(permissionId);
 
-        assertEq(smartSession.getNonce(permissionId, address(account)), 1);
+        vm.expectEmit(address(smartSession));
+        emit ISmartSession.NonceIterated(permissionId, address(account), 2);
+        smartSession.revokeEnableSignature(permissionId);
+        vm.stopPrank();
+
+        assertEq(smartSession.getNonce(permissionId, address(account)), 2);
     }
 
     function test_sessionsAreIsolatedPerAccount() public {
@@ -265,6 +270,42 @@ contract SessionManagementTest is SmartSessionTestBase {
         session.actions[0].actionPolicies[0].policy = makeAddr("unknown");
 
         assertFalse(smartSession.areActionsEnabled(address(account), permissionId, session.actions));
+    }
+
+    function test_policyViews_areFalseForPoliciesNotEnabled() public {
+        Session memory session =
+            defaultSession().withERC1271Policy(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        address unknown = makeAddr("unknown");
+        PolicyData[] memory unknownPolicies = new PolicyData[](1);
+        unknownPolicies[0] = PolicyData(unknown, "");
+        ActionId actionId = IdLib.toActionId(address(target), SET_VALUE);
+
+        assertTrue(
+            smartSession.isERC1271PolicyEnabled(address(account), permissionId, address(policy))
+        );
+        assertFalse(smartSession.isERC1271PolicyEnabled(address(account), permissionId, unknown));
+        assertFalse(
+            smartSession.areERC1271PoliciesEnabled(address(account), permissionId, unknownPolicies)
+        );
+        assertTrue(
+            smartSession.isActionPolicyEnabled(
+                address(account), permissionId, actionId, address(policy)
+            )
+        );
+        assertFalse(
+            smartSession.isActionPolicyEnabled(address(account), permissionId, actionId, unknown)
+        );
+    }
+
+    function test_contextWithoutContentNames_enablesNoContent() public {
+        Session memory session = defaultSession();
+        session.erc7739Policies.allowedERC7739Content = new ERC7739Context[](1);
+        session.erc7739Policies.allowedERC7739Content[0] =
+            ERC7739Context(APP_DOMAIN, new string[](0));
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(smartSession.getEnabledERC7739Content(address(account), permissionId).length, 0);
     }
 
     function _withoutActions() internal view returns (Session memory) {

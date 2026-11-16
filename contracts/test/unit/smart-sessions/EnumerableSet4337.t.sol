@@ -70,6 +70,34 @@ contract EnumerableSet4337Test is Test {
         assertTrue(set.contains(alice, "c"));
     }
 
+    function test_removeMiddle_keepsOtherValues() public {
+        set.add(alice, "a");
+        set.add(alice, "b");
+        set.add(alice, "c");
+
+        set.remove(alice, "b");
+
+        bytes32[] memory remaining = set.values(alice);
+        assertEq(remaining.length, 2);
+        assertEq(remaining[0], "a");
+        assertEq(remaining[1], "c");
+        assertFalse(set.contains(alice, "b"));
+    }
+
+    function test_remove_and_removeAll_zeroFreedSlots() public {
+        uint256 arraySlot = uint256(keccak256(abi.encode(alice, uint256(0))));
+        set.add(alice, "a");
+        set.add(alice, "b");
+        set.add(alice, "c");
+
+        set.remove(alice, "a");
+        assertEq(vm.load(address(set), bytes32(arraySlot + 3)), bytes32(0));
+
+        set.removeAll(alice);
+        assertEq(vm.load(address(set), bytes32(arraySlot + 1)), bytes32(0));
+        assertEq(vm.load(address(set), bytes32(arraySlot + 2)), bytes32(0));
+    }
+
     function test_remove_returnsFalseForMissingValue() public {
         assertFalse(set.remove(alice, "missing"));
     }

@@ -117,18 +117,15 @@ contract EnableModeTest is SmartSessionTestBase {
         validate(op);
     }
 
-    function test_RevertWhen_chainIdDoesNotMatch() public {
+    function testFuzz_RevertWhen_chainIdDoesNotMatch(uint64 chainId) public {
+        vm.assume(chainId != block.chainid);
         Session memory session = defaultSession();
         EnableSession memory data = enableData(address(account), session, SmartSessionMode.ENABLE);
-        data.hashesAndChainIds[0].chainId = uint64(block.chainid + 1);
+        data.hashesAndChainIds[0].chainId = chainId;
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         op.signature = _encode(data, op);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ISmartSession.ChainIdMismatch.selector, uint64(block.chainid + 1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.ChainIdMismatch.selector, chainId));
         validate(op);
     }
 

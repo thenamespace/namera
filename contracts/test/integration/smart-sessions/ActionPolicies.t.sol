@@ -19,6 +19,8 @@ contract ActionPoliciesTest is SmartSessionTestBase {
     using SessionBuilder for Session;
 
     bytes4 internal constant VALUE_SELECTOR = 0xFFFFFFFF;
+    bytes4 internal constant EXECUTE = 0xe9ae5c53;
+    bytes4 internal constant EXECUTE_USER_OP = 0x8dd7712f;
 
     function test_singleCall_passesCallDetailsToActionPolicy() public {
         PermissionId permissionId = enableSession(defaultSession());
@@ -194,6 +196,76 @@ contract ActionPoliciesTest is SmartSessionTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
         validate(op);
+    }
+
+    function testFuzz_anyAccountFunction_isCheckedAsActionOnAccount(bytes4 selector) public {
+        vm.assume(selector != EXECUTE && selector != EXECUTE_USER_OP);
+        Session memory session = _emptySession()
+            .withAction(address(account), selector, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(validate(signUse(userOp(abi.encodePacked(selector)), permissionId)), VALID);
+    }
+
+    function test_selectorOnlyCalldata_usesTheSelectorAction() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes memory callData = abi.encodePacked(SET_VALUE);
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 0, callData)), permissionId)),
+            VALID
+        );
+    }
+
+    /// @dev Only `execute` on the account itself is a nested execution; either part alone is a normal action.
+    function test_executeSelectorOnOtherTarget_isANormalAction() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), EXECUTE, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory callData = abi.encodeWithSelector(EXECUTE, bytes32(0), "");
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 0, callData)), permissionId)),
+            VALID
+        );
+    }
+
+    function test_otherFunctionOnAccountViaExecute_isANormalAction() public {
+        bytes4 selector = MockAccount.uninstallModule.selector;
+        Session memory session = _emptySession()
+            .withAction(address(account), selector, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory callData = abi.encodeWithSelector(selector, 2, makeAddr("module"), "");
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(account), 0, callData)), permissionId)),
+            VALID
+        );
+    }
+
+    function test_targetBelowModuleAddress_usesItsOwnAction() public {
+        address lowTarget = address(0x1234);
+        Session memory session = _emptySession()
+            .withAction(lowTarget, SET_VALUE, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(
+            validate(
+                signUse(
+                    userOp(executeSingle(lowTarget, 0, abi.encodeCall(MockTarget.setValue, (1)))),
+                    permissionId
+                )
+            ),
+            VALID
+        );
+    }
+
+    function test_zeroTarget_isCoveredByFallbackAction() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(validate(signUse(userOp(executeSingle(address(0), 0, "")), permissionId)), VALID);
     }
 
     function test_RevertWhen_execTypeIsTry() public {
