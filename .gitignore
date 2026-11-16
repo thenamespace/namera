@@ -1,0 +1,67 @@
+# -------------------------------------
+# OS / editors
+# -------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.history/
+.idea/
+*.iml
+
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.temp
+
+# -------------------------------------
+# Secrets and environment
+# -------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+
+# -------------------------------------
+# Node.js / TypeScript
+# -------------------------------------
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+*.tgz
+
+dist/
+build/
+.cache/
+.turbo/
+
+coverage/
+.vitest/
+test-results/
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# -------------------------------------
+# Solidity / Foundry
+# -------------------------------------
+out/
+cache/
+broadcast/**/31337/
+gas-report.*
+lcov.info
+
+# -------------------------------------
+# Local working state
+# -------------------------------------
+/research/
+/*.local.md
