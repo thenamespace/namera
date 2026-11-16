@@ -13,6 +13,7 @@ import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
 import {MockAccount} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
+import {MockSilentPolicy} from "../../utils/mocks/MockSilentPolicy.sol";
 import {MockTarget} from "../../utils/mocks/MockTarget.sol";
 
 contract ActionPoliciesTest is SmartSessionTestBase {
@@ -166,6 +167,35 @@ contract ActionPoliciesTest is SmartSessionTestBase {
         validate(op);
     }
 
+    /// @dev A fallback meant for ordinary calls must not authorize admin calls such as module installs.
+    function test_RevertWhen_fallbackActionWouldCoverAccountSelfCall() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory install =
+            abi.encodeCall(MockAccount.installModule, (1, makeAddr("validator"), ""));
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeSingle(address(account), 0, install)), permissionId);
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    function test_RevertWhen_policyReturnsNoData() public {
+        MockSilentPolicy silent = new MockSilentPolicy();
+        Session memory session =
+            _emptySession().withAction(address(target), SET_VALUE, address(silent), "");
+        PermissionId permissionId = enableSession(session);
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.PolicyViolation.selector, permissionId, address(silent)
+            )
+        );
+        validate(op);
+    }
+
     function test_callIntoModule_isAllowedWithModuleCallAction() public {
         Session memory session =
             _emptySession().withModuleCallAction(address(policy), MockPolicyConfig.allow());
@@ -286,6 +316,33 @@ contract ActionPoliciesTest is SmartSessionTestBase {
 
         vm.expectRevert(ISmartSession.UnsupportedExecutionType.selector);
         validate(op);
+    }
+
+    function test_RevertWhen_modeHasSelectorOrPayload() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes32[2] memory modes = [
+            LibERC7579.encodeMode(
+                LibERC7579.CALLTYPE_BATCH,
+                LibERC7579.EXECTYPE_DEFAULT,
+                bytes4(0x78210001),
+                bytes22(0)
+            ),
+            LibERC7579.encodeMode(
+                LibERC7579.CALLTYPE_SINGLE,
+                LibERC7579.EXECTYPE_DEFAULT,
+                bytes4(0),
+                bytes22(uint176(1))
+            )
+        ];
+        for (uint256 i; i < modes.length; ++i) {
+            bytes memory callData = abi.encodeCall(
+                MockAccount.execute, (modes[i], abi.encodePacked(address(target), uint256(0), ""))
+            );
+            ERC4337.PackedUserOperation memory op = signUse(userOp(callData), permissionId);
+
+            vm.expectRevert(ISmartSession.UnsupportedExecutionType.selector);
+            validate(op);
+        }
     }
 
     function test_RevertWhen_callTypeIsDelegatecall() public {

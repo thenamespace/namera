@@ -72,6 +72,18 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - **FlatBytes.** Upstream wrote `length / 32 + 1` slots, one past its 10-slot struct for a 320-byte
   value. Slots are now exact, unused tail bytes are zeroed, and capacity is 16 slots (512 bytes) so
   P-256/WebAuthn session validator configs fit.
+- **Removal revokes enable signatures.** `removeSession` (and so `onUninstall`) increments the enable
+  nonce. Upstream left an unused owner ENABLE signature valid, so a removed session could enable itself
+  again.
+- **No fallback for account self-calls.** The generic fallback action (`FALLBACK_ACTIONID`) no longer
+  covers executions whose target is the account (module installs, upgrades, owner changes); those need
+  an explicit `(account, selector)` action. Upstream let a fallback meant for spending limits authorize
+  admin calls.
+- **Policy return data.** A policy call must return exactly 32 bytes. Upstream read missing return data
+  as zero (valid), so a policy without the function, e.g. a broken proxy, approved everything.
+- **Execution mode.** `execute` user operations must use the default exec type with a zero mode
+  selector and payload (upstream checked only the exec type); an account interpreting them (ERC-7821
+  batch of batches) could decode the execution data differently.
 
 ## Additions
 
@@ -80,11 +92,18 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   `MULTICHAIN_SESSION_TYPEHASH` differ from upstream). The window is stored per permission and account
   (`getSessionValidity`, `SessionValiditySet`), intersected into the validation data of every user
   operation (enforced by the EntryPoint), and checked with `block.timestamp` for ERC-1271 signatures
-  (`validAfter < block.timestamp <= validUntil`, `0` = unbounded). Because the ERC-1271 path reads
+  (`validAfter <= block.timestamp <= validUntil` as in EntryPoint v0.7, `validUntil = 0` = unbounded). Because the ERC-1271 path reads
   `TIMESTAMP`, a session-key ERC-1271 signature cannot be verified inside another user operation's
   validation phase (ERC-7562); it works in execution and off-chain.
 - This changes the `Session` ABI and EIP-712 hashes; upstream SmartSession tooling cannot build Namera
   sessions.
+
+## Known limitations
+
+- **ERC-7739 content names are advisory.** `contents` is an opaque struct hash, so a session key can sign
+  any struct of an allowed app domain under an allowed content name. Content names protect honest
+  signers from phishing; the enforced bounds are the app domain and the ERC-1271 policies (which receive
+  the nested hash only). Same as upstream.
 
 ## Behaviour changes
 

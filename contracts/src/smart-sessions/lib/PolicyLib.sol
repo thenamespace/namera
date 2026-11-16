@@ -93,7 +93,8 @@ library PolicyLib {
             }
             result := mload(add(returnData, 0x20))
         }
-        if (result & AGGREGATOR_MASK != 0) {
+        // Return data that is not exactly one word (e.g. a policy without the function) must not read as valid.
+        if (returnData.length != 32 || result & AGGREGATOR_MASK != 0) {
             revert ISmartSession.PolicyViolation(permissionId, policy);
         }
         vd = ValidationData.wrap(result);
@@ -101,7 +102,8 @@ library PolicyLib {
 
     /// @dev Checks one ERC-7579 execution against its action policies, falling back to the fallback action's
     /// policies when the action has none. Calls into this module use their own sentinel action, so a session key
-    /// can only reconfigure sessions if the owner allowed it explicitly.
+    /// can only reconfigure sessions if the owner allowed it explicitly. Calls on the account itself (module
+    /// installs, upgrades, owner changes) never use the fallback and need their own action.
     function checkSingle7579Exec(
         mapping(ActionId => Policy) storage $policies,
         PermissionId permissionId,
@@ -123,19 +125,21 @@ library PolicyLib {
             actionId = FALLBACK_ACTIONID_SMARTSESSION_CALL;
         } else {
             actionId = target.toActionId(targetSig);
-            vd = $policies[actionId].tryCheck({
-                permissionId: permissionId,
-                callOnIPolicy: abi.encodeCall(
-                    IActionPolicy.checkAction,
-                    (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
-                ),
-                minPolicies: minPolicies
-            });
-            if (!(vd == RETRY_WITH_FALLBACK)) return vd;
-            actionId = FALLBACK_ACTIONID;
+            if (target != msg.sender) {
+                vd = $policies[actionId].tryCheck({
+                    permissionId: permissionId,
+                    callOnIPolicy: abi.encodeCall(
+                        IActionPolicy.checkAction,
+                        (permissionId.toConfigId(actionId), msg.sender, target, value, callData)
+                    ),
+                    minPolicies: minPolicies
+                });
+                if (!(vd == RETRY_WITH_FALLBACK)) return vd;
+                actionId = FALLBACK_ACTIONID;
+            }
         }
 
-        // Reverts if the fallback action has no policies either.
+        // Reverts if this action (or the fallback action) has no policies.
         return $policies[actionId].check({
             permissionId: permissionId,
             callOnIPolicy: abi.encodeCall(

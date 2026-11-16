@@ -64,6 +64,9 @@ struct ActionData {
 
 /// @notice ERC-7739 contents a session key may sign for one app domain.
 /// Only the domain separator is stored, as EIP-712 lets apps omit unused domain fields.
+/// Content names are advisory: `contents` is an opaque struct hash, so a session key can sign any struct of the
+/// app under an allowed name. They keep honest signers from being phished into other types; the enforced bounds
+/// are the app domain and the ERC-1271 policies.
 struct ERC7739Context {
     bytes32 appDomainSeparator;
     string[] contentNames;
@@ -157,7 +160,7 @@ enum PolicyType {
 }
 
 /// @dev Action target that marks a fallback action. With `FALLBACK_TARGET_SELECTOR_FLAG` its policies apply to
-/// every action without its own policies; with `FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION`
+/// every action without its own policies, except calls on the account itself; with `FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION`
 /// they apply to calls into this module.
 address constant FALLBACK_TARGET_FLAG = address(1);
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG = 0x00000001;

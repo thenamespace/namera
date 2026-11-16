@@ -140,9 +140,9 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (selector == ERC7579_EXECUTE_SELECTOR) {
             bytes32 mode = userOp.callData.executionMode();
             bytes1 callType = LibERC7579.getCallType(mode);
-            if (LibERC7579.getExecType(mode) != LibERC7579.EXECTYPE_DEFAULT) {
-                revert UnsupportedExecutionType();
-            }
+            // Only the default exec type, and no mode selector or payload: an account that interprets them
+            // (e.g. ERC-7821 batch of batches) could decode the execution data differently from this module.
+            if (uint256(mode) << 8 != 0) revert UnsupportedExecutionType();
             if (callType == LibERC7579.CALLTYPE_BATCH) {
                 vd = vd.intersect(
                     $actionPolicies.actionPolicies
