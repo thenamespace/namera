@@ -52,7 +52,8 @@ multiline_func_header = "attributes_first"
 quote_style = "double"
 number_underscore = "thousands"
 sort_imports = true
-ignore = ["dependencies/**"]
+# Ported upstream code keeps upstream formatting so diffs against erc7579/smartsessions stay readable.
+ignore = ["dependencies/**", "src/smart-sessions/**"]
 
 [lint]
 severity = ["high", "medium", "low"]
@@ -69,3 +70,4 @@ recursive_deps = false
 [dependencies]
 forge-std = "1.17.0"
 solady = "0.1.26"
+eth-infinitism-account-abstraction = "0.7"
