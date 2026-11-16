@@ -1,27 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
-import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
-import "../DataTypes.sol";
-import {SmartSessionModeLib} from "./SmartSessionModeLib.sol";
+import {EnableSession, PermissionId, SmartSessionMode} from "../DataTypes.sol";
 import {LibZip} from "solady/utils/LibZip.sol";
 
 library EncodeLib {
     using LibZip for bytes;
-    using EncodeLib for *;
-    using SmartSessionModeLib for SmartSessionMode;
 
-    error ChainIdAndHashesLengthMismatch(uint256 chainIdsLength, uint256 hashesLength);
-
-    function getSender(PackedUserOperation calldata userOp) internal pure returns (address) {
-        address data;
-        //read sender from userOp, which is first userOp member (saves 800 gas...)
-        assembly {
-            data := calldataload(userOp)
-        }
-        return address(uint160(data));
-    }
-
+    /// @dev Splits `userOp.signature` into the mode, the permission id (USE mode only) and the rest.
     function unpackMode(bytes calldata packed)
         internal
         pure
@@ -36,24 +22,7 @@ library EncodeLib {
         }
     }
 
-    function encodeUse(PermissionId permissionId, bytes memory sig)
-        internal
-        pure
-        returns (bytes memory userOpSig)
-    {
-        userOpSig = abi.encodePacked(SmartSessionMode.USE, permissionId, sig);
-    }
-
-    function encodeUnsafeEnable(bytes memory sig, EnableSession memory enableData)
-        internal
-        pure
-        returns (bytes memory packedSig)
-    {
-        packedSig = abi.encodePacked(
-            SmartSessionMode.UNSAFE_ENABLE, abi.encode(enableData, sig).flzCompress()
-        );
-    }
-
+    /// @dev Decodes the FastLZ-compressed `abi.encode(EnableSession, bytes signature)`.
     function decodeEnable(bytes calldata packedSig)
         internal
         pure

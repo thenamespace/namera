@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.20;
+pragma solidity 0.8.38;
 
 import "./AssociatedArrayLib.sol";
 
@@ -90,7 +90,7 @@ library EnumerableSet {
         uint256 len = _length(set, account);
         for (uint256 i = 1; i <= len; i++) {
             // get last value
-            bytes32 value = _at(set, account, len - i);
+            bytes32 value = _valueAt(set, account, len - i);
             _remove(set, account, value);
         }
     }
@@ -123,7 +123,11 @@ library EnumerableSet {
      *
      * - `index` must be strictly less than {length}.
      */
-    function _at(Set storage set, address account, uint256 index) private view returns (bytes32) {
+    function _valueAt(Set storage set, address account, uint256 index)
+        private
+        view
+        returns (bytes32)
+    {
         return set._values.get(account, index);
     }
 
@@ -200,12 +204,12 @@ library EnumerableSet {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(Bytes32Set storage set, address account, uint256 index)
+    function valueAt(Bytes32Set storage set, address account, uint256 index)
         internal
         view
         returns (bytes32)
     {
-        return _at(set._inner, account, index);
+        return _valueAt(set._inner, account, index);
     }
 
     /**
@@ -293,12 +297,12 @@ library EnumerableSet {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(AddressSet storage set, address account, uint256 index)
+    function valueAt(AddressSet storage set, address account, uint256 index)
         internal
         view
         returns (address)
     {
-        return address(uint160(uint256(_at(set._inner, account, index))));
+        return address(uint160(uint256(_valueAt(set._inner, account, index))));
     }
 
     /**
@@ -316,92 +320,6 @@ library EnumerableSet {
     {
         bytes32[] memory store = _values(set._inner, account);
         address[] memory result;
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            result := store
-        }
-
-        return result;
-    }
-
-    // UintSet
-
-    struct UintSet {
-        Set _inner;
-    }
-
-    /**
-     * @dev Add a value to a set. O(1).
-     *
-     * Returns true if the value was added to the set, that is if it was not
-     * already present.
-     */
-    function add(UintSet storage set, address account, uint256 value) internal returns (bool) {
-        return _add(set._inner, account, bytes32(value));
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * Returns true if the value was removed from the set, that is if it was
-     * present.
-     */
-    function remove(UintSet storage set, address account, uint256 value) internal returns (bool) {
-        return _remove(set._inner, account, bytes32(value));
-    }
-
-    function removeAll(UintSet storage set, address account) internal {
-        return _removeAll(set._inner, account);
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function contains(UintSet storage set, address account, uint256 value)
-        internal
-        view
-        returns (bool)
-    {
-        return _contains(set._inner, account, bytes32(value));
-    }
-
-    /**
-     * @dev Returns the number of values in the set. O(1).
-     */
-    function length(UintSet storage set, address account) internal view returns (uint256) {
-        return _length(set._inner, account);
-    }
-
-    /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
-     *
-     * Note that there are no guarantees on the ordering of values inside the
-     * array, and it may change when more values are added or removed.
-     *
-     * Requirements:
-     *
-     * - `index` must be strictly less than {length}.
-     */
-    function at(UintSet storage set, address account, uint256 index)
-        internal
-        view
-        returns (uint256)
-    {
-        return uint256(_at(set._inner, account, index));
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function values(UintSet storage set, address account) internal view returns (uint256[] memory) {
-        bytes32[] memory store = _values(set._inner, account);
-        uint256[] memory result;
 
         /// @solidity memory-safe-assembly
         assembly {

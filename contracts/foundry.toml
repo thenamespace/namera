@@ -15,6 +15,7 @@ via_ir = false
 bytecode_hash = "none"
 cbor_metadata = false
 auto_detect_remappings = false
+ignored_warnings_from = ["dependencies"]
 gas_reports = ["*"]
 fs_permissions = [
   { access = "read", path = "./chains" },
@@ -56,6 +57,9 @@ ignore = ["dependencies/**"]
 
 [lint]
 severity = ["high", "medium", "low"]
+# Smart Sessions checks every policy in a loop and must revert on the first violation; both lints describe
+# that design.
+exclude_lints = ["calls-loop", "require-revert-in-loop"]
 ignore = ["dependencies/**"]
 lint_on_build = false
 

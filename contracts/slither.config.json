@@ -3,5 +3,6 @@
   "exclude_dependencies": true,
   "compile_force_framework": "foundry",
   "fail_on": "medium",
-  "foundry_compile_all": true
+  "foundry_compile_all": true,
+  "detectors_to_exclude": "assembly,naming-convention,unindexed-event-address"
 }

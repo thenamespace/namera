@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.23;
+pragma solidity 0.8.38;
 
-import {IERC165} from "../../interfaces/IERC165.sol";
-import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
-import {
-    IModule as IERC7579Module,
-    VALIDATION_FAILED,
-    VALIDATION_SUCCESS
-} from "../../interfaces/IERC7579.sol";
-import "../DataTypes.sol";
+import {ConfigId} from "../DataTypes.sol";
+import {ERC4337} from "solady/accounts/ERC4337.sol";
 
 /**
  * IPolicy are external contracts that enforce policies / permission on 4337/7579 executions
@@ -18,10 +12,14 @@ import "../DataTypes.sol";
  *      mapping(id   =>   msg.sender   =>   userOp.sender(account) => state)
  *                        ^ smartSession    ^ smart account (associated storage)
  */
-interface IPolicy is IERC165 {
+interface IPolicy {
     event PolicySet(ConfigId id, address multiplexer, address account);
 
     error PolicyNotInitialized(ConfigId id, address multiplexer, address account);
+
+    /// @dev ERC-165. Policies report support for the policy type interfaces below.
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+
     /**
      * This function may be called by the multiplexer (SmartSessions) without deinitializing first.
      * Policies MUST overwrite the current state when this happens
@@ -29,7 +27,6 @@ interface IPolicy is IERC165 {
      * A secure policy would minimize external calls from this method (ideally, to 0) to prevent passing control flow to
      * external contracts.
      */
-
     function initializeWithMultiplexer(address account, ConfigId configId, bytes calldata initData)
         external;
 }
@@ -38,15 +35,12 @@ interface IPolicy is IERC165 {
  * IUserOpPolicy is a policy that enforces restrictions on user operations. It is called during the validation phase
  * of the ERC4337 execution.
  * Use this policy to enforce restrictions on user operations (userOp.gas, Time based restrictions).
- * The checkUserOpPolicy function should return a uint256 value that represents the policy's decision.
- * The policy's decision should be one of the following:
- * - VALIDATION_SUCCESS: The user operation is allowed.
- * - VALIDATION_FAILED: The user operation is not allowed.
- * - While it is possible to return values that pack validUntil and validAfter timestamps,
- *   SmartSession Policies can not utilize aggregator addresses. (PolicyLib.isFailed() will prevent this)
+ * The checkUserOpPolicy function returns ERC-4337 validation data: 0 allows the user operation, 1 rejects it.
+ * While it is possible to return values that pack validUntil and validAfter timestamps, SmartSession Policies can not
+ * utilize aggregator addresses (PolicyLib.isFailed() will prevent this).
  */
 interface IUserOpPolicy is IPolicy {
-    function checkUserOpPolicy(ConfigId id, PackedUserOperation calldata userOp)
+    function checkUserOpPolicy(ConfigId id, ERC4337.PackedUserOperation calldata userOp)
         external
         returns (uint256);
 }
@@ -58,10 +52,7 @@ interface IUserOpPolicy is IPolicy {
  * SmartSession will destruct the execution batch, and call the policy for each action, if the policy is installed for
  * the actionId for the account.
  * Use this policy to enforce restrictions on individual actions (i.e. transfers, approvals, etc).
- * The checkAction function should return a uint256 value that represents the policy's decision.
- * The policy's decision should be one of the following:
- * - VALIDATION_SUCCESS: The action is allowed.
- * - VALIDATION_FAILED: The action is not allowed.
+ * The checkAction function returns ERC-4337 validation data: 0 allows the action, 1 rejects it.
  */
 interface IActionPolicy is IPolicy {
     function checkAction(

@@ -1,7 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
-import "../DataTypes.sol";
+import {
+    ActionData,
+    ChainDigest,
+    ERC7739Context,
+    ERC7739Data,
+    EnableSession,
+    FALLBACK_TARGET_FLAG,
+    FALLBACK_TARGET_SELECTOR_FLAG,
+    FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION,
+    PolicyData,
+    Session,
+    SmartSessionMode
+} from "../DataTypes.sol";
+import {ISmartSession} from "../ISmartSession.sol";
 import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
 
 ///////  Custom EIP712 types  ////
@@ -94,12 +107,8 @@ bytes32 constant _MULTICHAIN_DOMAIN_SEPARATOR =
     0x057501e891776d1482927e5f094ae44049a4d893ba2d7b334dd7db8d38d3a0e1;
 
 library HashLib {
-    error ChainIdMismatch(uint64 providedChainId);
-    error HashMismatch(bytes32 providedHash, bytes32 computedHash);
-
-    using EfficientHashLib for bytes32;
+    using EfficientHashLib for bytes32[];
     using HashLib for *;
-    using EfficientHashLib for *;
 
     /**
      * Mimics SignTypedData() behavior
@@ -162,7 +171,9 @@ library HashLib {
 
     /**
      * Hashes the data from the Session struct with some security critical data
-     * such as nonce, account address, smart session address, and mode
+     * such as nonce, account address, smart session address, and mode.
+     * It is exactly how signTypedData hashes the object as an inner struct (no EIP-712 domain).
+     * chainId is not included as it is part of the ChainSession.
      */
     function sessionDigest(
         Session memory session,
@@ -170,43 +181,21 @@ library HashLib {
         SmartSessionMode mode,
         uint256 nonce
     ) internal view returns (bytes32) {
-        return _sessionDigest(session, account, address(this), mode, nonce);
-    }
-
-    /**
-     * Should never be used directly on-chain, only via sessionDigest()
-     * Only for external use - to be able to pass smartSession when
-     * testing for different chains which may have different addresses for
-     * the Smart Session contract
-     * It is exactly how signTypedData will hash such an object
-     * when this object is an inner struct
-     * It won't use eip712 domain for it as it is inner struct
-     */
-    function _sessionDigest(
-        Session memory session,
-        address account,
-        address smartSession, // for testing purposes
-        SmartSessionMode mode,
-        uint256 nonce
-    ) internal pure returns (bytes32 _hash) {
-        {
-            // chainId is not needed as it is in the ChainSession
-            _hash = keccak256(
-                abi.encode(
-                    SESSION_TYPEHASH,
-                    account,
-                    hashPermissions({
-                        session: session,
-                        ignoreSecurityAttestations: mode == SmartSessionMode.UNSAFE_ENABLE
-                    }),
-                    address(session.sessionValidator),
-                    keccak256(session.sessionValidatorInitData),
-                    session.salt,
-                    smartSession,
-                    nonce
-                )
-            );
-        }
+        return keccak256(
+            abi.encode(
+                SESSION_TYPEHASH,
+                account,
+                hashPermissions({
+                    session: session,
+                    ignoreSecurityAttestations: mode == SmartSessionMode.UNSAFE_ENABLE
+                }),
+                address(session.sessionValidator),
+                keccak256(session.sessionValidatorInitData),
+                session.salt,
+                address(this),
+                nonce
+            )
+        );
     }
 
     function hashPermissions(Session memory session, bool ignoreSecurityAttestations)
@@ -350,13 +339,13 @@ library HashLib {
             enableData.hashesAndChainIds[enableData.chainDigestIndex].sessionDigest;
 
         if (providedChainId != block.chainid) {
-            revert ChainIdMismatch(providedChainId);
+            revert ISmartSession.ChainIdMismatch(providedChainId);
         }
 
         // ensure digest we've built from the sessionToEnable is included into
         // the list of digests that were signed
         if (providedHash != computedHash) {
-            revert HashMismatch(providedHash, computedHash);
+            revert ISmartSession.HashMismatch(providedHash, computedHash);
         }
 
         digest = enableData.hashesAndChainIds.multichainDigest();

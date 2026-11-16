@@ -1,20 +1,21 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.38;
 
-import {
-    CallType,
-    ExecType,
-    Execution,
-    ModeCode as ExecutionMode
-} from "../../interfaces/IERC7579.sol";
+/// @dev ERC-7579 batch execution entry.
+struct Execution {
+    address target;
+    uint256 value;
+    bytes callData;
+}
 
 /**
- * Helper Library for decoding Execution calldata
- * malloc for memory allocation is bad for gas. use this assembly instead
+ * Decodes ERC-7579 `execute(bytes32 mode, bytes executionCalldata)` user operation calldata.
+ * Single executions and execution modes are decoded with Solady's LibERC7579. Batches are decoded into a typed
+ * `Execution[] calldata` so Solidity validates every field on access: SmartSession compares `target` against
+ * `msg.sender` and `address(this)`, which must not see dirty upper address bits.
  */
 library ExecutionLib {
-    error ERC7579DecodingError();
-
+    /// @dev Returns `executionCalldata` from `execute(bytes32,bytes)` calldata, with bounds checks.
     function decodeUserOpCallData(bytes calldata userOpCallData)
         internal
         pure
@@ -22,9 +23,8 @@ library ExecutionLib {
     {
         assembly {
             if lt(userOpCallData.length, 68) { revert(0, 0) }
-            let baseOffset := add(userOpCallData.offset, 0x24) //skip 4 bytes of selector and 32 bytes of execution mode
+            let baseOffset := add(userOpCallData.offset, 0x24) // skip the selector and the execution mode
             let calldataLoadOffset := calldataload(baseOffset)
-            // check for potential overflow in calldataLoadOffset
             if gt(calldataLoadOffset, 0xffffffffffffffff) { revert(0, 0) }
             erc7579ExecutionCalldata.offset := add(baseOffset, calldataLoadOffset)
             erc7579ExecutionCalldata.length := calldataload(
@@ -32,9 +32,8 @@ library ExecutionLib {
             )
             if gt(erc7579ExecutionCalldata.length, 0xffffffffffffffff) { revert(0, 0) }
 
+            // revert if the execution calldata starts or ends after the user operation calldata
             let calldataBound := add(userOpCallData.offset, userOpCallData.length)
-            // revert if erc7579ExecutionCalldata starts after userOp finishes and if erc7579ExecutionCalldata ends
-            // after userOp finishes
             if gt(erc7579ExecutionCalldata.offset, calldataBound) { revert(0, 0) }
             if gt(
                 add(erc7579ExecutionCalldata.offset, erc7579ExecutionCalldata.length),
@@ -43,34 +42,12 @@ library ExecutionLib {
         }
     }
 
-    function get7579ExecutionMode(bytes calldata userOpCallData)
-        internal
-        pure
-        returns (ExecutionMode mode)
-    {
-        mode = ExecutionMode.wrap(bytes32(userOpCallData[4:36]));
+    /// @dev Returns the ERC-7579 execution mode of `execute(bytes32,bytes)` calldata.
+    function executionMode(bytes calldata userOpCallData) internal pure returns (bytes32) {
+        return bytes32(userOpCallData[4:36]);
     }
 
-    function get7579ExecutionTypes(bytes calldata userOpCallData)
-        internal
-        pure
-        returns (CallType callType, ExecType execType)
-    {
-        ExecutionMode mode = ExecutionMode.wrap(bytes32(userOpCallData[4:36]));
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            callType := mode
-            execType := shl(8, mode)
-        }
-    }
-
-    /**
-     * @notice Decode a batch of `Execution` executionBatch from a `bytes` calldata.
-     * @dev code is copied from solady's LibERC7579.sol
-     * https://github.com/Vectorized/solady/blob/740812cedc9a1fc11e17cb3d4569744367dedf19/src/accounts/LibERC7579.sol#L146
-     *      Credits to Vectorized and the Solady Team
-     */
+    /// @dev Bounds checks as in Solady's `LibERC7579.decodeBatch`, returning typed executions.
     function decodeBatch(bytes calldata executionCalldata)
         internal
         pure
@@ -88,7 +65,6 @@ library ExecutionLib {
                 revert(0x1c, 0x04)
             }
             if executionBatch.length {
-                // Perform bounds checks on the decoded `executionBatch`.
                 // Loop runs out-of-gas if `executionBatch.length` is big enough to cause overflows.
                 for { let i := executionBatch.length } 1 {} {
                     i := sub(i, 1)
@@ -106,31 +82,5 @@ library ExecutionLib {
                 }
             }
         }
-    }
-
-    function encodeBatch(Execution[] memory executions)
-        internal
-        pure
-        returns (bytes memory callData)
-    {
-        callData = abi.encode(executions);
-    }
-
-    function decodeSingle(bytes calldata executionCalldata)
-        internal
-        pure
-        returns (address target, uint256 value, bytes calldata callData)
-    {
-        target = address(bytes20(executionCalldata[0:20]));
-        value = uint256(bytes32(executionCalldata[20:52]));
-        callData = executionCalldata[52:];
-    }
-
-    function encodeSingle(address target, uint256 value, bytes memory callData)
-        internal
-        pure
-        returns (bytes memory userOpCalldata)
-    {
-        userOpCalldata = abi.encodePacked(target, value, callData);
     }
 }

@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.4;
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity 0.8.38;
 
-import {PackedUserOperation} from "../interfaces/IERC4337.sol";
-import {CallType, ExecType, ModeCode as ExecutionMode} from "../interfaces/IERC7579.sol";
 import "./DataTypes.sol";
+import {ERC4337} from "solady/accounts/ERC4337.sol";
 
 /**
  * @title ISmartSession
@@ -23,7 +22,6 @@ import "./DataTypes.sol";
 interface ISmartSession {
     error AssociatedArray_OutOfBounds(uint256 index);
     error ChainIdMismatch(uint64 providedChainId);
-    error HashIndexOutOfBounds(uint256 index);
     error HashMismatch(bytes32 providedHash, bytes32 computedHash);
     error InvalidData();
     error InvalidActionId();
@@ -33,20 +31,14 @@ interface ISmartSession {
     error InvalidISessionValidator(ISessionValidator sessionValidator);
     error InvalidSelfCall();
     error InvalidSession(PermissionId permissionId);
-    error InvalidSessionKeySignature(
-        PermissionId permissionId, address sessionValidator, address account, bytes32 userOpHash
-    );
     error SmartSessionModuleAlreadyInstalled(address account);
     error InvalidPermissionId(PermissionId permissionId);
-    error InvalidCallTarget();
     error InvalidMode();
     error InvalidUserOpSender(address sender);
     error NoPoliciesSet(PermissionId permissionId);
-    error PartlyEnabledActions();
-    error PartlyEnabledPolicies();
     error PolicyViolation(PermissionId permissionId, address policy);
     error SignerNotFound(PermissionId permissionId, address account);
-    error UnsupportedCallType(CallType callType);
+    error UnsupportedCallType(bytes1 callType);
     error UnsupportedExecutionType();
     error UnsupportedPolicy(address policy);
     error UnsupportedSmartSessionMode(SmartSessionMode mode);
@@ -90,7 +82,7 @@ interface ISmartSession {
      *     EnableSession data, which is packed in userOp.signature is parsed, and stored in the SmartSession storage.
      *
      */
-    function validateUserOp(PackedUserOperation memory userOp, bytes32 userOpHash)
+    function validateUserOp(ERC4337.PackedUserOperation memory userOp, bytes32 userOpHash)
         external
         returns (ValidationData vd);
     /**

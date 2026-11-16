@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
-import {FlatBytesLib} from "../libraries/FlatBytesLib.sol";
-import {IRegistry, ModuleType} from "./interfaces/IRegistry.sol";
-import "./interfaces/ISessionValidator.sol";
-import "./utils/AssociatedArrayLib.sol";
-import {EnumerableMap} from "./utils/EnumerableMap4337.sol";
+import {ISessionValidator} from "./interfaces/ISessionValidator.sol";
+import {FlatBytesLib} from "./lib/FlatBytesLib.sol";
 import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -26,7 +23,6 @@ struct ChainDigest {
 }
 
 /**
- *
  * Represents a Session structure with various attributes for managing user operations and policies.
  *
  * Attributes:
@@ -36,15 +32,10 @@ struct ChainDigest {
  *         means of validation.
  *
  *     sessionValidatorInitData (bytes): Initialization data for the ISessionValidator contract.
- *         The ISessionValidator contract can be configured with different parameters that are
- *         passed in this field.
  *
  *     salt (bytes32): A unique identifier to prevent collision between sessions.
- *         A session key owner can have multiple sessions with the same parameters. To facilitate
- *         this, a salt is necessary to avoid collision.
  *
  *     userOpPolicies (PolicyData[]): An array of policy data for user operations.
- *         When every session can have multiple policies set.
  *
  *     erc7739Policies (ERC7739Data): ERC1271 Policies specific to the ERC7739 standard.
  *
@@ -61,15 +52,6 @@ struct Session {
     ERC7739Data erc7739Policies;
     ActionData[] actions;
     bool permitERC4337Paymaster;
-}
-
-struct MultiChainSession {
-    ChainSession[] sessionsAndChainIds;
-}
-
-struct ChainSession {
-    uint64 chainId;
-    Session session;
 }
 
 // Policy data is a struct that contains the policy address and the initialization data for the policy.
@@ -91,13 +73,6 @@ struct ERC7739Context {
     // Unused fields are left out of the struct type.
     bytes32 appDomainSeparator;
     string[] contentNames;
-}
-
-struct EIP712Domain {
-    string name;
-    string version;
-    uint256 chainId;
-    address verifyingContract;
 }
 
 struct ERC7739Data {
@@ -140,11 +115,6 @@ struct EnumerableERC7739Config {
     mapping(PermissionId => EnumerableSet.Bytes32Set) enabledDomainSeparators;
 }
 
-// struct EnumerableERC7739Config {
-//     mapping(PermissionId => EnumerableMap.Bytes32ToBytes32Map) erc1271Policies;
-// }
-// mapping(PermissionId => EnumerableSet.Bytes32Set) enabledDomainSeparators;
-
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                 Custom Types & Constants                   */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
@@ -165,21 +135,17 @@ type ValidationData is uint256;
 
 ActionId constant EMPTY_ACTIONID = ActionId.wrap(bytes32(0));
 PermissionId constant EMPTY_PERMISSIONID = PermissionId.wrap(bytes32(0));
-UserOpPolicyId constant EMPTY_USEROPPOLICYID = UserOpPolicyId.wrap(bytes32(0));
-ActionPolicyId constant EMPTY_ACTIONPOLICYID = ActionPolicyId.wrap(bytes32(0));
-Erc1271PolicyId constant EMPTY_ERC1271POLICYID = Erc1271PolicyId.wrap(bytes32(0));
-ConfigId constant EMPTY_CONFIGID = ConfigId.wrap(bytes32(0));
 
-ValidationData constant ERC4337_VALIDATION_SUCCESS = ValidationData.wrap(0);
 ValidationData constant ERC4337_VALIDATION_FAILED = ValidationData.wrap(1);
-bytes4 constant EIP1271_SUCCESS = 0x1626ba7e;
 bytes4 constant EIP1271_FAILED = 0xFFFFFFFF;
 
 uint256 constant ERC7579_MODULE_TYPE_VALIDATOR = 1;
-uint256 constant ERC7579_MODULE_TYPE_EXECUTOR = 2;
-uint256 constant ERC7579_MODULE_TYPE_FALLBACK = 3;
-uint256 constant ERC7579_MODULE_TYPE_HOOK = 4;
 uint256 constant ERC7579_MODULE_TYPE_STATELESS_VALIDATOR = 7;
+
+/// @dev Selector of ERC-7579 `execute(bytes32,bytes)`.
+bytes4 constant ERC7579_EXECUTE_SELECTOR = 0xe9ae5c53;
+/// @dev Selector of ERC-4337 `executeUserOp(PackedUserOperation,bytes32)`.
+bytes4 constant ERC4337_EXECUTE_USER_OP_SELECTOR = 0x8dd7712f;
 
 enum PolicyType {
     NA,
@@ -187,9 +153,6 @@ enum PolicyType {
     ACTION,
     ERC1271
 }
-
-IRegistry constant registry = IRegistry(address(0));
-ModuleType constant VALIDATOR_MODULE_TYPE = ModuleType.wrap(ERC7579_MODULE_TYPE_VALIDATOR);
 
 // ActionId for a fallback action policy. This id will be used if both action
 // target and selector are set to 1. During validation if the current target and
@@ -209,84 +172,30 @@ ActionId constant FALLBACK_ACTIONID_SMARTSESSION_CALL =
 // A unique ValidationData value to retry a policy check with the FALLBACK_ACTIONID.
 ValidationData constant RETRY_WITH_FALLBACK = ValidationData.wrap(uint256(0x50FFBAAD));
 
-using {validationDataEq as ==} for ValidationData global;
-using {validationDataNeq as !=} for ValidationData global;
+using {isUseMode, isEnableMode} for SmartSessionMode global;
 
-function validationDataEq(ValidationData uid1, ValidationData uid2) pure returns (bool) {
-    return ValidationData.unwrap(uid1) == ValidationData.unwrap(uid2);
+function isUseMode(SmartSessionMode mode) pure returns (bool) {
+    return mode == SmartSessionMode.USE;
 }
 
-function validationDataNeq(ValidationData uid1, ValidationData uid2) pure returns (bool) {
-    return ValidationData.unwrap(uid1) != ValidationData.unwrap(uid2);
+function isEnableMode(SmartSessionMode mode) pure returns (bool) {
+    return mode == SmartSessionMode.ENABLE || mode == SmartSessionMode.UNSAFE_ENABLE;
+}
+
+using {validationDataEq as ==} for ValidationData global;
+
+function validationDataEq(ValidationData a, ValidationData b) pure returns (bool) {
+    return ValidationData.unwrap(a) == ValidationData.unwrap(b);
 }
 
 using {permissionIdEq as ==} for PermissionId global;
-using {permissionIdNeq as !=} for PermissionId global;
 
-function permissionIdEq(PermissionId uid1, PermissionId uid2) pure returns (bool) {
-    return PermissionId.unwrap(uid1) == PermissionId.unwrap(uid2);
+function permissionIdEq(PermissionId a, PermissionId b) pure returns (bool) {
+    return PermissionId.unwrap(a) == PermissionId.unwrap(b);
 }
 
-function permissionIdNeq(PermissionId uid1, PermissionId uid2) pure returns (bool) {
-    return PermissionId.unwrap(uid1) != PermissionId.unwrap(uid2);
-}
-
-// ActionId
 using {actionIdEq as ==} for ActionId global;
-using {actionIdNeq as !=} for ActionId global;
 
-function actionIdEq(ActionId id1, ActionId id2) pure returns (bool) {
-    return ActionId.unwrap(id1) == ActionId.unwrap(id2);
-}
-
-function actionIdNeq(ActionId id1, ActionId id2) pure returns (bool) {
-    return ActionId.unwrap(id1) != ActionId.unwrap(id2);
-}
-
-// UserOpPolicyId
-using {userOpPolicyIdEq as ==} for UserOpPolicyId global;
-using {userOpPolicyIdNeq as !=} for UserOpPolicyId global;
-
-function userOpPolicyIdEq(UserOpPolicyId id1, UserOpPolicyId id2) pure returns (bool) {
-    return UserOpPolicyId.unwrap(id1) == UserOpPolicyId.unwrap(id2);
-}
-
-function userOpPolicyIdNeq(UserOpPolicyId id1, UserOpPolicyId id2) pure returns (bool) {
-    return UserOpPolicyId.unwrap(id1) != UserOpPolicyId.unwrap(id2);
-}
-
-// ActionPolicyId
-using {actionPolicyIdEq as ==} for ActionPolicyId global;
-using {actionPolicyIdNeq as !=} for ActionPolicyId global;
-
-function actionPolicyIdEq(ActionPolicyId id1, ActionPolicyId id2) pure returns (bool) {
-    return ActionPolicyId.unwrap(id1) == ActionPolicyId.unwrap(id2);
-}
-
-function actionPolicyIdNeq(ActionPolicyId id1, ActionPolicyId id2) pure returns (bool) {
-    return ActionPolicyId.unwrap(id1) != ActionPolicyId.unwrap(id2);
-}
-
-// Erc1271PolicyId
-using {erc1271PolicyIdEq as ==} for Erc1271PolicyId global;
-using {erc1271PolicyIdNeq as !=} for Erc1271PolicyId global;
-
-function erc1271PolicyIdEq(Erc1271PolicyId id1, Erc1271PolicyId id2) pure returns (bool) {
-    return Erc1271PolicyId.unwrap(id1) == Erc1271PolicyId.unwrap(id2);
-}
-
-function erc1271PolicyIdNeq(Erc1271PolicyId id1, Erc1271PolicyId id2) pure returns (bool) {
-    return Erc1271PolicyId.unwrap(id1) != Erc1271PolicyId.unwrap(id2);
-}
-
-// ConfigId
-using {configIdEq as ==} for ConfigId global;
-using {configIdNeq as !=} for ConfigId global;
-
-function configIdEq(ConfigId id1, ConfigId id2) pure returns (bool) {
-    return ConfigId.unwrap(id1) == ConfigId.unwrap(id2);
-}
-
-function configIdNeq(ConfigId id1, ConfigId id2) pure returns (bool) {
-    return ConfigId.unwrap(id1) != ConfigId.unwrap(id2);
+function actionIdEq(ActionId a, ActionId b) pure returns (bool) {
+    return ActionId.unwrap(a) == ActionId.unwrap(b);
 }

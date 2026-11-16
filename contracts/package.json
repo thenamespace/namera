@@ -11,7 +11,7 @@
     "lint": "forge fmt --check && forge lint",
     "format": "forge fmt",
     "typecheck": "tsc -p tsconfig.json",
-    "analyze": "slither .",
+    "analyze": "forge clean && slither .",
     "symbolic": "halmos",
     "coverage": "forge coverage --report summary --report lcov",
     "snapshot": "forge snapshot",

@@ -1,18 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
 import "./DataTypes.sol";
-
-import {EIP1271_MAGIC_VALUE, IERC1271} from "../interfaces/IERC1271.sol";
-import {IAccountExecute, PackedUserOperation} from "../interfaces/IERC4337.sol";
-import {
-    CALLTYPE_BATCH,
-    CALLTYPE_SINGLE,
-    CallType,
-    EXECTYPE_DEFAULT,
-    ExecType,
-    IERC7579Account
-} from "../interfaces/IERC7579.sol";
 
 import {ISmartSession} from "./ISmartSession.sol";
 import {SmartSessionBase} from "./core/SmartSessionBase.sol";
@@ -20,14 +9,15 @@ import {SmartSessionERC7739} from "./core/SmartSessionERC7739.sol";
 import {IActionPolicy, IUserOpPolicy} from "./interfaces/IPolicy.sol";
 import {ConfigLib} from "./lib/ConfigLib.sol";
 import {EncodeLib} from "./lib/EncodeLib.sol";
-import {ExecutionLib as ExecutionLib} from "./lib/ExecutionLib.sol";
+import {ExecutionLib} from "./lib/ExecutionLib.sol";
 import {HashLib} from "./lib/HashLib.sol";
 import {IdLib} from "./lib/IdLib.sol";
 import {PolicyLib} from "./lib/PolicyLib.sol";
-import {SignerLib} from "./lib/SignerLib.sol";
-import {SmartSessionModeLib} from "./lib/SmartSessionModeLib.sol";
 import {ValidationDataLib} from "./lib/ValidationDataLib.sol";
 import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
+import {ERC4337} from "solady/accounts/ERC4337.sol";
+import {LibERC7579} from "solady/accounts/LibERC7579.sol";
+import {SignatureCheckerLib} from "solady/utils/SignatureCheckerLib.sol";
 
 /**
  * @title SmartSession
@@ -46,16 +36,13 @@ import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
  */
 contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     using EnumerableSet for EnumerableSet.Bytes32Set;
-    using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
-    using SmartSessionModeLib for SmartSessionMode;
     using IdLib for *;
     using ValidationDataLib for ValidationData;
     using HashLib for *;
     using PolicyLib for *;
-    using SignerLib for *;
     using ConfigLib for *;
-    using ExecutionLib for *;
-    using EncodeLib for *;
+    using ExecutionLib for bytes;
+    using EncodeLib for bytes;
 
     /**
      * @notice Validates a user operation for ERC4337/ERC7579 compatibility
@@ -71,7 +58,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
      * @param userOpHash The hash of the user operation
      * @return vd ValidationData containing the validation result
      */
-    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash)
+    function validateUserOp(ERC4337.PackedUserOperation calldata userOp, bytes32 userOpHash)
         external
         override
         returns (ValidationData vd)
@@ -79,7 +66,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         // ensure that userOp.sender == msg.sender == account
         // SmartSession will sstore configs for a certain account,
         // so we have to ensure that unauthorized access is not possible
-        address account = userOp.getSender();
+        address account = userOp.sender;
         if (account != msg.sender) revert InvalidUserOpSender(account);
 
         // unpacking data packed in userOp.signature
@@ -154,63 +141,49 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         // NOTE: although SmartSession implements a ERC1271 feature,
         // it CAN NOT be used as a valid ERC1271 validator for
         // this step. SmartSessions ERC1271 function must prevent this
-        if (
-            IERC1271(account).isValidSignature(hash, enableData.permissionEnableSig)
-                != EIP1271_MAGIC_VALUE
-        ) {
+        if (!SignatureCheckerLib.isValidERC1271SignatureNow(
+                account, hash, enableData.permissionEnableSig
+            )) {
             revert InvalidEnableSignature(account, hash);
         }
 
-        // Enable UserOp policies
-        $userOpPolicies.enable({
-            policyType: PolicyType.USER_OP,
-            permissionId: permissionId,
-            configId: permissionId.toUserOpPolicyId().toConfigId(),
-            policyDatas: enableData.sessionToEnable.userOpPolicies,
-            useRegistry: false
-        });
+        Session memory session = enableData.sessionToEnable;
 
-        // Enable ERC1271 policies
-        $enabledERC7739.enable({
-            contexts: enableData.sessionToEnable.erc7739Policies.allowedERC7739Content,
-            permissionId: permissionId
-        });
-
-        // Enabel ERC1271 policies
-        $erc1271Policies.enable({
-            policyType: PolicyType.ERC1271,
-            permissionId: permissionId,
-            configId: permissionId.toErc1271PolicyId().toConfigId(),
-            policyDatas: enableData.sessionToEnable.erc7739Policies.erc1271Policies,
-            useRegistry: false
-        });
-
-        // Enable action policies
-        $actionPolicies.enable({
-            permissionId: permissionId,
-            actionPolicyDatas: enableData.sessionToEnable.actions,
-            useRegistry: false
-        });
-
-        _setPermit4337Paymaster(permissionId, enableData.sessionToEnable.permitERC4337Paymaster);
+        // Record the session before calling into policies (checks-effects-interactions).
+        // slither-disable-next-line unused-return
+        $enabledSessions.add(msg.sender, PermissionId.unwrap(permissionId));
+        _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
 
         // Enable mode can involve enabling ISessionValidator (new Permission)
         // or just adding policies (existing permission)
         // a) ISessionValidator is not set => enable ISessionValidator
-        // b) ISessionValidator is set => just add policies (above)
+        // b) ISessionValidator is set => just add policies (below)
         // Attention: if the same policy that has already been configured is added again,
         // the policy will be overwritten with the new configuration
         if (!_isISessionValidatorSet(permissionId, account)) {
             $sessionValidators.enable({
                 permissionId: permissionId,
-                sessionValidator: enableData.sessionToEnable.sessionValidator,
-                sessionValidatorConfig: enableData.sessionToEnable.sessionValidatorInitData,
-                useRegistry: false
+                sessionValidator: session.sessionValidator,
+                sessionValidatorConfig: session.sessionValidatorInitData
             });
         }
+        $enabledERC7739.enable({
+            contexts: session.erc7739Policies.allowedERC7739Content, permissionId: permissionId
+        });
 
-        // Mark the session as enabled
-        $enabledSessions.add(msg.sender, PermissionId.unwrap(permissionId));
+        $userOpPolicies.enable({
+            policyType: PolicyType.USER_OP,
+            permissionId: permissionId,
+            configId: permissionId.toUserOpPolicyId().toConfigId(),
+            policyDatas: session.userOpPolicies
+        });
+        $erc1271Policies.enable({
+            policyType: PolicyType.ERC1271,
+            permissionId: permissionId,
+            configId: permissionId.toErc1271PolicyId().toConfigId(),
+            policyDatas: session.erc7739Policies.erc1271Policies
+        });
+        $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
     }
 
     /**
@@ -226,7 +199,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     function _enforcePolicies(
         PermissionId permissionId,
         bytes32 userOpHash,
-        PackedUserOperation calldata userOp,
+        ERC4337.PackedUserOperation calldata userOp,
         bytes memory decompressedSignature,
         address account
     ) internal returns (ValidationData vd) {
@@ -242,7 +215,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             // by default, minPolicies for userOp policies is 0
             // in the case of the UserOp having paymasterAndData and the user opted in, to allow the PermissionID to use
             // paymasters, this value will be 1
-            uint256 minPolicies;
+            uint256 minPolicies = 0;
 
             // if a paymaster is used in this userop, we must ensure that the user authorized this PermissionID to use
             // any
@@ -275,15 +248,15 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
         // if the selector indicates that the userOp is an execution,
         // action policies have to be checked
-        if (selector == IERC7579Account.execute.selector) {
-            // Decode ERC7579 execution mode
-            (CallType callType, ExecType execType) = userOp.callData.get7579ExecutionTypes();
+        if (selector == ERC7579_EXECUTE_SELECTOR) {
+            bytes32 mode = userOp.callData.executionMode();
+            bytes1 callType = LibERC7579.getCallType(mode);
             // ERC7579 allows for different execution types, but SmartSession only supports the default execution type
-            if (ExecType.unwrap(execType) != ExecType.unwrap(EXECTYPE_DEFAULT)) {
+            if (LibERC7579.getExecType(mode) != LibERC7579.EXECTYPE_DEFAULT) {
                 revert UnsupportedExecutionType();
             }
             // DEFAULT EXEC & BATCH CALL
-            else if (callType == CALLTYPE_BATCH) {
+            else if (callType == LibERC7579.CALLTYPE_BATCH) {
                 vd = vd.intersect(
                     $actionPolicies.actionPolicies
                         .checkBatch7579Exec({
@@ -294,9 +267,9 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
                 );
             }
             // DEFAULT EXEC & SINGLE CALL
-            else if (callType == CALLTYPE_SINGLE) {
+            else if (callType == LibERC7579.CALLTYPE_SINGLE) {
                 (address target, uint256 value, bytes calldata callData) =
-                    userOp.callData.decodeUserOpCallData().decodeSingle();
+                    LibERC7579.decodeSingle(userOp.callData.decodeUserOpCallData());
                 vd = vd.intersect(
                     $actionPolicies.actionPolicies
                         .checkSingle7579Exec({
@@ -316,7 +289,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         // SmartSession does not support executeUserOp,
         // should this function selector be used in the userOp: revert
         // see why: https://github.com/erc7579/smartsessions/issues/17
-        else if (selector == IAccountExecute.executeUserOp.selector) {
+        else if (selector == ERC4337_EXECUTE_USER_OP_SELECTOR) {
             revert UnsupportedExecutionType();
         }
         /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/

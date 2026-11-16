@@ -1,31 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
-import {FlatBytesLib} from "../../libraries/FlatBytesLib.sol";
 import "../DataTypes.sol";
 import {ISmartSession} from "../ISmartSession.sol";
 import {ConfigLib} from "../lib/ConfigLib.sol";
-import {EncodeLib} from "../lib/EncodeLib.sol";
+import {FlatBytesLib} from "../lib/FlatBytesLib.sol";
 import {HashLib} from "../lib/HashLib.sol";
 import {IdLib} from "../lib/IdLib.sol";
 import {PolicyLib} from "../lib/PolicyLib.sol";
-import {SmartSessionModeLib} from "../lib/SmartSessionModeLib.sol";
-import {EnumerableMap} from "../utils/EnumerableMap4337.sol";
 import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
-import {NonceManager} from "./NonceManager.sol";
 
-abstract contract SmartSessionBase is ISmartSession, NonceManager {
-    using EnumerableMap for EnumerableMap.Bytes32ToBytes32Map;
+abstract contract SmartSessionBase is ISmartSession {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using SmartSessionModeLib for SmartSessionMode;
     using HashLib for *;
     using PolicyLib for *;
     using ConfigLib for *;
-    using EncodeLib for *;
     using IdLib for *;
-    using ConfigLib for Policy;
-    using ConfigLib for EnumerableActionPolicy;
     using FlatBytesLib for FlatBytesLib.Bytes;
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -46,6 +37,9 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
     mapping(
         PermissionId permissionId => mapping(address smartAccount => bool permitERC4337Paymaster)
     ) internal $permitERC4337Paymaster;
+    /// @dev Enable-signature nonce per permission and account; bumping it revokes unused enable signatures.
+    mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
+        $signerNonce;
 
     /**
      * Before enabling policies, we need to check if the session is enabled for the caller and the given permission
@@ -97,8 +91,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
             policyType: PolicyType.USER_OP,
             permissionId: permissionId,
             configId: permissionId.toUserOpPolicyId().toConfigId(),
-            policyDatas: userOpPolicies,
-            useRegistry: false
+            policyDatas: userOpPolicies
         });
     }
 
@@ -127,6 +120,9 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
 
     function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {
         $permitERC4337Paymaster[permissionId][msg.sender] = enabled;
+        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+        // change this account's state.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit PermissionIdPermit4337Paymaster(permissionId, msg.sender, enabled);
     }
 
@@ -147,8 +143,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
             policyType: PolicyType.ERC1271,
             permissionId: permissionId,
             configId: permissionId.toErc1271PolicyId().toConfigId(),
-            policyDatas: erc1271Policies.erc1271Policies,
-            useRegistry: false
+            policyDatas: erc1271Policies.erc1271Policies
         });
     }
 
@@ -188,9 +183,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
         enableWithPermissionId(permissionId)
     {
         // Enable the action policies
-        $actionPolicies.enable({
-            permissionId: permissionId, actionPolicyDatas: actionPolicies, useRegistry: false
-        });
+        $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: actionPolicies});
     }
 
     /**
@@ -208,6 +201,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
         $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
 
         // remove action Id from enabledActionIds
+        // slither-disable-next-line unused-return
         $actionPolicies.enabledActionIds[permissionId].remove(msg.sender, ActionId.unwrap(actionId));
         emit ISmartSession.ActionIdDisabled(permissionId, actionId, msg.sender);
     }
@@ -236,6 +230,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
             $actionPolicies.actionPolicies[actionId].policyList[permissionId].length(msg.sender)
                 == 0
         ) {
+            // slither-disable-next-line unused-return
             $actionPolicies.enabledActionIds[permissionId].remove(
                 msg.sender, ActionId.unwrap(actionId)
             );
@@ -245,7 +240,6 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
 
     /**
      * @notice Enable multiple sessions with their associated policies
-     * since this function is only called during the ERC-4337 execution phase, it is safe to use the registry
      * @param sessions An array of Session structures to be enabled
      * @return permissionIds An array of PermissionId values corresponding to the enabled sessions
      */
@@ -253,16 +247,12 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
         external
         returns (PermissionId[] memory permissionIds)
     {
-        return _enableSessions(sessions, true);
+        return _enableSessions(sessions);
     }
 
-    /**
-     * @notice Enable multiple sessions with their associated policies
-     * @param sessions An array of Session structures to be enabled
-     * @param useRegistry A flag to indicate whether to use a registry check for the policies and session validator
-     * @return permissionIds An array of PermissionId values corresponding to the enabled sessions
-     */
-    function _enableSessions(Session[] calldata sessions, bool useRegistry)
+    // Policies run with msg.sender = policy, so reentrancy from them cannot change this account's state.
+    // slither-disable-next-line reentrancy-benign,reentrancy-events
+    function _enableSessions(Session[] calldata sessions)
         internal
         returns (PermissionId[] memory permissionIds)
     {
@@ -271,50 +261,42 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
 
         permissionIds = new PermissionId[](length);
 
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             Session calldata session = sessions[i];
             PermissionId permissionId = session.toPermissionId();
+            permissionIds[i] = permissionId;
 
-            // Enable UserOp policies
-            $userOpPolicies.enable({
-                policyType: PolicyType.USER_OP,
-                permissionId: permissionId,
-                configId: permissionId.toUserOpPolicyId().toConfigId(),
-                policyDatas: session.userOpPolicies,
-                useRegistry: false
-            });
-
-            // Enable ERC1271 policies
-            $erc1271Policies.enable({
-                policyType: PolicyType.ERC1271,
-                permissionId: permissionId,
-                configId: permissionId.toErc1271PolicyId().toConfigId(),
-                policyDatas: session.erc7739Policies.erc1271Policies,
-                useRegistry: false
-            });
-            $enabledERC7739.enable(session.erc7739Policies.allowedERC7739Content, permissionId);
-
-            // Enable Action policies
-            $actionPolicies.enable({
-                permissionId: permissionId, actionPolicyDatas: session.actions, useRegistry: false
-            });
-
-            // Add the session to the list of enabled sessions for the caller
+            // Record the session before calling into policies (checks-effects-interactions).
+            // slither-disable-next-line unused-return
             $enabledSessions.add({account: msg.sender, value: PermissionId.unwrap(permissionId)});
-
+            // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+            // change this account's state.
+            // forge-lint: disable-next-line(reentrancy-events)
+            emit SessionCreated(permissionId, msg.sender);
             _setPermit4337Paymaster(permissionId, session.permitERC4337Paymaster);
 
-            // Enable the ISessionValidator for this session
             if (!_isISessionValidatorSet(permissionId, msg.sender)) {
                 $sessionValidators.enable({
                     permissionId: permissionId,
                     sessionValidator: session.sessionValidator,
-                    sessionValidatorConfig: session.sessionValidatorInitData,
-                    useRegistry: false
+                    sessionValidatorConfig: session.sessionValidatorInitData
                 });
             }
-            permissionIds[i] = permissionId;
-            emit SessionCreated(permissionId, msg.sender);
+            $enabledERC7739.enable(session.erc7739Policies.allowedERC7739Content, permissionId);
+
+            $userOpPolicies.enable({
+                policyType: PolicyType.USER_OP,
+                permissionId: permissionId,
+                configId: permissionId.toUserOpPolicyId().toConfigId(),
+                policyDatas: session.userOpPolicies
+            });
+            $erc1271Policies.enable({
+                policyType: PolicyType.ERC1271,
+                permissionId: permissionId,
+                configId: permissionId.toErc1271PolicyId().toConfigId(),
+                policyDatas: session.erc7739Policies.erc1271Policies
+            });
+            $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
         }
     }
 
@@ -333,9 +315,10 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
 
         // Remove all Action policies for this session
         uint256 actionLength = $actionPolicies.enabledActionIds[permissionId].length(msg.sender);
-        for (uint256 i; i < actionLength; i++) {
-            ActionId actionId =
-                ActionId.wrap($actionPolicies.enabledActionIds[permissionId].at(msg.sender, i));
+        for (uint256 i; i < actionLength; ++i) {
+            ActionId actionId = ActionId.wrap(
+                $actionPolicies.enabledActionIds[permissionId].valueAt(msg.sender, i)
+            );
             $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
         }
 
@@ -346,6 +329,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
         delete $permitERC4337Paymaster[permissionId][msg.sender];
 
         // Remove all ERC1271 policies for this session
+        // slither-disable-next-line unused-return
         $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
         $enabledERC7739.removeAll({permissionId: permissionId, smartAccount: msg.sender});
         emit SessionRemoved(permissionId, msg.sender);
@@ -387,7 +371,7 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
             sessions.offset := add(dataPointer, 32)
             sessions.length := calldataload(dataPointer)
         }
-        _enableSessions(sessions, false);
+        _enableSessions(sessions);
     }
 
     /**
@@ -402,12 +386,28 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
     {
         uint256 configIdsCnt = $enabledSessions.length({account: msg.sender});
 
-        for (uint256 i; i < configIdsCnt; i++) {
+        for (uint256 i; i < configIdsCnt; ++i) {
             // always remove index 0 since the array is shifted down when the first item is removed
             PermissionId configId =
-                PermissionId.wrap($enabledSessions.at({account: msg.sender, index: 0}));
+                PermissionId.wrap($enabledSessions.valueAt({account: msg.sender, index: 0}));
             removeSession(configId);
         }
+    }
+
+    /**
+     * @notice Get the current enable-signature nonce for a given permission ID and account
+     */
+    function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
+        return $signerNonce[permissionId][account];
+    }
+
+    /**
+     * @notice Revoke the current enable signature by incrementing the nonce
+     * @param permissionId The permission ID to revoke the signature for
+     */
+    function revokeEnableSignature(PermissionId permissionId) external {
+        uint256 nonce = $signerNonce[permissionId][msg.sender]++;
+        emit NonceIterated(permissionId, msg.sender, nonce + 1);
     }
 
     function isInitialized(address smartAccount) external view override returns (bool) {
@@ -587,9 +587,9 @@ abstract contract SmartSessionBase is ISmartSession, NonceManager {
     {
         uint256 length = $enabledERC7739.enabledDomainSeparators[permissionId].length(account);
         enabledERC7739ContentHashes = new ERC7739ContextHashes[](length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             enabledERC7739ContentHashes[i].appDomainSeparator =
-                $enabledERC7739.enabledDomainSeparators[permissionId].at(account, i);
+                $enabledERC7739.enabledDomainSeparators[permissionId].valueAt(account, i);
             enabledERC7739ContentHashes[i].contentNameHashes = $enabledERC7739.enabledContentNames[permissionId][enabledERC7739ContentHashes[i].appDomainSeparator].values(
                 account
             );

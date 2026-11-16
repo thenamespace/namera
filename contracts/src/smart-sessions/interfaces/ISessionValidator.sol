@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.23;
-
-import {IModule} from "../../interfaces/IERC7579.sol";
+pragma solidity 0.8.38;
 
 /**
  * ISessionValidator is a contract that validates signatures for a given session.
@@ -14,8 +12,13 @@ import {IModule} from "../../interfaces/IERC7579.sol";
  *  hash The userOp hash
  *  sig The signature of userOp
  *  data the config data that is used to validate the signature
+ *
+ * Session validators are ERC-7579 modules of type 7 (stateless validator); SmartSession only calls the two
+ * functions below.
  */
-interface ISessionValidator is IModule {
+interface ISessionValidator {
+    function isModuleType(uint256 moduleTypeId) external view returns (bool);
+
     function validateSignatureWithData(bytes32 hash, bytes calldata sig, bytes calldata data)
         external
         view

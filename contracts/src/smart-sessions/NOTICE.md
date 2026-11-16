@@ -1,41 +1,84 @@
-# Smart Sessions — origin and changes
+# Smart Sessions — origin, licences and changes
 
-This directory is a port of **SmartSession** from
+This directory is derived from **SmartSession** in
 [erc7579/smartsessions](https://github.com/erc7579/smartsessions) at commit
 `f5aaf867f7e22f3b9d746ce6f404f3a56833757f`, the code deployed at
 `0x00000000008bDABA73cD9815d79069c247Eb4bDA`. SmartSession is by Rhinestone and Biconomy
-(zeroknots.eth, Filipp Makarov). Each file keeps its original SPDX header: most are
-AGPL-3.0-only (see `LICENSE`), `IPolicy.sol` and `ISessionValidator.sol` are LGPL-3.0-only, and the
-`utils/` libraries, `ExecutionLib.sol`, `ValidationDataLib.sol` and `IRegistry.sol` are MIT.
+(zeroknots.eth, Filipp Makarov).
 
 The unmodified upstream files are in the commit
 `chore(contracts): vendor erc7579/smartsessions f5aaf86 core verbatim`; `git diff` against it shows
-every change below.
+every change.
+
+## Licences
+
+| Files                                                                                                  | Licence                                                                                                               |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `SmartSession.sol`, `core/*`, `DataTypes.sol`, `lib/{ConfigLib,EncodeLib,HashLib,IdLib,PolicyLib}.sol` | AGPL-3.0-only (upstream licence; see `LICENSE`)                                                                       |
+| `ISmartSession.sol`                                                                                    | AGPL-3.0-only — upstream marks it `UNLICENSED`; this version is regenerated from the AGPL implementation              |
+| `interfaces/IPolicy.sol`, `interfaces/ISessionValidator.sol`                                           | LGPL-3.0-only (upstream licence)                                                                                      |
+| `lib/ExecutionLib.sol`, `lib/ValidationDataLib.sol`, `utils/*`                                         | Apache-2.0; derived from MIT-licensed upstream code (notice below)                                                    |
+| `lib/FlatBytesLib.sol`                                                                                 | Apache-2.0; derived from MIT-licensed [rhinestonewtf/flatbytes](https://github.com/rhinestonewtf/flatbytes) `bb0859e` |
+
+AGPL/LGPL files cannot be relicensed without the copyright holders' permission.
+
+MIT notice for the MIT-derived files:
+
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+> associated documentation files (the "Software"), to deal in the Software without restriction,
+> including without limitation the rights to use, copy, modify, merge, publish, distribute,
+> sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions: The above copyright notice and this
+> permission notice shall be included in all copies or substantial portions of the Software.
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
 
 ## Not included
 
-`SmartSessionCompatibilityFallback.sol`, `lib/AccountIdLib.sol` (used only by the fallback),
-`lib/SubModuleLib.sol` (used only by bundled policies) and `external/policies/` (Namera ships its own
-policies).
+`SmartSessionCompatibilityFallback.sol`, `lib/AccountIdLib.sol`, `lib/SubModuleLib.sol`,
+`external/policies/` (Namera ships its own policies), `interfaces/IRegistry.sol` (registry checks are
+disabled upstream), `utils/EnumerableMap4337.sol` (unused), the `UintSet`, `AddressArray` and
+`UintArray` types (unused), and unused helpers, errors, constants and operators.
 
 ## Dependency changes
 
 Upstream depended on erc7579-implementation, modulekit, module-bases, flatbytes, OpenZeppelin,
-ExcessivelySafeCall and an older Solady. The port uses Solady 0.1.26 and files in `src/interfaces`
-and `src/libraries`:
+ExcessivelySafeCall and Solady 0.0.240. This version depends only on **Solady 0.1.26**:
 
-| Upstream                                                    | Port                                                                                                                  |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `erc7579/lib/ModeLib.sol`, `erc7579/interfaces/*`           | `src/interfaces/IERC7579.sol` (same types, constants, operators)                                                      |
-| `modulekit/external/ERC4337.sol` (account-abstraction v0.7) | `src/interfaces/IERC4337.sol` (`PackedUserOperation`, `IAccountExecute`); unused `_packValidationData` import dropped |
-| `module-bases/interfaces/IERC1271.sol`                      | `src/interfaces/IERC1271.sol`                                                                                         |
-| `forge-std/interfaces/IERC165.sol`                          | `src/interfaces/IERC165.sol`                                                                                          |
-| `flatbytes/BytesLib.sol` @ `bb0859e`                        | `src/libraries/FlatBytesLib.sol` (copied)                                                                             |
-| OpenZeppelin `ERC165Checker.supportsInterface`              | `src/libraries/ERC165Checker.sol` (same semantics, 30k gas queries)                                                   |
-| OpenZeppelin `MessageHashUtils.toTypedDataHash`             | Inlined in `HashLib.multichainDigest`: `keccak256("\x19\x01" ‖ domainSeparator ‖ structHash)`                         |
-| ExcessivelySafeCall `excessivelySafeCall`                   | Solady `LibCall.tryCall` in `PolicyLib.callPolicy` (same gas, value, 32-byte return copy cap)                         |
-| Solady `EIP712`, `EfficientHashLib`, `LibZip` (0.0.240)     | Solady 0.1.26                                                                                                         |
+| Upstream                                                                     | Now                                                                                           |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| account-abstraction `PackedUserOperation`                                    | Solady `ERC4337.PackedUserOperation` (same ABI)                                               |
+| erc7579 `ModeLib`, `CallType`/`ExecType`                                     | Solady `LibERC7579` (`getCallType`, `getExecType`, constants); errors use `bytes1` (same ABI) |
+| `ExecutionLib.decodeSingle`                                                  | Solady `LibERC7579.decodeSingle`                                                              |
+| `IERC7579Account.execute.selector`, `IAccountExecute.executeUserOp.selector` | Constants in `DataTypes.sol`                                                                  |
+| module-bases `IERC1271` call in the enable flow                              | Solady `SignatureCheckerLib.isValidERC1271SignatureNow`                                       |
+| OpenZeppelin `ERC165Checker.supportsInterface`                               | Direct `IPolicy.supportsInterface` call (`supportsInterface` declared in `IPolicy`)           |
+| OpenZeppelin `MessageHashUtils.toTypedDataHash`                              | Inlined `keccak256("\x19\x01" ‖ domainSeparator ‖ structHash)`                                |
+| ExcessivelySafeCall                                                          | Solady `LibCall.tryCall` (same gas, value, 32-byte return copy cap)                           |
+| IModule (erc7579)                                                            | `ISessionValidator` declares the two functions SmartSession calls                             |
+
+Batches are still decoded into `Execution[] calldata` (typed) so Solidity validates `target`; Solady's
+`getExecution` does not clean upper address bits.
 
 ## Behaviour changes
 
-None in this port commit. Fixes are listed below as they land.
+- **Enable order (checks-effects-interactions).** After the enable signature is verified, the session
+  is recorded (enabled set, paymaster flag, session validator, ERC-7739 contents) before policies are
+  called. Final state is unchanged; event order differs (session events before policy events).
+  `PolicyEnabled` is emitted before `initializeWithMultiplexer` is called.
+- **Policy interface check.** A policy that does not implement `supportsInterface` (or reverts) now
+  makes enabling revert with that error instead of `UnsupportedPolicy`; OpenZeppelin's extra check that
+  `supportsInterface(0xffffffff)` is false is not performed.
+- **Enable signature check.** An account whose `isValidSignature` reverts now fails with
+  `InvalidEnableSignature` instead of bubbling the revert.
+- **Renames.** `EnumerableSet.at` → `valueAt` (`at` becomes a reserved word).
+
+## Static analysis
+
+`forge lint` excludes `calls-loop` and `require-revert-in-loop` (policies are checked in a loop and
+must revert on violation). Reviewed false positives are suppressed inline with the reason:
+Solady-derived ERC-7739/ERC-6492 assembly (`incorrect-shift`, `divide-before-multiply`,
+`write-after-write`, `too-many-digits`), ignored set/`eip712Domain` return values (`unused-return`),
+and events after policy calls in loops (`reentrancy-*`; a reentrant policy runs with
+`msg.sender = policy` and cannot change the account's state). Slither excludes `assembly`,
+`naming-convention` (upstream `$storage` naming) and `unindexed-event-address` (keeps the upstream
+event ABI).

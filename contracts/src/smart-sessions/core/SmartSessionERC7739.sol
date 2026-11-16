@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
 import {ISmartSession} from "../ISmartSession.sol";
 import {EIP712} from "solady/utils/EIP712.sol";
@@ -21,6 +21,10 @@ abstract contract SmartSessionERC7739 is ISmartSession {
         bytes calldata contents
     ) internal view virtual returns (bool);
 
+    // Reviewed false positives on Solady's assembly: `0x6492` marker built as `mul(0x6492, div(...))`, and
+    // `result` reassigned on purpose when the ERC-6492 wrapper is present.
+    // slither-disable-start divide-before-multiply,write-after-write
+    // forge-lint: disable-start(divide-before-multiply)
     /// @dev Unwraps and returns the signature.
     function _erc1271UnwrapSignature(bytes calldata signature)
         internal
@@ -43,6 +47,9 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             }
         }
     }
+
+    // forge-lint: disable-end(divide-before-multiply)
+    // slither-disable-end divide-before-multiply,write-after-write
 
     /// @dev ERC1271 signature validation (Nested EIP-712 workflow).
     /// @dev Currently known as ERC-7739
@@ -106,6 +113,11 @@ abstract contract SmartSessionERC7739 is ISmartSession {
     /// We want to create bazaars, not walled castles.
     /// And we'll use push the Turing Completeness of the EVM to the limits to do so.
 
+    // Reviewed false positives on Solady's assembly: shifting constant bitmaps by a byte value is intended
+    // (`incorrect-shift`), `contents` is a calldata slice reassigned in assembly, `appDomainSeparator` is assigned
+    // in assembly, unused `eip712Domain()` fields are not needed, and the literals are character bitmaps.
+    // slither-disable-start incorrect-shift,write-after-write,unused-return,too-many-digits
+    // forge-lint: disable-start(incorrect-shift,uninitialized-local,unused-return)
     function _erc1271IsValidSignatureViaNestedEIP712(
         address sender,
         bytes32 hash,
@@ -196,4 +208,6 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             sender, hash, signature, appDomainSeparator, contents
         );
     }
+    // forge-lint: disable-end(incorrect-shift,uninitialized-local,unused-return)
+    // slither-disable-end incorrect-shift,write-after-write,unused-return,too-many-digits
 }

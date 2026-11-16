@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.38;
 
 import {ValidationData} from "../DataTypes.sol";
 // @author zeroknots rhinestone

@@ -1,26 +1,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.25;
+pragma solidity 0.8.38;
 
-import "../DataTypes.sol";
+import {
+    ActionData,
+    ActionId,
+    ConfigId,
+    ERC7579_EXECUTE_SELECTOR,
+    EnumerableActionPolicy,
+    FALLBACK_ACTIONID,
+    FALLBACK_ACTIONID_SMARTSESSION_CALL,
+    FALLBACK_TARGET_FLAG,
+    PermissionId,
+    Policy,
+    PolicyData,
+    RETRY_WITH_FALLBACK,
+    ValidationData
+} from "../DataTypes.sol";
 import {ISmartSession} from "../ISmartSession.sol";
-import {I1271Policy, IActionPolicy, IPolicy} from "../interfaces/IPolicy.sol";
-
+import {I1271Policy, IActionPolicy} from "../interfaces/IPolicy.sol";
 import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
-import {EncodeLib} from "./EncodeLib.sol";
-import {Execution, ExecutionLib as ExecutionLib} from "./ExecutionLib.sol";
+import {Execution, ExecutionLib} from "./ExecutionLib.sol";
 import {IdLib} from "./IdLib.sol";
 import {ValidationDataLib} from "./ValidationDataLib.sol";
-
-import {PackedUserOperation} from "../../interfaces/IERC4337.sol";
-import {IERC7579Account} from "../../interfaces/IERC7579.sol";
+import {ERC4337} from "solady/accounts/ERC4337.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
 
 library PolicyLib {
     using EnumerableSet for EnumerableSet.AddressSet;
-    using ExecutionLib for *;
+    using ExecutionLib for bytes;
     using IdLib for *;
     using PolicyLib for *;
-    using EncodeLib for *;
     using ValidationDataLib for ValidationData;
 
     /**
@@ -67,7 +76,7 @@ library PolicyLib {
         if (minPolicies > length) revert ISmartSession.NoPoliciesSet(permissionId);
 
         // Iterate over all policies and intersect the validation data
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             // Intersect the validation data from this policy with the accumulated result
             vd = vd.intersect(policies[i].callPolicy(permissionId, callOnIPolicy));
         }
@@ -107,7 +116,7 @@ library PolicyLib {
         }
 
         // Iterate over all policies and intersect the validation data
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             // Intersect the validation data from this policy with the accumulated result
             vd = vd.intersect(policies[i].callPolicy(permissionId, callOnIPolicy));
         }
@@ -180,7 +189,7 @@ library PolicyLib {
         }
 
         // Prevent potential bypass of policy checks through nested self executions
-        if (targetSig == IERC7579Account.execute.selector && target == msg.sender) {
+        if (targetSig == ERC7579_EXECUTE_SELECTOR && target == msg.sender) {
             revert ISmartSession.InvalidSelfCall();
         }
 
@@ -246,7 +255,7 @@ library PolicyLib {
      */
     function checkBatch7579Exec(
         mapping(ActionId => Policy) storage $policies,
-        PackedUserOperation calldata userOp,
+        ERC4337.PackedUserOperation calldata userOp,
         PermissionId permissionId,
         uint256 minPolicies
     ) internal returns (ValidationData vd) {
@@ -257,7 +266,7 @@ library PolicyLib {
         if (length == 0) revert ISmartSession.NoExecutionsInBatch();
 
         // Iterate through each execution in the batch
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             Execution calldata execution = executions[i];
 
             // Check policies for the current execution and intersect the result with previous checks
@@ -306,7 +315,7 @@ library PolicyLib {
         if (minPoliciesToEnforce > length) revert ISmartSession.NoPoliciesSet(permissionId);
 
         // iterate over all policies and intersect the validation data
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             valid = I1271Policy(policies[i]).check1271SignedAction({
                 id: configId,
                 requestSender: requestSender,
@@ -342,11 +351,8 @@ library PolicyLib {
         uint256 length = policyDatas.length;
         enabled = true;
         if (length == 0) return enabled; // 0 policies are always enabled lol
-        for (uint256 i; i < length; i++) {
-            PolicyData memory policyData = policyDatas[i];
-            IPolicy policy = IPolicy(policyData.policy);
-            // check if policy is enabled
-            if (!$policies.policyList[permissionId].contains(smartAccount, address(policy))) {
+        for (uint256 i; i < length; ++i) {
+            if (!$policies.policyList[permissionId].contains(smartAccount, policyDatas[i].policy)) {
                 return false;
             }
         }
@@ -374,7 +380,7 @@ library PolicyLib {
         uint256 length = actionPolicyDatas.length;
         enabled = true;
         if (length == 0) return enabled; // 0 actions are always enabled
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ++i) {
             ActionData calldata actionPolicyData = actionPolicyDatas[i];
             ActionId actionId =
                 actionPolicyData.actionTarget.toActionId(actionPolicyData.actionTargetSelector);

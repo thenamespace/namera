@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.38;
 
 // Copied from rhinestonewtf/flatbytes@bb0859e85ef2213d08d6280c8af9a7da4596b30f (src/BytesLib.sol),
 // the version used by erc7579/smartsessions. Stores bytes in consecutive slots so validation-time
