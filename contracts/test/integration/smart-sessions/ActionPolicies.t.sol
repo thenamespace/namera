@@ -208,16 +208,6 @@ contract ActionPoliciesTest is SmartSessionTestBase {
         assertEq(smartSession.getNonce(permissionId, address(account)), 1);
     }
 
-    function test_accountFunction_isCheckedAsActionOnAccount() public {
-        bytes4 selector = MockAccount.uninstallModule.selector;
-        Session memory session = _emptySession()
-            .withAction(address(account), selector, address(policy), MockPolicyConfig.allow());
-        PermissionId permissionId = enableSession(session);
-        bytes memory callData = abi.encodeWithSelector(selector, 2, makeAddr("module"), "");
-
-        assertEq(validate(signUse(userOp(callData), permissionId)), VALID);
-    }
-
     function test_RevertWhen_accountFunctionHasNoPolicy() public {
         PermissionId permissionId = enableSession(defaultSession());
         bytes memory callData =

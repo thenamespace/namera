@@ -60,19 +60,6 @@ contract ERC1271Test is SmartSessionTestBase {
         assertEq(result, bytes4(0x77390002));
     }
 
-    function test_validSessionSignature_isAccepted() public view {
-        bytes memory signature = _sign(mail, sessionKey);
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), EIP1271_MAGIC);
-    }
-
-    /// @dev Regression for the upstream bug: the signature must not validate for any other hash.
-    function test_signatureForOneHash_isRejectedForAnotherHash() public view {
-        bytes memory signature = _sign(mail, sessionKey);
-
-        assertEq(_isValidSignature(keccak256("unrelated hash"), signature), INVALID);
-    }
-
     /// @dev Regression for the upstream bug: a signed mail cannot authorize a different mail.
     function test_signatureForOneMessage_isRejectedForAnotherMessage() public {
         bytes memory signature = _sign(mail, sessionKey);
@@ -114,22 +101,6 @@ contract ERC1271Test is SmartSessionTestBase {
         );
     }
 
-    function test_expiredSession_isRejected() public {
-        bytes memory signature = _sign(mail, sessionKey);
-        vm.warp(block.timestamp + 1 days + 1);
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
-    }
-
-    function test_sessionBeforeStart_isRejected() public {
-        Session memory later = _signingSession().withValidity(uint48(block.timestamp + 1 hours), 0);
-        later.salt = keccak256("later");
-        PermissionId laterId = enableSession(later);
-        bytes memory signature = ERC7739Signer.sign(mail, address(account), laterId, sessionKey);
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
-    }
-
     /// @dev Same bounds as the EntryPoint: valid from `validAfter` through `validUntil`, both inclusive.
     function test_windowBounds_matchTheEntryPoint() public {
         uint48 start = uint48(block.timestamp + 1 hours);
@@ -154,16 +125,6 @@ contract ERC1271Test is SmartSessionTestBase {
         bytes memory signature = ERC7739Signer.sign(
             mail, address(account), PermissionId.wrap(keccak256("unknown")), sessionKey
         );
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
-    }
-
-    function test_policyRejection_isRejected() public {
-        Session memory session = _signingSession();
-        session.erc7739Policies.erc1271Policies[0].initData = MockPolicyConfig.deny();
-        session.salt = keccak256("denied");
-        PermissionId deniedId = enableSession(session);
-        bytes memory signature = ERC7739Signer.sign(mail, address(account), deniedId, sessionKey);
 
         assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
     }

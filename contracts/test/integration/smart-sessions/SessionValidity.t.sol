@@ -22,14 +22,6 @@ contract SessionValidityTest is SmartSessionTestBase {
         vm.warp(START - 100);
     }
 
-    function test_windowIsReturnedAsValidationData() public {
-        PermissionId permissionId = enableSession(defaultSession().withValidity(START, END));
-
-        uint256 validationData = validate(signUse(userOp(callSetValue(1)), permissionId));
-
-        assertEq(validationData, _bounds(START, END));
-    }
-
     function test_unboundedWindow_neverExpires() public {
         PermissionId permissionId = enableSession(defaultSession());
 

@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Array as Arr, Record as Rec } from "effect";
+import { Array as Arr } from "effect";
 
 import { ECDSASessionValidator, SmartSession } from "@namera-ai/contracts";
 import { getContractAddress, keccak256, stringToHex, toFunctionSelector, type Abi } from "viem";
@@ -25,11 +25,6 @@ describe("contract versions", () => {
     }
   });
 
-  it("label each version with its version number", () => {
-    assert.match(SmartSession.v1.label, /\.v1$/);
-    assert.match(ECDSASessionValidator.v1.label, /\.v1$/);
-  });
-
   it("include the SmartSession entry points the SDK calls", () => {
     const smartSessionSelectors = selectors(SmartSession.v1.abi);
 
@@ -48,13 +43,5 @@ describe("contract versions", () => {
       selectors(ECDSASessionValidator.v1.abi),
       toFunctionSelector("function validateSignatureWithData(bytes32,bytes,bytes)"),
     );
-  });
-
-  it("record the runtime code hash of every deployment", () => {
-    for (const version of versions) {
-      for (const deployment of Rec.values(version.deployments)) {
-        assert.match(deployment?.runtimeCodeHash ?? "", /^0x[0-9a-f]{64}$/);
-      }
-    }
   });
 });

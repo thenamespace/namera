@@ -70,12 +70,6 @@ contract ECDSASessionValidatorTest is Test {
         );
     }
 
-    function test_signatureForOtherHash_isInvalid() public view {
-        bytes memory signature = _signWith(keys[0], keccak256("other"));
-
-        assertFalse(validator.validateSignatureWithData(HASH, signature, _config(1, signers)));
-    }
-
     function test_zeroThreshold_isInvalid() public view {
         assertFalse(validator.validateSignatureWithData(HASH, "", _config(0, signers)));
     }

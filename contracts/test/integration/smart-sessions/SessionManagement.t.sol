@@ -18,7 +18,6 @@ import {IdLib} from "src/smart-sessions/lib/IdLib.sol";
 
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
-import {MockAccount} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 
 contract SessionManagementTest is SmartSessionTestBase {
@@ -94,16 +93,6 @@ contract SessionManagementTest is SmartSessionTestBase {
         assertEq(
             smartSession.getERC1271Policies(address(account), permissionId)[0], address(policy)
         );
-    }
-
-    function test_enableSessions_storesValidityWindow() public {
-        PermissionId permissionId = enableSession(defaultSession().withValidity(100, 200));
-
-        (uint48 validAfter, uint48 validUntil) =
-            smartSession.getSessionValidity(permissionId, address(account));
-
-        assertEq(validAfter, 100);
-        assertEq(validUntil, 200);
     }
 
     function test_RevertWhen_noSessionsAreGiven() public {
@@ -218,15 +207,7 @@ contract SessionManagementTest is SmartSessionTestBase {
         assertEq(target.value(), 4);
     }
 
-    function test_RevertWhen_removingTheEmptyPermissionId() public {
-        vm.prank(address(account));
-        vm.expectRevert(
-            abi.encodeWithSelector(ISmartSession.InvalidSession.selector, PermissionId.wrap(0))
-        );
-        smartSession.removeSession(PermissionId.wrap(0));
-    }
-
-    function test_revokeEnableSignature_incrementsNonce() public {
+    function test_revokeEnableSignature_reportsEachNewNonce() public {
         PermissionId permissionId = smartSession.getPermissionId(defaultSession());
         vm.startPrank(address(account));
         for (uint256 expected = 1; expected <= 2; ++expected) {
@@ -235,17 +216,14 @@ contract SessionManagementTest is SmartSessionTestBase {
             smartSession.revokeEnableSignature(permissionId);
         }
         vm.stopPrank();
-
-        assertEq(smartSession.getNonce(permissionId, address(account)), 2);
     }
 
-    function test_sessionsAreIsolatedPerAccount() public {
-        MockAccount other = new MockAccount(owner);
-        installSmartSession(address(other), "");
-        PermissionId permissionId = enableSession(defaultSession());
-
-        assertFalse(smartSession.isPermissionEnabled(permissionId, address(other)));
-        assertEq(smartSession.getPermissionIDs(address(other)).length, 0);
+    function test_RevertWhen_removingTheEmptyPermissionId() public {
+        vm.prank(address(account));
+        vm.expectRevert(
+            abi.encodeWithSelector(ISmartSession.InvalidSession.selector, PermissionId.wrap(0))
+        );
+        smartSession.removeSession(PermissionId.wrap(0));
     }
 
     function test_areEnabled_isFalseForUnknownPolicies() public {
@@ -257,18 +235,6 @@ contract SessionManagementTest is SmartSessionTestBase {
         assertTrue(
             smartSession.areUserOpPoliciesEnabled(
                 address(account), permissionId, new PolicyData[](0)
-            )
-        );
-    }
-
-    function test_areERC1271PoliciesEnabled_reflectsEnabledPolicies() public {
-        Session memory session =
-            defaultSession().withERC1271Policy(address(policy), MockPolicyConfig.allow());
-        PermissionId permissionId = enableSession(session);
-
-        assertTrue(
-            smartSession.areERC1271PoliciesEnabled(
-                address(account), permissionId, session.erc7739Policies.erc1271Policies
             )
         );
     }

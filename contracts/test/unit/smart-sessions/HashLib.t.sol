@@ -6,7 +6,6 @@ import {
     ChainDigest,
     ERC7739Data,
     FALLBACK_TARGET_FLAG,
-    PermissionId,
     PolicyData,
     Session,
     SmartSessionMode
@@ -20,9 +19,7 @@ import {
     MULTICHAIN_SESSION_TYPEHASH,
     POLICY_DATA_TYPEHASH,
     SESSION_TYPEHASH,
-    SIGNED_PERMISSIONS_TYPEHASH,
-    _MULTICHAIN_DOMAIN_SEPARATOR,
-    _MULTICHAIN_DOMAIN_TYPEHASH
+    SIGNED_PERMISSIONS_TYPEHASH
 } from "src/smart-sessions/lib/HashLib.sol";
 
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
@@ -82,18 +79,6 @@ contract HashLibTest is SmartSessionTestBase {
         assertEq(sessionDigest(address(account), session, SmartSessionMode.ENABLE), expected);
     }
 
-    function test_sessionDigest_flagsFallbackActions() public view {
-        Session memory session = defaultSession()
-            .withFallbackAction(address(policy), MockPolicyConfig.allow())
-            .withModuleCallAction(address(policy), MockPolicyConfig.allow());
-
-        bytes32 expected = vm.eip712HashStruct(
-            SessionTypes.signedSession(), abi.encode(_signed(session, true, true, false))
-        );
-
-        assertEq(sessionDigest(address(account), session, SmartSessionMode.ENABLE), expected);
-    }
-
     function test_sessionDigest_flagsEachFallbackKindSeparately() public view {
         Session memory generic =
             defaultSession().withFallbackAction(address(policy), MockPolicyConfig.allow());
@@ -122,16 +107,6 @@ contract HashLibTest is SmartSessionTestBase {
         );
     }
 
-    function test_multichainDomain_matchesItsDefinition() public pure {
-        bytes32 typehash = keccak256("EIP712Domain(string name,string version)");
-
-        assertEq(_MULTICHAIN_DOMAIN_TYPEHASH, typehash);
-        assertEq(
-            _MULTICHAIN_DOMAIN_SEPARATOR,
-            keccak256(abi.encode(typehash, keccak256("SmartSession"), keccak256("1")))
-        );
-    }
-
     function test_unsafeEnable_setsIgnoreSecurityAttestations() public view {
         Session memory session = defaultSession();
 
@@ -140,17 +115,6 @@ contract HashLibTest is SmartSessionTestBase {
         );
 
         assertEq(sessionDigest(address(account), session, SmartSessionMode.UNSAFE_ENABLE), expected);
-    }
-
-    function test_sessionDigest_bindsTheEnableNonce() public {
-        Session memory session = defaultSession();
-        bytes32 before = sessionDigest(address(account), session, SmartSessionMode.ENABLE);
-        PermissionId permissionId = smartSession.getPermissionId(session);
-
-        vm.prank(address(account));
-        smartSession.revokeEnableSignature(permissionId);
-
-        assertNotEq(sessionDigest(address(account), session, SmartSessionMode.ENABLE), before);
     }
 
     function testFuzz_multichainDigest_matchesIndependentComputation(

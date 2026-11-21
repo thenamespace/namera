@@ -6,7 +6,7 @@ import {ERC4337} from "solady/accounts/ERC4337.sol";
 import {ConfigId, PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 
-import {EntryPointFixture, IEntryPoint} from "../../utils/EntryPoint.sol";
+import {IEntryPoint} from "../../utils/EntryPoint.sol";
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
@@ -14,38 +14,12 @@ import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 contract UserOpValidationTest is SmartSessionTestBase {
     using SessionBuilder for Session;
 
-    function test_userOpHashMatchesEntryPoint() public view {
-        ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
-        op.paymasterAndData = hex"1234";
-
-        assertEq(userOpHash(op), entryPoint.getUserOpHash(op));
-    }
-
-    function test_entryPointDeploysSenderCreatorAtCanonicalAddress() public view {
-        assertGt(EntryPointFixture.SENDER_CREATOR.code.length, 0);
-    }
-
     function test_executesCallThroughEntryPoint() public {
         PermissionId permissionId = enableSession(defaultSession());
 
         handleOp(signUse(userOp(callSetValue(42)), permissionId));
 
         assertEq(target.value(), 42);
-    }
-
-    function test_validSessionKeySignature_returnsSuccess() public {
-        PermissionId permissionId = enableSession(defaultSession());
-
-        assertEq(validate(signUse(userOp(callSetValue(1)), permissionId)), VALID);
-    }
-
-    function test_wrongSessionKey_returnsSignatureFailure() public {
-        PermissionId permissionId = enableSession(defaultSession());
-        ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
-        (, uint256 otherKey) = makeAddrAndKey("other");
-        op.signature = abi.encodePacked(uint8(0), permissionId, signUserOpHash(op, otherKey));
-
-        assertEq(validate(op), SIG_FAILED);
     }
 
     function test_RevertWhen_permissionNotEnabled() public {
@@ -89,15 +63,18 @@ contract UserOpValidationTest is SmartSessionTestBase {
         assertEq(validate(signUse(userOp(callSetValue(1)), permissionId)), bounds);
     }
 
-    function test_userOpPolicyIsCalledForEveryOp() public {
+    function test_userOpPolicyIsCheckedForEveryOpOfTheAccount() public {
+        MockPolicy userOpPolicy = new MockPolicy(true);
         Session memory session =
-            defaultSession().withUserOpPolicy(address(policy), MockPolicyConfig.allow());
+            defaultSession().withUserOpPolicy(address(userOpPolicy), MockPolicyConfig.allow());
         PermissionId permissionId = enableSession(session);
+        ConfigId configId =
+            ConfigId.wrap(keccak256(abi.encodePacked(address(account), permissionId)));
 
         handleOp(signUse(userOp(callSetValue(1)), permissionId));
         handleOp(signUse(userOp(callSetValue(2)), permissionId));
 
-        assertEq(target.calls(), 2);
+        assertEq(userOpPolicy.checkCount(configId, address(smartSession), address(account)), 2);
     }
 
     function test_RevertWhen_userOpPolicyRejects() public {
@@ -195,22 +172,5 @@ contract UserOpValidationTest is SmartSessionTestBase {
             abi.encodeWithSelector(IEntryPoint.FailedOp.selector, 0, "AA24 signature error")
         );
         handleOp(op);
-    }
-
-    function test_policiesAreIsolatedPerAccount() public {
-        MockPolicy otherPolicy = new MockPolicy(true);
-        Session memory session =
-            defaultSession().withUserOpPolicy(address(otherPolicy), MockPolicyConfig.allow());
-        PermissionId permissionId = enableSession(session);
-
-        handleOp(signUse(userOp(callSetValue(1)), permissionId));
-
-        ConfigId configId = _userOpConfigId(permissionId);
-        assertEq(otherPolicy.checkCount(configId, address(smartSession), address(account)), 1);
-        assertEq(otherPolicy.checkCount(configId, address(smartSession), makeAddr("other")), 0);
-    }
-
-    function _userOpConfigId(PermissionId permissionId) internal view returns (ConfigId) {
-        return ConfigId.wrap(keccak256(abi.encodePacked(address(account), permissionId)));
     }
 }

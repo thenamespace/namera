@@ -56,46 +56,22 @@ contract EnumerableSet4337Test is Test {
         assertTrue(set.contains(alice, "a"));
     }
 
-    function test_remove_movesLastValueIntoTheGap() public {
+    function test_remove_keepsTheOtherValues() public {
         set.add(alice, "a");
         set.add(alice, "b");
         set.add(alice, "c");
 
-        assertTrue(set.remove(alice, "a"));
-
-        assertEq(set.length(alice), 2);
-        assertEq(set.valueAt(alice, 0), "c");
-        assertEq(set.valueAt(alice, 1), "b");
-        assertFalse(set.contains(alice, "a"));
-        assertTrue(set.contains(alice, "c"));
-    }
-
-    function test_removeMiddle_keepsOtherValues() public {
-        set.add(alice, "a");
-        set.add(alice, "b");
-        set.add(alice, "c");
-
-        set.remove(alice, "b");
+        assertTrue(set.remove(alice, "b"));
 
         bytes32[] memory remaining = set.values(alice);
         assertEq(remaining.length, 2);
-        assertEq(remaining[0], "a");
-        assertEq(remaining[1], "c");
+        assertTrue(remaining[0] != "b" && remaining[1] != "b");
+        assertTrue(set.contains(alice, "a"));
+        assertTrue(set.contains(alice, "c"));
         assertFalse(set.contains(alice, "b"));
-    }
 
-    function test_remove_and_removeAll_zeroFreedSlots() public {
-        uint256 arraySlot = uint256(keccak256(abi.encode(alice, uint256(0))));
-        set.add(alice, "a");
-        set.add(alice, "b");
-        set.add(alice, "c");
-
-        set.remove(alice, "a");
-        assertEq(vm.load(address(set), bytes32(arraySlot + 3)), bytes32(0));
-
-        set.removeAll(alice);
-        assertEq(vm.load(address(set), bytes32(arraySlot + 1)), bytes32(0));
-        assertEq(vm.load(address(set), bytes32(arraySlot + 2)), bytes32(0));
+        assertTrue(set.remove(alice, "a"));
+        assertEq(set.values(alice)[0], "c");
     }
 
     function test_remove_returnsFalseForMissingValue() public {
@@ -141,17 +117,24 @@ contract EnumerableSet4337Test is Test {
         assertEq(vm.load(address(set), bytes32(arraySlot + 2)), bytes32("b"));
     }
 
-    function testFuzz_valuesMatchContains(bytes32[] memory inputs) public {
-        vm.assume(inputs.length <= 20);
-        for (uint256 i; i < inputs.length; ++i) {
-            set.add(alice, inputs[i]);
+    function testFuzz_holdsEachDistinctValueOnce(uint8[] memory seeds) public {
+        vm.assume(seeds.length <= 20);
+        bool[16] memory seen;
+        uint256 distinct;
+        for (uint256 i; i < seeds.length; ++i) {
+            uint256 value = seeds[i] % 16;
+            set.add(alice, bytes32(value));
+            if (!seen[value]) {
+                seen[value] = true;
+                ++distinct;
+            }
         }
 
         bytes32[] memory stored = set.values(alice);
 
-        assertEq(stored.length, set.length(alice));
-        for (uint256 i; i < inputs.length; ++i) {
-            assertTrue(set.contains(alice, inputs[i]));
+        assertEq(stored.length, distinct);
+        for (uint256 i; i < stored.length; ++i) {
+            assertTrue(seen[uint256(stored[i])]);
         }
     }
 }

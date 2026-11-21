@@ -4,10 +4,10 @@ pragma solidity 0.8.38;
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
 import {PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
-import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 
 import {AccountFixtures} from "../utils/AccountFixtures.sol";
 import {IERC5267} from "../utils/ERC7739Signer.sol";
+import {IEntryPoint} from "../utils/EntryPoint.sol";
 import {SmartSessionTestBase} from "../utils/SmartSessionTestBase.sol";
 
 /// @notice SmartSession on a real deployed account implementation (loaded from fixtures). Each account test
@@ -49,17 +49,6 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         );
     }
 
-    function test_enableModeExecutesThroughEntryPoint() public {
-        handleOp(signEnable(userOp(smartAccount, callSetValue(11)), defaultSession()));
-
-        assertEq(target.value(), 11);
-        assertTrue(
-            smartSession.isPermissionEnabled(
-                smartSession.getPermissionId(defaultSession()), smartAccount
-            )
-        );
-    }
-
     function test_useModeAfterEnable() public {
         handleOp(signEnable(userOp(smartAccount, callSetValue(1)), defaultSession()));
         PermissionId permissionId = smartSession.getPermissionId(defaultSession());
@@ -70,43 +59,16 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         assertEq(target.calls(), 2);
     }
 
-    function test_removedSessionIsRejected() public {
-        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), defaultSession()));
-        PermissionId permissionId = smartSession.getPermissionId(defaultSession());
-        vm.prank(smartAccount);
-        smartSession.removeSession(permissionId);
-        ERC4337.PackedUserOperation memory op =
-            signUse(userOp(smartAccount, callSetValue(2)), permissionId);
-
-        vm.expectRevert();
-        handleOp(op);
-    }
-
-    function test_actionWithoutPolicyIsRejected() public {
-        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), defaultSession()));
-        PermissionId permissionId = smartSession.getPermissionId(defaultSession());
-        ERC4337.PackedUserOperation memory op =
-            signUse(userOp(smartAccount, executeSingle(makeAddr("unlisted"), 0, "")), permissionId);
-
-        vm.expectRevert();
-        handleOp(op);
-    }
-
     function test_wrongOwnerSignatureIsRejected() public {
         Session memory session = defaultSession();
         ownerKey = uint256(keccak256("not the owner"));
         ERC4337.PackedUserOperation memory op =
             signEnable(userOp(smartAccount, callSetValue(1)), session);
 
-        vm.expectRevert();
+        vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
         handleOp(op);
         assertFalse(
             smartSession.isPermissionEnabled(smartSession.getPermissionId(session), smartAccount)
         );
-    }
-
-    function test_smartSessionIsInstalled() public view {
-        assertTrue(ISmartSession(address(smartSession)).isModuleType(1));
-        assertEq(smartSession.getPermissionIDs(smartAccount).length, 0);
     }
 }

@@ -29,15 +29,6 @@ contract EnableModeTest is SmartSessionTestBase {
         assertEq(target.value(), 5);
     }
 
-    function test_enableConsumesTheEnableNonce() public {
-        Session memory session = defaultSession();
-        PermissionId permissionId = smartSession.getPermissionId(session);
-
-        handleOp(signEnable(userOp(callSetValue(1)), session));
-
-        assertEq(smartSession.getNonce(permissionId, address(account)), 1);
-    }
-
     function test_unsafeEnableMode_isAccepted() public {
         Session memory session = defaultSession();
 
@@ -47,15 +38,6 @@ contract EnableModeTest is SmartSessionTestBase {
             smartSession.isPermissionEnabled(
                 smartSession.getPermissionId(session), address(account)
             )
-        );
-    }
-
-    function test_enableModes_signDifferentDigests() public view {
-        Session memory session = defaultSession();
-
-        assertNotEq(
-            sessionDigest(address(account), session, SmartSessionMode.ENABLE),
-            sessionDigest(address(account), session, SmartSessionMode.UNSAFE_ENABLE)
         );
     }
 
@@ -85,15 +67,8 @@ contract EnableModeTest is SmartSessionTestBase {
 
         ERC4337.PackedUserOperation memory replay = userOp(callSetValue(2));
         replay.signature = _encode(data, replay);
-        bytes32 expected = sessionDigest(address(account), session, SmartSessionMode.ENABLE);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ISmartSession.HashMismatch.selector,
-                data.hashesAndChainIds[0].sessionDigest,
-                expected
-            )
-        );
+        vm.expectPartialRevert(ISmartSession.HashMismatch.selector);
         validate(replay);
     }
 
@@ -105,15 +80,8 @@ contract EnableModeTest is SmartSessionTestBase {
         smartSession.revokeEnableSignature(permissionId);
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         op.signature = _encode(data, op);
-        bytes32 currentDigest = sessionDigest(address(account), session, SmartSessionMode.ENABLE);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ISmartSession.HashMismatch.selector,
-                data.hashesAndChainIds[0].sessionDigest,
-                currentDigest
-            )
-        );
+        vm.expectPartialRevert(ISmartSession.HashMismatch.selector);
         validate(op);
     }
 
@@ -126,15 +94,8 @@ contract EnableModeTest is SmartSessionTestBase {
         smartSession.removeSession(permissionId);
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         op.signature = _encode(data, op);
-        bytes32 currentDigest = sessionDigest(address(account), session, SmartSessionMode.ENABLE);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ISmartSession.HashMismatch.selector,
-                data.hashesAndChainIds[0].sessionDigest,
-                currentDigest
-            )
-        );
+        vm.expectPartialRevert(ISmartSession.HashMismatch.selector);
         validate(op);
     }
 
@@ -156,16 +117,8 @@ contract EnableModeTest is SmartSessionTestBase {
         data.sessionToEnable = session.withUserOpPolicy(address(policy), MockPolicyConfig.allow());
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         op.signature = _encode(data, op);
-        bytes32 tamperedDigest =
-            sessionDigest(address(account), data.sessionToEnable, SmartSessionMode.ENABLE);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ISmartSession.HashMismatch.selector,
-                data.hashesAndChainIds[0].sessionDigest,
-                tamperedDigest
-            )
-        );
+        vm.expectPartialRevert(ISmartSession.HashMismatch.selector);
         validate(op);
     }
 

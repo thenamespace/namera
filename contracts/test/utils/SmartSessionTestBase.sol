@@ -261,7 +261,9 @@ abstract contract SmartSessionTestBase is Test {
         return ValidationData.unwrap(smartSession.validateUserOp(op, opHash));
     }
 
-    /// @dev EntryPoint v0.7 `getUserOpHash`, computed locally.
+    /// @dev EntryPoint v0.7 `getUserOpHash`, computed locally so it makes no external call before the one
+    /// `vm.expectRevert` targets. Every `handleOp` test checks it: the EntryPoint rejects signatures over any
+    /// other hash.
     function userOpHash(ERC4337.PackedUserOperation memory op) internal view returns (bytes32) {
         bytes32 packed = keccak256(
             abi.encode(

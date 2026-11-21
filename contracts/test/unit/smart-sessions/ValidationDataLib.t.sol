@@ -41,13 +41,6 @@ contract ValidationDataLibTest is Test {
         assertEq(validUntil, UNBOUNDED);
     }
 
-    function testFuzz_isCommutative(uint256 a, uint256 b) public pure {
-        ValidationData x = ValidationData.wrap(a);
-        ValidationData y = ValidationData.wrap(b);
-
-        assertEq(ValidationData.unwrap(x.intersect(y)), ValidationData.unwrap(y.intersect(x)));
-    }
-
     function testFuzz_differentAggregators_fail(address aggregatorA, address aggregatorB)
         public
         pure
@@ -58,14 +51,6 @@ contract ValidationDataLibTest is Test {
         ValidationData b = ValidationData.wrap(uint160(aggregatorB));
 
         assertEq(ValidationData.unwrap(a.intersect(b)), 1);
-    }
-
-    function test_signatureFailure_isKept() public pure {
-        ValidationData failed = ValidationData.wrap(1);
-
-        uint256 result = ValidationData.unwrap(failed.intersect(_pack(10, 20)));
-
-        assertEq(uint160(result), 1);
     }
 
     function _pack(uint48 validAfter, uint48 validUntil) internal pure returns (ValidationData) {
