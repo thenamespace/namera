@@ -4,10 +4,9 @@ Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
 
 ## Packages
 
-| Package                                                  | Description                                                                 |
-| -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [`@namera-ai/sdk`](./packages/sdk/README.md)             | Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts. |
-| [`@namera-ai/contracts`](./packages/contracts/README.md) | ABIs and deployment addresses of Namera's Smart Sessions contracts.         |
+| Package                                                  | Description                                                         |
+| -------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`@namera-ai/contracts`](./packages/contracts/README.md) | ABIs and deployment addresses of Namera's Smart Sessions contracts. |
 
 ## Development
 

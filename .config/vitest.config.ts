@@ -13,10 +13,6 @@ const config = defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: "sdk", root: "packages/sdk", include: ["test/**/*.test.ts"] },
-      },
-      {
-        extends: true,
         test: { name: "contracts", root: "packages/contracts", include: ["test/**/*.test.ts"] },
       },
     ],

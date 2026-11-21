@@ -30,7 +30,6 @@ Preview); the workspace settings point them at the patched compiler and the conf
 
 ```text
 contracts/      @namera-ai/contracts-sol: Solidity contracts (Foundry, private)
-packages/sdk/   @namera-ai/sdk: Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
 packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namera's Smart Sessions contracts.
 packages/       Publishable packages
 apps/           Runnable applications (private)

@@ -8,7 +8,6 @@ before changing anything, then load the skills listed under [Skills](#skills) th
 - `contracts`: `@namera-ai/contracts-sol` (private), the Foundry project with Namera's Smart Sessions
   and session validators. Its own tooling (`forge fmt`, `forge lint`, `forge test`, Slither, Halmos)
   applies there; see `contracts/README.md`.
-- `packages/sdk`: `@namera-ai/sdk`, Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
 - `packages/contracts`: `@namera-ai/contracts`, ABIs and deployment addresses of Namera's Smart Sessions contracts.
 - `packages/*`: publishable packages, each with an independent public boundary.
 - `apps/*`: runnable applications (private).

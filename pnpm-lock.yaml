@@ -305,21 +305,6 @@ importers:
         specifier: 'catalog:'
         version: 2.57.20(typescript@7.0.2)(zod@4.6.6)
 
-  packages/sdk:
-    devDependencies:
-      '@effect/vitest':
-        specifier: 'catalog:'
-        version: 4.1.5(effect@4.1.5)(vitest@5.1.1(@types/node@26.6.6)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)))
-      effect:
-        specifier: 'catalog:'
-        version: 4.1.5
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.23.7(@arethetypeswrong/core@0.18.5)(oxc-resolver@11.24.2)(publint@0.3.25)(typescript@7.0.2)
-      viem:
-        specifier: 'catalog:'
-        version: 2.57.20(typescript@7.0.2)(zod@4.6.6)
-
   tools/cli:
     dependencies:
       '@effect/platform-node':
