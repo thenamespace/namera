@@ -5,9 +5,10 @@ import { Command } from "effect/cli";
 import { FetchHttpClient } from "effect/http";
 
 import { cli } from "./cli.ts";
+import * as Environment from "./contracts/environment.ts";
 import { Tools } from "./services/Tools.ts";
 
-const services = Tools.layer.pipe(
+const services = Layer.mergeAll(Tools.layer, Environment.layer).pipe(
   Layer.provideMerge(NodeServices.layer),
   Layer.provideMerge(FetchHttpClient.layer),
 );

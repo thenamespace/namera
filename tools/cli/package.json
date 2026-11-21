@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@effect/platform-node": "4.1.5",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:"
   }
 }

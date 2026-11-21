@@ -26,21 +26,29 @@ cp .env.example .env  # deployer keystore name, Etherscan key, optional RPC over
 | `pnpm mutation`          | Forge mutation testing over `src/` (slow; `mutation-report.json`) |
 | `pnpm snapshot`          | Gas snapshot                                                      |
 | `pnpm fixtures:accounts` | Refresh deployed account bytecode in `test/fixtures/accounts/`    |
-| `pnpm chains:status`     | Pre-flight and deployment state per chain (read-only)             |
-| `pnpm chains:deploy`     | Deploy missing contracts, write the manifest, verify              |
-| `pnpm chains:verify`     | Verify contracts from the manifest on Sourcify and Etherscan      |
 
-`chains:*` take `--chain <slug>` (repeatable), `--network mainnet|testnet` or `--all`. Status defaults
-to every chain.
+Deployment runs from the repository root through `namera-dev contracts` (Effect, `tools/cli`):
+
+| Command (repository root) | What it does                                                          |
+| ------------------------- | --------------------------------------------------------------------- |
+| `pnpm contracts:status`   | Pre-flight and deployment state per chain (read-only)                 |
+| `pnpm contracts:deploy`   | Deploy missing contracts, record their provenance, verify them        |
+| `pnpm contracts:record`   | Rewrite `deployments/<chainId>.json` from the chain and the broadcast |
+| `pnpm contracts:verify`   | Verify recorded contracts on Sourcify and Etherscan                   |
+| `pnpm contracts:generate` | Generate `@namera-ai/contracts` from the build and the records        |
+
+The chain commands take `--chain <slug>` (repeatable), `--network mainnet|testnet` or `--all`, and
+`--rpc-url <url>` to override the endpoint of a single chain. Status defaults to every chain.
+Configuration comes from the environment, then `contracts/.env`.
 
 ## Layout
 
 ```
 src/                    contracts
-script/                 Deploy.s.sol, Status.s.sol, run.ts (multi-chain runner), fixture fetcher
-script/config/          Contracts.sol: every managed contract with its versioned label (salt)
+script/                 Deploy.s.sol, Status.s.sol, fixture fetcher
+script/config/          contracts.json: every managed contract with its versioned label (salt), read by Contracts.sol
 chains/                 chains.json: supported chains, RPCs and verifiers
-deployments/            <chainId>.json manifests written by deploys (committed)
+deployments/            <chainId>.json provenance records written by `namera-dev contracts record` (committed)
 test/utils/             shared setup: EntryPoint and account fixtures, session builder, test base, mocks
 test/unit/              library and validator tests, with fuzzing
 test/integration/       SmartSession behaviour through a mock ERC-7579 account and the EntryPoint
@@ -70,21 +78,43 @@ ERC-1271 signature format; `test/accounts/RealAccountTestBase.sol` holds the sha
   checked on the real node via `eth_call`) and skips contracts that are already deployed, so re-running
   is safe.
 
-Managed contracts (`script/config/Contracts.sol`):
+Managed contracts (`script/config/contracts.json`, the single list Solidity and the tooling read):
 
 | Label                               | Contract                                         |
 | ----------------------------------- | ------------------------------------------------ |
 | `namera.smart-session.v1`           | `SmartSession` (ERC-7579 validator)              |
 | `namera.ecdsa-session-validator.v1` | `ECDSASessionValidator` (k-of-n session signers) |
 
-`pnpm chains:status` prints each contract's address. To simulate a deploy without sending transactions:
+`pnpm contracts:status` prints each contract's address. To simulate a deploy without sending transactions:
 `forge script script/Deploy.s.sol --rpc-url <url>`.
+
+## Deployment records
+
+`namera-dev contracts deploy` broadcasts `Deploy.s.sol`, then writes `deployments/<chainId>.json`
+with one record per contract:
+
+| Field                                 | Source                                                                |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `address`, `factory`, `salt`          | CREATE2 inputs; the address is recomputed from the current build      |
+| `initcodeHash`                        | `keccak256` of the artifact's initcode, checked against the broadcast |
+| `runtimeCodeHash`                     | `keccak256` of the code read from the chain                           |
+| `transaction` (hash, block, deployer) | The broadcast run, confirmed against the node's receipt               |
+| `source` (commit, compiler settings)  | `git rev-parse HEAD` and the artifact's compiler metadata             |
+
+Deploying refuses to run while `src/`, `script/` or the Foundry config have uncommitted changes, so
+the recorded commit is the source that was built. Committed records are kept as long as the chain
+still matches them; a record whose code is gone, changed or at another address fails the command.
+`transaction` is absent when the code was already on chain before this pipeline ran there (anyone
+can deploy the same initcode through the factory).
+
+Keep every deployed label in `contracts.json`: removing one drops it from the generated package.
 
 ### Adding a chain
 
 1. Add it to `chains/chains.json` (id, slug, RPC env name, public RPC, verifiers).
-2. `pnpm chains:status --chain <slug>` must report `ready true`.
-3. `pnpm chains:deploy --chain <slug>` deploys every contract and verifies it.
-4. Commit the new `deployments/<chainId>.json`.
+2. `pnpm contracts:status --chain <slug>` must report `ready true`.
+3. `pnpm contracts:deploy --chain <slug>` deploys every contract, records it and verifies it.
+4. `pnpm contracts:generate`, add a changeset for `@namera-ai/contracts`, and commit the new
+   `deployments/<chainId>.json` with the generated sources.
 
 The deployer can be any funded keystore (`cast wallet import`); it does not affect addresses.

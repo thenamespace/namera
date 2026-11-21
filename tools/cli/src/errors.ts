@@ -25,3 +25,13 @@ export class SetupError extends Schema.TaggedError<SetupError, { readonly brand:
     message: Schema.String,
   },
 ) {}
+
+/** A JSON-RPC request to a chain node failed or returned an unexpected result. */
+export class RpcFailed extends Schema.TaggedError<RpcFailed, { readonly brand: unique symbol }>()(
+  "RpcFailed",
+  {
+    url: Schema.String,
+    method: Schema.String,
+    message: Schema.String,
+  },
+) {}

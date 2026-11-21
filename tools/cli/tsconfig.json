@@ -11,9 +11,16 @@
           "experimentalApiUsage": "off",
           "unstableApiUsage": "off"
         },
-        "keyPatterns": [{ "target": "service", "pattern": "package-identifier" }],
+        "keyPatterns": [
+          {
+            "target": "service",
+            "pattern": "package-identifier"
+          }
+        ],
         "allowedUnstableApis": [
           "@effect/platform-node",
+          "@effect/vitest",
+          "effect/ConfigProvider",
           "effect/FileSystem",
           "effect/Path",
           "effect/cli",

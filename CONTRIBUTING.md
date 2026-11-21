@@ -33,7 +33,7 @@ contracts/      @namera-ai/contracts-sol: Solidity contracts (Foundry, private)
 packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namera's Smart Sessions contracts.
 packages/       Publishable packages
 apps/           Runnable applications (private)
-tools/cli/      namera-dev: repository tooling (release checks)
+tools/cli/      namera-dev: repository tooling (release checks, contract deployments, package generation)
 .changeset/     Pending release notes
 .config/        Lint, format, test, Turborepo and commit configuration
 ```
@@ -48,15 +48,16 @@ Run the complete check before opening a pull request:
 pnpm check
 ```
 
-| Command               | What it does                                         |
-| --------------------- | ---------------------------------------------------- |
-| `pnpm check`          | Format check, lint, typecheck, build and tests       |
-| `pnpm format`         | Format the workspace with Oxfmt                      |
-| `pnpm lint:fix`       | Apply Oxlint's automatic fixes                       |
-| `pnpm test`           | Run every Vitest project once                        |
-| `pnpm test:contracts` | Run the Foundry tests in `contracts/`                |
-| `pnpm dev`            | Run every package's dev task                         |
-| `pnpm pack:check`     | Check each publishable package with publint and attw |
+| Command                   | What it does                                                            |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `pnpm check`              | Format check, lint, typecheck, build and tests                          |
+| `pnpm format`             | Format the workspace with Oxfmt                                         |
+| `pnpm lint:fix`           | Apply Oxlint's automatic fixes                                          |
+| `pnpm test`               | Run every Vitest project once                                           |
+| `pnpm test:contracts`     | Run the Foundry tests in `contracts/`                                   |
+| `pnpm contracts:generate` | Regenerate `@namera-ai/contracts` from the build and deployment records |
+| `pnpm dev`                | Run every package's dev task                                            |
+| `pnpm pack:check`         | Check each publishable package with publint and attw                    |
 
 The Git hooks format and lint staged files on commit, check the commit message, and run lint,
 typecheck and tests before a push.

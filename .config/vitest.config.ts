@@ -15,6 +15,10 @@ const config = defineConfig({
         extends: true,
         test: { name: "contracts", root: "packages/contracts", include: ["test/**/*.test.ts"] },
       },
+      {
+        extends: true,
+        test: { name: "tools", root: "tools/cli", include: ["src/**/*.test.ts"] },
+      },
     ],
   },
 });

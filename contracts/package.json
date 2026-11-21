@@ -17,10 +17,7 @@
     "coverage:html": "pnpm coverage && genhtml lcov.info --branch-coverage --ignore-errors inconsistent,corrupt --output-directory coverage --quiet",
     "mutation": "forge test --mutate $(find src -name '*.sol') --match-path 'test/{unit,integration}/**' --json > mutation-report.json",
     "snapshot": "forge snapshot",
-    "fixtures:accounts": "node --env-file-if-exists=.env script/fixtures/fetch-account-fixtures.ts",
-    "chains:status": "node --env-file-if-exists=.env script/run.ts status",
-    "chains:deploy": "node --env-file-if-exists=.env script/run.ts deploy",
-    "chains:verify": "node --env-file-if-exists=.env script/run.ts verify"
+    "fixtures:accounts": "node --env-file-if-exists=.env script/fixtures/fetch-account-fixtures.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
