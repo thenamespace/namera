@@ -60,14 +60,10 @@ bytes32 constant CHAIN_SESSION_TYPEHASH =
 bytes32 constant MULTICHAIN_SESSION_TYPEHASH =
     0x88e4631f2dca0065122e90ca335755f770f098f3fd3f4bfad24bc6c083c3c839;
 
-// keccak256("EIP712Domain(string name,string version)")
-bytes32 constant _MULTICHAIN_DOMAIN_TYPEHASH =
-    0xb03948446334eb9b2196d5eb166f69b9d49403eb4a12f36de8d3f9f3cb8e15c3;
-
 // Domain of the multichain digest the owner signs: { name: "SmartSession", version: "1" }. Chain ID and verifying
 // contract are omitted so one signature covers several chains; both are bound inside each session digest
 // (`smartSession`) and its ChainSession entry (`chainId`).
-// keccak256(abi.encode(_MULTICHAIN_DOMAIN_TYPEHASH, keccak256("SmartSession"), keccak256("1")))
+// keccak256(abi.encode(keccak256("EIP712Domain(string name,string version)"), keccak256("SmartSession"), keccak256("1")))
 bytes32 constant _MULTICHAIN_DOMAIN_SEPARATOR =
     0x057501e891776d1482927e5f094ae44049a4d893ba2d7b334dd7db8d38d3a0e1;
 
