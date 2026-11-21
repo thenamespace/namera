@@ -18,10 +18,10 @@
             "pattern": "package-identifier"
           }
         ],
-        "allowedUnstableApis": ["@effect/platform-node", "@effect/vitest", "effect/FileSystem"],
-        "allowedExperimentalApis": ["@namera-ai/contracts"]
+        "allowedExperimentalApis": ["@namera-ai/contracts"],
+        "allowedUnstableApis": ["@effect/vitest"]
       }
     ]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

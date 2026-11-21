@@ -46,15 +46,11 @@
     "dev": "tsdown --watch",
     "lint": "oxlint -c ../../.config/oxlint.config.ts --deny-warnings .",
     "pack:check": "publint && attw --pack . --profile esm-only",
-    "typecheck": "tsc --noEmit",
-    "generate": "node scripts/generate-abis.ts && oxfmt -c ../../.config/oxfmt.config.ts --write src/abis",
-    "generate:check": "pnpm generate && git diff --exit-code -- src/abis"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.1.5",
     "@effect/vitest": "catalog:",
     "effect": "catalog:",
-    "oxfmt": "0.79.0",
     "tsdown": "catalog:",
     "viem": "catalog:"
   },

@@ -8,7 +8,12 @@
   "scripts": {
     "build": "turbo --root-turbo-json .config/turbo.json run build",
     "changeset": "changeset",
-    "check": "pnpm format:check && pnpm lint && turbo --root-turbo-json .config/turbo.json run typecheck build && pnpm test && pnpm test:contracts",
+    "check": "pnpm format:check && pnpm lint && turbo --root-turbo-json .config/turbo.json run typecheck build && pnpm test && pnpm test:contracts && namera-dev contracts generate --check",
+    "contracts:deploy": "namera-dev contracts deploy",
+    "contracts:generate": "namera-dev contracts generate",
+    "contracts:record": "namera-dev contracts record",
+    "contracts:status": "namera-dev contracts status",
+    "contracts:verify": "namera-dev contracts verify",
     "dev": "turbo --root-turbo-json .config/turbo.json run dev",
     "format": "oxfmt -c .config/oxfmt.config.ts --ignore-path .gitignore --ignore-path .config/oxfmtignore --write .",
     "format:check": "oxfmt -c .config/oxfmt.config.ts --ignore-path .gitignore --ignore-path .config/oxfmtignore --check .",

@@ -1,11 +1,6 @@
-/**
- * ABI of Namera's `SmartSession` contract, generated from the Foundry build.
- *
- * @stability experimental
- * @category abis
- * @since 0.1.0
- */
-export const smartSessionAbi = [
+import type * as Contract from "./Contract.ts";
+
+const abiV1 = [
   {
     type: "function",
     name: "areActionsEnabled",
@@ -909,3 +904,33 @@ export const smartSessionAbi = [
     inputs: [{ name: "mode", type: "uint8", internalType: "enum SmartSessionMode" }],
   },
 ] as const;
+
+/**
+ * Version 1 of Namera's `SmartSession` contract (`namera.smart-session.v1`): its ABI, CREATE2
+ * address and the record of every chain it is deployed on.
+ *
+ * **Details**
+ *
+ * The address commits to the salt `keccak256(label)` and to the initcode built with solc
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
+ * every chain.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 0.1.0
+ */
+export const v1: Contract.Version<typeof abiV1> = {
+  label: "namera.smart-session.v1",
+  address: "0xe98939a39E5faA47861D9Af4f10689c90239d3D0",
+  factory: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  salt: "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
+  initcodeHash: "0x3014b3548e21fd7a115ada0eea79ce76ce822d014970a43233400e6df3b2a6f8",
+  compiler: {
+    compiler: "0.8.38+commit.1835d247",
+    evmVersion: "cancun",
+    optimizerRuns: 200,
+    viaIR: false,
+  },
+  abi: abiV1,
+  deployments: {},
+};
