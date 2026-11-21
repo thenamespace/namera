@@ -1,0 +1,9 @@
+{
+  "contracts": [
+    { "artifact": "SmartSession.sol:SmartSession", "label": "namera.smart-session.v1" },
+    {
+      "artifact": "ECDSASessionValidator.sol:ECDSASessionValidator",
+      "label": "namera.ecdsa-session-validator.v1"
+    }
+  ]
+}

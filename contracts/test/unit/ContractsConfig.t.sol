@@ -26,7 +26,7 @@ contract ContractsConfigTest is Test {
         Create2FactoryFixture.install();
     }
 
-    function test_labelsAreUnique() public pure {
+    function test_labelsAreUnique() public view {
         ContractSpec[] memory specs = Contracts.all();
         for (uint256 i; i < specs.length; ++i) {
             for (uint256 j = i + 1; j < specs.length; ++j) {

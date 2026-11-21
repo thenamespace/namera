@@ -20,8 +20,9 @@ gas_reports = ["*"]
 fs_permissions = [
   { access = "read", path = "./chains" },
   { access = "read", path = "./test/fixtures" },
-  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./deployments" },
   { access = "read", path = "./out" },
+  { access = "read", path = "./script/config" },
 ]
 
 [profile.default.fuzz]
