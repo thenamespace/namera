@@ -1,0 +1,125 @@
+# namera repository guide
+
+namera is a pnpm and Turborepo monorepo written in TypeScript 7 with Effect v4. Read this file
+before changing anything, then load the skills listed under [Skills](#skills) that match the task.
+
+## Workspace map
+
+- `contracts`: `@namera-ai/contracts-sol` (private), the Foundry project with Namera's Smart Sessions
+  and session validators. Its own tooling (`forge fmt`, `forge lint`, `forge test`, Slither, Halmos)
+  applies there; see `contracts/README.md`.
+- `packages/sdk`: `@namera-ai/sdk`, Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
+- `packages/contracts`: `@namera-ai/contracts`, ABIs and deployment addresses of Namera's Smart Sessions contracts.
+- `packages/*`: publishable packages, each with an independent public boundary.
+- `apps/*`: runnable applications (private).
+- `tools/cli`: `namera-dev`, repository tooling written with Effect (release checks).
+- `.config/`: Oxlint, Oxfmt, Commitlint, Turborepo and Vitest configuration.
+
+Dependencies point inward: apps depend on packages, packages never depend on apps.
+
+## Commands
+
+- `pnpm check`: formatting, linting, type checking, builds and tests. Run it before every commit.
+- `pnpm format`: format the workspace with Oxfmt.
+- `pnpm test`: run every Vitest project once.
+- `pnpm test:contracts`: run the Foundry tests.
+- `pnpm pack:check`: publint and attw on each publishable package.
+- `pnpm changeset`: record a change to a published package.
+
+## Tooling
+
+Use the klarity presets configured at the root. Do not add Prettier, ESLint, Husky, lint-staged,
+tsup or Rollup unless the existing tools demonstrably cannot meet a requirement. Tool configs live in
+`.config/`.
+
+`tsc` is TypeScript 7 (tsgo) patched with the Effect language service (`@effect/tsgo`), so
+`typecheck` reports Effect diagnostics. Fix them in the code rather than silencing them; disable one
+with an `@effect-diagnostics-next-line` comment only when the flagged pattern is the point of the
+code. `pnpm install` also patches oxlint (`effect-tsgo patch --oxlint`): lint is type-aware and runs
+the `@effect/tsgo` oxlint presets. Silence those with a one-line reason and
+`// oxlint-disable-next-line effecttsgo/<rule> -- <reason>`.
+
+Published packages build with tsdown (`tsdown.config.ts`, klarity's preset): ESM, declarations and
+source maps in `dist`, checked by publint. During development, workspace packages resolve each
+other's `src` through the `workspace-source` export condition, so typecheck and tests never need a
+build first.
+
+## Dependencies
+
+- Pin every dependency to an exact version (`.npmrc` sets `save-exact`). Use the latest release
+  unless something blocks it, and say why when it does.
+- Published libraries declare `dependencies` and `peerDependencies` as ranges (`^4.1.5`) so they
+  work with their consumers' versions. Their `devDependencies` stay pinned.
+- The pnpm catalog (`pnpm-workspace.yaml`) holds only the shared toolchain (TypeScript, Node types,
+  Oxlint, Vitest, Effect) and dependencies that more than one package.json uses. Pin a dependency
+  that one package uses in that package.json.
+- New releases must be a day old before they install (`minimumReleaseAge`). Effect (`effect`,
+  `@effect/*`), Oxlint and Oxfmt are excluded: keep them on their latest release.
+
+## Code guidelines
+
+These apply to all code: packages, apps, tools and tests. Load the `effect-conventions`
+skill before writing or reviewing code.
+
+- Name things for what they are in the domain, consistently across the repository: one name per
+  concept, not synonyms per file.
+- Use what exists before writing a helper: Effect (`Array`, `String`, `Option`, `Schema`,
+  `Predicate`, …), then the workspace's own modules. Add a missing, generally useful helper to the
+  package that owns the concept, with tests.
+- Inline one-off logic at its use site. Extract only substantial or reused logic, into a module with
+  a specific name; never into catch-all `utils` or `helpers` files.
+- Separate logical blocks with a blank line (setup, validation, execution, result). Oxfmt does not
+  insert logical blank lines; review grouping yourself.
+- Every exported declaration of a published package has TSDoc (`effect-conventions` skill). Preserve existing
+  public APIs when cleaning up.
+- Follow [landmines](https://github.com/interfere-inc/landmines) (below); lint enforces it.
+
+## Landmines
+
+The oxlint config extends `@interfere/landmines`' recommended rules, which keep agent-written code
+honest. Each rule's message says what to do instead; do that rather than disabling it.
+
+- **No prose comments** (`no-comments`): express meaning in names and code, and put rationale in
+  the commit message or PR. Allowed: functional directives (`oxlint-disable…`, `@ts-expect-error`,
+  `@effect-diagnostics…`), single-line `// WARNING:` comments for dangerous, recurring footguns, and
+  TSDoc on exported symbols. Module documentation goes on the `export * as` in `index.ts`.
+- **No inferred-away types** (`no-explicit-return-types`): do not annotate return types on
+  implementations; let them be inferred, and pin a contract with `satisfies` where it matters.
+- **Tests that cannot lie**: no test doubles (`no-test-doubles`: no module mocks, stubbed
+  globals or fake implementations; use the real implementation, test layers, and MSW with
+  unhandled requests as errors for the network), no fixed sleeps (`no-fixed-sleep`: await the
+  operation or a signal; use `TestClock`), no polling races (`no-unsignaled-poll`), and no retries
+  or raised timeouts (`no-flake-masking`): fix the flake.
+- **Structure**: tests live with the package they test (`colocated-tests`); test files are
+  `*.test.ts`, shared fixtures `*.fixture.ts` and helpers `*.test-utils.ts` (`test-file-names`);
+  `package.json` exports name explicit entry points, never `"./*"` (`package-exports`).
+
+## Tests
+
+Tests live in each package's `test/` folder and run through `@effect/vitest` (`it.effect`,
+`assert`). Write the tests a behaviour needs: the documented contract, its failure cases and
+regressions. Do not test what the type checker already proves. See the `effect-conventions` skill.
+
+## Commits and pull requests
+
+Commits and PR titles follow Conventional Commits with kebab-case scopes (`feat(api): add retries`);
+Commitlint enforces it on commit and the `PR title` workflow on pull requests.
+Add a changeset for every user-visible change to a published package.
+
+## Skills
+
+These skills are installed globally (`npx skills add envoy1084/skills`), not stored in this
+repository.
+
+| Skill                 | Load it when                                               |
+| --------------------- | ---------------------------------------------------------- |
+| `effect-conventions`  | Writing, reviewing, documenting or testing any Effect code |
+| `package-development` | Adding, renaming or publishing a workspace package         |
+| `dependencies`        | Adding, upgrading or removing a dependency                 |
+| `changesets`          | A change affects a published package                       |
+
+# Learning more about Effect
+
+Before writing any Effect code, read `node_modules/effect/AGENTS.md` **completely**, and follow the
+links in it when required. For APIs and concepts the guide does not cover, search the source in
+`node_modules/effect/src`. Never rely on Effect v3 knowledge or external copies of the docs.

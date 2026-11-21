@@ -1,7 +1,0 @@
-{
-  "extends": "klarity/tsconfig/test",
-  "compilerOptions": {
-    "customConditions": ["workspace-source"]
-  },
-  "include": ["test", "scripts", "*.config.ts"]
-}

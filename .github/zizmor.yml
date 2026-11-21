@@ -1,0 +1,9 @@
+rules:
+  # Actions are referenced by major version tags (`@v7`) kept current by Dependabot, not commit
+  # SHA pins, so tag references are expected.
+  unpinned-uses:
+    disable: true
+  # GitHub's `$/` self-repository syntax is not supported by actionlint yet
+  # (rhysd/actionlint#711); in-repo actions stay `./` until it is.
+  self-repository:
+    disable: true

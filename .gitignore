@@ -1,69 +1,224 @@
-# -------------------------------------
-# OS / editors
-# -------------------------------------
-.DS_Store
-Thumbs.db
-Desktop.ini
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.pnp.*
+.yarn/*
+!.yarn/patches/
+!.yarn/releases/
+bower_components/
+jspm_packages/
 
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/launch.json
-.history/
-.idea/
-*.iml
+# ── Package builds and packed tarballs ────────────────────────────────────────
+dist/
+build/
+out/
+*.tgz
+*.tsbuildinfo
+next-env.d.ts
 
-*.swp
-*.swo
-*~
-*.bak
-*.tmp
-*.temp
+# ── Frameworks ────────────────────────────────────────────────────────────────
+# Next.js
+.next/
+# TanStack Start / Router, Nitro, Vinxi, Vite
+.output/
+.nitro/
+.vinxi/
+.tanstack/
+.vite/
+vite.config.*.timestamp-*
+# Astro, Svelte, Nuxt, Remix, React Router
+.astro/
+.svelte-kit/
+.nuxt/
+.react-router/
+# Docs generators (Fumadocs, Docusaurus, VitePress)
+.source/
+.docusaurus/
+**/.vitepress/cache/
+**/.vitepress/dist/
+# Expo / React Native
+.expo/
+.expo-shared/
+ios/Pods/
+android/.gradle/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+# Storybook
+storybook-static/
+# Deploy targets
+.vercel/
+.netlify/
+.wrangler/
+.dev.vars
+.serverless/
+.sst/
+.amplify/
+.firebase/
 
-# -------------------------------------
-# Secrets and environment
-# -------------------------------------
+# ── Tool caches ───────────────────────────────────────────────────────────────
+.turbo/
+.cache/
+.parcel-cache/
+.eslintcache
+.oxlintcache
+.stylelintcache
+.vitest/
+.swc/
+*.cpuprofile
+*.heapprofile
+.codegen-check/
+
+# ── Tests and reports ─────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+.stryker-tmp/
+reports/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+__screenshots__/
+junit.xml
+
+# ── Rust ──────────────────────────────────────────────────────────────────────
+target/
+**/*.rs.bk
+*.pdb
+# Cargo.lock is committed for binaries and workspaces; keep it.
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+.python-version.local
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.pytype/
+.tox/
+.nox/
+.hypothesis/
+.ipynb_checkpoints/
+htmlcov/
+.coverage
+.coverage.*
+# uv.lock and poetry.lock are committed; keep them.
+
+# ── Go ────────────────────────────────────────────────────────────────────────
+/bin/
+*.test
+*.out
+go.work.sum
+
+# ── Solidity / Foundry / Hardhat ──────────────────────────────────────────────
+# Foundry and Hardhat projects live in their own folder (e.g. contracts/).
+**/contracts/cache/
+**/contracts/out/
+**/contracts/artifacts/
+**/contracts/broadcast/*/31337/
+typechain-types/
+contracts/broadcast/
+contracts/dependencies/
+contracts/lcov.info
+contracts/mutation-report.json
+contracts/gas-report.*
+*.keystore
+
+# ── Containers and infrastructure ─────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.pulumi/
+docker-compose.override.yml
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+pgdata/
+
+# ── Environment and secrets ───────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
+!.env.*.example
 *.pem
 *.key
-*.keystore
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.npmrc.local
+gha-creds-*.json
+service-account*.json
 
-# -------------------------------------
-# Node.js / TypeScript
-# -------------------------------------
-node_modules/
-.pnpm-store/
-*.tsbuildinfo
-*.tgz
+# ── Local working state (plans, research, scratch) ────────────────────────────
+research/
+scratch/
+tmp/
+temp/
+*.local
+*.local.*
 
-dist/
-build/
-.cache/
-.turbo/
+# ── Agents ────────────────────────────────────────────────────────────────────
+# Shared skills and settings are committed; per-user state is not.
+.claude/settings.local.json
+.claude/worktrees/
+.codex/
+.cursor/
+.aider*
 
-coverage/
-.vitest/
-test-results/
-
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
+logs/
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# -------------------------------------
-# Solidity / Foundry
-# -------------------------------------
-out/
-cache/
-broadcast/
-dependencies/
-gas-report.*
-lcov.info
-mutation-report.json
+# ── Editors ───────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+*.code-workspace
+.fleet/
+.zed/
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
 
-# -------------------------------------
-# Local working state
-# -------------------------------------
-/research/
-/*.local.md
+# ── Operating systems ─────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.directory
+.Trash-*

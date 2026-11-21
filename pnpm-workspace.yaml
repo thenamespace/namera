@@ -1,26 +1,40 @@
 packages:
-  - apps/*
-  - contracts
-  - packages/*
+  - "apps/*"
+  - "contracts"
+  - "packages/*"
+  - "tools/*"
+
+# Versions shared by the workspace: the toolchain every package uses (TypeScript, Node types,
+# Oxlint, Vitest) and dependencies referenced by more than one package.json. A dependency only one
+# package uses is pinned in that package.json instead.
+catalog:
+  "@effect/tsgo": "0.73.2"
+  "@effect/vitest": "4.1.5"
+  "@interfere/landmines": "0.1.1"
+  "@types/node": "26.6.6"
+  effect: "4.1.5"
+  klarity: "0.3.0"
+  oxlint: "1.94.0"
+  oxlint-tsgolint: "7.0.2007"
+  tsdown: "0.23.7"
+  typescript: "7.0.2"
+  viem: "2.57.20"
+  vitest: "5.1.1"
+
+# A release must be a day old before it installs, so a compromised version is likely caught first.
+minimumReleaseAge: 1440
+
+# Pinned to their latest release on purpose: Effect and the Oxc tools (with their platform
+# binaries) ship together and are upgraded as soon as they are out.
+minimumReleaseAgeExclude:
+  - effect
+  - "@effect/*"
+  - oxlint
+  - "@oxlint/*"
+  - oxlint-tsgolint
+  - "@oxlint-tsgolint/*"
+  - oxfmt
+  - "@oxfmt/*"
 
 allowBuilds:
   lefthook: true
-
-catalog:
-  "@arethetypeswrong/core": 0.18.5
-  "@commitlint/cli": 21.2.4
-  "@commitlint/config-conventional": 21.2.4
-  "@effect/vitest": 4.1.4
-  "@types/node": 26.6.6
-  "@vitest/coverage-v8": 5.1.0
-  effect: 4.1.4
-  klarity: 0.3.0
-  lefthook: 2.2.2
-  oxfmt: 0.78.0
-  oxlint: 1.93.0
-  publint: 0.3.25
-  tsdown: 0.23.7
-  turbo: 2.11.11
-  typescript: 7.0.2
-  viem: 2.57.20
-  vitest: 5.1.0

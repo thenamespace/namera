@@ -1,26 +1,29 @@
-import { ecdsaSessionValidatorAbi, smartSessionAbi } from "@namera-ai/contracts";
-import { toFunctionSelector } from "viem";
-import { describe, expect, it } from "vitest";
+import { assert, describe, it } from "@effect/vitest";
+import { Array as Arr } from "effect";
 
-const selectors = (abi: readonly { type: string }[]) =>
-  abi.filter((item) => item.type === "function").map((item) => toFunctionSelector(item as never));
+import { ecdsaSessionValidatorAbi, smartSessionAbi } from "@namera-ai/contracts";
+import { toFunctionSelector, type Abi } from "viem";
+
+const selectors = (abi: Abi) =>
+  Arr.flatMap(abi, (item) => (item.type === "function" ? [toFunctionSelector(item)] : []));
 
 describe("ABIs", () => {
   it("include the SmartSession entry points the SDK calls", () => {
-    expect(selectors(smartSessionAbi)).toEqual(
-      expect.arrayContaining([
-        toFunctionSelector(
-          "function validateUserOp((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes),bytes32)",
-        ),
-        toFunctionSelector("function isValidSignatureWithSender(address,bytes32,bytes)"),
-        toFunctionSelector("function revokeEnableSignature(bytes32)"),
-        toFunctionSelector("function removeSession(bytes32)"),
-      ]),
-    );
+    const smartSessionSelectors = selectors(smartSessionAbi);
+
+    for (const signature of [
+      "function validateUserOp((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes),bytes32)",
+      "function isValidSignatureWithSender(address,bytes32,bytes)",
+      "function revokeEnableSignature(bytes32)",
+      "function removeSession(bytes32)",
+    ]) {
+      assert.include(smartSessionSelectors, toFunctionSelector(signature));
+    }
   });
 
   it("include the session validator check", () => {
-    expect(selectors(ecdsaSessionValidatorAbi)).toContain(
+    assert.include(
+      selectors(ecdsaSessionValidatorAbi),
       toFunctionSelector("function validateSignatureWithData(bytes32,bytes,bytes)"),
     );
   });

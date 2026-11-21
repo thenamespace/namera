@@ -12,6 +12,7 @@ jobs:
   deep:
     name: Deep fuzz and invariants
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       FOUNDRY_PROFILE: deep
     defaults:
@@ -19,6 +20,8 @@ jobs:
         working-directory: contracts
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.9.0

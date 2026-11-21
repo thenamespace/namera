@@ -1,6 +1,1 @@
-import config from "klarity/oxfmt";
-
-export default {
-  ...config,
-  ignorePatterns: [...config.ignorePatterns, "contracts/dependencies/**", "contracts/out/**"],
-};
+export { default } from "klarity/oxfmt";

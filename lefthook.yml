@@ -1,5 +1,4 @@
-# Mirrors klarity's lefthook/monorepo preset. Not extended: lefthook lets extended files override
-# local jobs, and these jobs must pass the .config/ tool configs explicitly.
+# Git hooks (from klarity's monorepo preset, with the configs in .config/).
 min_version: 2.1.0
 
 pre-commit:
@@ -25,4 +24,4 @@ commit-msg:
 pre-push:
   jobs:
     - name: check
-      run: pnpm run check
+      run: pnpm exec turbo --root-turbo-json .config/turbo.json run lint typecheck && pnpm test && pnpm test:contracts

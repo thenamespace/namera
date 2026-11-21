@@ -2,14 +2,27 @@
   "name": "@namera-ai/contracts",
   "version": "0.0.0",
   "description": "ABIs and deployment addresses of Namera's Smart Sessions contracts.",
+  "keywords": [
+    "abi",
+    "erc-7579",
+    "session-keys",
+    "smart-sessions",
+    "solidity",
+    "viem"
+  ],
+  "homepage": "https://github.com/thenamespace/namera/tree/main/packages/contracts#readme",
+  "bugs": "https://github.com/thenamespace/namera/issues",
   "license": "Apache-2.0",
+  "author": "Vedant Chainani (https://github.com/envoy1084)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thenamespace/namera.git",
     "directory": "packages/contracts"
   },
   "files": [
-    "dist"
+    "CHANGELOG.md",
+    "dist",
+    "src"
   ],
   "type": "module",
   "sideEffects": false,
@@ -31,19 +44,21 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "lint": "oxlint -c ../../.config/oxlint.config.ts --deny-warnings .",
+    "pack:check": "publint && attw --pack . --profile esm-only",
+    "typecheck": "tsc --noEmit",
     "generate": "node scripts/generate-abis.ts && oxfmt -c ../../.config/oxfmt.config.ts --write src/abis",
-    "generate:check": "pnpm generate && git diff --exit-code -- src/abis",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+    "generate:check": "pnpm generate && git diff --exit-code -- src/abis"
   },
   "devDependencies": {
-    "@arethetypeswrong/core": "catalog:",
-    "klarity": "catalog:",
-    "oxfmt": "catalog:",
-    "publint": "catalog:",
+    "@effect/platform-node": "4.1.5",
+    "@effect/vitest": "catalog:",
+    "effect": "catalog:",
+    "oxfmt": "0.79.0",
     "tsdown": "catalog:",
-    "typescript": "catalog:",
-    "viem": "catalog:",
-    "vitest": "catalog:"
+    "viem": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

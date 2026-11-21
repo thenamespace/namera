@@ -1,55 +1,82 @@
+# Pull requests, pushes to main, the merge queue and manual runs: formatting, lint, types, builds
+# and tests (and package metadata when the repository publishes), plus a security audit of the
+# workflows.
 name: CI
 
 on:
   pull_request:
   push:
     branches: [main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  merge_group:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   FOUNDRY_VERSION: v1.9.0
 
 jobs:
   check:
-    name: Check
+    # The version PR only changes versions and changelogs, and GitHub does not run workflows on
+    # PRs the workflow token opens; dispatch CI on its branch to check it.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login != 'github-actions[bot]' ||
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       FOUNDRY_PROFILE: ci
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
         with:
-          node-version-file: .node-version
-          cache: pnpm
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
       - run: pnpm check
+      - run: pnpm pack:check
 
   analyze:
-    name: Analyze contracts
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
         with:
-          node-version-file: .node-version
-          cache: pnpm
+          persist-credentials: false
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
       - run: pipx install slither-analyzer==0.11.6 && pipx install halmos==0.3.3
       - name: Slither
         run: pnpm --filter @namera-ai/contracts-sol analyze
       - name: Halmos
         run: pnpm --filter @namera-ai/contracts-sol symbolic
+
+  zizmor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Annotations instead of code scanning: SARIF uploads would need `security-events: write`.
+      - uses: zizmorcore/zizmor-action@v0.8.1
+        with:
+          version: 1.32.0
+          config: .github/zizmor.yml
+          advanced-security: false
+          annotations: true
