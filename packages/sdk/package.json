@@ -38,7 +38,6 @@
     "./accounts": "./src/accounts/index.ts",
     "./effect": "./src/effect/index.ts",
     "./effect/accounts": "./src/effect/accounts/index.ts",
-    "./testing": "./src/testing/index.ts",
     "./*": "./src/*.ts",
     "./accounts/internal/*": null,
     "./internal/*": null,
@@ -55,7 +54,6 @@
       "./accounts": "./dist/accounts/index.js",
       "./effect": "./dist/effect/index.js",
       "./effect/accounts": "./dist/effect/accounts/index.js",
-      "./testing": "./dist/testing/index.js",
       "./*": "./dist/*.js",
       "./accounts/internal/*": null,
       "./internal/*": null,
@@ -67,25 +65,15 @@
   "scripts": {
     "build": "rm -rf dist && tsc -b tsconfig.json && pnpm babel",
     "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
-    "codegen": "cd ../.. && namera-dev sdk codegen",
+    "codegen": "cd ../.. && namera-dev codegen --dir packages/sdk",
     "typecheck": "tsc -b tsconfig.json",
     "pack:check": "publint && attw --pack . --profile esm-only",
     "docgen": "docgen",
     "mutation": "stryker run"
   },
   "peerDependencies": {
-    "@pimlico/alto": "^0.0.21",
     "effect": "^4.1.5",
-    "prool": "^0.3.0",
     "viem": "^2.58.4"
-  },
-  "peerDependenciesMeta": {
-    "@pimlico/alto": {
-      "optional": true
-    },
-    "prool": {
-      "optional": true
-    }
   },
   "dependencies": {
     "@namera-ai/contracts": "workspace:^",
@@ -93,14 +81,13 @@
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
-    "@pimlico/alto": "0.0.21",
+    "@namera-ai/devnet": "workspace:*",
     "@stryker-mutator/core": "10.1.1",
     "@stryker-mutator/vitest-runner": "10.1.1",
     "effect": "catalog:",
     "esbuild": "0.28.2",
     "miniflare": "4.20260730.0",
     "permissionless": "0.5.2",
-    "prool": "0.3.0",
     "tstyche": "7.2.5",
     "viem": "catalog:",
     "zod": "4.6.6"

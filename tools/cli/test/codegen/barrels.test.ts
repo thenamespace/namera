@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Result } from "effect"
 
-import { duplicateNames, exportsMap, moduleMetadata, parseBarrel, renderBarrel } from "@namera-ai/tools/sdk/barrels"
+import { duplicateNames, exportsMap, moduleMetadata, parseBarrel, renderBarrel } from "@namera-ai/tools/codegen/barrels"
 
 const moduleDoc = (tags: string) => `/**\n * A module.\n *\n${tags}\n */\nexport const a = 1\n`
 

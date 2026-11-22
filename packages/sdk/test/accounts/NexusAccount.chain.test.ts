@@ -3,11 +3,11 @@ import { External } from "@namera-ai/contracts"
 import { Account, NexusAccount } from "@namera-ai/sdk"
 import { decodeFunctionData, parseAbi, zeroAddress, zeroHash } from "viem"
 
-import { chain, client, fund, isolate, newOwner, send } from "./accounts.test-utils.ts"
+import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 
 const nexus = External.nexus["1.3.3"]
 const typedData = {
-  domain: { name: "Example", version: "1", chainId: chain.chain.id, verifyingContract: zeroAddress },
+  domain: { name: "Example", version: "1", chainId: devnet.chain.id, verifyingContract: zeroAddress },
   types: { Mail: [{ name: "contents", type: "string" }] },
   primaryType: "Mail",
   message: { contents: "hello" }
@@ -31,7 +31,7 @@ const verify = async (account: NexusAccount.NexusAccount) => {
 }
 
 describe("NexusAccount", { concurrent: false }, () => {
-  isolate({ beforeEach, afterEach })
+  devnet.isolate({ beforeEach, afterEach })
 
   it("computes the address the factory deploys to, offline", async () => {
     for (const sessions of [true, false]) {
@@ -53,21 +53,23 @@ describe("NexusAccount", { concurrent: false }, () => {
 
   it("deploys with Smart Sessions in its first operation, then transfers and batches", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
-    await fund(account.address)
+    await devnet.fund(account.address)
 
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }])).success)
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
 
     const recipient = newOwner().address
-    assert.isTrue((await send(account, [{ to: recipient, value: 2n }, { to: recipient, value: 3n }])).success)
+    assert.isTrue(
+      (await devnet.sendUserOperation(account, [{ to: recipient, value: 2n }, { to: recipient, value: 3n }])).success
+    )
     assert.strictEqual(await client.getBalance({ address: recipient }), 5n)
     assert.deepStrictEqual(account.namera, { type: "nexus", version: "1.3.3", entryPoint: "0.7", eip7702: false })
   })
 
   it("signs in the domain the deployed account reports (1.3.3 reports version 1.3.2)", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
     const [, name, version, chainId, verifyingContract, salt] = await client.readContract({
       address: account.address,
@@ -79,7 +81,7 @@ describe("NexusAccount", { concurrent: false }, () => {
     assert.deepStrictEqual([name, version, chainId, verifyingContract, salt], [
       "Nexus",
       "1.3.2",
-      BigInt(chain.chain.id),
+      BigInt(devnet.chain.id),
       account.address,
       zeroHash
     ])
@@ -87,35 +89,38 @@ describe("NexusAccount", { concurrent: false }, () => {
 
   it("signs ERC-1271 messages and typed data that viem verifies, before and after deployment", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
-    await fund(account.address)
+    await devnet.fund(account.address)
 
     await verify(account)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
     await verify(account)
   })
 
   it("installs Smart Sessions later on an account deployed without them", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner(), sessions: false })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
     assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
 
-    assert.isTrue((await send(account, Account.installSessionsCalls(account))).success)
+    assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
   })
 
   it("delegates the owner's address through EIP-7702 in the first operation, with Smart Sessions", async () => {
     const owner = newOwner()
     const account = await NexusAccount.fromEip7702({ client, owner })
-    await fund(owner.address)
+    await devnet.fund(owner.address)
 
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }])).success)
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
     assert.strictEqual(
       await client.getCode({ address: owner.address }),
       `0xef0100${nexus.implementation.slice(2).toLowerCase()}`
     )
     assert.isTrue(await Account.isSessionsInstalled(client, { address: owner.address }))
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }, { to: zeroAddress, value: 2n }])).success)
+    assert.isTrue(
+      (await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }, { to: zeroAddress, value: 2n }]))
+        .success
+    )
     await verify(account)
   })
 })

@@ -24,10 +24,10 @@ export const parseFixtureName = (file: string): { readonly name: string; readonl
 }
 
 /**
- * Renders `src/testing/internal/bytecode.ts` of `@namera-ai/sdk`: the code `TestChain` installs, so the published
- * `./testing` entry works without the contracts workspace.
+ * Renders `src/internal/bytecode.ts` of `@namera-ai/devnet`: the code `Devnet` installs, so the devnet works without
+ * a Foundry build or the fixture files at run time.
  */
-export const renderTestChainBytecode = (
+export const renderDevnetBytecode = (
   fixtures: ReadonlyArray<CodeFixture>,
   contracts: ReadonlyArray<DeployedContract>
 ): string => {
@@ -39,7 +39,7 @@ export const renderTestChainBytecode = (
 
   return Arr.join(
     [
-      "// Written by `namera-dev sdk codegen` from contracts/test/fixtures/accounts and the Foundry build; do not edit.",
+      "// Written by `namera-dev devnet bytecode` from contracts/test/fixtures/accounts and the Foundry build; do not edit.",
       "",
       "/** @internal */",
       "export const fixtures: ReadonlyArray<{ readonly name: string; readonly address: `0x${string}`; readonly code: `0x${string}` }> = [",

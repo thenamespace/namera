@@ -68,7 +68,12 @@ export default defineConfig({
     passWithNoTests: true,
     projects: [
       project("@namera-ai/contracts", "packages/contracts"),
-      project("@namera-ai/sdk", "packages/sdk", { test: { globalSetup: ["test/setup/chain.ts"] } }),
+      project("@namera-ai/devnet", "packages/devnet", { test: { globalSetup: ["test/setup/devnet.ts"] } }),
+      // The SDK's unit tests need no chain; `*.chain.test.ts` run against the devnet.
+      project("@namera-ai/sdk", "packages/sdk", { test: { exclude: [...exclude, "**/*.chain.test.ts"] } }),
+      project("@namera-ai/sdk/chain", "packages/sdk", {
+        test: { include: ["test/**/*.chain.test.ts"], globalSetup: ["test/setup/devnet.ts"] }
+      }),
       project("@namera-ai/tools", "tools/cli"),
       project("@namera-ai/oxc", "tools/oxc"),
       ...runtimeTests

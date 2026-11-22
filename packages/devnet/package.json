@@ -1,0 +1,36 @@
+{
+  "name": "@namera-ai/devnet",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A local devnet for tests: anvil and the alto bundler per Vitest worker, with EntryPoint 0.7, the supported smart accounts and Namera's contracts deployed.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null,
+    "./index": null,
+    "./*/index": null
+  },
+  "scripts": {
+    "codegen": "cd ../.. && namera-dev codegen --dir packages/devnet && namera-dev devnet bytecode",
+    "typecheck": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@pimlico/alto": "0.0.21",
+    "prool": "0.3.0",
+    "viem": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@namera-ai/contracts": "workspace:^",
+    "effect": "catalog:",
+    "permissionless": "0.5.2",
+    "tstyche": "7.2.5",
+    "zod": "4.6.6"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

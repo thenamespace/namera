@@ -2,7 +2,7 @@ import * as path from "node:path"
 import { defineConfig } from "vitest/config"
 
 // Stryker's test run: the tests that cover src/internal/core. The account encodings are proven on the test chain, so
-// this config starts it too. Run from this package.
+// this config starts the devnet too. Run from this package.
 export default defineConfig({
   test: {
     include: [
@@ -11,7 +11,7 @@ export default defineConfig({
       "test/runtime/Runtime.test.ts",
       "test/accounts/**/*.test.ts"
     ],
-    globalSetup: ["test/setup/chain.ts"],
+    globalSetup: ["test/setup/devnet.ts"],
     setupFiles: [path.join(import.meta.dirname, "../../vitest.setup.ts")]
   }
 })

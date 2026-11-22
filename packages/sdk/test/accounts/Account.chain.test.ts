@@ -6,7 +6,7 @@ import { createWalletClient, encodeFunctionData, http, parseAbi, zeroAddress } f
 import { entryPoint07Address } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
 
-import { autoBundlingBundlerFor, chain, client, fund, isolate, newOwner, send } from "./accounts.test-utils.ts"
+import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 
 const rejection = (promise: Promise<unknown>) =>
   promise.then(
@@ -15,7 +15,7 @@ const rejection = (promise: Promise<unknown>) =>
   )
 
 describe("Account", { concurrent: false }, () => {
-  isolate({ beforeEach, afterEach })
+  devnet.isolate({ beforeEach, afterEach })
 
   it("detects an account another SDK deployed and connects to it", async () => {
     const owner = newOwner()
@@ -27,8 +27,8 @@ describe("Account", { concurrent: false }, () => {
       index: 9n,
       entryPoint: { address: entryPoint07Address, version: "0.7" }
     })
-    await fund(deployedElsewhere.address)
-    await send(deployedElsewhere, [{ to: zeroAddress }])
+    await devnet.fund(deployedElsewhere.address)
+    await devnet.sendUserOperation(deployedElsewhere, [{ to: zeroAddress }])
 
     assert.deepStrictEqual(await Account.detect(client, { address: deployedElsewhere.address }), {
       type: "kernel",
@@ -40,13 +40,13 @@ describe("Account", { concurrent: false }, () => {
 
     const account = await Account.from({ client, address: deployedElsewhere.address, owner })
     assert.strictEqual(account.namera.type, "kernel")
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }])).success)
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
   })
 
   it("detects a Safe7579 account by its Safe singleton and the adapter's account id", async () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()] })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
     assert.deepInclude(await Account.detect(client, { address: account.address }), {
       type: "safe7579",
@@ -59,8 +59,8 @@ describe("Account", { concurrent: false }, () => {
   it("detects EIP-7702 delegations and reports undeployed addresses", async () => {
     const owner = newOwner()
     const account = await NexusAccount.fromEip7702({ client, owner })
-    await fund(owner.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(owner.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
     const detected = await Account.detect(client, { address: owner.address })
     assert.deepInclude(detected, { type: "nexus", version: "1.3.3", eip7702: true, sessionsInstalled: true })
@@ -70,9 +70,9 @@ describe("Account", { concurrent: false }, () => {
   it("rejects an account whose implementation it doesn't support, naming the implementation", async () => {
     // A plain Safe 1.4.1 without the Safe7579 adapter.
     const deployer = createWalletClient({
-      account: privateKeyToAccount(chain.keys[1]!),
-      chain: chain.chain,
-      transport: http(chain.rpcUrl)
+      account: privateKeyToAccount(devnet.keys[1]!),
+      chain: devnet.chain,
+      transport: http(devnet.rpcUrl)
     })
     const safe = External.safe7579["2"]
     const owner = newOwner()
@@ -112,10 +112,10 @@ describe("Account", { concurrent: false }, () => {
 
   it("installs Smart Sessions through the bundler client, waiting for the receipt", async () => {
     const account = await KernelAccount.from({ client, owner: newOwner(), sessions: false })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
-    const receipt = await Account.installSessionsSync(autoBundlingBundlerFor(account))
+    const receipt = await Account.installSessionsSync(devnet.bundlerClient(account, { bundleOnReceipt: true }))
 
     assert.strictEqual(receipt.status, "success")
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))

@@ -344,6 +344,37 @@ importers:
         specifier: 'catalog:'
         version: 2.58.4(typescript@7.0.2)(zod@4.6.6)
 
+  packages/devnet:
+    dependencies:
+      '@pimlico/alto':
+        specifier: 0.0.21
+        version: 0.0.21(supports-color@7.2.0)(typescript@7.0.2)
+      prool:
+        specifier: 0.3.0
+        version: 0.3.0(@pimlico/alto@0.0.21(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0))
+      viem:
+        specifier: 'catalog:'
+        version: 2.58.4(typescript@7.0.2)(zod@4.6.6)
+    devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.1.5(effect@4.1.5)(vitest@5.1.1)
+      '@namera-ai/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+      effect:
+        specifier: 'catalog:'
+        version: 4.1.5
+      permissionless:
+        specifier: 0.5.2
+        version: 0.5.2(typescript@7.0.2)(viem@2.58.4(typescript@7.0.2)(zod@4.6.6))
+      tstyche:
+        specifier: 7.2.5
+        version: 7.2.5(typescript@7.0.2)
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
+
   packages/sdk:
     dependencies:
       '@namera-ai/contracts':
@@ -356,9 +387,9 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 4.1.5(effect@4.1.5)(vitest@5.1.1)
-      '@pimlico/alto':
-        specifier: 0.0.21
-        version: 0.0.21(supports-color@7.2.0)(typescript@7.0.2)
+      '@namera-ai/devnet':
+        specifier: workspace:*
+        version: link:../devnet
       '@stryker-mutator/core':
         specifier: 10.1.1
         version: 10.1.1(@types/node@26.6.6)
@@ -377,9 +408,6 @@ importers:
       permissionless:
         specifier: 0.5.2
         version: 0.5.2(typescript@7.0.2)(viem@2.58.4(typescript@7.0.2)(zod@4.6.6))
-      prool:
-        specifier: 0.3.0
-        version: 0.3.0(@pimlico/alto@0.0.21(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0))
       tstyche:
         specifier: 7.2.5
         version: 7.2.5(typescript@7.0.2)
@@ -8471,7 +8499,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 26.6.6
+      '@types/node': 18.19.130
 
   '@types/convert-source-map@2.0.3': {}
 
@@ -8489,7 +8517,7 @@ snapshots:
 
   '@types/mysql@2.15.26':
     dependencies:
-      '@types/node': 26.6.6
+      '@types/node': 18.19.130
 
   '@types/node@18.19.130':
     dependencies:
@@ -8505,7 +8533,7 @@ snapshots:
 
   '@types/pg@8.6.1':
     dependencies:
-      '@types/node': 26.6.6
+      '@types/node': 18.19.130
       pg-protocol: 1.16.1
       pg-types: 2.2.0
 
@@ -8515,7 +8543,7 @@ snapshots:
 
   '@types/tedious@4.0.14':
     dependencies:
-      '@types/node': 26.6.6
+      '@types/node': 18.19.130
 
   '@types/ws@8.18.2':
     dependencies:
@@ -10481,7 +10509,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.2
-      '@types/node': 26.6.6
+      '@types/node': 18.19.130
       long: 5.3.2
 
   proxy-addr@2.0.8:

@@ -10,5 +10,3 @@ Namera v2: a rewrite on viem and Effect, with no compatibility with 1.x.
   (`Transport`, `Rpc`, `Reverted`, `Timeout`) is the first family; raw viem and ox errors become a `ChainError` with
   the original as the cause. `NameraError` holds the union, a guard that works across duplicate copies, and `decode`.
 - `Session.now()` returns the current time in the seconds sessions use; the Effect form reads `Clock`.
-- `@namera-ai/sdk/testing`: `TestChain`, a local anvil and alto bundler per Vitest worker with EntryPoint 0.7, the
-  supported smart accounts and Namera's contracts at their production addresses.

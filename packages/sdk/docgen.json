@@ -56,9 +56,6 @@
       "@namera-ai/sdk/otel": [
         "./src/otel/index.ts"
       ],
-      "@namera-ai/sdk/testing": [
-        "./src/testing/index.ts"
-      ],
       "@namera-ai/sdk/*": [
         "./src/*.ts"
       ]
@@ -115,9 +112,6 @@
       ],
       "@namera-ai/sdk/otel": [
         "../../src/otel/index.ts"
-      ],
-      "@namera-ai/sdk/testing": [
-        "../../src/testing/index.ts"
       ],
       "@namera-ai/sdk/*": [
         "../../src/*.ts"

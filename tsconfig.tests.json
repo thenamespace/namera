@@ -37,9 +37,6 @@
       "@namera-ai/sdk/effect": [
         "./packages/sdk/src/effect/index.ts"
       ],
-      "@namera-ai/sdk/testing": [
-        "./packages/sdk/src/testing/index.ts"
-      ],
       "@namera-ai/sdk/*": [
         "./packages/sdk/src/*.ts"
       ]

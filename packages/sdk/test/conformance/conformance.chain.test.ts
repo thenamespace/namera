@@ -6,7 +6,7 @@ import { Cause, Effect, Exit } from "effect"
 import { http, zeroAddress } from "viem"
 import { createBundlerClient } from "viem/account-abstraction"
 
-import { chain, client, fund, isolate, newOwner, send } from "../accounts/accounts.test-utils.ts"
+import { client, devnet, newOwner } from "../accounts/accounts.test-utils.ts"
 import { table } from "./table.ts"
 
 const exportsOf = (api: Record<string, unknown>) =>
@@ -27,7 +27,7 @@ const identity = (error: unknown) => {
 }
 
 describe("the Promise and Effect APIs", { concurrent: false }, () => {
-  isolate({ beforeEach, afterEach })
+  devnet.isolate({ beforeEach, afterEach })
 
   it("export the same modules and names", () => {
     assert.deepStrictEqual(
@@ -71,8 +71,8 @@ describe("the Promise and Effect APIs", { concurrent: false }, () => {
 
   it("reject with the signal's reason when aborted mid-flight", async () => {
     const account = await KernelAccount.from({ client, owner: newOwner(), sessions: false })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
     // alto bundles manually, so the operation waits for its receipt until the test aborts at the first receipt request.
     const controller = new AbortController()
@@ -80,7 +80,7 @@ describe("the Promise and Effect APIs", { concurrent: false }, () => {
       account,
       client,
       pollingInterval: 50,
-      transport: http(chain.bundlerUrl, {
+      transport: http(devnet.bundlerUrl, {
         onFetchRequest: async (request) => {
           if ((await request.clone().text()).includes("eth_getUserOperationReceipt")) {
             controller.abort(new Error("cancelled"))

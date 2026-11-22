@@ -5,18 +5,18 @@ import { toKernelSmartAccount } from "permissionless/accounts"
 import { parseAbi, parseEther, zeroAddress } from "viem"
 import { entryPoint07Address } from "viem/account-abstraction"
 
-import { chain, client, fund, isolate, newOwner, sameBytes, send } from "./accounts.test-utils.ts"
+import { client, devnet, newOwner, sameBytes } from "./accounts.test-utils.ts"
 
 const kernel = External.kernel["3.3"]
 const typedData = {
-  domain: { name: "Example", version: "1", chainId: chain.chain.id, verifyingContract: zeroAddress },
+  domain: { name: "Example", version: "1", chainId: devnet.chain.id, verifyingContract: zeroAddress },
   types: { Mail: [{ name: "contents", type: "string" }] },
   primaryType: "Mail",
   message: { contents: "hello" }
 } as const
 
 describe("KernelAccount", { concurrent: false }, () => {
-  isolate({ beforeEach, afterEach })
+  devnet.isolate({ beforeEach, afterEach })
 
   describe("matches permissionless's Kernel 3.3 byte for byte", () => {
     const pair = async () => {
@@ -89,20 +89,20 @@ describe("KernelAccount", { concurrent: false }, () => {
 
   it("deploys with Smart Sessions in its first operation, then transfers and batches", async () => {
     const account = await KernelAccount.from({ client, owner: newOwner() })
-    await fund(account.address)
+    await devnet.fund(account.address)
 
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }])).success)
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
 
     const recipient = newOwner().address
-    const batch = await send(account, [{ to: recipient, value: 2n }, { to: recipient, value: 3n }])
+    const batch = await devnet.sendUserOperation(account, [{ to: recipient, value: 2n }, { to: recipient, value: 3n }])
     assert.isTrue(batch.success)
     assert.strictEqual(await client.getBalance({ address: recipient }), 5n)
   })
 
   it("signs ERC-1271 messages and typed data that viem verifies, before and after deployment", async () => {
     const account = await KernelAccount.from({ client, owner: newOwner() })
-    await fund(account.address)
+    await devnet.fund(account.address)
 
     const verify = async () => {
       assert.isTrue(
@@ -121,27 +121,27 @@ describe("KernelAccount", { concurrent: false }, () => {
       )
     }
     await verify()
-    await send(account, [{ to: zeroAddress }])
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
     await verify()
   })
 
   it("installs Smart Sessions later on an account deployed without them", async () => {
     const account = await KernelAccount.from({ client, owner: newOwner(), sessions: false })
-    await fund(account.address)
-    await send(account, [{ to: zeroAddress }])
+    await devnet.fund(account.address)
+    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
     assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
 
-    assert.isTrue((await send(account, Account.installSessionsCalls(account))).success)
+    assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
   })
 
   it("delegates the owner's address through EIP-7702 in the first operation, with Smart Sessions", async () => {
     const owner = newOwner()
     const account = await KernelAccount.fromEip7702({ client, owner })
-    await fund(owner.address)
+    await devnet.fund(owner.address)
     assert.strictEqual(account.address, owner.address)
 
-    assert.isTrue((await send(account, [{ to: zeroAddress, value: 1n }])).success)
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
     assert.strictEqual(
       await client.getCode({ address: owner.address }),
       `0xef0100${kernel.implementation.slice(2).toLowerCase()}`
@@ -150,7 +150,10 @@ describe("KernelAccount", { concurrent: false }, () => {
 
     const recipient = newOwner().address
     assert.isTrue(
-      (await send(account, [{ to: recipient, value: parseEther("0.1") }, { to: recipient, value: 1n }])).success
+      (await devnet.sendUserOperation(account, [{ to: recipient, value: parseEther("0.1") }, {
+        to: recipient,
+        value: 1n
+      }])).success
     )
     assert.isTrue(
       await client.verifyTypedData({

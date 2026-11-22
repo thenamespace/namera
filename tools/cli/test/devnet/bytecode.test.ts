@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 
-import { parseFixtureName, renderTestChainBytecode } from "@namera-ai/tools/sdk/testChainBytecode"
+import { parseFixtureName, renderDevnetBytecode } from "@namera-ai/tools/devnet/bytecode"
 
 describe("parseFixtureName", () => {
   it("reads the name and address of a fixture file", () => {
@@ -16,9 +16,9 @@ describe("parseFixtureName", () => {
   })
 })
 
-describe("renderTestChainBytecode", () => {
+describe("renderDevnetBytecode", () => {
   it("lists fixtures by name and contracts in deployment order", () => {
-    const source = renderTestChainBytecode(
+    const source = renderDevnetBytecode(
       [
         { name: "zeta", address: "0x2", code: "0x02" },
         { name: "alpha", address: "0x1", code: "0x01" }

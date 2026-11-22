@@ -35,6 +35,7 @@ The toolchain follows the Effect v4 repository: `tsc -b` builds, dprint formats,
 contracts/      @namera-ai/contracts-sol: Solidity contracts (Foundry, private)
 packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namera's Smart Sessions contracts.
 packages/sdk/   @namera-ai/sdk: session keys, policies and grants for agents on ERC-7579 smart accounts (Promise and Effect APIs)
+packages/devnet/ @namera-ai/devnet (private): the local devnet tests run on (anvil, alto, accounts, Namera's contracts)
 packages/       Publishable packages
 apps/           Runnable applications (private)
 tools/cli/      namera-dev: repository tooling (release checks, contract deployments, package generation)
