@@ -62,6 +62,17 @@ struct ActionData {
     PolicyData[] actionPolicies;
 }
 
+/// @notice What a session key's ERC-1271 signature asks the ERC-1271 policies to accept (Namera).
+/// @dev `hash` is the final nested hash the session key signed. Smart Sessions has bound `appDomainSeparator` to
+/// the requested hash and, when not empty, `contentsData` to the signed struct hash; `policyData` is unchecked.
+struct ERC1271Request {
+    address requestSender;
+    bytes32 hash;
+    bytes32 appDomainSeparator;
+    bytes contentsData;
+    bytes policyData;
+}
+
 /// @notice ERC-7739 contents a session key may sign for one app domain.
 /// Only the domain separator is stored, as EIP-712 lets apps omit unused domain fields.
 /// Content names are advisory: `contents` is an opaque struct hash, so a session key can sign any struct of the

@@ -253,12 +253,9 @@ contract PolicyManagementTest is SmartSessionTestBase {
     }
 
     function _note() internal returns (ERC7739Signer.AppData memory) {
-        return ERC7739Signer.AppData({
-            appDomainSeparator: APP_DOMAIN,
-            contents: keccak256(abi.encode(keccak256(bytes(NOTE)), makeAddr("recipient"))),
-            contentsType: NOTE,
-            contentsName: "Note"
-        });
+        return ERC7739Signer.typedData(
+            APP_DOMAIN, NOTE, "Note", abi.encode(keccak256(bytes(NOTE)), makeAddr("recipient"))
+        );
     }
 
     function _erc7739Data(string[] memory contentNames)

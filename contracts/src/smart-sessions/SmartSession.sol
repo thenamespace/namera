@@ -58,18 +58,20 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     }
 
     /// @notice ERC-7579 ERC-1271 forwarding for session keys.
-    /// @param signature `abi.encodePacked(permissionId, sessionKeySignature, APP_DOMAIN_SEPARATOR, contents,
-    /// contentsDescription, uint16(contentsDescription.length))`, optionally ERC-6492 wrapped.
+    /// @param signature `abi.encodePacked(permissionId, sessionKeySignature, contentsData, policyData,
+    /// uint16(contentsData.length), uint16(policyData.length), APP_DOMAIN_SEPARATOR, contents, contentsDescription,
+    /// uint16(contentsDescription.length))`, optionally ERC-6492 wrapped. `contentsData` (the signed struct's
+    /// EIP-712 `encodeData`, or empty) and `policyData` are for ERC-1271 policies; see `I1271TypedDataPolicy`.
     function isValidSignatureWithSender(address sender, bytes32 hash, bytes calldata signature)
         external
         view
         override
         returns (bytes4 result)
     {
-        // ERC-7739 support probe. 0x77390002 marks the version that binds signatures to `hash`
-        // (upstream SmartSession reports 0x77390001).
+        // ERC-7739 support probe. Upstream SmartSession reports 0x77390001; 0x77390002 bound signatures to `hash`,
+        // and 0x77390003 adds the typed data for ERC-1271 policies to the signature.
         if (hash == 0x7739773977397739773977397739773977397739773977397739773977397739) {
-            return bytes4(0x77390002);
+            return bytes4(0x77390003);
         }
         // A session may not authorize another session.
         if (sender == address(this)) return EIP1271_FAILED;
@@ -195,8 +197,10 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     }
 
     /// @dev Session-key ERC-1271 check after ERC-7739 unwrapping. Returns false unless the session is enabled and
-    /// within its validity window, the content is allowed for the app domain, every ERC-1271 policy (at least one)
-    /// passes and the session key signature is valid.
+    /// within its validity window, the content is allowed for the app domain, the typed data (when given) hashes to
+    /// `contents`, every ERC-1271 policy (at least one) passes and the session key signature is valid.
+    /// `signature` is `permissionId ‖ sessionKeySignature ‖ contentsData ‖ policyData ‖ uint16(contentsData.length)
+    /// ‖ uint16(policyData.length)` (Namera): see `I1271TypedDataPolicy`.
     // Session expiry is time-based by design (see _isWithinSessionValidity).
     // slither-disable-next-line timestamp
     function _erc1271IsValidSignatureNowCalldata(
@@ -204,8 +208,18 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         bytes32 hash,
         bytes calldata signature,
         bytes32 appDomainSeparator,
-        bytes calldata contents
+        bytes calldata contentsDescription
     ) internal view virtual override returns (bool) {
+        ERC1271Request memory request = ERC1271Request({
+            requestSender: sender,
+            hash: hash,
+            appDomainSeparator: appDomainSeparator,
+            contentsData: "",
+            policyData: ""
+        });
+        bool wellFormed;
+        (wellFormed, signature) = _readTypedData(request, signature, _contents(contentsDescription));
+        if (!wellFormed) return false;
         PermissionId permissionId = PermissionId.wrap(bytes32(signature[:32]));
         signature = signature[32:];
 
@@ -213,14 +227,13 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             !$enabledSessions.contains(msg.sender, PermissionId.unwrap(permissionId))
                 || !_isWithinSessionValidity(permissionId, msg.sender)
                 || !$enabledERC7739.enabledContentNames[permissionId][appDomainSeparator].contains(
-                    msg.sender, string(contents).hashERC7739Content()
+                    msg.sender, string(contentsDescription).hashERC7739Content()
                 )
         ) return false;
 
         bool policiesPass = $erc1271Policies.checkERC1271({
             account: msg.sender,
-            requestSender: sender,
-            hash: hash,
+            request: request,
             signature: signature,
             permissionId: permissionId,
             configId: permissionId.toErc1271PolicyId().toConfigId(),
@@ -231,5 +244,31 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         return $sessionValidators.isValidISessionValidator({
             hash: hash, account: msg.sender, permissionId: permissionId, signature: signature
         });
+    }
+
+    /// @dev Reads `contentsData ‖ policyData ‖ uint16(contentsData.length) ‖ uint16(policyData.length)` off the end
+    /// of `signature` into `request`, returning the rest (`permissionId ‖ sessionKeySignature`). Not well formed
+    /// when the lengths overrun the signature, or when `contentsData` is given and does not hash to `contents`.
+    function _readTypedData(
+        ERC1271Request memory request,
+        bytes calldata signature,
+        bytes32 contents
+    ) internal pure returns (bool wellFormed, bytes calldata rest) {
+        rest = signature;
+        uint256 length = signature.length;
+        if (length < 36) return (false, rest);
+        // The two lengths, then (once checked against the signature) where each part starts.
+        uint256 policyDataStart = uint16(bytes2(signature[length - 2:]));
+        uint256 contentsDataStart = uint16(bytes2(signature[length - 4:length - 2]));
+        if (length < 36 + contentsDataStart + policyDataStart) return (false, rest);
+        policyDataStart = length - 4 - policyDataStart;
+        contentsDataStart = policyDataStart - contentsDataStart;
+
+        request.contentsData = signature[contentsDataStart:policyDataStart];
+        if (request.contentsData.length != 0 && keccak256(request.contentsData) != contents) {
+            return (false, rest);
+        }
+        request.policyData = signature[policyDataStart:length - 4];
+        return (true, signature[:contentsDataStart]);
     }
 }

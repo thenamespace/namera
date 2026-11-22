@@ -84,7 +84,7 @@ admin-free, and serves every account and session from one deployment:
 | `ValuePolicy`     | user op         | a native-currency budget per period                                                                                      |
 | `RateLimitPolicy` | user op         | operations per period                                                                                                    |
 | `GasPolicy`       | user op         | worst-case gas cost per period                                                                                           |
-| `SignaturePolicy` | ERC-1271        | which contracts may verify the session's signatures                                                                      |
+| `SignaturePolicy` | ERC-1271        | which contracts may verify the session's signatures, and conditions on the signed typed data's fields                    |
 
 **Periods without TIMESTAMP.** ERC-7562 bans `TIMESTAMP` during validation. The agent appends the time it sends at
 as one 32-byte word after the ABI encoding of the account's `execute` calldata (accounts and Smart Sessions ignore it;
@@ -97,9 +97,12 @@ re-enabling a session never resets them.
 configurations are stored as words, so no dynamic storage arrays are needed. `@namera-ai/devnet`'s ERC-7562 test traces
 a real session operation's validation and checks both rules on these contracts.
 
-**Signatures.** Smart Sessions gives ERC-1271 policies only the final nested hash, so `SignaturePolicy` cannot check
-message fields (a permit's spender or value); Smart Sessions itself limits the app domains and content types a session
-may sign.
+**Signatures.** A session key's ERC-1271 signature carries the signed struct's EIP-712 `encodeData`, and Smart Sessions
+checks that it hashes to the signed struct before passing it to policies that implement `I1271TypedDataPolicy`.
+`SignaturePolicy` uses it to put conditions on single fields: a session may sign USDC permits for one spender up to a
+cap, and nothing else. A field rule compares field `index` as an unsigned word (`ArgPolicy`'s conditions); a dynamic or
+nested field's word is its hash. `policyData`, which Smart Sessions passes unchecked, is room for later policies that
+verify nested fields themselves.
 
 ## Deterministic deployment
 

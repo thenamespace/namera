@@ -68,7 +68,7 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   the signature and never compared it with the requested `hash`, so one session-key signature validated
   for any hash. It now requires `keccak256(\x19\x01 ‖ APP_DOMAIN_SEPARATOR ‖ contents) == hash` and,
   as in Solady, that the appended data fits in the signature and is non-empty; otherwise the signature
-  is invalid. The ERC-7739 support probe returns `0x77390002` (upstream `0x77390001`).
+  is invalid.
 - **FlatBytes.** Upstream wrote `length / 32 + 1` slots, one past its 10-slot struct for a 320-byte
   value. Slots are now exact, unused tail bytes are zeroed, and capacity is 16 slots (512 bytes) so
   P-256/WebAuthn session validator configs fit.
@@ -97,13 +97,29 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   validation phase (ERC-7562); it works in execution and off-chain.
 - This changes the `Session` ABI and EIP-712 hashes; upstream SmartSession tooling cannot build Namera
   sessions.
+- **Typed data for ERC-1271 policies.** A session-key ERC-1271 signature carries the signed struct's
+  EIP-712 `encodeData` and data for the policies between the session key's signature and the ERC-7739
+  appendix: `permissionId ‖ sessionKeySignature ‖ contentsData ‖ policyData ‖ uint16(contentsData.length)
+  ‖ uint16(policyData.length) ‖ APP_DOMAIN_SEPARATOR ‖ contents ‖ contentsDescription ‖ uint16(…)`. A
+  non-empty `contentsData` must hash to `contents`, or the signature is invalid; lengths that overrun the
+  signature make it invalid without reverting. Policies reporting the new `I1271TypedDataPolicy`
+  interface (`interfaces/IPolicy.sol`) get `check1271TypedData(id, requestSender, account,
+  appDomainSeparator, contentsData, policyData)` instead of `check1271SignedAction`, so they can put
+  conditions on single fields of what the session key signed (a permit's spender and value). Other
+  policies are called as before, with the session key's signature. The session validator gets only the
+  session key's signature. `PolicyLib.checkERC1271` takes an `ERC1271Request` (`DataTypes.sol`).
+- The ERC-7739 support probe returns `0x77390003`: upstream returns `0x77390001`, `0x77390002` marked
+  the hash binding fix, and `0x77390003` the signature layout above.
 
 ## Known limitations
 
 - **ERC-7739 content names are advisory.** `contents` is an opaque struct hash, so a session key can sign
   any struct of an allowed app domain under an allowed content name. Content names protect honest
-  signers from phishing; the enforced bounds are the app domain and the ERC-1271 policies (which receive
-  the nested hash only). Same as upstream.
+  signers from phishing; the enforced bounds are the app domain and the ERC-1271 policies. A policy that
+  needs the struct's type checks the type hash in `contentsData` (bound to `contents` by its hash), not
+  the content name.
+- **Only `TypedDataSign`.** ERC-7739's `PersonalSign` workflow (`signMessage`) is not supported, as
+  upstream.
 
 ## Behaviour changes
 

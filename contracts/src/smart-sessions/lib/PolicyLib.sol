@@ -6,6 +6,7 @@ import {
     ActionData,
     ActionId,
     ConfigId,
+    ERC1271Request,
     ERC7579_EXECUTE_SELECTOR,
     EnumerableActionPolicy,
     FALLBACK_ACTIONID,
@@ -18,7 +19,7 @@ import {
     ValidationData
 } from "../DataTypes.sol";
 import {ISmartSession} from "../ISmartSession.sol";
-import {I1271Policy, IActionPolicy} from "../interfaces/IPolicy.sol";
+import {I1271TypedDataPolicy, IActionPolicy} from "../interfaces/IPolicy.sol";
 import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
 import {Execution, ExecutionLib} from "./ExecutionLib.sol";
 import {IdLib} from "./IdLib.sol";
@@ -176,12 +177,12 @@ library PolicyLib {
         }
     }
 
-    /// @dev True if all ERC-1271 policies (at least `minPoliciesToEnforce`) accept the signed request.
+    /// @dev True if all ERC-1271 policies (at least `minPoliciesToEnforce`) accept the signed request. Namera:
+    /// a policy that reports `I1271TypedDataPolicy` is given the signed typed data instead of the hash.
     function checkERC1271(
         Policy storage $self,
         address account,
-        address requestSender,
-        bytes32 hash,
+        ERC1271Request memory request,
         bytes calldata signature,
         PermissionId permissionId,
         ConfigId configId,
@@ -192,15 +193,38 @@ library PolicyLib {
         if (minPoliciesToEnforce > length) revert ISmartSession.NoPoliciesSet(permissionId);
 
         for (uint256 i; i < length; ++i) {
-            if (!I1271Policy(policies[i]).check1271SignedAction({
-                    id: configId,
-                    requestSender: requestSender,
-                    account: account,
-                    hash: hash,
-                    signature: signature
-                })) return false;
+            if (!_accepts(I1271TypedDataPolicy(policies[i]), account, request, signature, configId))
+            {
+                return false;
+            }
         }
         return true;
+    }
+
+    function _accepts(
+        I1271TypedDataPolicy policy,
+        address account,
+        ERC1271Request memory request,
+        bytes calldata signature,
+        ConfigId configId
+    ) private view returns (bool) {
+        if (policy.supportsInterface(type(I1271TypedDataPolicy).interfaceId)) {
+            return policy.check1271TypedData({
+                id: configId,
+                requestSender: request.requestSender,
+                account: account,
+                appDomainSeparator: request.appDomainSeparator,
+                contentsData: request.contentsData,
+                policyData: request.policyData
+            });
+        }
+        return policy.check1271SignedAction({
+            id: configId,
+            requestSender: request.requestSender,
+            account: account,
+            hash: request.hash,
+            signature: signature
+        });
     }
 
     /// @dev True if every policy in `policyDatas` is enabled (vacuously true for none).

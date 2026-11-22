@@ -9,6 +9,7 @@ import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
 import {MockAccount} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
+import {MockTypedDataPolicy} from "../../utils/mocks/MockTypedDataPolicy.sol";
 
 /// @dev An account whose EIP-712 domain has a salt, to check the module binds every domain field.
 contract MockSaltedAccount is MockAccount {
@@ -57,7 +58,7 @@ contract ERC1271Test is SmartSessionTestBase {
             address(this), 0x7739773977397739773977397739773977397739773977397739773977397739, ""
         );
 
-        assertEq(result, bytes4(0x77390002));
+        assertEq(result, bytes4(0x77390003));
     }
 
     /// @dev Regression for the upstream bug: a signed mail cannot authorize a different mail.
@@ -262,6 +263,7 @@ contract ERC1271Test is SmartSessionTestBase {
         ERC7739Signer.AppData memory app = ERC7739Signer.AppData({
             appDomainSeparator: APP_DOMAIN,
             contents: keccak256("permit struct hash"),
+            contentsData: "",
             contentsType: longType,
             contentsName: "PermitBatchTransferFrom"
         });
@@ -296,6 +298,80 @@ contract ERC1271Test is SmartSessionTestBase {
         signature[signature.length - 1] = 0xff;
 
         assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
+    }
+
+    /// @dev The typed data in the signature must be the signed struct's preimage, so policies can trust it.
+    function test_typedDataThatIsNotTheStructsPreimage_isRejected() public {
+        bytes memory forged = abi.encode(keccak256(bytes(MAIL)), makeAddr("someone else"));
+        bytes memory signature =
+            ERC7739Signer.sign(mail, address(account), permissionId, sessionKey, forged, "");
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
+    }
+
+    /// @dev Typed data is optional: a policy that doesn't read it still sees the session key's signature.
+    function test_withoutTypedData_hashPoliciesStillPass() public view {
+        bytes memory signature =
+            ERC7739Signer.sign(mail, address(account), permissionId, sessionKey, "", "extra");
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), EIP1271_MAGIC);
+    }
+
+    function test_typedDataLengthsPastTheSignature_areRejectedWithoutReverting() public view {
+        bytes memory sessionKeySignature =
+            ERC7739Signer.sessionKeySignature(mail, address(account), sessionKey);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        bytes memory overrun = abi.encodePacked(
+            permissionId, sessionKeySignature, uint16(66), uint16(0), ERC7739Signer.appendix(mail)
+        );
+        assertEq(_isValidSignature(hash, overrun), INVALID);
+        bytes memory tooShort =
+            abi.encodePacked(permissionId, uint16(0), ERC7739Signer.appendix(mail));
+        assertEq(_isValidSignature(hash, tooShort), INVALID);
+    }
+
+    /// @dev Other lengths never validate and never revert. The one exception reads the same bytes as policy
+    /// data with no typed data, which Smart Sessions does not check (the policy would).
+    function testFuzz_wrongTypedDataLengthsNeverValidate(uint16 contentsLength, uint16 policyLength)
+        public
+        view
+    {
+        uint256 length = mail.contentsData.length;
+        vm.assume(contentsLength != length || policyLength != 0);
+        vm.assume(contentsLength != 0 || policyLength != length);
+        bytes memory signature = abi.encodePacked(
+            permissionId,
+            ERC7739Signer.sessionKeySignature(mail, address(account), sessionKey),
+            mail.contentsData,
+            contentsLength,
+            policyLength,
+            ERC7739Signer.appendix(mail)
+        );
+
+        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
+    }
+
+    function test_typedDataPolicy_receivesTheVerifiedTypedDataAndItsPolicyData() public {
+        MockTypedDataPolicy typedPolicy = new MockTypedDataPolicy();
+        bytes memory policyData = "nested preimages";
+        Session memory session = defaultSession()
+            .withERC7739Content(APP_DOMAIN, MAIL)
+            .withERC1271Policy(
+                address(typedPolicy), abi.encode(APP_DOMAIN, mail.contentsData, policyData)
+            );
+        session.salt = keccak256("typed data");
+        PermissionId typedId = enableSession(session);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        bytes memory signature = ERC7739Signer.sign(
+            mail, address(account), typedId, sessionKey, mail.contentsData, policyData
+        );
+        assertEq(_isValidSignature(hash, signature), EIP1271_MAGIC);
+        bytes memory otherPolicyData = ERC7739Signer.sign(
+            mail, address(account), typedId, sessionKey, mail.contentsData, "other"
+        );
+        assertEq(_isValidSignature(hash, otherPolicyData), INVALID);
     }
 
     function _withoutDescription(bytes memory signature, uint256 descriptionLength)

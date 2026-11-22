@@ -48,3 +48,17 @@ interface I1271Policy is IPolicy {
         bytes calldata signature
     ) external view returns (bool);
 }
+
+/// @notice Runs instead of `check1271SignedAction` when the policy reports this interface: Smart Sessions passes
+/// the signed typed data. `\x19\x01 ‖ appDomainSeparator ‖ keccak256(contentsData)` is the requested hash when
+/// `contentsData` (the struct's EIP-712 `encodeData`) is not empty; `policyData` is unchecked.
+interface I1271TypedDataPolicy is I1271Policy {
+    function check1271TypedData(
+        bytes32 id,
+        address requestSender,
+        address account,
+        bytes32 appDomainSeparator,
+        bytes calldata contentsData,
+        bytes calldata policyData
+    ) external view returns (bool);
+}

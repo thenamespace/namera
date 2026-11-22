@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {
     I1271Policy as Namera1271Policy,
+    I1271TypedDataPolicy as Namera1271TypedDataPolicy,
     IActionPolicy as NameraActionPolicy,
     IPolicy as NameraPolicy,
     IUserOpPolicy as NameraUserOpPolicy
@@ -14,6 +15,7 @@ import {PolicyStorage} from "src/policies/lib/PolicyStorage.sol";
 import {UserOpCalls} from "src/policies/lib/UserOpCalls.sol";
 import {
     I1271Policy,
+    I1271TypedDataPolicy,
     IActionPolicy,
     IPolicy,
     IUserOpPolicy
@@ -55,6 +57,9 @@ contract PolicyInterfacesTest is Test {
         assertEq(type(NameraUserOpPolicy).interfaceId, type(IUserOpPolicy).interfaceId);
         assertEq(type(NameraActionPolicy).interfaceId, type(IActionPolicy).interfaceId);
         assertEq(type(Namera1271Policy).interfaceId, type(I1271Policy).interfaceId);
+        assertEq(
+            type(Namera1271TypedDataPolicy).interfaceId, type(I1271TypedDataPolicy).interfaceId
+        );
         assertEq(
             NameraPolicy.initializeWithMultiplexer.selector,
             IPolicy.initializeWithMultiplexer.selector

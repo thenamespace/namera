@@ -20,13 +20,27 @@ import {EIP712} from "solady/utils/EIP712.sol";
 /// requested hash. Only the `TypedDataSign` workflow is supported (no `PersonalSign`).
 abstract contract SmartSessionERC7739 is ISmartSession {
     /// @dev Validates the unwrapped signature for the final nested hash; implemented by SmartSession.
+    /// `contentsDescription` is a slice of the signature right after the app struct's hash (`contents`), which
+    /// `_contents` reads.
     function _erc1271IsValidSignatureNowCalldata(
         address sender,
         bytes32 hash,
         bytes calldata signature,
         bytes32 appDomainSeparator,
-        bytes calldata contents
+        bytes calldata contentsDescription
     ) internal view virtual returns (bool);
+
+    /// @dev The app struct's hash: the word before `contentsDescription` in the signature (no stack room to pass
+    /// it alongside the slice).
+    function _contents(bytes calldata contentsDescription)
+        internal
+        pure
+        returns (bytes32 contents)
+    {
+        assembly ("memory-safe") {
+            contents := calldataload(sub(contentsDescription.offset, 0x20))
+        }
+    }
 
     // Reviewed false positives: the `0x6492...` marker is built as `mul(0x6492, div(...))`, and `result` is
     // reassigned on purpose when the wrapper is present.

@@ -319,7 +319,9 @@ contract LimitBoundaryTest is Test {
         SignaturePolicy policy = new SignaturePolicy();
         address[] memory verifiers = new address[](1);
         verifiers[0] = address(0x3000);
-        policy.initializeWithMultiplexer(address(this), "id", abi.encode(verifiers));
+        policy.initializeWithMultiplexer(
+            address(this), "id", abi.encode(SignaturePolicy.Config(verifiers, new bytes[](0)))
+        );
         assertFalse(policy.check1271SignedAction("id", address(0x2000), address(this), 0, ""));
         assertFalse(policy.check1271SignedAction("id", address(0x4000), address(this), 0, ""));
     }

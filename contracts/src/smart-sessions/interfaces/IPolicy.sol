@@ -52,3 +52,21 @@ interface I1271Policy is IPolicy {
         bytes calldata signature
     ) external view returns (bool);
 }
+
+/// @notice Namera extension: an ERC-1271 policy that reads the signed typed data, for conditions on its fields.
+/// @dev Smart Sessions calls `check1271TypedData` instead of `check1271SignedAction` on policies that report this
+/// interface through ERC-165. Smart Sessions has checked that `\x19\x01 ‖ appDomainSeparator ‖ contents` is the
+/// requested hash and, when `contentsData` is not empty, that `keccak256(contentsData) == contents`: `contentsData`
+/// is the struct's EIP-712 `encodeData` (its type hash, then one word per field, dynamic and nested fields hashed).
+/// `policyData` is for the policy alone (such as the preimage of a nested field) and is not checked; a policy that
+/// reads it verifies it against `contentsData`.
+interface I1271TypedDataPolicy is I1271Policy {
+    function check1271TypedData(
+        ConfigId id,
+        address requestSender,
+        address account,
+        bytes32 appDomainSeparator,
+        bytes calldata contentsData,
+        bytes calldata policyData
+    ) external view returns (bool);
+}
