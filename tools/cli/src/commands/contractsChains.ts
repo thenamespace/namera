@@ -1,18 +1,17 @@
-import {
-  Array as Arr,
-  Console,
-  Effect,
-  FileSystem,
-  Formatter,
-  Option,
-  Path,
-  Predicate,
-  Record as Rec,
-  Result,
-  Schema,
-  String as Str
-} from "effect"
-import { Command, Flag } from "effect/cli"
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Formatter from "effect/Formatter"
+import * as Option from "effect/Option"
+import * as Path from "effect/Path"
+import * as Predicate from "effect/Predicate"
+import * as Rec from "effect/Record"
+import * as Result from "effect/Result"
+import * as Schema from "effect/Schema"
+import * as Str from "effect/String"
 
 import { getAddress } from "viem"
 
@@ -72,29 +71,28 @@ const failureMessage = (failure: unknown) => {
   return String(failure)
 }
 
-const forEachChain = <E, R>(
+const forEachChain = Effect.fnUntraced(function*<E, R>(
   command: string,
   selected: ReadonlyArray<Chain>,
   run: (chain: Chain) => Effect.Effect<unknown, E, R>
-) =>
-  Effect.gen(function*() {
-    const failed: Array<string> = []
-    for (const chain of selected) {
-      yield* Console.log(`\n── ${chain.name} (${chain.id}) ──`)
-      const outcome = yield* Effect.result(run(chain))
-      if (Result.isFailure(outcome)) {
-        yield* Console.error(failureMessage(outcome.failure))
-        failed.push(chain.slug)
-      }
+) {
+  const failed: Array<string> = []
+  for (const chain of selected) {
+    yield* Console.log(`\n── ${chain.name} (${chain.id}) ──`)
+    const outcome = yield* Effect.result(run(chain))
+    if (Result.isFailure(outcome)) {
+      yield* Console.error(failureMessage(outcome.failure))
+      failed.push(chain.slug)
     }
-    if (failed.length > 0) {
-      return yield* CheckFailed.make({
-        check: command,
-        problems: [`failed: ${Arr.join(failed, ", ")}`]
-      })
-    }
-    return yield* Effect.void
-  })
+  }
+  if (failed.length > 0) {
+    return yield* CheckFailed.make({
+      check: command,
+      problems: [`failed: ${Arr.join(failed, ", ")}`]
+    })
+  }
+  return yield* Effect.void
+})
 
 const forge = Effect.fnUntraced(function*(args: ReadonlyArray<string>) {
   const tools = yield* Tools

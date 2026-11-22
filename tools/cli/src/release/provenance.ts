@@ -1,4 +1,7 @@
-import { Array as Arr, Option, Schema, String as Str } from "effect"
+import * as Arr from "effect/Array"
+import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
+import * as Str from "effect/String"
 
 /** npm's `/-/npm/v1/attestations/<name>@<version>` response. */
 export const Attestations = Schema.Struct({
@@ -58,7 +61,7 @@ export const provenanceProblems = (
   )
   if (Option.isNone(statement)) return [`${id}: unreadable provenance statement`]
 
-  const problems: string[] = []
+  const problems: Array<string> = []
   const subject = `pkg:npm/${Str.replace("@", "%40")(release.name)}@${release.version}`
   const digests = Arr.map(
     Arr.filter(statement.value.subject, (entry) => entry.name === subject),

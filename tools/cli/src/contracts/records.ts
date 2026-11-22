@@ -1,4 +1,6 @@
-import { Array as Arr, Option, Result } from "effect"
+import * as Arr from "effect/Array"
+import * as Option from "effect/Option"
+import * as Result from "effect/Result"
 
 import { getAddress, type Hex, isAddressEqual, keccak256, slice } from "viem"
 

@@ -1,8 +1,13 @@
 #!/usr/bin/env node
-import { NodeRuntime, NodeServices } from "@effect/platform-node"
-import { Array as Arr, Console, Effect, Layer, String as Str } from "effect"
-import { Command } from "effect/cli"
-import { FetchHttpClient } from "effect/http"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as NodeServices from "@effect/platform-node/NodeServices"
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as FetchHttpClient from "effect/http/FetchHttpClient"
+import * as Layer from "effect/Layer"
+import * as Str from "effect/String"
 
 import { cli } from "./cli.ts"
 import * as Environment from "./contracts/environment.ts"
@@ -13,7 +18,7 @@ const services = Layer.mergeAll(Tools.layer, Environment.layer).pipe(
   Layer.provideMerge(FetchHttpClient.layer)
 )
 
-const report = (lines: readonly string[]) =>
+const report = (lines: ReadonlyArray<string>) =>
   Console.error(Arr.join(lines, "\n")).pipe(
     Effect.andThen(Effect.sync(() => (process.exitCode = 1)))
   )

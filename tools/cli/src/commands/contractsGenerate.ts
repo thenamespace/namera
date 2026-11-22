@@ -1,5 +1,12 @@
-import { Array as Arr, Console, Effect, FileSystem, Option, Path, String as Str } from "effect"
-import { Command, Flag } from "effect/cli"
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Option from "effect/Option"
+import * as Path from "effect/Path"
+import * as Str from "effect/String"
 
 import { isAddressEqual } from "viem"
 

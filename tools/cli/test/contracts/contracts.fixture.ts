@@ -2,7 +2,7 @@ import { String as Str } from "effect"
 
 import { getContractAddress, type Hex, keccak256, stringToHex } from "viem"
 
-import { type BuiltContract, factory } from "./workspace.ts"
+import { type BuiltContract, factory } from "@namera-ai/tools/contracts/workspace"
 
 export const initcode: Hex = "0x6080604052348015600e575f5ffd5b50"
 

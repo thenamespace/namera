@@ -3,8 +3,8 @@ import { Option, Result, String as Str } from "effect"
 
 import { concat, keccak256 } from "viem"
 
+import { broadcastCreations, deploymentRecord } from "@namera-ai/tools/contracts/records"
 import { contract, initcode, runtimeCode, transaction } from "./contracts.fixture.ts"
-import { broadcastCreations, deploymentRecord } from "./records.ts"
 
 const salt = contract.salt
 

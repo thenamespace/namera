@@ -1,5 +1,8 @@
-import { Effect, Schema } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
+import * as Effect from "effect/Effect"
+import * as HttpClient from "effect/http/HttpClient"
+import * as HttpClientRequest from "effect/http/HttpClientRequest"
+import * as HttpClientResponse from "effect/http/HttpClientResponse"
+import * as Schema from "effect/Schema"
 
 import { RpcFailed } from "../errors.ts"
 import { Hex, TransactionReceipt } from "./schema.ts"

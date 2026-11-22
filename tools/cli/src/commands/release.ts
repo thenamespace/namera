@@ -1,4 +1,4 @@
-import { Command } from "effect/cli"
+import * as Command from "effect/cli/Command"
 
 import { releaseCheckCommand } from "./releaseCheck.ts"
 import { releaseSmokeCommand } from "./releaseSmoke.ts"

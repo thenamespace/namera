@@ -20,38 +20,40 @@
     "directory": "packages/contracts"
   },
   "files": [
-    "CHANGELOG.md",
-    "dist",
-    "src"
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "CHANGELOG.md"
   ],
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": {
-      "workspace-source": "./src/index.ts",
-      "default": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null
   },
   "publishConfig": {
-    "exports": {
-      ".": "./dist/index.js",
-      "./package.json": "./package.json"
-    },
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./internal/*": null
+    }
   },
   "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "lint": "oxlint -c ../../.config/oxlint.config.ts --deny-warnings .",
-    "pack:check": "publint && attw --pack . --profile esm-only",
-    "typecheck": "tsc --noEmit"
+    "build": "rm -rf dist && tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "typecheck": "tsc -b tsconfig.json",
+    "pack:check": "publint && attw --pack . --profile esm-only"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "effect": "catalog:",
-    "tsdown": "catalog:",
     "viem": "catalog:"
   },
   "engines": {

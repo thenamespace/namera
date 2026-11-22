@@ -1,8 +1,8 @@
 import { assert, describe, it } from "@effect/vitest"
 import { String as Str } from "effect"
 
+import { packageSources } from "@namera-ai/tools/contracts/render"
 import { contract, transaction } from "./contracts.fixture.ts"
-import { packageSources } from "./render.ts"
 
 describe("packageSources", () => {
   it("renders the Contract types, one module per contract and an index", () => {

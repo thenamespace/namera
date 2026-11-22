@@ -1,4 +1,11 @@
-import { Array as Arr, Effect, FileSystem, Option, Order, Path, Schema, String as Str } from "effect"
+import * as Arr from "effect/Array"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Option from "effect/Option"
+import * as Order from "effect/Order"
+import * as Path from "effect/Path"
+import * as Schema from "effect/Schema"
+import * as Str from "effect/String"
 
 import { getAddress, getContractAddress, type Hex, keccak256, stringToHex } from "viem"
 

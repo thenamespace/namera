@@ -17,7 +17,7 @@ const config = defineConfig({
       },
       {
         extends: true,
-        test: { name: "tools", root: "tools/cli", include: ["src/**/*.test.ts"] }
+        test: { name: "tools", root: "tools/cli", include: ["test/**/*.test.ts"] }
       }
     ]
   }

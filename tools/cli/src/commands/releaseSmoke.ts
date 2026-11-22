@@ -1,9 +1,19 @@
 // oxlint-disable-next-line effecttsgo/node-builtin-import -- synchronous digest of in-memory data; Effect has no hashing API
 import { createHash } from "node:crypto"
 
-import { Array as Arr, Console, Effect, FileSystem, Option, Path, Schedule, Schema, String as Str } from "effect"
-import { Command, Flag } from "effect/cli"
-import { HttpClient, HttpClientResponse } from "effect/http"
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as HttpClient from "effect/http/HttpClient"
+import * as HttpClientResponse from "effect/http/HttpClientResponse"
+import * as Option from "effect/Option"
+import * as Path from "effect/Path"
+import * as Schedule from "effect/Schedule"
+import * as Schema from "effect/Schema"
+import * as Str from "effect/String"
 
 import { CheckFailed, SetupError, ToolFailed } from "../errors.ts"
 import { integrityOf, planProblems, readPackDir } from "../release/packDir.ts"

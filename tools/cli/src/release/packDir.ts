@@ -1,7 +1,12 @@
 // oxlint-disable-next-line effecttsgo/node-builtin-import -- synchronous digest of in-memory data; Effect has no hashing API
 import { createHash } from "node:crypto"
 
-import { Array as Arr, Effect, FileSystem, Order, Path, Schema } from "effect"
+import * as Arr from "effect/Array"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Order from "effect/Order"
+import * as Path from "effect/Path"
+import * as Schema from "effect/Schema"
 
 import { SetupError } from "../errors.ts"
 
@@ -36,8 +41,8 @@ export const integrityOf = (algorithm: "sha256" | "sha512", bytes: Uint8Array) =
 
 /** The plan's publish releases; a publish release without a tarball is a problem. */
 export const packedReleases = (plan: typeof PublishPlan.Type) => {
-  const releases: PackedRelease[] = []
-  const problems: string[] = []
+  const releases: Array<PackedRelease> = []
+  const problems: Array<string> = []
   for (const release of plan.plan.flat()) {
     if (release.kind !== "publish") continue
     if (release.tarball === undefined) {
@@ -60,11 +65,11 @@ export const packedReleases = (plan: typeof PublishPlan.Type) => {
  * is, and each tarball matches the plan.
  */
 export const planProblems = (
-  releases: readonly PackedRelease[],
-  publishable: readonly string[],
+  releases: ReadonlyArray<PackedRelease>,
+  publishable: ReadonlyArray<string>,
   integrities: ReadonlyMap<string, string | undefined>
 ) => {
-  const problems: string[] = []
+  const problems: Array<string> = []
   for (const name of publishable) {
     const count = Arr.filter(releases, (release) => release.name === name).length
     if (count === 0) problems.push(`${name}: not in the publish plan`)

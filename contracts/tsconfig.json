@@ -1,7 +1,18 @@
 {
-  "extends": "klarity/tsconfig/app/node",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
+  "include": [
+    "script/**/*.ts"
+  ],
   "compilerOptions": {
-    "erasableSyntaxOnly": true
-  },
-  "include": ["script/**/*.ts"]
+    "rootDir": ".",
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
+    "types": [
+      "node"
+    ],
+    "declarationMap": false,
+    "sourceMap": false
+  }
 }

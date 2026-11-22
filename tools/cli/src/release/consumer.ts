@@ -1,4 +1,7 @@
-import { Array as Arr, Formatter, Record as Rec, String as Str } from "effect"
+import * as Arr from "effect/Array"
+import * as Formatter from "effect/Formatter"
+import * as Rec from "effect/Record"
+import * as Str from "effect/String"
 
 import type { PackedRelease } from "./packDir.ts"
 
@@ -10,7 +13,7 @@ import type { PackedRelease } from "./packDir.ts"
  * YAML with JSON scalars: pnpm edits it in place during install, which flow-style YAML prevents.
  */
 export const consumerManifests = (
-  releases: readonly PackedRelease[],
+  releases: ReadonlyArray<PackedRelease>,
   tarballOf: (release: PackedRelease) => string,
   peers: Readonly<Record<string, string>>
 ) => {
@@ -55,7 +58,7 @@ export const publicEntries = (name: string, exports: Readonly<Record<string, unk
  * A module importing every entry: run by Node as `.mjs`. An entry that exports nothing fails the
  * run.
  */
-export const entriesModule = (specifiers: readonly string[]) =>
+export const entriesModule = (specifiers: ReadonlyArray<string>) =>
   Arr.join(
     [
       ...Arr.map(

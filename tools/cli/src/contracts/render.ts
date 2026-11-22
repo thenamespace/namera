@@ -1,4 +1,8 @@
-import { Array as Arr, Formatter, Predicate, Record as Rec, String as Str } from "effect"
+import * as Arr from "effect/Array"
+import * as Formatter from "effect/Formatter"
+import * as Predicate from "effect/Predicate"
+import * as Rec from "effect/Record"
+import * as Str from "effect/String"
 
 import type { ChainDeployments, DeploymentRecord } from "./schema.ts"
 import { type BuiltContract, factory } from "./workspace.ts"

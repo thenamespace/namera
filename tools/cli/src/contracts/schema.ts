@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 /** `0x`-prefixed hex data of any length. */
 export const Hex = Schema.TemplateLiteral(["0x", Schema.String]).check(

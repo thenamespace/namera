@@ -9,7 +9,7 @@ pre-commit:
       stage_fixed: true
     - name: lint
       glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
-      run: pnpm exec oxlint -c .config/oxlint.config.ts --deny-warnings {staged_files}
+      run: pnpm exec oxlint --deny-warnings {staged_files}
     - name: solidity
       root: contracts/
       glob: "*.sol"

@@ -1,5 +1,5 @@
 {
-  "oxc.configPath": ".config/oxlint.config.ts",
+  "oxc.configPath": ".oxlintrc.json",
   "editor.defaultFormatter": "dprint.dprint",
   "editor.formatOnSave": true,
   "vitest.rootConfig": ".config/vitest.config.ts",

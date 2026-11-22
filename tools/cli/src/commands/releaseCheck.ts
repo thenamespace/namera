@@ -1,17 +1,16 @@
-import {
-  Array as Arr,
-  Console,
-  DateTime,
-  Effect,
-  FileSystem,
-  Formatter,
-  Order,
-  Path,
-  Record as Rec,
-  Schema,
-  String as Str
-} from "effect"
-import { Command, Flag } from "effect/cli"
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
+import * as Console from "effect/Console"
+import * as DateTime from "effect/DateTime"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Formatter from "effect/Formatter"
+import * as Order from "effect/Order"
+import * as Path from "effect/Path"
+import * as Rec from "effect/Record"
+import * as Schema from "effect/Schema"
+import * as Str from "effect/String"
 
 import { CheckFailed, SetupError, type ToolFailed } from "../errors.ts"
 import { consumerManifests, entriesModule, publicEntries } from "../release/consumer.ts"
@@ -35,7 +34,7 @@ const readManifest = Effect.fn("releaseCheck.readManifest")(function*(file: stri
   )
 })
 
-const fail = (problems: readonly string[]) =>
+const fail = (problems: ReadonlyArray<string>) =>
   problems.length === 0
     ? Effect.void
     : Effect.fail(CheckFailed.make({ check: "release-check", problems }))
@@ -76,10 +75,10 @@ export const releaseCheck = Effect.fn("releaseCheck")(
     const { releases, problems: readProblems, integrities } = yield* readPackDir(packDir)
     const packages = yield* publishablePackages(path.resolve("."))
 
-    const checks: Array<{ readonly name: string; readonly problems: readonly string[] }> = []
+    const checks: Array<{ readonly name: string; readonly problems: ReadonlyArray<string> }> = []
     const step = <R>(name: string, check: Effect.Effect<unknown, CheckFailed | ToolFailed, R>) =>
       check.pipe(
-        Effect.as<readonly string[]>([]),
+        Effect.as<ReadonlyArray<string>>([]),
         Effect.catchTags({
           CheckFailed: (failed) => Effect.succeed(failed.problems),
           ToolFailed: (failed) => Effect.succeed([`${failed.tool}:`, Str.trim(failed.output)])
@@ -134,7 +133,7 @@ export const releaseCheck = Effect.fn("releaseCheck")(
       )
 
       if (installed) {
-        const specifiers: string[] = []
+        const specifiers: Array<string> = []
         for (const release of releases) {
           const manifest = yield* readManifest(
             path.join(consumer, "node_modules", release.name, "package.json")

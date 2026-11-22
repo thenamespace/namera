@@ -1,34 +1,12 @@
 {
-  "extends": "klarity/tsconfig/library/node",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src"
+  ],
   "compilerOptions": {
-    "rootDir": ".",
-    "erasableSyntaxOnly": true,
-    "noErrorTruncation": true,
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "diagnosticSeverity": {
-          "experimentalApiUsage": "off",
-          "unstableApiUsage": "off"
-        },
-        "keyPatterns": [
-          {
-            "target": "service",
-            "pattern": "package-identifier"
-          }
-        ],
-        "allowedUnstableApis": [
-          "@effect/platform-node",
-          "@effect/vitest",
-          "effect/ConfigProvider",
-          "effect/FileSystem",
-          "effect/Path",
-          "effect/cli",
-          "effect/http",
-          "effect/process"
-        ]
-      }
+    "types": [
+      "node"
     ]
-  },
-  "include": ["src/**/*.ts"]
+  }
 }

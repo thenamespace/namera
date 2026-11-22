@@ -1,0 +1,92 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": [
+    "./tools/oxc/oxlintrc.json"
+  ],
+  "ignorePatterns": [
+    "**/dist",
+    "**/coverage",
+    "**/*.tsbuildinfo",
+    "**/CHANGELOG.md",
+    "contracts/dependencies/**",
+    "contracts/out/**",
+    "contracts/cache/**",
+    "contracts/broadcast/**",
+    "research/**",
+    "**/.*",
+    "!.changeset",
+    "!.changeset/**/*",
+    "!.config",
+    "!.config/**/*",
+    "!.github",
+    "!.github/**/*",
+    "!.vscode",
+    "!.vscode/**/*"
+  ],
+  "jsPlugins": [
+    "@namera-ai/oxc/oxlint",
+    {
+      "name": "landmines-testing",
+      "specifier": "@interfere/landmines/testing"
+    },
+    {
+      "name": "landmines-structure",
+      "specifier": "@interfere/landmines/structure"
+    }
+  ],
+  "rules": {
+    "landmines-testing/no-fixed-sleep": "error",
+    "landmines-testing/no-flake-masking": "error",
+    "landmines-testing/no-test-doubles": "error",
+    "landmines-testing/no-unsignaled-poll": "error",
+    "landmines-testing/strict-msw": "error",
+    "landmines-structure/test-file-names": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/{test,typetest,examples,benchmark,typeperf,scripts,script}/**",
+        "**/vitest.*.ts",
+        ".config/**"
+      ],
+      "rules": {
+        "eslint/no-console": "off",
+        "effect/no-import-from-barrel-package": "off"
+      }
+    },
+    {
+      "files": [
+        "tools/cli/**"
+      ],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "**/test/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "vitest",
+                "message": "Import from @effect/vitest instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "contracts/script/**"
+      ],
+      "rules": {
+        "landmines-structure/test-file-names": "off"
+      }
+    }
+  ]
+}

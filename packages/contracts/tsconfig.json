@@ -1,27 +1,5 @@
 {
-  "extends": "klarity/tsconfig/library",
-  "compilerOptions": {
-    "customConditions": ["workspace-source"],
-    "rootDir": ".",
-    "erasableSyntaxOnly": true,
-    "noErrorTruncation": true,
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "diagnosticSeverity": {
-          "experimentalApiUsage": "off",
-          "unstableApiUsage": "off"
-        },
-        "keyPatterns": [
-          {
-            "target": "service",
-            "pattern": "package-identifier"
-          }
-        ],
-        "allowedExperimentalApis": ["@namera-ai/contracts"],
-        "allowedUnstableApis": ["@effect/vitest"]
-      }
-    ]
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"]
 }

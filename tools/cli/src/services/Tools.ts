@@ -1,5 +1,10 @@
-import { Array as Arr, Context, Effect, Layer, Stream } from "effect"
-import { ChildProcess, ChildProcessSpawner } from "effect/process"
+import * as Arr from "effect/Array"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ChildProcess from "effect/process/ChildProcess"
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner"
+import * as Stream from "effect/Stream"
 
 import { ToolFailed } from "../errors.ts"
 
@@ -10,7 +15,7 @@ export class Tools extends Context.Service<
     /** Runs `command`, failing with its output when it exits non-zero. */
     readonly run: (
       command: string,
-      args: readonly string[],
+      args: ReadonlyArray<string>,
       options?: { readonly cwd?: string; readonly inherit?: boolean }
     ) => Effect.Effect<string, ToolFailed>
   }
@@ -22,7 +27,7 @@ export class Tools extends Context.Service<
 
       const run = Effect.fn("Tools.run")(function*(
         command: string,
-        args: readonly string[],
+        args: ReadonlyArray<string>,
         options: { readonly cwd?: string; readonly inherit?: boolean } = {}
       ) {
         const tool = Arr.join([command, ...args.slice(0, 2)], " ")

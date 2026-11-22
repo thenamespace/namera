@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 /** A check found problems; each is one line for the report. */
 export class CheckFailed extends Schema.TaggedError<

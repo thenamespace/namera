@@ -5,9 +5,9 @@
 //
 // Reads RPC_BASE_SEPOLIA, falling back to the public Base Sepolia RPC. Every contract below is deployed at the
 // same address on all launch chains (checked by the chain scan), so Base Sepolia is representative.
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 
-const RPC = process.env.RPC_BASE_SEPOLIA ?? "https://sepolia.base.org";
+const RPC = process.env.RPC_BASE_SEPOLIA ?? "https://sepolia.base.org"
 
 const CONTRACTS: Record<string, string> = {
   "kernel-3.3-factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
@@ -23,8 +23,8 @@ const CONTRACTS: Record<string, string> = {
   "safe7579-v2-launchpad": "0x75798463024Bda64D83c94A64Bc7D7eaB41300eF",
   "safe7579-v2-delegatecall-util": "0x3fB7a8Bee59D8C5b2F1Cf6CE93e5E694Cb233B57",
   "ownable-validator": "0x000000000013fdB5234E4E3162a810F54d9f7E98",
-  "erc7484-registry": "0x000000000069E2a187AEFFb852bF3cCdC95151B2",
-};
+  "erc7484-registry": "0x000000000069E2a187AEFFb852bF3cCdC95151B2"
+}
 
 async function getCode(address: string): Promise<string> {
   const response = await fetch(RPC, {
@@ -34,27 +34,28 @@ async function getCode(address: string): Promise<string> {
       jsonrpc: "2.0",
       id: 1,
       method: "eth_getCode",
-      params: [address, "latest"],
-    }),
-  });
-  const { result, error } = (await response.json()) as { result?: string; error?: unknown };
-  if (!result || result === "0x")
-    throw new Error(`no code at ${address}: ${JSON.stringify(error)}`);
-  return result;
+      params: [address, "latest"]
+    })
+  })
+  const { result, error } = (await response.json()) as { result?: string; error?: unknown }
+  if (!result || result === "0x") {
+    throw new Error(`no code at ${address}: ${JSON.stringify(error)}`)
+  }
+  return result
 }
 
-const DIR = "test/fixtures/accounts";
+const DIR = "test/fixtures/accounts"
 
 const contracts = await Promise.all(
   Object.entries(CONTRACTS).map(async ([name, address]) => ({
     name,
     address,
-    code: await getCode(address),
-  })),
-);
-rmSync(DIR, { recursive: true, force: true });
-mkdirSync(DIR, { recursive: true });
+    code: await getCode(address)
+  }))
+)
+rmSync(DIR, { recursive: true, force: true })
+mkdirSync(DIR, { recursive: true })
 for (const { name, address, code } of contracts) {
-  writeFileSync(`${DIR}/${name}@${address}.hex`, `${code}\n`);
+  writeFileSync(`${DIR}/${name}@${address}.hex`, `${code}\n`)
 }
-console.log(`wrote ${contracts.length} contracts to ${DIR}`);
+console.log(`wrote ${contracts.length} contracts to ${DIR}`)
