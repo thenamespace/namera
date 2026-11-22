@@ -20,6 +20,39 @@ pnpm add @namera-ai/sdk viem effect
 
 Every module is also importable on its own (`@namera-ai/sdk/Session`).
 
+## Accounts
+
+Kernel 3.3, Nexus 1.3.3 and Safe 1.4.1 with Safe7579 v2 are viem `SmartAccount`s, so viem's bundler client, paymasters
+and wagmi use them unchanged. New accounts install Smart Sessions in their deploying operation unless `sessions: false`.
+
+```ts
+import { Account, KernelAccount } from "@namera-ai/sdk"
+import { createPublicClient, http, zeroAddress } from "viem"
+import { createBundlerClient } from "viem/account-abstraction"
+import { privateKeyToAccount } from "viem/accounts"
+import { base } from "viem/chains"
+
+const client = createPublicClient({ chain: base, transport: http() })
+const owner = privateKeyToAccount(process.env.OWNER_KEY as `0x${string}`)
+const account = await KernelAccount.from({ client, owner })
+
+const bundler = createBundlerClient({ account, client, transport: http(process.env.BUNDLER_URL) })
+await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
+
+await Account.detect(client, { address: account.address }) // { type: "kernel", version: "3.3", sessionsInstalled: true, … }
+```
+
+`KernelAccount.fromEip7702` and `NexusAccount.fromEip7702` use the owner's own address. As with any viem EIP-7702
+account, the first user operation carries the owner's signed authorization:
+
+```ts
+import { signAuthorization } from "viem/actions"
+
+const account = await KernelAccount.fromEip7702({ client, owner })
+const authorization = await signAuthorization(client, account.authorization!)
+await bundler.sendUserOperation({ calls, authorization })
+```
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or

@@ -13,6 +13,7 @@
  */
 import * as Predicate from "effect/Predicate"
 
+import type { AccountError } from "./accounts/AccountError.ts"
 import type { ChainError } from "./ChainError.ts"
 
 /**
@@ -41,7 +42,7 @@ export const TypeId = "~@namera-ai/sdk/NameraError" as const
  * @category models
  * @since 2.0.0
  */
-export type NameraError = ChainError
+export type NameraError = AccountError | ChainError
 
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors

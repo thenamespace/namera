@@ -182,6 +182,7 @@ export {};
 ## NameraError.d.ts
 
 ```ts
+import type { AccountError } from "./accounts/AccountError.ts";
 import type { ChainError } from "./ChainError.ts";
 /**
  * Marks every Namera error, whichever copy of the package created it.
@@ -208,7 +209,7 @@ export declare const TypeId: "~@namera-ai/sdk/NameraError";
  * @category models
  * @since 2.0.0
  */
-export type NameraError = ChainError;
+export type NameraError = AccountError | ChainError;
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
  * the same way.
@@ -314,6 +315,884 @@ export declare namespace now {
 }
 ```
 
+## accounts/Account.d.ts
+
+```ts
+/**
+ * Every supported smart account at once: detect which account an address holds, connect to it, and install Smart
+ * Sessions on it.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type { Chain, Client, Hex, TransactionReceipt, Transport } from "viem";
+import type { SmartAccount } from "viem/account-abstraction";
+import type * as ChainError from "../ChainError.ts";
+import type { Call } from "../internal/core/account/erc7579.ts";
+import { type RunOptions } from "../internal/promise.ts";
+import type * as AccountError from "./AccountError.ts";
+import * as internal from "./internal/account.ts";
+import type { AccountClient, Metadata as Metadata_, NameraSmartAccount, Owner as Owner_ } from "./internal/smartAccount.ts";
+/**
+ * What Namera records about an account it built, readable as `account.namera`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Metadata<Type extends "kernel" | "nexus" | "safe7579" = "kernel" | "nexus" | "safe7579"> = Metadata_<Type>;
+/**
+ * A viem `SmartAccount` Namera built, with its `namera` metadata. It works with viem's bundler client unchanged.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Account<Type extends Metadata["type"] = Metadata["type"]> = NameraSmartAccount<Type>;
+/**
+ * An owner of an account: a local key (`privateKeyToAccount`) or a JSON-RPC wallet account (EIP-1193), which signs
+ * through the client.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Owner = Owner_;
+/**
+ * A call an account makes, as viem's bundler client takes them.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type AccountCall = Call;
+/**
+ * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ *
+ * **Details**
+ *
+ * Recognises Kernel and Nexus by their ERC-1967 implementation (or EIP-7702 delegation), and Safe7579 by its Safe
+ * singleton and the adapter's `accountId`. Accounts other SDKs created are recognised when their implementation is
+ * supported.
+ *
+ * **Example** (Detecting an account)
+ *
+ * ```ts
+ * import { Account } from "@namera-ai/sdk"
+ * import { createPublicClient, http } from "viem"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const detected = await Account.detect(client, { address: "0x0000000000000000000000000000000000000001" })
+ * if (detected.type === "kernel") console.log(detected.version, detected.sessionsInstalled)
+ * ```
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function detect(client: Client<Transport, Chain | undefined>, options: detect.Options): Promise<detect.ReturnType>;
+/**
+ * Types of `Account.detect`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace detect {
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly address: Hex;
+    }
+    /**
+     * A supported account with its version, an unsupported one with the implementation found, or no code at all.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = internal.Detected;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = ChainError.ChainError;
+}
+/**
+ * Connects to an existing account, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ *
+ * **When to use**
+ *
+ * Use with accounts created elsewhere (ZeroDev, Biconomy or Safe tooling) when their implementation is supported.
+ *
+ * **Gotchas**
+ *
+ * Fails with `AccountError` (`NotSupported`) for an unsupported or undeployed account. An EIP-7702 account needs its
+ * own local key as the owner.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Promise<from.ReturnType>;
+/**
+ * Types of `Account.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly client: AccountClient;
+        readonly address: Hex;
+        readonly owner?: Owner | undefined;
+        readonly owners?: ReadonlyArray<Owner> | undefined;
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = Account;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+/**
+ * Returns the calls that install Smart Sessions on an account, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const installSessionsCalls: (account: Account) => ReadonlyArray<AccountCall>;
+/**
+ * Sends a user operation that installs Smart Sessions on the bundler client's account, and returns its hash.
+ *
+ * **Example** (Installing Smart Sessions on an existing account)
+ *
+ * ```ts
+ * import { Account, KernelAccount } from "@namera-ai/sdk"
+ * import { createPublicClient, http } from "viem"
+ * import { createBundlerClient } from "viem/account-abstraction"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owner = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123")
+ * const account = await KernelAccount.from({ client, owner, sessions: false })
+ * const bundler = createBundlerClient({ account, client, transport: http("https://bundler.example") })
+ *
+ * const hash = await Account.installSessions(bundler)
+ * ```
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function installSessions(client: Client<Transport, Chain | undefined, SmartAccount | undefined>, options?: RunOptions): Promise<Hex>;
+/**
+ * Types of `Account.installSessions`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace installSessions {
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+/**
+ * Installs Smart Sessions on the bundler client's account and waits for the user operation, returning its
+ * transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function installSessionsSync(client: Client<Transport, Chain | undefined, SmartAccount | undefined>, options?: RunOptions): Promise<TransactionReceipt>;
+/**
+ * Types of `Account.installSessionsSync`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace installSessionsSync {
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+/**
+ * Checks whether Smart Sessions is installed on the account at an address. An undeployed account has none.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function isSessionsInstalled(client: Client<Transport, Chain | undefined>, options: isSessionsInstalled.Options): Promise<boolean>;
+/**
+ * Types of `Account.isSessionsInstalled`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace isSessionsInstalled {
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly address: Hex;
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = ChainError.ChainError;
+}
+```
+
+## accounts/AccountError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import * as NameraError from "../NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/accounts/AccountError";
+declare const Address: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+declare const NotSupported_base: Schema.Class<NotSupported, Schema.TaggedStruct<"NotSupported", {
+    readonly implementation: Schema.optionalKey<Schema.TemplateLiteral<readonly ["0x", Schema.String]>>;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The account is not a supported implementation or version. `implementation` is the implementation found on chain,
+ * when there is one.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class NotSupported extends NotSupported_base {
+    get message(): string;
+}
+declare const SessionsNotInstalled_base: Schema.Class<SessionsNotInstalled, Schema.TaggedStruct<"SessionsNotInstalled", {
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The account does not have Smart Sessions installed as a validator.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionsNotInstalled extends SessionsNotInstalled_base {
+    get message(): string;
+}
+declare const SigningFailed_base: Schema.Class<SigningFailed, Schema.TaggedStruct<"SigningFailed", {
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The owner rejected or failed to produce a signature.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SigningFailed extends SigningFailed_base {
+    get message(): string;
+}
+declare const InvalidOptions_base: Schema.Class<InvalidOptions, Schema.TaggedStruct<"InvalidOptions", {
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The options cannot describe a valid account, such as a threshold above the number of owners or a client without
+ * a chain.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidOptions extends InvalidOptions_base {
+    get message(): string;
+}
+declare const ChainMismatch_base: Schema.Class<ChainMismatch, Schema.TaggedStruct<"ChainMismatch", {
+    readonly expected: Schema.Int;
+    readonly actual: Schema.Int;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The account was used on a chain other than the one it was built for.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class ChainMismatch extends ChainMismatch_base {
+    get message(): string;
+}
+/**
+ * Schema for the reason of an `AccountError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const AccountErrorReason: Schema.Union<[
+    typeof NotSupported,
+    typeof SessionsNotInstalled,
+    typeof SigningFailed,
+    typeof InvalidOptions,
+    typeof ChainMismatch
+]>;
+/**
+ * The specific failure behind an `AccountError`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type AccountErrorReason = typeof AccountErrorReason.Type;
+/**
+ * Schema for the account an `AccountError` is about: its type (`kernel`, `nexus`, `safe7579`, or `unknown` before
+ * detection) and address.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const AccountRef: Schema.Struct<{
+    readonly type: Schema.Literals<readonly ["kernel", "nexus", "safe7579", "unknown"]>;
+    readonly address: Schema.optionalKey<typeof Address>;
+}>;
+declare const AccountError_base: Schema.Class<AccountError, Schema.TaggedStruct<"AccountError", {
+    readonly account: Schema.Struct<{
+        readonly type: Schema.Literals<readonly ["kernel", "nexus", "safe7579", "unknown"]>;
+        readonly address: Schema.optionalKey<typeof Address>;
+    }>;
+    readonly reason: Schema.Union<[typeof NotSupported, typeof SessionsNotInstalled, typeof SigningFailed, typeof InvalidOptions, typeof ChainMismatch]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A failure building or using a smart account. `account` says which account, `reason` what failed.
+ *
+ * **Example** (Narrowing on the reason)
+ *
+ * ```ts import.meta.vitest
+ * import { AccountError } from "@namera-ai/sdk"
+ *
+ * const error = AccountError.invalidOptions({ account: { type: "safe7579" }, detail: "threshold 2 with 1 owner" })
+ *
+ * error.reason._tag // => "InvalidOptions"
+ * error.shortMessage // => "The account options are invalid: threshold 2 with 1 owner"
+ * error.metaMessages // => ["Account: safe7579"]
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class AccountError extends AccountError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/accounts/AccountError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    readonly cause: ChainMismatch | InvalidOptions | NotSupported | SessionsNotInstalled | SigningFailed;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string> | undefined;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is an `AccountError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isAccountError: (u: unknown) => u is AccountError;
+/**
+ * The options every `AccountError` constructor accepts: the account, a detail for the message, and the underlying
+ * failure.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export interface Options {
+    readonly account: typeof AccountRef.Type;
+    readonly detail?: string | undefined;
+    readonly cause?: unknown;
+}
+/**
+ * Creates an `AccountError` for an unsupported account. `implementation` is the implementation found on chain.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const notSupported: (options: Options & {
+    readonly implementation?: `0x${string}` | undefined;
+}) => AccountError;
+/**
+ * Creates an `AccountError` for an account without Smart Sessions.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const sessionsNotInstalled: (options: Options) => AccountError;
+/**
+ * Creates an `AccountError` for an owner that could not sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const signingFailed: (options: Options) => AccountError;
+/**
+ * Creates an `AccountError` for options that cannot describe a valid account.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const invalidOptions: (options: Options) => AccountError;
+/**
+ * Creates an `AccountError` for an account used on the wrong chain.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const chainMismatch: (options: Options & {
+    readonly expected: number;
+    readonly actual: number;
+}) => AccountError;
+export {};
+```
+
+## accounts/KernelAccount.d.ts
+
+```ts
+/**
+ * ZeroDev's Kernel 3.3 as a viem smart account, owned by one key with the ECDSA validator as root, and as an
+ * EIP-7702 delegation of the owner's own address.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as ChainError from "../ChainError.ts";
+import { type RunOptions } from "../internal/promise.ts";
+import type * as Account from "./Account.ts";
+import type * as AccountError from "./AccountError.ts";
+import * as internal from "./internal/kernel.ts";
+/**
+ * A Kernel account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type KernelAccount = Account.Account<"kernel">;
+/**
+ * Builds a Kernel account for an owner, at its counterfactual address unless `address` is given.
+ *
+ * **Details**
+ *
+ * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
+ * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator for
+ * `execute`, so an agent's first operation needs no separate owner transaction.
+ *
+ * **Example** (Sending a user operation from a Kernel account)
+ *
+ * ```ts
+ * import { KernelAccount } from "@namera-ai/sdk"
+ * import { createPublicClient, http, zeroAddress } from "viem"
+ * import { createBundlerClient } from "viem/account-abstraction"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owner = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123")
+ * const account = await KernelAccount.from({ client, owner })
+ *
+ * const bundler = createBundlerClient({ account, client, transport: http("https://bundler.example") })
+ * await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Promise<from.ReturnType>;
+/**
+ * Types of `KernelAccount.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The client (with a chain), the owner, and optionally the `version` (`"3.3"`), `index` (the counterfactual salt,
+     * `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends internal.FromOptions, RunOptions {
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = KernelAccount;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+/**
+ * Builds a Kernel account on the owner's own address through EIP-7702: the first user operation carries the
+ * authorization that delegates the address to Kernel.
+ *
+ * **Details**
+ *
+ * With `sessions` (the default) the first user operation also installs Smart Sessions.
+ *
+ * **Gotchas**
+ *
+ * The owner must be a local key, which signs the authorization. Before the delegation is included, the account
+ * cannot answer ERC-1271 checks.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function fromEip7702(options: fromEip7702.Options): Promise<fromEip7702.ReturnType>;
+/**
+ * Types of `KernelAccount.fromEip7702`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace fromEip7702 {
+    /**
+     * The client (with a chain), the owner's local key, and optionally the `version` and `sessions`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends internal.FromEip7702Options, RunOptions {
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = KernelAccount;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+```
+
+## accounts/NexusAccount.d.ts
+
+```ts
+/**
+ * Biconomy's Nexus 1.3.3 as a viem smart account, owned by one key on its default (K1) validator, and as an
+ * EIP-7702 delegation of the owner's own address.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as ChainError from "../ChainError.ts";
+import { type RunOptions } from "../internal/promise.ts";
+import type * as Account from "./Account.ts";
+import type * as AccountError from "./AccountError.ts";
+import * as internal from "./internal/nexus.ts";
+/**
+ * A Nexus account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type NexusAccount = Account.Account<"nexus">;
+/**
+ * Builds a Nexus account for an owner, at its counterfactual address unless `address` is given.
+ *
+ * **Details**
+ *
+ * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
+ * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator,
+ * so an agent's first operation needs no separate owner transaction.
+ *
+ * **Example** (Sending a user operation from a Nexus account)
+ *
+ * ```ts
+ * import { NexusAccount } from "@namera-ai/sdk"
+ * import { createPublicClient, http, zeroAddress } from "viem"
+ * import { createBundlerClient } from "viem/account-abstraction"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owner = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123")
+ * const account = await NexusAccount.from({ client, owner })
+ *
+ * const bundler = createBundlerClient({ account, client, transport: http("https://bundler.example") })
+ * await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Promise<from.ReturnType>;
+/**
+ * Types of `NexusAccount.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The client (with a chain), the owner, and optionally the `version` (`"1.3.3"`), `index` (the counterfactual salt,
+     * `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends internal.FromOptions, RunOptions {
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = NexusAccount;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+/**
+ * Builds a Nexus account on the owner's own address through EIP-7702: the first user operation carries the
+ * authorization that delegates the address to Nexus.
+ *
+ * **Details**
+ *
+ * With `sessions` (the default) the first user operation also installs Smart Sessions.
+ *
+ * **Gotchas**
+ *
+ * The owner must be a local key, which signs the authorization. Before the delegation is included, the account
+ * cannot answer ERC-1271 checks.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function fromEip7702(options: fromEip7702.Options): Promise<fromEip7702.ReturnType>;
+/**
+ * Types of `NexusAccount.fromEip7702`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace fromEip7702 {
+    /**
+     * The client (with a chain), the owner's local key, and optionally the `version` and `sessions`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends internal.FromEip7702Options, RunOptions {
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = NexusAccount;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+```
+
+## accounts/Safe7579Account.d.ts
+
+```ts
+/**
+ * Safe 1.4.1 with Rhinestone's Safe7579 v2 adapter as a viem smart account: one or more owners on OwnableValidator,
+ * with a signing threshold.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as ChainError from "../ChainError.ts";
+import { type RunOptions } from "../internal/promise.ts";
+import type * as Account from "./Account.ts";
+import type * as AccountError from "./AccountError.ts";
+import * as internal from "./internal/safe7579.ts";
+/**
+ * A Safe7579 account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Safe7579Account = Account.Account<"safe7579">;
+/**
+ * Builds a Safe7579 account for its owners, at its counterfactual address unless `address` is given.
+ *
+ * **Details**
+ *
+ * The Safe proxy factory deploys the account in the first user operation, adding the Safe7579 adapter through its
+ * launchpad with no registry attesters. With `sessions` (the default) that deployment also installs Smart Sessions
+ * as a validator. User operations and ERC-1271 signatures carry `threshold` owner signatures.
+ *
+ * **Gotchas**
+ *
+ * Fails with `AccountError` (`InvalidOptions`) when the owners repeat or `threshold` is not between 1 and the
+ * number of owners. Safe7579 has no EIP-7702 path. Deployment costs about twice a Kernel's.
+ *
+ * **Example** (A two-of-two Safe7579 account)
+ *
+ * ```ts
+ * import { Safe7579Account } from "@namera-ai/sdk"
+ * import { createPublicClient, http } from "viem"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owners = [
+ *   privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123"),
+ *   privateKeyToAccount("0x1123456789012345678901234567890123456789012345678901234567890123")
+ * ]
+ * const account = await Safe7579Account.from({ client, owners, threshold: 2 })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Promise<from.ReturnType>;
+/**
+ * Types of `Safe7579Account.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The client (with a chain), the `owners` and optionally the `threshold` (all owners), `version` (`"2"`), `index`
+     * (the salt nonce, `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends internal.FromOptions, RunOptions {
+    }
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = Safe7579Account;
+    /**
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError;
+}
+```
+
+## accounts/index.d.ts
+
+```ts
+/**
+ * Smart accounts that run Namera sessions: Kernel, Nexus and Safe7579 owner accounts as viem `SmartAccount`s, and
+ * detection of existing accounts.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Account from "./Account.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as AccountError from "./AccountError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KernelAccount from "./KernelAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as NexusAccount from "./NexusAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Safe7579Account from "./Safe7579Account.ts";
+```
+
 ## effect/ChainError.d.ts
 
 ```ts
@@ -372,6 +1251,244 @@ import * as Effect from "effect/Effect";
 export declare const now: () => Effect.Effect<number>;
 ```
 
+## effect/accounts/Account.d.ts
+
+```ts
+/**
+ * The Effect form of `Account`: detect, connect to and install Smart Sessions on any supported account.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as Effect from "effect/Effect";
+import type { Chain, Client, Hex, TransactionReceipt, Transport } from "viem";
+import type { SmartAccount } from "viem/account-abstraction";
+import type * as Account_ from "../../accounts/Account.ts";
+import type * as AccountError from "../../accounts/AccountError.ts";
+import type * as ChainError from "../../ChainError.ts";
+/**
+ * A viem `SmartAccount` Namera built, with its `namera` metadata.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Account<Type extends Account_.Metadata["type"] = Account_.Metadata["type"]> = Account_.Account<Type>;
+/**
+ * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const detect: (client: Client<Transport, Chain | undefined>, options: {
+    readonly address: Hex;
+}) => Effect.Effect<Account_.detect.ReturnType, ChainError.ChainError>;
+/**
+ * Connects to an existing account, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: Omit<Account_.from.Options, "signal">) => Effect.Effect<Account, AccountError.AccountError | ChainError.ChainError>;
+/**
+ * Returns the calls that install Smart Sessions on an account, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const installSessionsCalls: (account: Account) => ReadonlyArray<Account_.AccountCall>;
+/**
+ * Sends a user operation that installs Smart Sessions on the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const installSessions: (client: Client<Transport, Chain | undefined, SmartAccount | undefined>) => Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError>;
+/**
+ * Installs Smart Sessions on the bundler client's account and waits for the user operation, returning its
+ * transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const installSessionsSync: (client: Client<Transport, Chain | undefined, SmartAccount | undefined>) => Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError>;
+/**
+ * Checks whether Smart Sessions is installed on the account at an address. An undeployed account has none.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const isSessionsInstalled: (client: Client<Transport, Chain | undefined>, options: {
+    readonly address: Hex;
+}) => Effect.Effect<boolean, ChainError.ChainError>;
+```
+
+## effect/accounts/AccountError.d.ts
+
+```ts
+/**
+ * Failures building or using a smart account, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../../accounts/AccountError.ts";
+```
+
+## effect/accounts/KernelAccount.d.ts
+
+```ts
+/**
+ * The Effect form of `KernelAccount`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as Effect from "effect/Effect";
+import type * as AccountError from "../../accounts/AccountError.ts";
+import * as internal from "../../accounts/internal/kernel.ts";
+import type * as KernelAccount_ from "../../accounts/KernelAccount.ts";
+import type * as ChainError from "../../ChainError.ts";
+/**
+ * A Kernel account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type KernelAccount = KernelAccount_.KernelAccount;
+/**
+ * Builds a Kernel account for an owner, at its counterfactual address unless `address` is given.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: internal.FromOptions) => Effect.Effect<KernelAccount, AccountError.AccountError | ChainError.ChainError>;
+/**
+ * Builds a Kernel account on the owner's own address through EIP-7702.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const fromEip7702: (options: internal.FromEip7702Options) => Effect.Effect<KernelAccount, AccountError.AccountError | ChainError.ChainError>;
+```
+
+## effect/accounts/NexusAccount.d.ts
+
+```ts
+/**
+ * The Effect form of `NexusAccount`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as Effect from "effect/Effect";
+import type * as AccountError from "../../accounts/AccountError.ts";
+import * as internal from "../../accounts/internal/nexus.ts";
+import type * as NexusAccount_ from "../../accounts/NexusAccount.ts";
+import type * as ChainError from "../../ChainError.ts";
+/**
+ * A Nexus account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type NexusAccount = NexusAccount_.NexusAccount;
+/**
+ * Builds a Nexus account for an owner, at its counterfactual address unless `address` is given.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: internal.FromOptions) => Effect.Effect<NexusAccount, AccountError.AccountError | ChainError.ChainError>;
+/**
+ * Builds a Nexus account on the owner's own address through EIP-7702.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const fromEip7702: (options: internal.FromEip7702Options) => Effect.Effect<NexusAccount, AccountError.AccountError | ChainError.ChainError>;
+```
+
+## effect/accounts/Safe7579Account.d.ts
+
+```ts
+/**
+ * The Effect form of `Safe7579Account`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as Effect from "effect/Effect";
+import type * as AccountError from "../../accounts/AccountError.ts";
+import * as internal from "../../accounts/internal/safe7579.ts";
+import type * as Safe7579Account_ from "../../accounts/Safe7579Account.ts";
+import type * as ChainError from "../../ChainError.ts";
+/**
+ * A Safe7579 account built by Namera.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Safe7579Account = Safe7579Account_.Safe7579Account;
+/**
+ * Builds a Safe7579 account for its owners, at its counterfactual address unless `address` is given.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: internal.FromOptions) => Effect.Effect<Safe7579Account, AccountError.AccountError | ChainError.ChainError>;
+```
+
+## effect/accounts/index.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/accounts`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Account from "./Account.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as AccountError from "./AccountError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KernelAccount from "./KernelAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as NexusAccount from "./NexusAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Safe7579Account from "./Safe7579Account.ts";
+```
+
 ## effect/index.d.ts
 
 ```ts
@@ -396,6 +1513,31 @@ export * as NameraError from "./NameraError.ts";
  * @since 2.0.0
  */
 export * as Session from "./Session.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Account from "./accounts/Account.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as AccountError from "./accounts/AccountError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KernelAccount from "./accounts/KernelAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as NexusAccount from "./accounts/NexusAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Safe7579Account from "./accounts/Safe7579Account.ts";
 ```
 
 ## index.d.ts
@@ -422,6 +1564,31 @@ export * as NameraError from "./NameraError.ts";
  * @since 2.0.0
  */
 export * as Session from "./Session.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Account from "./accounts/Account.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as AccountError from "./accounts/AccountError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KernelAccount from "./accounts/KernelAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as NexusAccount from "./accounts/NexusAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Safe7579Account from "./accounts/Safe7579Account.ts";
 ```
 
 ## testing/TestChain.d.ts
@@ -469,7 +1636,7 @@ export interface TestChain {
     readonly keys: ReadonlyArray<Hex>;
     /** Saves the chain state and returns its id, for one `revert`. */
     readonly snapshot: () => Promise<Hex>;
-    /** Restores the state saved by `snapshot` and clears alto's mempool and caches. */
+    /** Restores the state saved by `snapshot`, and restarts alto so it bundles against the restored chain. */
     readonly revert: (id: Hex) => Promise<void>;
     /** Mines `blocks` blocks (default 1). */
     readonly mine: (blocks?: number) => Promise<void>;

@@ -1,5 +1,7 @@
 {
   "Session.ts": 1024,
   "ChainError.ts": 46080,
-  "index.ts": 122880
+  "index.ts": 122880,
+  "KernelAccount.ts": 46080,
+  "Account.ts": 61440
 }

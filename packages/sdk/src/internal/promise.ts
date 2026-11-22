@@ -8,8 +8,6 @@ import { fromUnknown } from "./chainError.ts"
 
 /**
  * The options every Promise function accepts besides its own.
- *
- * @internal
  */
 export interface RunOptions {
   readonly signal?: AbortSignal | undefined

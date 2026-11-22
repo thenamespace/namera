@@ -35,9 +35,12 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
+    "./accounts": "./src/accounts/index.ts",
     "./effect": "./src/effect/index.ts",
+    "./effect/accounts": "./src/effect/accounts/index.ts",
     "./testing": "./src/testing/index.ts",
     "./*": "./src/*.ts",
+    "./accounts/internal/*": null,
     "./internal/*": null,
     "./testing/internal/*": null,
     "./index": null,
@@ -49,9 +52,12 @@
     "exports": {
       "./package.json": "./package.json",
       ".": "./dist/index.js",
+      "./accounts": "./dist/accounts/index.js",
       "./effect": "./dist/effect/index.js",
+      "./effect/accounts": "./dist/effect/accounts/index.js",
       "./testing": "./dist/testing/index.js",
       "./*": "./dist/*.js",
+      "./accounts/internal/*": null,
       "./internal/*": null,
       "./testing/internal/*": null,
       "./index": null,
@@ -82,11 +88,11 @@
     }
   },
   "dependencies": {
+    "@namera-ai/contracts": "workspace:^",
     "ox": "^1.8.19"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
-    "@namera-ai/contracts": "workspace:^",
     "@pimlico/alto": "0.0.21",
     "@stryker-mutator/core": "10.1.1",
     "@stryker-mutator/vitest-runner": "10.1.1",
@@ -96,7 +102,8 @@
     "permissionless": "0.5.2",
     "prool": "0.3.0",
     "tstyche": "7.2.5",
-    "viem": "catalog:"
+    "viem": "catalog:",
+    "zod": "4.6.6"
   },
   "engines": {
     "node": ">=22"

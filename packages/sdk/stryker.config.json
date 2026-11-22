@@ -22,5 +22,7 @@
     "clear-text",
     "progress"
   ],
-  "tempDirName": "../../node_modules/.cache/stryker-sdk"
+  "tempDirName": "../../node_modules/.cache/stryker-sdk",
+  "concurrency": 4,
+  "timeoutMS": 60000
 }
