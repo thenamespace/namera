@@ -937,10 +937,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0xe98939a39E5faA47861D9Af4f10689c90239d3D0",
+  "address": "0x0e4D5D3db32D13E138056d09D1aaeEBCf7946c0C",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0x3014b3548e21fd7a115ada0eea79ce76ce822d014970a43233400e6df3b2a6f8",
+  "initcodeHash": "0x44cee64cc94ae49c81a13119690e35c0cfc629cbe62a8dca1d2e494ba53554aa",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
   "abi": abiV1,
   "deployments": {}

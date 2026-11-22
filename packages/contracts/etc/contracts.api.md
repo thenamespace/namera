@@ -1016,6 +1016,40 @@ declare const abiV1: readonly [{
     readonly stateMutability: "view";
 }, {
     readonly type: "function";
+    readonly name: "check1271TypedData";
+    readonly inputs: readonly [{
+        readonly name: "id";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "requestSender";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "appDomainSeparator";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "contentsData";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }, {
+        readonly name: "";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
     readonly name: "initializeWithMultiplexer";
     readonly inputs: readonly [{
         readonly name: "account";
@@ -1066,6 +1100,22 @@ declare const abiV1: readonly [{
         readonly internalType: "address";
     }];
     readonly anonymous: false;
+}, {
+    readonly type: "error";
+    readonly name: "InvalidFieldRule";
+    readonly inputs: readonly [{
+        readonly name: "typeIndex";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "ruleIndex";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "NoVerifiers";
+    readonly inputs: readonly [];
 }, {
     readonly type: "error";
     readonly name: "PolicyNotInitialized";
