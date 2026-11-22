@@ -15,17 +15,17 @@ Each contract is a namespace with one export per version. A version has the same
 chain; `deployments` holds its provenance per chain id.
 
 ```ts
-import { SmartSession } from "@namera-ai/contracts";
-import { encodeFunctionData, pad } from "viem";
+import { SmartSession } from "@namera-ai/contracts"
+import { encodeFunctionData, pad } from "viem"
 
 const removeSessionCall = encodeFunctionData({
   abi: SmartSession.v1.abi,
   functionName: "removeSession",
-  args: [pad("0x01", { size: 32 })],
-});
+  args: [pad("0x01", { size: 32 })]
+})
 
-SmartSession.v1.address; // "0xe98939a39E5faA47861D9Af4f10689c90239d3D0"
-SmartSession.v1.deployments[8453]?.blockNumber; // creation block on Base, once deployed there
+SmartSession.v1.address // "0xe98939a39E5faA47861D9Af4f10689c90239d3D0"
+SmartSession.v1.deployments[8453]?.blockNumber // creation block on Base, once deployed there
 ```
 
 `Contract.Version`, `Contract.Deployment` and `Contract.Compiler` type the generated values.

@@ -5,7 +5,7 @@
  * @stability experimental
  * @since 0.1.0
  */
-export type * as Contract from "./Contract.ts";
+export type * as Contract from "./Contract.ts"
 
 /**
  * Namera's `SmartSession` contract: ABI, CREATE2 address and deployment records, one export per
@@ -14,7 +14,7 @@ export type * as Contract from "./Contract.ts";
  * @stability experimental
  * @since 0.1.0
  */
-export * as SmartSession from "./SmartSession.ts";
+export * as SmartSession from "./SmartSession.ts"
 
 /**
  * Namera's `ECDSASessionValidator` contract: ABI, CREATE2 address and deployment records, one
@@ -23,4 +23,4 @@ export * as SmartSession from "./SmartSession.ts";
  * @stability experimental
  * @since 0.1.0
  */
-export * as ECDSASessionValidator from "./ECDSASessionValidator.ts";
+export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"

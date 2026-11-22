@@ -1,11 +1,11 @@
-import { Command } from "effect/cli";
+import { Command } from "effect/cli"
 
-import { chainCommands } from "./contractsChains.ts";
-import { generateCommand } from "./contractsGenerate.ts";
+import { chainCommands } from "./contractsChains.ts"
+import { generateCommand } from "./contractsGenerate.ts"
 
 export const contractsCommand = Command.make("contracts").pipe(
   Command.withDescription(
-    "Deploy Namera's contracts, record their provenance and generate @namera-ai/contracts",
+    "Deploy Namera's contracts, record their provenance and generate @namera-ai/contracts"
   ),
-  Command.withSubcommands([...chainCommands, generateCommand]),
-);
+  Command.withSubcommands([...chainCommands, generateCommand])
+)

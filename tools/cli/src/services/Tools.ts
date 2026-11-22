@@ -1,7 +1,7 @@
-import { Array as Arr, Context, Effect, Layer, Stream } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import { Array as Arr, Context, Effect, Layer, Stream } from "effect"
+import { ChildProcess, ChildProcessSpawner } from "effect/process"
 
-import { ToolFailed } from "../errors.ts";
+import { ToolFailed } from "../errors.ts"
 
 /** Runs the command-line tools the checks need, capturing their output. */
 export class Tools extends Context.Service<
@@ -11,47 +11,46 @@ export class Tools extends Context.Service<
     readonly run: (
       command: string,
       args: readonly string[],
-      options?: { readonly cwd?: string; readonly inherit?: boolean },
-    ) => Effect.Effect<string, ToolFailed>;
+      options?: { readonly cwd?: string; readonly inherit?: boolean }
+    ) => Effect.Effect<string, ToolFailed>
   }
 >()("@namera-ai/tools/Tools") {
   static readonly layer = Layer.effect(
     Tools,
-    Effect.gen(function* () {
-      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    Effect.gen(function*() {
+      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
 
-      const run = Effect.fn("Tools.run")(function* (
+      const run = Effect.fn("Tools.run")(function*(
         command: string,
         args: readonly string[],
-        options: { readonly cwd?: string; readonly inherit?: boolean } = {},
+        options: { readonly cwd?: string; readonly inherit?: boolean } = {}
       ) {
-        const tool = Arr.join([command, ...args.slice(0, 2)], " ");
-        const failed = (output: string) => ToolFailed.make({ tool, output });
+        const tool = Arr.join([command, ...args.slice(0, 2)], " ")
+        const failed = (output: string) => ToolFailed.make({ tool, output })
         const handle = yield* spawner
           .spawn(
             ChildProcess.make(command, [...args], {
               ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
-              ...(options.inherit === true ? { stdout: "inherit", stderr: "inherit" } : {}),
-            }),
+              ...(options.inherit === true ? { stdout: "inherit", stderr: "inherit" } : {})
+            })
           )
-          .pipe(Effect.mapError((cause) => failed(String(cause))));
+          .pipe(Effect.mapError((cause) => failed(String(cause))))
 
-        const output =
-          options.inherit === true
-            ? ""
-            : yield* handle.all.pipe(
-                Stream.decodeText(),
-                Stream.mkString,
-                Effect.mapError((cause) => failed(String(cause))),
-              );
+        const output = options.inherit === true
+          ? ""
+          : yield* handle.all.pipe(
+            Stream.decodeText(),
+            Stream.mkString,
+            Effect.mapError((cause) => failed(String(cause)))
+          )
         const exitCode = yield* handle.exitCode.pipe(
-          Effect.mapError((cause) => failed(String(cause))),
-        );
-        if (exitCode !== ChildProcessSpawner.ExitCode(0)) return yield* failed(output);
-        return output;
-      }, Effect.scoped);
+          Effect.mapError((cause) => failed(String(cause)))
+        )
+        if (exitCode !== ChildProcessSpawner.ExitCode(0)) return yield* failed(output)
+        return output
+      }, Effect.scoped)
 
-      return Tools.of({ run });
-    }),
-  );
+      return Tools.of({ run })
+    })
+  )
 }

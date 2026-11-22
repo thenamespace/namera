@@ -26,11 +26,11 @@ updates:
         - "@effect/*"
         - "oxlint"
         - "oxlint-tsgolint"
-        - "oxfmt"
+        - "dprint"
     groups:
       effect:
         patterns: ["effect", "@effect/*"]
       oxc:
-        patterns: ["oxlint", "oxlint-tsgolint", "oxfmt"]
+        patterns: ["oxlint", "oxlint-tsgolint", "dprint"]
       dependencies:
         patterns: ["*"]

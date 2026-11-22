@@ -7,10 +7,10 @@
  * @since 0.1.0
  */
 export interface Compiler {
-  readonly compiler: string;
-  readonly evmVersion: string;
-  readonly optimizerRuns: number;
-  readonly viaIR: boolean;
+  readonly compiler: string
+  readonly evmVersion: string
+  readonly optimizerRuns: number
+  readonly viaIR: boolean
 }
 
 /**
@@ -27,12 +27,12 @@ export interface Compiler {
  * @since 0.1.0
  */
 export interface Deployment {
-  readonly runtimeCodeHash: `0x${string}`;
-  readonly transactionHash?: `0x${string}`;
-  readonly blockNumber?: bigint;
-  readonly blockHash?: `0x${string}`;
-  readonly deployer?: `0x${string}`;
-  readonly source: Compiler & { readonly commit: string };
+  readonly runtimeCodeHash: `0x${string}`
+  readonly transactionHash?: `0x${string}`
+  readonly blockNumber?: bigint
+  readonly blockHash?: `0x${string}`
+  readonly deployer?: `0x${string}`
+  readonly source: Compiler & { readonly commit: string }
 }
 
 /**
@@ -49,12 +49,12 @@ export interface Deployment {
  * @since 0.1.0
  */
 export interface Version<Abi> {
-  readonly label: string;
-  readonly address: `0x${string}`;
-  readonly factory: `0x${string}`;
-  readonly salt: `0x${string}`;
-  readonly initcodeHash: `0x${string}`;
-  readonly compiler: Compiler;
-  readonly abi: Abi;
-  readonly deployments: Readonly<Partial<Record<number, Deployment>>>;
+  readonly label: string
+  readonly address: `0x${string}`
+  readonly factory: `0x${string}`
+  readonly salt: `0x${string}`
+  readonly initcodeHash: `0x${string}`
+  readonly compiler: Compiler
+  readonly abi: Abi
+  readonly deployments: Readonly<Partial<Record<number, Deployment>>>
 }

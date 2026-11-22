@@ -1,6 +1,6 @@
-import { Array as Arr, Formatter, String as Str, Record as Rec } from "effect";
+import { Array as Arr, Formatter, Record as Rec, String as Str } from "effect"
 
-import type { PackedRelease } from "./packDir.ts";
+import type { PackedRelease } from "./packDir.ts"
 
 /**
  * The manifests of a throwaway app that installs the packed tarballs: each release as a `file:`
@@ -12,44 +12,44 @@ import type { PackedRelease } from "./packDir.ts";
 export const consumerManifests = (
   releases: readonly PackedRelease[],
   tarballOf: (release: PackedRelease) => string,
-  peers: Readonly<Record<string, string>>,
+  peers: Readonly<Record<string, string>>
 ) => {
   const tarballs = Rec.fromEntries(
-    Arr.map(releases, (release) => [release.name, `file:${tarballOf(release)}`]),
-  );
+    Arr.map(releases, (release) => [release.name, `file:${tarballOf(release)}`])
+  )
   const dependencies = Rec.fromEntries(
-    Arr.filter(Rec.toEntries(peers), ([name]) => !(name in tarballs)),
-  );
+    Arr.filter(Rec.toEntries(peers), ([name]) => !(name in tarballs))
+  )
   return {
     packageJson: {
       name: "release-consumer",
       private: true,
       type: "module",
-      dependencies: { ...dependencies, ...tarballs },
+      dependencies: { ...dependencies, ...tarballs }
     },
     workspace: Arr.join(
       [
         "overrides:",
         ...Arr.map(
           Rec.toEntries(tarballs),
-          ([name, tarball]) => `  ${Formatter.formatJson(name)}: ${Formatter.formatJson(tarball)}`,
+          ([name, tarball]) => `  ${Formatter.formatJson(name)}: ${Formatter.formatJson(tarball)}`
         ),
-        "",
+        ""
       ],
-      "\n",
-    ),
-  };
-};
+      "\n"
+    )
+  }
+}
 
 /** Import specifiers of a package's published exports, without `./package.json` and patterns. */
 export const publicEntries = (name: string, exports: Readonly<Record<string, unknown>>) =>
   Arr.map(
     Arr.filter(
       Rec.keys(exports),
-      (subpath) => subpath !== "./package.json" && !Str.includes("*")(subpath),
+      (subpath) => subpath !== "./package.json" && !Str.includes("*")(subpath)
     ),
-    (subpath) => (subpath === "." ? name : `${name}/${Str.slice(2)(subpath)}`),
-  );
+    (subpath) => (subpath === "." ? name : `${name}/${Str.slice(2)(subpath)}`)
+  )
 
 /**
  * A module importing every entry: run by Node as `.mjs`. An entry that exports nothing fails the
@@ -60,16 +60,18 @@ export const entriesModule = (specifiers: readonly string[]) =>
     [
       ...Arr.map(
         specifiers,
-        (specifier, index) => `import * as entry${index} from "${specifier}";`,
+        (specifier, index) => `import * as entry${index} from "${specifier}";`
       ),
       "",
-      `const entries = { ${Arr.join(
-        Arr.map(specifiers, (specifier, index) => `"${specifier}": entry${index}`),
-        ", ",
-      )} };`,
+      `const entries = { ${
+        Arr.join(
+          Arr.map(specifiers, (specifier, index) => `"${specifier}": entry${index}`),
+          ", "
+        )
+      } };`,
       "const empty = Object.entries(entries).filter(([, entry]) => Object.keys(entry).length === 0);",
-      'if (empty.length > 0) throw new Error("no exports: " + empty.map(([name]) => name).join(", "));',
-      "",
+      "if (empty.length > 0) throw new Error(\"no exports: \" + empty.map(([name]) => name).join(\", \"));",
+      ""
     ],
-    "\n",
-  );
+    "\n"
+  )

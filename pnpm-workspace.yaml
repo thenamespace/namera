@@ -24,8 +24,8 @@ catalog:
 # A release must be a day old before it installs, so a compromised version is likely caught first.
 minimumReleaseAge: 1440
 
-# Pinned to their latest release on purpose: Effect and the Oxc tools (with their platform
-# binaries) ship together and are upgraded as soon as they are out.
+# Pinned to their latest release on purpose: Effect, the Oxc tools and dprint (with their
+# platform binaries) ship together and are upgraded as soon as they are out.
 minimumReleaseAgeExclude:
   - effect
   - "@effect/*"
@@ -33,8 +33,8 @@ minimumReleaseAgeExclude:
   - "@oxlint/*"
   - oxlint-tsgolint
   - "@oxlint-tsgolint/*"
-  - oxfmt
-  - "@oxfmt/*"
+  - dprint
+  - "@dprint/*"
 
 allowBuilds:
   lefthook: true
