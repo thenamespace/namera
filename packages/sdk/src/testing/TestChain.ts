@@ -80,7 +80,7 @@ export interface TestChain {
   readonly keys: ReadonlyArray<Hex>
   /** Saves the chain state and returns its id, for one `revert`. */
   readonly snapshot: () => Promise<Hex>
-  /** Restores the state saved by `snapshot` and clears alto's mempool and caches. */
+  /** Restores the state saved by `snapshot`, and restarts alto so it bundles against the restored chain. */
   readonly revert: (id: Hex) => Promise<void>
   /** Mines `blocks` blocks (default 1). */
   readonly mine: (blocks?: number) => Promise<void>
@@ -206,9 +206,12 @@ export const from = async (context: Context): Promise<TestChain> => {
     bundlerUrl: alto.url,
     keys: Array.from({ length: 7 }, (_, index) => developmentKey(index + 1)),
     snapshot: () => request(node, "evm_snapshot") as Promise<Hex>,
+    // alto caches chain state (block, executor nonce, mempool) that a revert invalidates, and clearing its state is
+    // not enough to bundle again; restarting this worker's alto is (about 0.6 s).
     revert: async (id) => {
       await request(node, "evm_revert", [id])
-      await request(bundler, "debug_bundler_clearState")
+      await alto.restart()
+      await request(bundler, "eth_supportedEntryPoints")
     },
     mine: async (blocks = 1) => {
       await request(node, "anvil_mine", [toHex(blocks)])
