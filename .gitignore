@@ -74,6 +74,7 @@ storybook-static/
 coverage/
 .nyc_output/
 .stryker-tmp/
+stryker-setup-*.js
 reports/
 test-results/
 playwright-report/

@@ -36,3 +36,7 @@ allowBuilds:
   dprint: true
   esbuild: true
   lefthook: true
+  # alto's optional native accelerators; both fall back to JavaScript.
+  msgpackr-extract: false
+  protobufjs: false
+  workerd: true

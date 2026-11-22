@@ -64,7 +64,8 @@
     "codegen": "cd ../.. && namera-dev sdk codegen",
     "typecheck": "tsc -b tsconfig.json",
     "pack:check": "publint && attw --pack . --profile esm-only",
-    "docgen": "docgen"
+    "docgen": "docgen",
+    "mutation": "stryker run"
   },
   "peerDependencies": {
     "@pimlico/alto": "^0.0.21",
@@ -85,13 +86,17 @@
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
+    "@namera-ai/contracts": "workspace:^",
     "@pimlico/alto": "0.0.21",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "effect": "catalog:",
+    "esbuild": "0.28.2",
+    "miniflare": "4.20260730.0",
     "permissionless": "0.5.2",
     "prool": "0.3.0",
     "tstyche": "7.2.5",
-    "viem": "catalog:",
-    "@namera-ai/contracts": "workspace:^"
+    "viem": "catalog:"
   },
   "engines": {
     "node": ">=22"

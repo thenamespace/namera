@@ -1,3 +1,4 @@
+import { playwright } from "@vitest/browser-playwright"
 import * as path from "node:path"
 import { defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config"
 
@@ -41,8 +42,26 @@ const shared: ViteUserConfig = {
   }
 }
 
-const project = (name: string, directory: string, config: ViteUserConfig = {}) =>
-  mergeConfig(shared, mergeConfig({ root: directory, test: { name } }, config))
+// `mergeConfig` concatenates arrays, so a project's own `include` replaces the shared one afterwards, as in Effect.
+const project = (name: string, directory: string, config: ViteUserConfig = {}) => {
+  const merged = mergeConfig(shared, mergeConfig({ root: directory, test: { name } }, config))
+  if (config.test?.include !== undefined) merged.test!.include = [...config.test.include]
+  return merged
+}
+
+// The runtime matrix (`NAMERA_RUNTIME_TESTS=1`): the SDK's smoke test alone, for Bun, Deno and older Node, and in
+// Chromium. workerd runs in the default suite through Miniflare.
+const runtimeTests = process.env["NAMERA_RUNTIME_TESTS"] === "1"
+  ? [
+    project("@namera-ai/sdk/runtime", "packages/sdk", { test: { include: ["test/runtime/Runtime.test.ts"] } }),
+    project("@namera-ai/sdk/browser", "packages/sdk", {
+      test: {
+        include: ["test/runtime/Runtime.test.ts"],
+        browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: "chromium" }] }
+      }
+    })
+  ]
+  : []
 
 export default defineConfig({
   test: {
@@ -51,7 +70,8 @@ export default defineConfig({
       project("@namera-ai/contracts", "packages/contracts"),
       project("@namera-ai/sdk", "packages/sdk", { test: { globalSetup: ["test/setup/chain.ts"] } }),
       project("@namera-ai/tools", "tools/cli"),
-      project("@namera-ai/oxc", "tools/oxc")
+      project("@namera-ai/oxc", "tools/oxc"),
+      ...runtimeTests
     ]
   }
 })

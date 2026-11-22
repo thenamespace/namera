@@ -47,6 +47,51 @@ jobs:
       - run: pnpm check
       - run: pnpm pack:check
 
+  # The SDK's runtime smoke test on every runtime it supports besides Node 26 and workerd, which `pnpm check` covers.
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [node-22, bun, deno, chromium]
+    env:
+      NAMERA_RUNTIME_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - if: matrix.runtime == 'node-22'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - if: matrix.runtime == 'node-22'
+        run: node node_modules/vitest/vitest.mjs run --project @namera-ai/sdk/runtime
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      # Vitest's default forks pool needs Node's IPC channel; Bun runs the threads pool.
+      - if: matrix.runtime == 'bun'
+        run: bun run --bun vitest run --pool=threads --project @namera-ai/sdk/runtime
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - if: matrix.runtime == 'deno'
+        run: deno run -A node_modules/vitest/vitest.mjs run --project @namera-ai/sdk/runtime
+      - if: matrix.runtime == 'chromium'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: matrix.runtime == 'chromium'
+        run: pnpm exec vitest run --project @namera-ai/sdk/browser
+
   analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 30

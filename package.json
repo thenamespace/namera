@@ -10,7 +10,7 @@
     "build": "turbo --root-turbo-json .config/turbo.json run build",
     "bundle-size": "node scripts/bundle-size.ts",
     "changeset": "changeset",
-    "check": "pnpm format:check && pnpm lint && pnpm circular && turbo --root-turbo-json .config/turbo.json run typecheck build && pnpm check-dist-types && pnpm api-snapshot --check && pnpm bundle-size && pnpm docgen && pnpm test && pnpm doctest && pnpm test-types && pnpm test:contracts && namera-dev contracts generate --check && namera-dev sdk codegen --check",
+    "check": "pnpm format:check && pnpm lint && pnpm circular && turbo --root-turbo-json .config/turbo.json run typecheck build && pnpm check-dist-types && pnpm api-snapshot --check && pnpm bundle-size && pnpm type-cost && pnpm docgen && pnpm test && pnpm doctest && pnpm test-types && pnpm test:contracts && namera-dev contracts generate --check && namera-dev sdk codegen --check",
     "check-dist-types": "node scripts/check-dist-types.ts",
     "circular": "node scripts/circular.ts",
     "contracts:deploy": "namera-dev contracts deploy",
@@ -36,6 +36,7 @@
     "test-types": "tstyche",
     "test:contracts": "pnpm --filter @namera-ai/contracts-sol test",
     "test:watch": "vitest",
+    "type-cost": "node scripts/type-cost.ts",
     "typecheck": "tsc -b tsconfig.json"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@rollup/plugin-node-resolve": "16.0.3",
     "@types/madge": "5.0.3",
     "@types/node": "catalog:",
+    "@vitest/browser-playwright": "5.1.1",
     "@vitest/coverage-v8": "5.1.1",
     "babel-plugin-annotate-pure-calls": "0.5.0",
     "dprint": "0.65.0",
@@ -66,6 +68,7 @@
     "lefthook": "2.2.2",
     "madge": "8.0.0",
     "oxlint": "catalog:",
+    "playwright": "1.65.1",
     "publint": "0.3.25",
     "rollup": "4.68.8",
     "rollup-plugin-esbuild": "6.2.1",
