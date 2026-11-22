@@ -36,6 +36,10 @@ Dependencies point inward: apps depend on packages, packages never depend on app
 - `pnpm test`, `pnpm doctest`, `pnpm test-types`, `pnpm coverage`: Vitest, TSDoc examples (`@effect/doctest`), type
   tests (tstyche), v8 coverage.
 - `pnpm test:contracts`: the Foundry tests.
+- `pnpm type-cost [--update]`: the type-check cost of each package's `typeperf/` consumer against its baseline.
+- `pnpm --filter @namera-ai/sdk mutation`: StrykerJS on `src/internal/core` (100% break threshold).
+- `NAMERA_RUNTIME_TESTS=1 pnpm vitest run --project @namera-ai/sdk/runtime` (run it with Node 22, Bun or Deno) and
+  `--project @namera-ai/sdk/browser` (Chromium): the SDK's runtime smoke test, as the CI `runtime` job runs it.
 - `pnpm --filter @namera-ai/sdk codegen`: regenerate the SDK's barrels, exports maps, version module and test chain
   bytecode (`--check` runs in `pnpm check`).
 - `pnpm circular`, `pnpm check-dist-types`, `pnpm api-snapshot [--check]`, `pnpm bundle-size`, `pnpm docgen`: the
