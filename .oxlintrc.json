@@ -9,6 +9,7 @@
     "**/*.tsbuildinfo",
     "**/CHANGELOG.md",
     "contracts/dependencies/**",
+    "tools/oxc/test/fixtures/**",
     "contracts/out/**",
     "contracts/cache/**",
     "contracts/broadcast/**",
@@ -25,6 +26,7 @@
   ],
   "jsPlugins": [
     "@namera-ai/oxc/oxlint",
+    "@namera-ai/oxc/oxlint/namera",
     {
       "name": "landmines-testing",
       "specifier": "@interfere/landmines/testing"
@@ -86,6 +88,44 @@
       ],
       "rules": {
         "landmines-structure/test-file-names": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/**"
+      ],
+      "rules": {
+        "namera/no-effect-run": "error",
+        "namera/no-foreign-internal": "error"
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/promise.ts"
+      ],
+      "rules": {
+        "namera/no-effect-run": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/core/**"
+      ],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "src/internal/core is viem-free; use ox."
+              }
+            ]
+          }
+        ]
       }
     }
   ]
