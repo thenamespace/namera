@@ -29,7 +29,7 @@ for (const { dir, manifest } of publishablePackages()) {
         exactOptionalPropertyTypes: true,
         noEmit: true,
         target: "ES2022",
-        lib: ["ES2024"],
+        lib: ["ES2024", "DOM"],
         module: "ESNext",
         moduleResolution: "bundler",
         skipLibCheck: false,

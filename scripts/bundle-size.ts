@@ -2,11 +2,35 @@ import { nodeResolve } from "@rollup/plugin-node-resolve"
 import * as Fs from "node:fs"
 import * as Path from "node:path"
 import * as Zlib from "node:zlib"
-import { rollup } from "rollup"
+import { type Plugin, rollup } from "rollup"
 import esbuild from "rollup-plugin-esbuild"
 import { publishablePackages } from "./packages.ts"
 
 const external = ["viem", /^viem\//]
+
+// Consumers' bundlers read `sideEffects` from the package.json nearest to every file, but node-resolve only applies
+// it to files it resolves through a package entry, so a workspace package's own modules would count as side-effectful.
+const packageSideEffects = (): Plugin => {
+  const cache = new Map<string, boolean>()
+  const sideEffectFree = (dir: string): boolean => {
+    const cached = cache.get(dir)
+    if (cached !== undefined) return cached
+    const manifest = Path.join(dir, "package.json")
+    const parent = Path.dirname(dir)
+    const result = Fs.existsSync(manifest)
+      ? JSON.parse(Fs.readFileSync(manifest, "utf8")).sideEffects === false
+      : parent !== dir && sideEffectFree(parent)
+    cache.set(dir, result)
+    return result
+  }
+  return {
+    name: "package-side-effects",
+    load: (id) =>
+      id.startsWith("\0") || !sideEffectFree(Path.dirname(id))
+        ? null
+        : { code: Fs.readFileSync(id, "utf8"), moduleSideEffects: false }
+  }
+}
 const failures: Array<string> = []
 
 for (const { dir, manifest } of publishablePackages()) {
@@ -18,8 +42,12 @@ for (const { dir, manifest } of publishablePackages()) {
     const bundle = await rollup({
       input: Path.join(dir, "bundle", fixture),
       external,
-      treeshake: { moduleSideEffects: false },
-      plugins: [nodeResolve({ exportConditions: ["import", "default"] }), esbuild({ target: "es2022", minify: true })],
+      treeshake: { preset: "recommended" },
+      plugins: [
+        packageSideEffects(),
+        nodeResolve({ exportConditions: ["import", "default"] }),
+        esbuild({ target: "es2022", minify: true })
+      ],
       onwarn: (warning) => {
         throw new Error(`${fixture}: ${warning.message}`)
       }
