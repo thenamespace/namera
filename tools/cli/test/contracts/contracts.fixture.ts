@@ -39,3 +39,10 @@ export const transaction = {
   blockHash: `0x${Str.repeat(32)("cd")}`,
   deployer: "0x1804c8AB1F12E6bbf3894d4083f33e07309d1F38"
 } as const
+
+export const external = {
+  kernel: {
+    description: "ZeroDev's Kernel smart account.",
+    versions: { "3.3": { factory: "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9" } }
+  }
+} as const

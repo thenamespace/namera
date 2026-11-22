@@ -4,13 +4,21 @@ import * as FileSystem from "effect/FileSystem"
 import * as Option from "effect/Option"
 import * as Order from "effect/Order"
 import * as Path from "effect/Path"
+import * as Rec from "effect/Record"
 import * as Schema from "effect/Schema"
 import * as Str from "effect/String"
 
 import { getAddress, getContractAddress, type Hex, keccak256, stringToHex } from "viem"
 
 import { SetupError } from "../errors.ts"
-import { type Chain, ChainDeployments, ChainsConfig, ContractsConfig, FoundryArtifact } from "./schema.ts"
+import {
+  type Chain,
+  ChainDeployments,
+  ChainsConfig,
+  ContractsConfig,
+  ExternalConfig,
+  FoundryArtifact
+} from "./schema.ts"
 
 /** The Foundry project, relative to the repository root. */
 export const contractsDir = "contracts"
@@ -190,4 +198,14 @@ export const allDeployments = Effect.fn("workspace.allDeployments")(function*() 
     records,
     Order.mapInput(Order.Number, (record: ChainDeployments) => record.chainId)
   )
+})
+
+/** Reads `contracts/script/config/external.json`, checksumming every address. */
+export const externalContracts = Effect.fn("workspace.externalContracts")(function*() {
+  const path = yield* Path.Path
+  const config = yield* readJson(path.join(contractsDir, "script", "config", "external.json"), ExternalConfig)
+  return Rec.map(config, (group) => ({
+    ...group,
+    versions: Rec.map(group.versions, (addresses) => Rec.map(addresses, (address) => getAddress(address)))
+  })) satisfies ExternalConfig
 })

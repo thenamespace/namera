@@ -123,3 +123,18 @@ export const TransactionReceipt = Schema.Struct({
   from: Address,
   status: Hex
 })
+
+/**
+ * `contracts/script/config/external.json`: the contracts Namera builds on but does not deploy (EntryPoint, the
+ * supported smart accounts), by group and version. Each group becomes one export of `@namera-ai/contracts/External`.
+ */
+export const ExternalConfig = Schema.Record(
+  Schema.String.check(Schema.isPattern(/^[a-z][A-Za-z0-9]*$/)),
+  Schema.Struct({
+    description: Schema.String,
+    versions: Schema.Record(Schema.String, Schema.Record(Schema.String, Address))
+  })
+)
+
+/** The external contracts by group and version. */
+export type ExternalConfig = typeof ExternalConfig.Type

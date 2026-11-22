@@ -24,3 +24,12 @@ export * as SmartSession from "./SmartSession.ts"
  * @since 0.1.0
  */
 export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"
+
+/**
+ * The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and the supported
+ * smart accounts' factories, implementations and validators.
+ *
+ * @stability experimental
+ * @since 0.1.0
+ */
+export * as External from "./External.ts"

@@ -2,13 +2,27 @@ import { assert, describe, it } from "@effect/vitest"
 import { String as Str } from "effect"
 
 import { packageSources } from "@namera-ai/tools/contracts/render"
-import { contract, transaction } from "./contracts.fixture.ts"
+import { contract, external, transaction } from "./contracts.fixture.ts"
 
 describe("packageSources", () => {
-  it("renders the Contract types, one module per contract and an index", () => {
-    const sources = packageSources([contract], [])
+  it("renders each external group as one documented export, keyed by version", () => {
+    const module = packageSources([contract], [], external).get("External.ts") ?? ""
 
-    assert.deepStrictEqual([...sources.keys()], ["Contract.ts", "Example.ts", "index.ts"])
+    assert.include(
+      module,
+      "export const kernel = {\"3.3\": {\"factory\": \"0x2577507b78c2008Ff367261CB6285d44ba5eF2E9\"}} as const;"
+    )
+    assert.include(module, "Keyed by version (`3.3`).")
+    assert.include(
+      packageSources([contract], [], external).get("index.ts"),
+      "export * as External from \"./External.ts\";"
+    )
+  })
+
+  it("renders the Contract types, one module per contract and an index", () => {
+    const sources = packageSources([contract], [], external)
+
+    assert.deepStrictEqual([...sources.keys()], ["Contract.ts", "Example.ts", "External.ts", "index.ts"])
     assert.include(sources.get("index.ts"), "export type * as Contract from \"./Contract.ts\";")
     assert.include(sources.get("index.ts"), "export * as Example from \"./Example.ts\";")
     assert.include(
@@ -39,7 +53,8 @@ describe("packageSources", () => {
             }
           }
         }
-      ]
+      ],
+      external
     )
 
     const module = sources.get("Example.ts") ?? ""
@@ -48,7 +63,7 @@ describe("packageSources", () => {
   })
 
   it("wraps doc comments within 100 columns", () => {
-    for (const source of packageSources([contract], []).values()) {
+    for (const source of packageSources([contract], [], external).values()) {
       for (const line of Str.split(source, "\n")) {
         if (Str.startsWith(" *")(line)) assert.isAtMost(line.length, 100, line)
       }

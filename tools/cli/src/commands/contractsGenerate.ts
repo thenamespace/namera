@@ -11,7 +11,13 @@ import * as Str from "effect/String"
 import { isAddressEqual } from "viem"
 
 import { packageSources } from "../contracts/render.ts"
-import { allDeployments, builtContracts, contractsDir, packageSourceDir } from "../contracts/workspace.ts"
+import {
+  allDeployments,
+  builtContracts,
+  contractsDir,
+  externalContracts,
+  packageSourceDir
+} from "../contracts/workspace.ts"
 import { CheckFailed, SetupError } from "../errors.ts"
 import { Tools } from "../services/Tools.ts"
 
@@ -47,7 +53,7 @@ export const generate = Effect.fn("contracts.generate")(
     }
 
     const staging = yield* fs.makeTempDirectoryScoped({ prefix: "namera-contracts-" })
-    const sources = packageSources(contracts, deployments)
+    const sources = packageSources(contracts, deployments, yield* externalContracts())
     for (const [file, source] of sources) {
       yield* fs.writeFileString(path.join(staging, file), source)
     }

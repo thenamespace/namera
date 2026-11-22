@@ -4,7 +4,7 @@ import * as Predicate from "effect/Predicate"
 import * as Rec from "effect/Record"
 import * as Str from "effect/String"
 
-import type { ChainDeployments, DeploymentRecord } from "./schema.ts"
+import type { ChainDeployments, DeploymentRecord, ExternalConfig } from "./schema.ts"
 import { type BuiltContract, factory } from "./workspace.ts"
 
 const since = "0.1.0"
@@ -176,14 +176,37 @@ const namespaceExport = (name: string, summary: string, typeOnly: boolean) =>
     "\n"
   )
 
+const externalModule = (external: ExternalConfig) =>
+  Arr.join(
+    Arr.map(Rec.toEntries(external), ([group, { description, versions }]) =>
+      Arr.join(
+        [
+          docComment(
+            [
+              description,
+              `Keyed by version (${
+                Arr.join(Arr.map(Rec.keys(versions), (version) => `\`${version}\``), ", ")
+              }). The addresses are the same on every chain Namera supports.`
+            ],
+            ["@stability experimental", "@category addresses", `@since ${since}`]
+          ),
+          `export const ${group} = ${literal(versions)} as const;`,
+          ""
+        ],
+        "\n"
+      )),
+    "\n"
+  )
+
 /**
  * The source files of `@namera-ai/contracts`, by file name: the `Contract` types, one module per
- * contract with one export per version, and an index re-exporting each module as a namespace.
- * Unformatted; dprint formats them.
+ * contract with one export per version, `External` with the addresses Namera builds on, and an
+ * index re-exporting each module as a namespace. Unformatted; dprint formats them.
  */
 export const packageSources = (
   contracts: ReadonlyArray<BuiltContract>,
-  deployments: ReadonlyArray<ChainDeployments>
+  deployments: ReadonlyArray<ChainDeployments>,
+  external: ExternalConfig
 ) => {
   const names = Arr.dedupe(Arr.map(contracts, (contract) => contract.contract))
 
@@ -208,7 +231,12 @@ export const packageSources = (
           name,
           `Namera's \`${name}\` contract: ABI, CREATE2 address and deployment records, one export per version (\`${name}.v1\`, …).`,
           false
-        ))
+        )),
+      namespaceExport(
+        "External",
+        "The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and the supported smart accounts' factories, implementations and validators.",
+        false
+      )
     ],
     "\n"
   )
@@ -216,6 +244,7 @@ export const packageSources = (
   return new Map<string, string>([
     ["Contract.ts", contractModule],
     ...modules,
+    ["External.ts", externalModule(external)],
     ["index.ts", index]
   ])
 }
