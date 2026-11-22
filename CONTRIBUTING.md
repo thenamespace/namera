@@ -34,10 +34,11 @@ The toolchain follows the Effect v4 repository: `tsc -b` builds, dprint formats,
 ```text
 contracts/      @namera-ai/contracts-sol: Solidity contracts (Foundry, private)
 packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namera's Smart Sessions contracts.
+packages/sdk/   @namera-ai/sdk: session keys, policies and grants for agents on ERC-7579 smart accounts (Promise and Effect APIs)
 packages/       Publishable packages
 apps/           Runnable applications (private)
 tools/cli/      namera-dev: repository tooling (release checks, contract deployments, package generation)
-tools/oxc/      Effect's oxlint rules (vendored)
+tools/oxc/      Effect's oxlint rules (vendored) and Namera's own rules
 scripts/        Repository checks: circular imports, built declarations, API reports, bundle budgets
 .changeset/     Pending release notes
 .config/        Turborepo and Commitlint configuration

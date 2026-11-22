@@ -15,6 +15,10 @@ export const exclude = [
 ]
 
 const shared: ViteUserConfig = {
+  // Tests load internal modules through the path aliases in tsconfig.tests.json, as in Effect.
+  resolve: {
+    tsconfigPaths: true
+  },
   server: {
     watch: {
       ignored: exclude
@@ -45,7 +49,9 @@ export default defineConfig({
     passWithNoTests: true,
     projects: [
       project("@namera-ai/contracts", "packages/contracts"),
-      project("@namera-ai/tools", "tools/cli")
+      project("@namera-ai/sdk", "packages/sdk", { test: { globalSetup: ["test/setup/chain.ts"] } }),
+      project("@namera-ai/tools", "tools/cli"),
+      project("@namera-ai/oxc", "tools/oxc")
     ]
   }
 })

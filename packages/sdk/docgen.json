@@ -1,0 +1,125 @@
+{
+  "$schema": "../../node_modules/@effect/docgen/schema.json",
+  "exclude": [
+    "src/internal/**/*.ts",
+    "src/**/internal/**/*.ts"
+  ],
+  "parseCompilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@namera-ai/sdk": [
+        "./src/index.ts"
+      ],
+      "@namera-ai/sdk/accounts": [
+        "./src/accounts/index.ts"
+      ],
+      "@namera-ai/sdk/agent": [
+        "./src/agent/index.ts"
+      ],
+      "@namera-ai/sdk/browser": [
+        "./src/browser/index.ts"
+      ],
+      "@namera-ai/sdk/decorators": [
+        "./src/decorators/index.ts"
+      ],
+      "@namera-ai/sdk/effect": [
+        "./src/effect/index.ts"
+      ],
+      "@namera-ai/sdk/effect/accounts": [
+        "./src/effect/accounts/index.ts"
+      ],
+      "@namera-ai/sdk/effect/infra": [
+        "./src/effect/infra/index.ts"
+      ],
+      "@namera-ai/sdk/effect/keys": [
+        "./src/effect/keys/index.ts"
+      ],
+      "@namera-ai/sdk/infra": [
+        "./src/infra/index.ts"
+      ],
+      "@namera-ai/sdk/keys": [
+        "./src/keys/index.ts"
+      ],
+      "@namera-ai/sdk/node": [
+        "./src/node/index.ts"
+      ],
+      "@namera-ai/sdk/otel": [
+        "./src/otel/index.ts"
+      ],
+      "@namera-ai/sdk/testing": [
+        "./src/testing/index.ts"
+      ],
+      "@namera-ai/sdk/*": [
+        "./src/*.ts"
+      ]
+    }
+  },
+  "examplesCompilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@namera-ai/sdk": [
+        "../../src/index.ts"
+      ],
+      "@namera-ai/sdk/accounts": [
+        "../../src/accounts/index.ts"
+      ],
+      "@namera-ai/sdk/agent": [
+        "../../src/agent/index.ts"
+      ],
+      "@namera-ai/sdk/browser": [
+        "../../src/browser/index.ts"
+      ],
+      "@namera-ai/sdk/decorators": [
+        "../../src/decorators/index.ts"
+      ],
+      "@namera-ai/sdk/effect": [
+        "../../src/effect/index.ts"
+      ],
+      "@namera-ai/sdk/effect/accounts": [
+        "../../src/effect/accounts/index.ts"
+      ],
+      "@namera-ai/sdk/effect/infra": [
+        "../../src/effect/infra/index.ts"
+      ],
+      "@namera-ai/sdk/effect/keys": [
+        "../../src/effect/keys/index.ts"
+      ],
+      "@namera-ai/sdk/infra": [
+        "../../src/infra/index.ts"
+      ],
+      "@namera-ai/sdk/keys": [
+        "../../src/keys/index.ts"
+      ],
+      "@namera-ai/sdk/node": [
+        "../../src/node/index.ts"
+      ],
+      "@namera-ai/sdk/otel": [
+        "../../src/otel/index.ts"
+      ],
+      "@namera-ai/sdk/testing": [
+        "../../src/testing/index.ts"
+      ],
+      "@namera-ai/sdk/*": [
+        "../../src/*.ts"
+      ]
+    }
+  }
+}

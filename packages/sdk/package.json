@@ -1,0 +1,99 @@
+{
+  "name": "@namera-ai/sdk",
+  "version": "1.8.0",
+  "description": "Scoped, revocable session keys for agents on ERC-7579 smart accounts, built on viem.",
+  "keywords": [
+    "account-abstraction",
+    "agent-wallet",
+    "erc-4337",
+    "erc-7579",
+    "permissions",
+    "session-keys",
+    "smart-accounts",
+    "smart-sessions",
+    "viem"
+  ],
+  "homepage": "https://github.com/thenamespace/namera/tree/main/packages/sdk#readme",
+  "bugs": "https://github.com/thenamespace/namera/issues",
+  "license": "Apache-2.0",
+  "author": "Vedant Chainani (https://github.com/envoy1084)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera.git",
+    "directory": "packages/sdk"
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./effect": "./src/effect/index.ts",
+    "./testing": "./src/testing/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null,
+    "./testing/internal/*": null,
+    "./index": null,
+    "./*/index": null
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./effect": "./dist/effect/index.js",
+      "./testing": "./dist/testing/index.js",
+      "./*": "./dist/*.js",
+      "./internal/*": null,
+      "./testing/internal/*": null,
+      "./index": null,
+      "./*/index": null
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "codegen": "cd ../.. && namera-dev sdk codegen",
+    "typecheck": "tsc -b tsconfig.json",
+    "pack:check": "publint && attw --pack . --profile esm-only",
+    "docgen": "docgen"
+  },
+  "peerDependencies": {
+    "@pimlico/alto": "^0.0.21",
+    "effect": "^4.1.5",
+    "prool": "^0.3.0",
+    "viem": "^2.58.4"
+  },
+  "peerDependenciesMeta": {
+    "@pimlico/alto": {
+      "optional": true
+    },
+    "prool": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "ox": "^1.8.19"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@pimlico/alto": "0.0.21",
+    "effect": "catalog:",
+    "permissionless": "0.5.2",
+    "prool": "0.3.0",
+    "tstyche": "7.2.5",
+    "viem": "catalog:",
+    "@namera-ai/contracts": "workspace:^"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

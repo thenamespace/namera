@@ -18,7 +18,8 @@
   ],
   "exclude": [
     "**/node_modules/**",
-    "**/dist/**"
+    "**/dist/**",
+    "./tools/oxc/test/fixtures/**"
   ],
   "compilerOptions": {
     "rootDir": ".",
@@ -28,6 +29,20 @@
     "types": [
       "node"
     ],
-    "tsBuildInfoFile": "${configDir}/node_modules/.cache/tsconfig.tests.tsbuildinfo"
+    "tsBuildInfoFile": "${configDir}/node_modules/.cache/tsconfig.tests.tsbuildinfo",
+    "paths": {
+      "@namera-ai/sdk": [
+        "./packages/sdk/src/index.ts"
+      ],
+      "@namera-ai/sdk/effect": [
+        "./packages/sdk/src/effect/index.ts"
+      ],
+      "@namera-ai/sdk/testing": [
+        "./packages/sdk/src/testing/index.ts"
+      ],
+      "@namera-ai/sdk/*": [
+        "./packages/sdk/src/*.ts"
+      ]
+    }
   }
 }
