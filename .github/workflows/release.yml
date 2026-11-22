@@ -70,6 +70,8 @@ jobs:
           ignore-scripts: "true"
       # Commits through the GitHub API with the workflow token (signed by GitHub).
       - uses: changesets/action/version@v2.1.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # @changesets/changelog-github links PRs and authors
         with:
           script: pnpm release:version
           commit-message: "chore(release): version packages"
@@ -89,6 +91,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0
       # No dependency cache in the release: everything comes from the lockfile and the registry.
       - uses: ./.github/actions/setup
 
@@ -108,8 +114,12 @@ jobs:
           fi
           pnpm release:version
           git diff --stat
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - run: pnpm check
+      # Effect's publish build: stripInternal on, pure-call annotations, built declarations re-checked.
+      - run: pnpm release:build
 
       # Packs the publish plan from the plan job; a dry run packs the versions made above.
       - uses: changesets/action/pack@v2.1.2
