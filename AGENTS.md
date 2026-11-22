@@ -129,6 +129,12 @@ regressions. Do not test what the type checker already proves. See the `effect-c
   `@namera-ai/devnet`: `devnet.isolate({ beforeEach, afterEach })` and `describe(name, { concurrent: false }, …)`, so
   tests in a file never share chain state. Everything else is a unit test and runs without a chain
   (`pnpm vitest run --project @namera-ai/sdk`).
+- **The devnet's alto runs in safe mode only**: it traces every user operation and rejects what breaks ERC-7562, as
+  the shared mempool does, so chain tests never rely on a lenient bundler. Never turn it off, and never route a test
+  around a rejection. Fix the operation; when the rejection is what mainnet would do too (an unstaked factory), keep
+  the devnet's state matching mainnet (stakes included) and test the limitation. `patches/@pimlico__alto@0.0.21.patch`
+  makes safe mode work on anvil (pimlicolabs/alto#810 and two anvil tracer differences); re-check it on every alto
+  upgrade and drop what alto fixes.
 
 ## Commits and pull requests
 

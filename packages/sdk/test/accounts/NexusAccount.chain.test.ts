@@ -51,12 +51,26 @@ describe("NexusAccount", { concurrent: false }, () => {
     }
   })
 
-  it("deploys with Smart Sessions in its first operation, then transfers and batches", async () => {
+  // The factory has no EntryPoint stake on any chain, and initialising the K1 validator writes its storage for the
+  // account, which ERC-7562 (STO-022) allows during deployment only under a staked factory. Lenient bundlers accept it.
+  it("can't deploy in a user operation on a bundler that enforces ERC-7562: its factory is unstaked", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
     await devnet.fund(account.address)
 
-    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
+    const error = await devnet.sendUserOperation(account, [{ to: zeroAddress }]).then(
+      () => assert.fail("expected the bundler to reject it"),
+      (error: unknown) => error
+    )
+    assert.include(String(error), `unstaked factory accessed ${nexus.k1Validator.toLowerCase()}`)
+  })
+
+  it("deploys with Smart Sessions through its factory, then transfers and batches", async () => {
+    const account = await NexusAccount.from({ client, owner: newOwner() })
+    await devnet.fund(account.address)
+    await devnet.deploy(account)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
 
     const recipient = newOwner().address
     assert.isTrue(
@@ -68,8 +82,7 @@ describe("NexusAccount", { concurrent: false }, () => {
 
   it("signs in the domain the deployed account reports (1.3.3 reports version 1.3.2)", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
-    await devnet.fund(account.address)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
 
     const [, name, version, chainId, verifyingContract, salt] = await client.readContract({
       address: account.address,
@@ -92,14 +105,14 @@ describe("NexusAccount", { concurrent: false }, () => {
     await devnet.fund(account.address)
 
     await verify(account)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
     await verify(account)
   })
 
   it("installs Smart Sessions later on an account deployed without them", async () => {
     const account = await NexusAccount.from({ client, owner: newOwner(), sessions: false })
     await devnet.fund(account.address)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
     assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
 
     assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)

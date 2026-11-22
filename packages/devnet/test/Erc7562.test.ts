@@ -1,8 +1,8 @@
 // Namera's policies inside ERC-4337 validation, checked against ERC-7562 as public bundlers check it: a JS tracer on
 // anvil records every opcode and storage slot the policy contracts touch while the account validates a real session
 // operation, and the test asserts no banned opcode (TIMESTAMP, NUMBER, BALANCE, …) and only storage associated with
-// the account (`keccak256(account ‖ x) + n`). alto's own safe mode fails on anvil for any operation, so the rules are
-// checked here directly.
+// the account (`keccak256(account ‖ x) + n`). The devnet's alto enforces ERC-7562 on every operation too; this test
+// pins the rules to the policy contracts themselves, so a regression names the policy and the slot.
 import { afterEach, assert, beforeEach, describe, inject, it } from "@effect/vitest"
 import {
   AllowPolicy,
@@ -189,7 +189,6 @@ describe("Namera's policies under ERC-7562", { concurrent: false }, () => {
       client,
       owners: [owner],
       version: "0.3.3",
-      useMetaFactory: false,
       entryPoint: { address: entryPoint07Address, version: "0.7" }
     })
     await devnet.fund(kernel.address, parseEther("10"))

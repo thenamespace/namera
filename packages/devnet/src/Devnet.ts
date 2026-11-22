@@ -2,6 +2,10 @@
  * A local devnet for tests: anvil and the alto bundler, one pair per Vitest worker, with EntryPoint 0.7, the supported
  * smart accounts and Namera's contracts at their production addresses, and the controls tests need.
  *
+ * alto runs in safe mode only: it traces every user operation's validation and rejects what breaks ERC-7562, as the
+ * shared mempool does, so a test that passes here does not rely on a lenient bundler. EntryPoint stakes match
+ * mainnet's.
+ *
  * **Details**
  *
  * `globalSetup` starts the proxies once per test run; each worker's pair starts on first use. `from` connects a test
@@ -18,7 +22,17 @@
 import { Instance } from "prool"
 import { Server } from "prool/vitest"
 import type { Chain, Hex, HttpTransport, PublicClient, TransactionReceipt, Transport } from "viem"
-import { createClient, createPublicClient, defineChain, http, parseEther, toHex } from "viem"
+import {
+  createClient,
+  createPublicClient,
+  defineChain,
+  encodeFunctionData,
+  http,
+  pad,
+  parseAbi,
+  parseEther,
+  toHex
+} from "viem"
 import {
   type BundlerClient,
   createBundlerClient,
@@ -44,6 +58,42 @@ const deployer = mnemonicToAccount(mnemonic, { addressIndex: 0 }).address
 
 // The Arachnid deterministic deployer, which anvil installs at genesis and Namera deploys through on every chain.
 const create2Factory = "0x4e59b44847b379578588920cA78FbF26c0B4956C"
+
+// ZeroDev's FactoryStaker and the Kernel 3.3 factory it deploys through (`@namera-ai/contracts` `External.kernel`).
+const kernelFactoryStaker = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5"
+const kernelFactory = "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9"
+// Solady `Ownable`'s owner slot.
+const ownerSlot = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff74873927"
+
+/**
+ * Gives the FactoryStaker the state it has on every mainnet: it approves the Kernel 3.3 factory and holds 0.1 ether of
+ * EntryPoint stake with a one-day unstake delay. ERC-7562 lets account deployment write a module's storage for the
+ * account (STO-022) only through a staked factory, so alto's safe mode needs the stake too.
+ */
+const stakeKernelFactory = async (
+  request: (method: string, params?: ReadonlyArray<unknown>) => Promise<unknown>,
+  transact: (
+    label: string,
+    transaction: { readonly to: Hex; readonly data: Hex; readonly value?: Hex }
+  ) => Promise<void>
+) => {
+  await request("anvil_setStorageAt", [kernelFactoryStaker, ownerSlot, pad(deployer)])
+  await transact("approving the Kernel factory", {
+    to: kernelFactoryStaker,
+    data: encodeFunctionData({
+      abi: parseAbi(["function approveFactory(address factory, bool approval)"]),
+      args: [kernelFactory, true]
+    })
+  })
+  await transact("staking the Kernel FactoryStaker", {
+    to: kernelFactoryStaker,
+    value: toHex(parseEther("0.1")),
+    data: encodeFunctionData({
+      abi: parseAbi(["function stake(address entryPoint, uint32 unstakeDelay) payable"]),
+      args: [entryPoint07Address, 86_400]
+    })
+  })
+}
 
 /**
  * The serializable context `globalSetup` provides to test workers: the proxy URLs of anvil and alto.
@@ -125,6 +175,12 @@ export interface Devnet {
   /** Makes alto bundle and submit every pending user operation now. */
   readonly sendBundleNow: () => Promise<void>
   /**
+   * Deploys an account by sending its factory call as a plain transaction, as a relayer would. Use it for accounts
+   * whose factory has no EntryPoint stake (Nexus, Safe7579): ERC-7562 forbids their first user operation from
+   * deploying them, because initialising their validator writes storage outside the account.
+   */
+  readonly deploy: (account: SmartAccount) => Promise<void>
+  /**
    * A bundler client for an account. With `bundleOnReceipt`, it bundles alto's mempool when it first asks for a
    * receipt, so functions that send and then wait complete without the test polling.
    */
@@ -182,7 +238,8 @@ export const globalSetup = (): GlobalSetup => {
           rpcUrl: `${anvilUrl}/${poolId}`,
           executorPrivateKeys: [developmentKey(8)],
           utilityPrivateKey: developmentKey(9),
-          safeMode: false,
+          // Always on: see the module documentation. `patches/@pimlico__alto@0.0.21.patch` makes it work on anvil.
+          safeMode: true,
           bundleMode: "manual",
           enableDebugEndpoints: true
         })
@@ -228,15 +285,21 @@ export const from = async (context: Context): Promise<Devnet> => {
 
   const last = contracts.at(-1)
   const installed = last !== undefined && await request(node, "eth_getCode", [last.address, "latest"]) !== "0x"
+  // anvil answers before automine includes a transaction, so wait for the receipt.
+  const transact = async (
+    label: string,
+    transaction: { readonly to: Hex; readonly data: Hex; readonly value?: Hex }
+  ) => {
+    const hash = await request(node, "eth_sendTransaction", [{ from: deployer, ...transaction }]) as Hex
+    const { status } = await waitForTransactionReceipt(node, { hash, pollingInterval: 10 })
+    if (status !== "success") throw new Error(`Devnet: ${label} failed`)
+  }
   if (!installed) {
     for (const { address, code } of fixtures) await request(node, "anvil_setCode", [address, code])
+    await stakeKernelFactory(request.bind(undefined, node), transact)
     for (const { address, initcode, label, salt } of contracts) {
-      const hash = await request(node, "eth_sendTransaction", [
-        { from: deployer, to: create2Factory, data: `${salt}${initcode.slice(2)}` }
-      ]) as Hex
-      // anvil answers before automine includes the transaction, so wait for the receipt.
-      const { status } = await waitForTransactionReceipt(node, { hash, pollingInterval: 10 })
-      if (status !== "success" || await request(node, "eth_getCode", [address, "latest"]) === "0x") {
+      await transact(`deploying ${label}`, { to: create2Factory, data: `${salt}${initcode.slice(2)}` })
+      if (await request(node, "eth_getCode", [address, "latest"]) === "0x") {
         throw new Error(`Devnet: ${label} did not deploy at ${address}`)
       }
     }
@@ -305,6 +368,12 @@ export const from = async (context: Context): Promise<Devnet> => {
       await request(node, "anvil_setBalance", [address, toHex(wei)])
     },
     sendBundleNow,
+    deploy: async (account) => {
+      const { factory, factoryData } = await account.getFactoryArgs()
+      if (factory === undefined || factoryData === undefined) throw new Error("Devnet: the account has no factory")
+      await transact("deploying the account", { to: factory, data: factoryData })
+      if (!(await account.isDeployed())) throw new Error(`Devnet: no account deployed at ${account.address}`)
+    },
     bundlerClient,
     sendUserOperation: async (account, calls) => {
       const bundler = bundlerClient(account)

@@ -21,7 +21,6 @@ const kernelAccount = () =>
     client,
     owners: [privateKeyToAccount(devnet.keys[0]!)],
     version: "0.3.3",
-    useMetaFactory: false,
     entryPoint: { address: entryPoint07Address, version: "0.7" }
   })
 

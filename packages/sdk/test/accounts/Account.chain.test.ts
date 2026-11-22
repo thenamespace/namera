@@ -23,7 +23,6 @@ describe("Account", { concurrent: false }, () => {
       client,
       owners: [owner],
       version: "0.3.3",
-      useMetaFactory: false,
       index: 9n,
       entryPoint: { address: entryPoint07Address, version: "0.7" }
     })
@@ -45,8 +44,7 @@ describe("Account", { concurrent: false }, () => {
 
   it("detects a Safe7579 account by its Safe singleton and the adapter's account id", async () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()] })
-    await devnet.fund(account.address)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
 
     assert.deepInclude(await Account.detect(client, { address: account.address }), {
       type: "safe7579",

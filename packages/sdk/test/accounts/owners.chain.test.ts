@@ -16,19 +16,22 @@ const typedData = {
   message: { contents: "hello" }
 } as const
 
-const builders: ReadonlyArray<readonly [string, () => Promise<Account.Account>]> = [
-  ["Kernel", () => KernelAccount.from({ client, owner: walletOwner })],
-  ["Nexus", () => NexusAccount.from({ client, owner: walletOwner })],
-  ["Safe7579", () => Safe7579Account.from({ client, owners: [walletOwner] })]
+// Nexus and Safe7579 deploy through their factory first: a bundler that enforces ERC-7562 refuses to deploy them in a
+// user operation (their factories are unstaked; see their own tests).
+const builders: ReadonlyArray<readonly [string, () => Promise<Account.Account>, boolean]> = [
+  ["Kernel", () => KernelAccount.from({ client, owner: walletOwner }), false],
+  ["Nexus", () => NexusAccount.from({ client, owner: walletOwner }), true],
+  ["Safe7579", () => Safe7579Account.from({ client, owners: [walletOwner] }), true]
 ]
 
 describe("a JSON-RPC wallet owner", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
-  for (const [name, build] of builders) {
+  for (const [name, build, deployFirst] of builders) {
     it(`deploys and runs a ${name} account, and signs ERC-1271 typed data`, async () => {
       const account = await build()
       await devnet.fund(account.address)
+      if (deployFirst) await devnet.deploy(account)
 
       assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
       assert.isTrue(

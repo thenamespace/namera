@@ -13,6 +13,7 @@ const CONTRACTS: Record<string, string> = {
   "entrypoint-0.7": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
   "entrypoint-0.7-sender-creator": "0xEFC2c1444eBCC4Db75e7613d20C6a62fF67A167C",
   "kernel-3.3-factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
+  "kernel-factory-staker": "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
   "kernel-3.3-implementation": "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28",
   "kernel-ecdsa-validator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57",
   "nexus-1.3.3-factory": "0x0000b1C08f1418dA76B5E99c1Bf5718486cf8c53",

@@ -66,12 +66,26 @@ describe("Safe7579Account", { concurrent: false }, () => {
     )
   })
 
-  it("deploys with Smart Sessions in its first operation, then transfers and batches", async () => {
+  // The proxy factory has no EntryPoint stake on any chain, and setting the account up writes the adapter's storage
+  // for it, which ERC-7562 (STO-022) allows during deployment only under a staked factory. Lenient bundlers accept it.
+  it("can't deploy in a user operation on a bundler that enforces ERC-7562: its factory is unstaked", async () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()] })
     await devnet.fund(account.address)
 
-    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
+    const error = await devnet.sendUserOperation(account, [{ to: zeroAddress }]).then(
+      () => assert.fail("expected the bundler to reject it"),
+      (error: unknown) => error
+    )
+    assert.include(String(error), `unstaked factory accessed ${safe.adapter.toLowerCase()}`)
+  })
+
+  it("deploys with Smart Sessions through its factory, then transfers and batches", async () => {
+    const account = await Safe7579Account.from({ client, owners: [newOwner()] })
+    await devnet.fund(account.address)
+    await devnet.deploy(account)
     assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
 
     const recipient = newOwner().address
     assert.isTrue(
@@ -95,6 +109,7 @@ describe("Safe7579Account", { concurrent: false }, () => {
     const owners = [newOwner(), newOwner()]
     const account = await Safe7579Account.from({ client, owners, threshold: 2 })
     await devnet.fund(account.address)
+    await devnet.deploy(account)
 
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
     await verify(account)
@@ -114,14 +129,14 @@ describe("Safe7579Account", { concurrent: false }, () => {
     await devnet.fund(account.address)
 
     await verify(account)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
     await verify(account)
   })
 
   it("installs Smart Sessions later on an account deployed without them", async () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()], sessions: false })
     await devnet.fund(account.address)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
+    await devnet.deploy(account)
     assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
 
     assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
