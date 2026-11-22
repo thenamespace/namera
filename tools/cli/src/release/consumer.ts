@@ -9,8 +9,9 @@ import type { PackedRelease } from "./packDir.ts"
  * The manifests of a throwaway app that installs the packed tarballs: each release as a `file:`
  * dependency, overridden everywhere so the packages' dependencies on each other resolve to the
  * tarballs too (the new versions are not on npm yet), and every peer the packages declare,
- * optional ones included, so each entry can be imported. The pnpm workspace file is block-style
- * YAML with JSON scalars: pnpm edits it in place during install, which flow-style YAML prevents.
+ * optional ones included, so each entry can be imported, without running their build scripts. The
+ * pnpm workspace file is block-style YAML with JSON scalars: pnpm edits it in place during install,
+ * which flow-style YAML prevents.
  */
 export const consumerManifests = (
   releases: ReadonlyArray<PackedRelease>,
@@ -32,6 +33,9 @@ export const consumerManifests = (
     },
     workspace: Arr.join(
       [
+        // The app only imports the entries, so dependencies' build scripts (native extras of optional peers) don't
+        // matter, and pnpm must not fail the install for leaving them unapproved.
+        "strictDepBuilds: false",
         "overrides:",
         ...Arr.map(
           Rec.toEntries(tarballs),
@@ -44,12 +48,15 @@ export const consumerManifests = (
   }
 }
 
-/** Import specifiers of a package's published exports, without `./package.json` and patterns. */
+/**
+ * Import specifiers of a package's published exports, without `./package.json`, patterns and the paths the map
+ * blocks with `null`.
+ */
 export const publicEntries = (name: string, exports: Readonly<Record<string, unknown>>) =>
   Arr.map(
     Arr.filter(
       Rec.keys(exports),
-      (subpath) => subpath !== "./package.json" && !Str.includes("*")(subpath)
+      (subpath) => subpath !== "./package.json" && !Str.includes("*")(subpath) && exports[subpath] !== null
     ),
     (subpath) => (subpath === "." ? name : `${name}/${Str.slice(2)(subpath)}`)
   )
