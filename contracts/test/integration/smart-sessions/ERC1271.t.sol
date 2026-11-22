@@ -309,6 +309,26 @@ contract ERC1271Test is SmartSessionTestBase {
         assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
     }
 
+    /// @dev Forged typed data is refused whether its hash sorts below or above the signed struct's hash.
+    function test_forgedTypedData_isRejectedWhicheverWayItsHashCompares() public view {
+        bytes32 hash = ERC7739Signer.appHash(mail);
+        bool below;
+        bool above;
+        for (uint256 i; !(below && above); ++i) {
+            bytes memory forged = abi.encode(keccak256(bytes(MAIL)), address(uint160(i + 1)));
+            if (keccak256(forged) < mail.contents) {
+                if (below) continue;
+                below = true;
+            } else {
+                if (above) continue;
+                above = true;
+            }
+            bytes memory signature =
+                ERC7739Signer.sign(mail, address(account), permissionId, sessionKey, forged, "");
+            assertEq(_isValidSignature(hash, signature), INVALID);
+        }
+    }
+
     /// @dev Typed data is optional: a policy that doesn't read it still sees the session key's signature.
     function test_withoutTypedData_hashPoliciesStillPass() public view {
         bytes memory signature =
@@ -329,6 +349,12 @@ contract ERC1271Test is SmartSessionTestBase {
         bytes memory tooShort =
             abi.encodePacked(permissionId, uint16(0), ERC7739Signer.appendix(mail));
         assertEq(_isValidSignature(hash, tooShort), INVALID);
+        // Policy data longer than what precedes the lengths, with no typed data.
+        bytes memory policyDataOverrun =
+            abi.encodePacked(permissionId, uint16(0), uint16(4), ERC7739Signer.appendix(mail));
+        assertEq(_isValidSignature(hash, policyDataOverrun), INVALID);
+        bytes memory noRoomForTheLengths = abi.encodePacked(bytes3(0), ERC7739Signer.appendix(mail));
+        assertEq(_isValidSignature(hash, noRoomForTheLengths), INVALID);
     }
 
     /// @dev Other lengths never validate and never revert. The one exception reads the same bytes as policy
