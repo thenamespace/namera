@@ -24,6 +24,7 @@ export const factory = getAddress("0x4e59b44847b379578588920cA78FbF26c0B4956C")
 /** A managed contract as the current build produces it: ABI, initcode and its CREATE2 address. */
 export type BuiltContract = {
   readonly label: string
+  readonly initcode: Hex
   readonly artifact: string
   readonly contract: string
   readonly version: number
@@ -87,6 +88,7 @@ export const builtContracts = Effect.fn("workspace.builtContracts")(function*() 
 
         return {
           label: spec.label,
+          initcode: artifact.bytecode.object,
           artifact: spec.artifact,
           contract,
           version: Number(version),

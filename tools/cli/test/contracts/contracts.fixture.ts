@@ -12,6 +12,7 @@ const salt = keccak256(stringToHex("namera.example.v1"))
 
 export const contract = {
   label: "namera.example.v1",
+  initcode,
   artifact: "Example.sol:Example",
   contract: "Example",
   version: 1,
