@@ -49,7 +49,10 @@ for (const { dir, manifest } of publishablePackages()) {
         esbuild({ target: "es2022", minify: true })
       ],
       onwarn: (warning) => {
-        throw new Error(`${fixture}: ${warning.message}`)
+        // Cycles inside dependencies (ox, Effect) are theirs to keep; a cycle through our own code still fails.
+        const thirdParty = warning.code === "CIRCULAR_DEPENDENCY" &&
+          (warning.ids ?? []).every((id) => id.includes("/node_modules/"))
+        if (!thirdParty) throw new Error(`${fixture}: ${warning.message}`)
       }
     })
     const { output } = await bundle.generate({ format: "esm" })
