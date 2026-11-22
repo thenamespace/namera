@@ -15,8 +15,8 @@ export const entryPoint = {
 } as const
 
 /**
- * ZeroDev's Kernel smart account: its factory, implementation and ECDSA validator, the owner's root
- * validator.
+ * ZeroDev's Kernel smart account: its factory, the staked FactoryStaker that accounts deploy
+ * through, the implementation and the ECDSA validator, the owner's root validator.
  *
  * Keyed by version (`3.3`). The addresses are the same on every chain Namera supports.
  *
@@ -27,6 +27,7 @@ export const entryPoint = {
 export const kernel = {
   "3.3": {
     "factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
+    "factoryStaker": "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
     "implementation": "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28",
     "ecdsaValidator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57"
   }

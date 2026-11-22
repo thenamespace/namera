@@ -26,7 +26,6 @@ describe("KernelAccount", { concurrent: false }, () => {
         client,
         owners: [owner],
         version: "0.3.3",
-        useMetaFactory: false,
         entryPoint: { address: entryPoint07Address, version: "0.7" }
       })
       return { ours, reference }
@@ -68,15 +67,17 @@ describe("KernelAccount", { concurrent: false }, () => {
     })
   })
 
-  it("computes the address the factory deploys to, offline", async () => {
+  it("deploys through the staked FactoryStaker to the address the factory computes, offline", async () => {
     const owner = newOwner()
     const account = await KernelAccount.from({ client, owner, index: 7n })
-    const { factoryData } = await account.getFactoryArgs()
+    const { factory, factoryData } = await account.getFactoryArgs()
 
-    const [data, salt] = (await import("viem")).decodeFunctionData({
-      abi: parseAbi(["function createAccount(bytes data, bytes32 salt)"]),
+    assert.strictEqual(factory, kernel.factoryStaker)
+    const [forwardedTo, data, salt] = (await import("viem")).decodeFunctionData({
+      abi: parseAbi(["function deployWithFactory(address factory, bytes createData, bytes32 salt)"]),
       data: factoryData!
     }).args
+    assert.strictEqual(forwardedTo, kernel.factory)
     const predicted = await client.readContract({
       address: kernel.factory,
       abi: parseAbi(["function getAddress(bytes data, bytes32 salt) view returns (address)"]),

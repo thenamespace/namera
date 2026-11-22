@@ -10,6 +10,7 @@ import { encodeInstallModule, MODULE_TYPE_VALIDATOR } from "./erc7579.ts"
 /** The contracts of one Kernel version. @internal */
 export interface Contracts {
   readonly factory: Hex.Hex
+  readonly factoryStaker: Hex.Hex
   readonly implementation: Hex.Hex
   readonly ecdsaValidator: Hex.Hex
 }
@@ -17,7 +18,9 @@ export interface Contracts {
 const initialize = AbiFunction.from(
   "function initialize(bytes21 rootValidator, address hook, bytes validatorData, bytes hookData, bytes[] initConfig)"
 )
-const createAccount = AbiFunction.from("function createAccount(bytes data, bytes32 salt) payable returns (address)")
+const deployWithFactory = AbiFunction.from(
+  "function deployWithFactory(address factory, bytes createData, bytes32 salt) payable returns (address)"
+)
 
 // `execute(bytes32,bytes)`: the only selector a Kernel grants an installed (non-root) validator such as SmartSession.
 const EXECUTE = "0xe9ae5c53"
@@ -57,15 +60,25 @@ export const initData = (options: {
       : [encodeInstallModule(MODULE_TYPE_VALIDATOR, options.smartSession, validatorInstallData("0x"))]
   ])
 
-/** The factory call and counterfactual address of a Kernel account. @internal */
+/**
+ * The factory call and counterfactual address of a Kernel account.
+ *
+ * The account deploys through ZeroDev's FactoryStaker, which forwards to the Kernel factory. The FactoryStaker is staked
+ * in the EntryPoint on every chain and the factory is not, and ERC-7562 (STO-022) lets deployment write the ECDSA
+ * validator's storage for the account only under a staked factory, so bundlers that enforce it accept the first
+ * operation. The address is the same either way: the Kernel factory still runs the CREATE2.
+ *
+ * @internal
+ */
 export const deployment = (options: {
   readonly contracts: Contracts
   readonly initData: Hex.Hex
   readonly index: bigint
-}): { readonly factoryData: Hex.Hex; readonly address: Hex.Hex } => {
+}): { readonly factory: Hex.Hex; readonly factoryData: Hex.Hex; readonly address: Hex.Hex } => {
   const salt = Hex.fromNumber(options.index, { size: 32 })
   return {
-    factoryData: AbiFunction.encodeData(createAccount, [options.initData, salt]),
+    factory: options.contracts.factoryStaker,
+    factoryData: AbiFunction.encodeData(deployWithFactory, [options.contracts.factory, options.initData, salt]),
     // Kernel's factory salts CREATE2 with keccak256(data ‖ salt).
     address: predictAddress({
       factory: options.contracts.factory,
