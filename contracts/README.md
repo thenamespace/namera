@@ -44,7 +44,9 @@ Configuration comes from the environment, then `contracts/.env`.
 ## Layout
 
 ```
-src/                    contracts
+src/smart-sessions/     Namera's fork of Smart Sessions (LGPL/AGPL, see its NOTICE.md)
+src/validators/         ECDSASessionValidator
+src/policies/           Namera's policies (Apache-2.0), one per `Policy.*` builder, and their libraries in lib/
 script/                 Deploy.s.sol, Status.s.sol, fixture fetcher
 script/config/          contracts.json: every managed contract with its versioned label (salt), read by Contracts.sol
 chains/                 chains.json: supported chains, RPCs and verifiers
@@ -55,6 +57,7 @@ test/integration/       SmartSession behaviour through a mock ERC-7579 account a
 test/accounts/          the same session flows on real Kernel 3.3, Nexus 1.3.3 and Safe7579 v2
 test/invariant/         stateful fuzzing (handlers in invariant/handlers)
 test/symbolic/          Halmos proofs
+test/unit/policies/, test/integration/policies/   policy tests, directly and through SmartSession and the EntryPoint
 test/fixtures/          deployed bytecode of the account contracts, one `<name>@<address>.hex` per contract
 ```
 
@@ -66,6 +69,37 @@ account contracts (Kernel, Nexus, Safe + Safe7579 and their validators and facto
 deployed bytecode in `test/fixtures/accounts/` at their canonical addresses, so account tests
 exercise exactly what is deployed on chain. Each account test only supplies how to deploy the account, its nonce key layout and its owner
 ERC-1271 signature format; `test/accounts/RealAccountTestBase.sol` holds the shared session flows.
+
+## Policies
+
+`src/policies/` holds the launch policies that back the SDK's `Policy.*` builders. Every one is immutable and
+admin-free, and serves every account and session from one deployment:
+
+| Contract          | Kind            | Enforces                                                                                                                 |
+| ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `AllowPolicy`     | action, user op | nothing: the policy for a call allowed without conditions (Smart Sessions needs one per action)                          |
+| `ArgPolicy`       | action          | conditions on static argument words and the value: `Eq`, `Neq`, `Lt`, `Lte`, `Gt`, `Gte`, `Between`, `OneOf`             |
+| `ApprovalPolicy`  | action          | allowed spenders and a maximum for ERC-20 `approve` / `increaseAllowance` and Permit2 `approve`                          |
+| `SpendPolicy`     | user op         | ERC-20 budgets per token and period across every call (transfers, and approvals unless an `ApprovalPolicy` governs them) |
+| `ValuePolicy`     | user op         | a native-currency budget per period                                                                                      |
+| `RateLimitPolicy` | user op         | operations per period                                                                                                    |
+| `GasPolicy`       | user op         | worst-case gas cost per period                                                                                           |
+| `SignaturePolicy` | ERC-1271        | which contracts may verify the session's signatures                                                                      |
+
+**Periods without TIMESTAMP.** ERC-7562 bans `TIMESTAMP` during validation. The agent appends the time it sends at
+as one 32-byte word after the ABI encoding of the account's `execute` calldata (accounts and Smart Sessions ignore it;
+the session signature covers it). A limit charges the period containing that time and returns the period's bounds as
+validation data, so the EntryPoint only accepts the operation within that period. Periods are epoch-aligned (a day is
+a UTC day); a period of 0 is the lifetime and needs no time. Counters are keyed by schedule, never by budget, so
+re-enabling a session never resets them.
+
+**Storage.** Every slot is `keccak256(account ‖ x) + n` (`lib/PolicyStorage.sol`), ERC-7562 associated storage;
+configurations are stored as words, so no dynamic storage arrays are needed. `@namera-ai/devnet`'s ERC-7562 test traces
+a real session operation's validation and checks both rules on these contracts.
+
+**Signatures.** Smart Sessions gives ERC-1271 policies only the final nested hash, so `SignaturePolicy` cannot check
+message fields (a permit's spender or value); Smart Sessions itself limits the app domains and content types a session
+may sign.
 
 ## Deterministic deployment
 

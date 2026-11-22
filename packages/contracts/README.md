@@ -1,7 +1,8 @@
 # @namera-ai/contracts
 
-ABIs, CREATE2 addresses and deployment provenance of Namera's Smart Sessions contracts. No runtime
-dependencies: every export is generated data.
+ABIs, CREATE2 addresses and deployment provenance of Namera's Smart Sessions contracts: `SmartSession`,
+`ECDSASessionValidator` and the policies (`AllowPolicy`, `ArgPolicy`, `ApprovalPolicy`, `SpendPolicy`, `ValuePolicy`,
+`RateLimitPolicy`, `GasPolicy`, `SignaturePolicy`). No runtime dependencies: every export is generated data.
 
 ## Install
 
