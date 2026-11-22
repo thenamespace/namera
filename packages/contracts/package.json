@@ -49,7 +49,8 @@
     "build": "rm -rf dist && tsc -b tsconfig.json && pnpm babel",
     "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
     "typecheck": "tsc -b tsconfig.json",
-    "pack:check": "publint && attw --pack . --profile esm-only"
+    "pack:check": "publint && attw --pack . --profile esm-only",
+    "docgen": "docgen"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",

@@ -33,4 +33,6 @@ minimumReleaseAgeExclude:
   - "@dprint/*"
 
 allowBuilds:
+  dprint: true
+  esbuild: true
   lefthook: true

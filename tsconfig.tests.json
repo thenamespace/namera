@@ -12,7 +12,9 @@
     "./packages/*/test/**/*.ts",
     "./packages/*/typetest/**/*.ts",
     "./packages/*/benchmark/**/*.ts",
-    "./tools/*/test/**/*.ts"
+    "./tools/*/test/**/*.ts",
+    "./packages/*/bundle/**/*.ts",
+    "./scripts/**/*.ts"
   ],
   "exclude": [
     "**/node_modules/**",

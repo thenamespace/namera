@@ -222,3 +222,6 @@ desktop.ini
 $RECYCLE.BIN/
 .directory
 .Trash-*
+
+# Generated API docs (docgen)
+packages/*/docs/

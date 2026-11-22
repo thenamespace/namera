@@ -45,7 +45,7 @@
   "overrides": [
     {
       "files": [
-        "**/{test,typetest,examples,benchmark,typeperf,scripts,script}/**",
+        "**/{test,typetest,examples,benchmark,typeperf,bundle,scripts,script}/**",
         "**/vitest.*.ts",
         ".config/**"
       ],
