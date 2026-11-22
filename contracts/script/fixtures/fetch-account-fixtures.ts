@@ -1,4 +1,4 @@
-// Fetches the deployed bytecode of the smart accounts used by test/accounts into
+// Fetches the deployed bytecode of EntryPoint 0.7 and the smart accounts used by test/accounts into
 // test/fixtures/accounts/<name>@<address>.hex, so account tests run locally without an RPC.
 //
 //   node script/fixtures/fetch-account-fixtures.ts
@@ -10,6 +10,8 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 const RPC = process.env.RPC_BASE_SEPOLIA ?? "https://sepolia.base.org"
 
 const CONTRACTS: Record<string, string> = {
+  "entrypoint-0.7": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+  "entrypoint-0.7-sender-creator": "0xEFC2c1444eBCC4Db75e7613d20C6a62fF67A167C",
   "kernel-3.3-factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
   "kernel-3.3-implementation": "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28",
   "kernel-ecdsa-validator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57",
