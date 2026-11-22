@@ -21,10 +21,13 @@ pnpm install
 Install [Foundry](https://getfoundry.sh) 1.9 before `pnpm install`: the contracts package installs
 its Soldeer dependencies during install. See [`contracts/README.md`](./contracts/README.md).
 
-`pnpm install` installs the Git hooks (Lefthook) and patches TypeScript 7 and Oxlint with the
-[Effect language service](https://github.com/Effect-TS/tsgo), so `tsc` and `oxlint` report Effect
-diagnostics. In VS Code, install the recommended extensions (Oxc, Vitest and TypeScript Native
-Preview); the workspace settings point them at the patched compiler and the configs in `.config/`.
+`pnpm install` installs the Git hooks (Lefthook) and patches TypeScript 7 with the
+[Effect language service](https://github.com/Effect-TS/tsgo), so `tsc` reports Effect diagnostics. In VS Code, install
+the recommended extensions (dprint, Oxc, Vitest and TypeScript Native Preview); the workspace settings point them at
+the patched compiler and the root configs.
+
+The toolchain follows the Effect v4 repository: `tsc -b` builds, dprint formats, oxlint lints with Effect's rules
+(`tools/oxc`), Vitest, `@effect/doctest` and tstyche test, and `@effect/docgen` generates API docs.
 
 ## Repository structure
 
@@ -34,8 +37,10 @@ packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namer
 packages/       Publishable packages
 apps/           Runnable applications (private)
 tools/cli/      namera-dev: repository tooling (release checks, contract deployments, package generation)
+tools/oxc/      Effect's oxlint rules (vendored)
+scripts/        Repository checks: circular imports, built declarations, API reports, bundle budgets
 .changeset/     Pending release notes
-.config/        Lint, format, test, Turborepo and commit configuration
+.config/        Turborepo and Commitlint configuration
 ```
 
 Keep changes within the package that owns the behavior.
@@ -50,13 +55,15 @@ pnpm check
 
 | Command                   | What it does                                                            |
 | ------------------------- | ----------------------------------------------------------------------- |
-| `pnpm check`              | Format check, lint, typecheck, build and tests                          |
-| `pnpm format`             | Format the workspace with Oxfmt                                         |
-| `pnpm lint:fix`           | Apply Oxlint's automatic fixes                                          |
+| `pnpm check`              | Format, lint, typecheck, build, repository checks, docs and all tests   |
+| `pnpm format`             | Format the workspace with dprint                                        |
+| `pnpm lint:fix`           | Apply oxlint's automatic fixes                                          |
 | `pnpm test`               | Run every Vitest project once                                           |
+| `pnpm doctest`            | Run the TSDoc examples                                                  |
+| `pnpm test-types`         | Run the type tests (tstyche)                                            |
 | `pnpm test:contracts`     | Run the Foundry tests in `contracts/`                                   |
+| `pnpm api-snapshot`       | Rewrite the API reports (`packages/<name>/etc/`); review the diff       |
 | `pnpm contracts:generate` | Regenerate `@namera-ai/contracts` from the build and deployment records |
-| `pnpm dev`                | Run every package's dev task                                            |
 | `pnpm pack:check`         | Check each publishable package with publint and attw                    |
 
 The Git hooks format and lint staged files on commit, check the commit message, and run lint,
@@ -64,9 +71,10 @@ typecheck and tests before a push.
 
 ## Tests
 
-Each package keeps its tests in `test/`, written with `@effect/vitest`. Tests import the package by
-its name and resolve its sources through the `workspace-source` export condition, so no build is
-needed. Register a new package's tests as a project in `.config/vitest.config.ts`.
+Each package keeps its tests in `test/`, mirroring `src/`, written with `@effect/vitest`. Tests import the package by
+its name; in the repository the package's `exports` point at `src`, so no build is needed. Type tests live in
+`typetest/` (`*.tst.ts`, tstyche). Register a new package as a project in the root `vitest.config.ts` and as a
+reference in `tsconfig.packages.json`.
 
 ## Commits and pull requests
 

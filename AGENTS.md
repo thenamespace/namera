@@ -14,38 +14,49 @@ before changing anything, then load the skills listed under [Skills](#skills) th
 - `apps/*`: runnable applications (private).
 - `tools/cli`: `namera-dev`, repository tooling written with Effect (release checks; contract
   deployment, provenance records and `@namera-ai/contracts` generation).
-- `.config/`: Oxlint, Oxfmt, Commitlint, Turborepo and Vitest configuration.
+- `tools/oxc`: Effect's oxlint rules, vendored (MIT, see its NOTICE.md).
+- `scripts/`: repository checks (circular imports, built declarations, API reports, bundle budgets).
+- Root configs follow the Effect v4 repository: `tsconfig.base.json` (+ `tsconfig.packages.json`,
+  `tsconfig.tests.json`), `.oxlintrc.json`, `dprint.json`, `vitest.config.ts`, `vitest.setup.ts`,
+  `vitest.docs.ts`, `tstyche.json`. `.config/` holds Commitlint and Turborepo.
 
 Dependencies point inward: apps depend on packages, packages never depend on apps.
 
 ## Commands
 
-- `pnpm check`: formatting, linting, type checking, builds and tests. Run it before every commit.
-- `pnpm format`: format the workspace with Oxfmt.
-- `pnpm test`: run every Vitest project once.
-- `pnpm test:contracts`: run the Foundry tests.
-- `pnpm contracts:status|deploy|record|verify|generate`: deploy contracts, record their provenance
-  in `contracts/deployments/` and regenerate `@namera-ai/contracts`.
+- `pnpm check`: everything below plus builds, docs generation and the Foundry tests. Run it before every commit.
+- `pnpm format` / `pnpm format:check`: dprint.
+- `pnpm lint`: oxlint over the repository, then `forge fmt --check` and `forge lint` for the contracts.
+- `pnpm typecheck`: `tsc -b` over the project references.
+- `pnpm build`: `tsc -b` + Babel `annotate-pure-calls` per package.
+- `pnpm test`, `pnpm doctest`, `pnpm test-types`, `pnpm coverage`: Vitest, TSDoc examples (`@effect/doctest`), type
+  tests (tstyche), v8 coverage.
+- `pnpm test:contracts`: the Foundry tests.
+- `pnpm circular`, `pnpm check-dist-types`, `pnpm api-snapshot [--check]`, `pnpm bundle-size`, `pnpm docgen`: the
+  repository checks. `pnpm api-snapshot` rewrites `packages/<name>/etc/<name>.api.md`; review the diff, it is the
+  public API.
+- `pnpm contracts:status|deploy|record|verify|generate`: deploy contracts, record their provenance in
+  `contracts/deployments/` and regenerate `@namera-ai/contracts`.
 - `pnpm pack:check`: publint and attw on each publishable package.
 - `pnpm changeset`: record a change to a published package.
 
 ## Tooling
 
-Use the klarity presets configured at the root. Do not add Prettier, ESLint, Husky, lint-staged,
-tsup or Rollup unless the existing tools demonstrably cannot meet a requirement. Tool configs live in
-`.config/`.
+The toolchain is copied from the Effect v4 repository (`Effect-TS/effect`); match it rather than adding tools. Do not
+add Prettier, ESLint, Husky, lint-staged, tsup, tsdown or other bundlers unless the existing tools demonstrably cannot
+meet a requirement.
 
-`tsc` is TypeScript 7 (tsgo) patched with the Effect language service (`@effect/tsgo`), so
-`typecheck` reports Effect diagnostics. Fix them in the code rather than silencing them; disable one
-with an `@effect-diagnostics-next-line` comment only when the flagged pattern is the point of the
-code. `pnpm install` also patches oxlint (`effect-tsgo patch --oxlint`): lint is type-aware and runs
-the `@effect/tsgo` oxlint presets. Silence those with a one-line reason and
-`// oxlint-disable-next-line effecttsgo/<rule> -- <reason>`.
-
-Published packages build with tsdown (`tsdown.config.ts`, klarity's preset): ESM, declarations and
-source maps in `dist`, checked by publint. During development, workspace packages resolve each
-other's `src` through the `workspace-source` export condition, so typecheck and tests never need a
-build first.
+- **TypeScript 7** (tsgo), patched by `effect-tsgo patch` on install, so `tsc` reports Effect language service
+  diagnostics. Fix them in the code; disable one with `@effect-diagnostics-next-line` only when the flagged pattern is
+  the point of the code.
+- **Build:** `tsc -b` emits `dist` mirroring `src`, then Babel annotates pure calls. Source imports use `.ts`
+  specifiers, rewritten at build. No bundler.
+- **Exports:** in the repository `exports` point at `src/*.ts` (no build needed for tests or typecheck);
+  `publishConfig.exports` point at `dist/*.js`; `"./*"` gives deep imports; `internal/*` is `null`. Packages ship
+  `src` next to `dist`.
+- **Library code imports Effect per module** (`effect/Effect`, `effect/cli/Command`), never a barrel. Tests, scripts
+  and examples may use barrels (`.oxlintrc.json` overrides).
+- **Publishing** turns `stripInternal` on (`pnpm release:build`) and re-checks the built declarations.
 
 ## Dependencies
 
@@ -57,7 +68,7 @@ build first.
   Oxlint, Vitest, Effect) and dependencies that more than one package.json uses. Pin a dependency
   that one package uses in that package.json.
 - New releases must be a day old before they install (`minimumReleaseAge`). Effect (`effect`,
-  `@effect/*`), Oxlint and Oxfmt are excluded: keep them on their latest release.
+  `@effect/*`), Oxlint and dprint are excluded: keep them on their latest release.
 
 ## Code guidelines
 
@@ -71,35 +82,30 @@ skill before writing or reviewing code.
   package that owns the concept, with tests.
 - Inline one-off logic at its use site. Extract only substantial or reused logic, into a module with
   a specific name; never into catch-all `utils` or `helpers` files.
-- Separate logical blocks with a blank line (setup, validation, execution, result). Oxfmt does not
+- Separate logical blocks with a blank line (setup, validation, execution, result). dprint does not
   insert logical blank lines; review grouping yourself.
 - Every exported declaration of a published package has TSDoc (`effect-conventions` skill). Preserve existing
   public APIs when cleaning up.
-- Follow [landmines](https://github.com/interfere-inc/landmines) (below); lint enforces it.
+- Comments explain non-obvious reasoning, invariants and trade-offs, as in Effect's source; never restate the code.
+- Public functions declare their signatures explicitly, as Effect does (`export const make: <A>(a: A) => X<A> = …`).
+- Follow the landmines test rules (below); lint enforces them.
 
-## Landmines
+## Landmines (test rules)
 
-The oxlint config extends `@interfere/landmines`' recommended rules, which keep agent-written code
-honest. Each rule's message says what to do instead; do that rather than disabling it.
+The oxlint config keeps `@interfere/landmines`' test-honesty rules. Each rule's message says what to do instead; do
+that rather than disabling it.
 
-- **No prose comments** (`no-comments`): express meaning in names and code, and put rationale in
-  the commit message or PR. Allowed: functional directives (`oxlint-disable…`, `@ts-expect-error`,
-  `@effect-diagnostics…`), single-line `// WARNING:` comments for dangerous, recurring footguns, and
-  TSDoc on exported symbols. Module documentation goes on the `export * as` in `index.ts`.
-- **No inferred-away types** (`no-explicit-return-types`): do not annotate return types on
-  implementations; let them be inferred, and pin a contract with `satisfies` where it matters.
-- **Tests that cannot lie**: no test doubles (`no-test-doubles`: no module mocks, stubbed
-  globals or fake implementations; use the real implementation, test layers, and MSW with
-  unhandled requests as errors for the network), no fixed sleeps (`no-fixed-sleep`: await the
-  operation or a signal; use `TestClock`), no polling races (`no-unsignaled-poll`), and no retries
-  or raised timeouts (`no-flake-masking`): fix the flake.
-- **Structure**: tests live with the package they test (`colocated-tests`); test files are
-  `*.test.ts`, shared fixtures `*.fixture.ts` and helpers `*.test-utils.ts` (`test-file-names`);
-  `package.json` exports name explicit entry points, never `"./*"` (`package-exports`).
+- **No test doubles** (`no-test-doubles`): no module mocks, stubbed globals or fake implementations; use the real
+  implementation, test layers, and MSW with unhandled requests as errors for the network.
+- **No fixed sleeps** (`no-fixed-sleep`): await the operation or a signal; use `TestClock`.
+- **No polling races** (`no-unsignaled-poll`) and **no retries or raised timeouts** (`no-flake-masking`): fix the
+  flake.
+- **File names** (`test-file-names`): test files are `*.test.ts`, shared fixtures `*.fixture.ts`, helpers
+  `*.test-utils.ts`.
 
 ## Tests
 
-Tests live in each package's `test/` folder and run through `@effect/vitest` (`it.effect`,
+Tests live in each package's `test/` folder, mirroring `src/`, import the package by name, and run through `@effect/vitest` (`it.effect`,
 `assert`). Write the tests a behaviour needs: the documented contract, its failure cases and
 regressions. Do not test what the type checker already proves. See the `effect-conventions` skill.
 

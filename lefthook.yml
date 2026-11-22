@@ -1,4 +1,4 @@
-# Git hooks (from klarity's monorepo preset, with the configs in .config/).
+# Git hooks: dprint and oxlint on staged files, commitlint on the message, lint, typecheck and tests before a push.
 min_version: 2.1.0
 
 pre-commit:
@@ -24,4 +24,4 @@ commit-msg:
 pre-push:
   jobs:
     - name: check
-      run: pnpm exec turbo --root-turbo-json .config/turbo.json run lint typecheck && pnpm test && pnpm test:contracts
+      run: pnpm lint && pnpm typecheck && pnpm test && pnpm test-types && pnpm test:contracts
