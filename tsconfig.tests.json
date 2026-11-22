@@ -8,6 +8,7 @@
   ],
   "include": [
     "**/vitest.*.ts",
+    "./vitest.setup.ts",
     "./packages/*/test/**/*.ts",
     "./packages/*/typetest/**/*.ts",
     "./packages/*/benchmark/**/*.ts",

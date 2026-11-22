@@ -54,6 +54,7 @@
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "effect": "catalog:",
+    "tstyche": "7.2.5",
     "viem": "catalog:"
   },
   "engines": {
