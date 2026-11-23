@@ -57,7 +57,7 @@ const runtimeTests = process.env["NAMERA_RUNTIME_TESTS"] === "1"
     project("@namera-ai/sdk/runtime", "packages/sdk", { test: { include: ["test/runtime/Runtime.test.ts"] } }),
     project("@namera-ai/sdk/browser", "packages/sdk", {
       test: {
-        include: ["test/runtime/Runtime.test.ts"],
+        include: ["test/runtime/Runtime.test.ts", "test/browser/**/*.test.ts"],
         browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: "chromium" }] }
       }
     })
@@ -72,7 +72,10 @@ export default defineConfig({
       project("@namera-ai/contracts", "packages/contracts"),
       project("@namera-ai/devnet", "packages/devnet", { test: { globalSetup: ["test/setup/devnet.ts"] } }),
       // The SDK's unit tests need no chain; `*.chain.test.ts` run against the devnet.
-      project("@namera-ai/sdk", "packages/sdk", { test: { exclude: [...exclude, "**/*.chain.test.ts"] } }),
+      // `test/browser/` needs a browser (IndexedDB) and runs in the Chromium project of the runtime matrix.
+      project("@namera-ai/sdk", "packages/sdk", {
+        test: { exclude: [...exclude, "**/*.chain.test.ts", "test/browser/**"] }
+      }),
       project("@namera-ai/sdk/chain", "packages/sdk", {
         test: { include: ["test/**/*.chain.test.ts"], globalSetup: ["test/setup/devnet.ts"] }
       }),

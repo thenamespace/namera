@@ -312,7 +312,8 @@ export declare namespace remove {
 
 /**
  * Signs a 32-byte digest with a key, as it is: no hashing or prefixing. secp256k1 signatures are `r ‖ s ‖ v` (65
- * bytes), p256 `r ‖ s` (64 bytes), ed25519 64 bytes.
+ * bytes), p256 `r ‖ s` (64 bytes), ed25519 64 bytes. A store whose `prehash` is `"sha256"` (WebCrypto) signs the
+ * SHA-256 of the digest instead, which WebCrypto can't avoid.
  *
  * **When to use**
  *

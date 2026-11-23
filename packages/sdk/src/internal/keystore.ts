@@ -23,6 +23,11 @@ export interface Store {
   readonly [TypeId]: typeof TypeId
   readonly type: StoreType
   readonly curves: ReadonlyArray<core.Curve>
+  /**
+   * How `sign` treats the digest: as it is (undefined), or hashed with SHA-256 first (`"sha256"`), as WebCrypto always
+   * does. A verifier must check the signature against the same value.
+   */
+  readonly prehash?: "sha256" | undefined
   readonly create: (options: {
     readonly curve: core.Curve
     readonly label?: string | undefined

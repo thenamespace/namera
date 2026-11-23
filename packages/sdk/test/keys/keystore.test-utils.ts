@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Key, Keystore, KeystoreError } from "@namera-ai/sdk"
 import * as Ed25519 from "ox/Ed25519"
+import * as Hash from "ox/Hash"
 import * as P256 from "ox/P256"
 import * as PublicKey from "ox/PublicKey"
 import * as Signature from "ox/Signature"
@@ -20,13 +21,17 @@ export const reasonOf = (error: unknown) => {
 }
 
 /** Whether `signature` is the key's signature of the digest, by the key's curve. */
-export const verifies = async (key: Key.Key, signature: `0x${string}`): Promise<boolean> => {
+export const verifies = async (
+  key: Key.Key,
+  signature: `0x${string}`,
+  prehash?: "sha256" | undefined
+): Promise<boolean> => {
   switch (key.curve) {
     case "secp256k1":
       return (await recoverAddress({ hash: digest, signature })) === Key.address(key, "eip155")
     case "p256":
       return P256.verify({
-        payload: digest,
+        payload: prehash === "sha256" ? Hash.sha256(digest) : digest,
         publicKey: PublicKey.fromHex(key.publicKey),
         signature: Signature.from({ r: `0x${signature.slice(2, 66)}`, s: `0x${signature.slice(66, 130)}`, yParity: 0 })
       })
@@ -57,7 +62,7 @@ export const conformance = (
         assert.deepInclude(await Keystore.list(store), key)
 
         const signature = await Keystore.sign(store, { id: key.id, digest })
-        assert.isTrue(await verifies(key, signature))
+        assert.isTrue(await verifies(key, signature, store.prehash))
 
         await Keystore.remove(store, { id: key.id })
         assert.strictEqual(reasonOf(await rejection(Keystore.get(store, { id: key.id })))._tag, "NotFound")
