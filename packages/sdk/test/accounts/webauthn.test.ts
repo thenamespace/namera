@@ -166,6 +166,27 @@ describe("WebAuthnValidator encodings", () => {
   })
 })
 
+describe("the stub signature", () => {
+  it("is a well-formed, Chrome-sized assertion, so estimation pays for a full P-256 verification", () => {
+    const id = Hex.padLeft("0x01", 32)
+    const stub = WebAuthn.stubSignature({ precompile: false, credentialIds: [id] })
+    const r = Hex.toBigInt(Hex.slice(stub, 35, 67))
+    const s = Hex.toBigInt(Hex.slice(stub, 67, 99))
+    const clientDataLength = Hex.toNumber(Hex.slice(stub, 105 + 37, 107 + 37))
+    const clientDataJSON = Hex.toString(Hex.slice(stub, 107 + 37))
+
+    assert.isTrue(r > BigInt(0) && r < n)
+    assert.isTrue(s > BigInt(0) && s <= n / BigInt(2))
+    assert.strictEqual(Hex.toNumber(Hex.slice(stub, 99, 101)), 23)
+    assert.strictEqual(Hex.toNumber(Hex.slice(stub, 101, 103)), 1)
+    assert.strictEqual(Hex.toNumber(Hex.slice(stub, 103, 105)), 37)
+    assert.strictEqual(clientDataLength, Hex.size(Hex.fromString(clientDataJSON)))
+    assert.isAtLeast(clientDataLength, 200)
+    assert.match(clientDataJSON.slice(1, 22), /^"type":"webauthn\.get"$/)
+    assert.match(clientDataJSON.slice(23, 80), /^"challenge":"[\w-]{43}"$/)
+  })
+})
+
 describe("the P-256 precompile probe", () => {
   it("counts only an answer of 1 as the precompile", () => {
     assert.isTrue(WebAuthn.isPrecompileAnswer(`0x${"00".repeat(31)}01`))

@@ -93,6 +93,7 @@ export const initializer = (options: {
     AbiFunction.encodeData(addSafe7579, [options.contracts.adapter, modules, [], 0]),
     options.contracts.adapter,
     "0x0000000000000000000000000000000000000000",
+    // Stryker disable next-line StringLiteral: BigInt("") is 0 too
     BigInt("0"),
     "0x0000000000000000000000000000000000000000"
   ])

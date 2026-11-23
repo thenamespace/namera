@@ -193,6 +193,7 @@ const leaf = (userOperationHash: Hex.Hex): Hex.Hex =>
   Hash.keccak256(AbiParameters.encode(AbiParameters.from(["bytes32"]), [userOperationHash]))
 
 const parent = (a: Hex.Hex, b: Hex.Hex): Hex.Hex =>
+  // Stryker disable next-line EqualityOperator: two nodes of a tree are never equal
   Hex.toBigInt(a) < Hex.toBigInt(b) ? Hash.keccak256(Hex.concat(a, b)) : Hash.keccak256(Hex.concat(b, a))
 
 /**
@@ -233,7 +234,7 @@ const stubAssertion = {
   typeIndex: 1,
   authenticatorData: Hex.concat(Hash.sha256(Hex.fromString("localhost")), "0x1d00000000"),
   clientDataJSON: `{"type":"webauthn.get","challenge":"${
-    Base64.fromBytes(Bytes.fromHex(zeroHash), { url: true, pad: false })
+    Base64.fromBytes(Bytes.fromHex(stubWord), { url: true, pad: false })
   }","origin":"https://localhost","crossOrigin":false,"other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}`
 }
 

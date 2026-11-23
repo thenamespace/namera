@@ -44,6 +44,7 @@ export const encodeCalls = (calls: ReadonlyArray<Call>): Hex.Hex => {
   return AbiFunction.encodeData(execute, [
     mode("0x01"),
     AbiParameters.encode(executions, [
+      // Stryker disable next-line StringLiteral: BigInt("") is 0 too
       calls.map(({ data = "0x", to, value = BigInt("0") }) => ({ target: to, value, callData: data }))
     ])
   ])
