@@ -906,6 +906,8 @@ contract WebAuthnValidatorTest is WebAuthnTestBase {
         // Too short to hold either field.
         bytes memory tiny = bytes('"type":"webauthn.get"');
         assertFalse(_userOpValid(account, _sign(alice, authenticatorData, tiny, 0, 0)));
+        assertFalse(_userOpValid(account, _sign(alice, authenticatorData, bytes("{}"), 0, 0)));
+        assertFalse(_userOpValid(account, _sign(alice, authenticatorData, "", 0, 0)));
     }
 
     /// @dev Failures never cancel each other out.
@@ -958,13 +960,88 @@ contract WebAuthnValidatorTest is WebAuthnTestBase {
     function test_precompile_answeringZeroIsInvalid() public {
         _install(account, 1, _list(alice));
         vm.etch(address(0x100), address(new P256PrecompileAnsweringZero()).code);
+        Parts memory assertion = _assert(alice, USER_OP_HASH);
+        assertTrue(_userOpValid(account, _signature(BACKEND_PRECOMPILE, assertion)));
+
+        // Valid fields, an invalid signature: the precompile answers the word 0.
+        assertion.r = bytes32(uint256(assertion.r) ^ 1);
+        assertFalse(_userOpValid(account, _signature(BACKEND_PRECOMPILE, assertion)));
+    }
+
+    function test_removePasskey_reportsTheCountItWouldLeave() public {
+        _install(account, 3, _list(alice, bob, carol));
+        vm.prank(account);
+        vm.expectRevert(abi.encodeWithSelector(WebAuthnValidator.InvalidThreshold.selector, 3, 2));
+        validator.removePasskey(alice.id);
+    }
+
+    function test_removePasskey_fromTheMiddleOfALongList() public {
+        TestPasskey memory dave = _passkey("dave");
+        TestPasskey[] memory four = new TestPasskey[](4);
+        (four[0], four[1], four[2], four[3]) = (alice, bob, carol, dave);
+        _install(account, 1, four);
+        vm.prank(account);
+        validator.removePasskey(carol.id);
+
+        (, bytes32[] memory ids,) = validator.getPasskeys(account);
+        assertEq(ids.length, 3);
+        assertEq(ids[0], alice.id);
+        assertEq(ids[1], bob.id);
+        assertEq(ids[2], dave.id);
+        assertTrue(_userOpValid(account, _signature(BACKEND_SOLIDITY, _assert(dave, USER_OP_HASH))));
+    }
+
+    /// @dev A mode-2 signature never takes the multichain path, even with a proof that holds.
+    function test_unknownModeIsInvalidForERC1271AndSessions() public {
+        _install(account, 1, _list(alice));
+        bytes32 challenge = validator.replaySafeHash(account, USER_OP_HASH);
+        (bytes32 root,, bytes32 leafB) = _tree(challenge, keccak256("b"));
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = leafB;
+        Parts[] memory assertions = new Parts[](1);
+        assertions[0] = _assert(alice, validator.multichainChallenge(root));
+        bytes memory signature = _multichainSignature(BACKEND_SOLIDITY, root, proof, assertions);
+        signature[0] = 0x02;
+
+        vm.prank(account);
+        assertEq(
+            validator.isValidSignatureWithSender(app, USER_OP_HASH, signature), ERC1271_INVALID
+        );
+
+        (root,, leafB) = _tree(USER_OP_HASH, keccak256("b"));
+        proof[0] = leafB;
+        assertions[0] = _assert(alice, validator.multichainChallenge(root));
+        signature = _multichainSignature(BACKEND_SOLIDITY, root, proof, assertions);
+        signature[0] = 0x02;
+        assertFalse(
+            validator.validateSignatureWithData(
+                USER_OP_HASH, signature, _installData(1, _list(alice))
+            )
+        );
+    }
+
+    /// @dev 256 user operations: an eight-level proof.
+    function test_multichain_deepProof() public {
+        _install(account, 1, _list(alice));
+        bytes32[] memory level = new bytes32[](256);
+        for (uint256 i; i < 256; ++i) {
+            level[i] = keccak256(abi.encode(i == 0 ? USER_OP_HASH : keccak256(abi.encode(i))));
+        }
+        bytes32[] memory proof = new bytes32[](8);
+        for (uint256 depth; depth < 8; ++depth) {
+            proof[depth] = level[1];
+            bytes32[] memory next = new bytes32[](level.length / 2);
+            for (uint256 i; i < next.length; ++i) {
+                next[i] = _parent(level[2 * i], level[2 * i + 1]);
+            }
+            level = next;
+        }
+        Parts[] memory assertions = new Parts[](1);
+        assertions[0] = _assert(alice, validator.multichainChallenge(level[0]));
 
         assertTrue(
-            _userOpValid(account, _signature(BACKEND_PRECOMPILE, _assert(alice, USER_OP_HASH)))
-        );
-        assertFalse(
             _userOpValid(
-                account, _signature(BACKEND_PRECOMPILE, _assert(alice, keccak256("other")))
+                account, _multichainSignature(BACKEND_SOLIDITY, level[0], proof, assertions)
             )
         );
     }
