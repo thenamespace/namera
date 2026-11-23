@@ -1,7 +1,7 @@
 import { assert } from "@effect/vitest"
-import { KernelAccount, NexusAccount, Safe7579Account, Session, SmartAccount } from "@namera-ai/sdk"
+import { KernelAccount, Key, Keystore, NexusAccount, Safe7579Account, Session, SmartAccount } from "@namera-ai/sdk"
 import * as Effect_ from "@namera-ai/sdk/effect"
-import { Effect } from "effect"
+import { Effect, Exit } from "effect"
 import { createClient, http, zeroAddress } from "viem"
 import { entryPoint07Abi, entryPoint07Address } from "viem/account-abstraction"
 
@@ -56,7 +56,122 @@ const account = (value: unknown) => {
   return { address, namera }
 }
 
+// Key stores the Promise and Effect forms share: a store is the same value in both APIs.
+const memory = Keystore.memory()
+const secp256k1Only = Keystore.from({
+  curves: ["secp256k1"],
+  create: () => Promise.reject(new Error("unused")),
+  get: () => Promise.reject(new Error("unused")),
+  list: () => Promise.reject(new Error("backend offline")),
+  remove: () => Promise.reject(new Error("unused")),
+  sign: () => Promise.reject(new Error("unused"))
+})
+const digest = `0x${"11".repeat(32)}` as const
+const devKey = {
+  id: "dev",
+  label: undefined,
+  curve: "secp256k1",
+  publicKey:
+    "0x048318535b54105d4a7aae60c08fc45f9687181b4fdfc625bd1a753fa7397fed753547f11ca8696646f2f3acb08e31016afac23e630c5d11f59f61fef57b0d2aa5",
+  createdAt: 0
+} as const
+
 export const table: Record<string, Conformance> = {
+  "Key.address": {
+    kind: "sync",
+    check: async () => {
+      assert.strictEqual(Key.address(devKey, "eip155"), await Effect.runPromise(Effect_.Key.address(devKey, "eip155")))
+    }
+  },
+  "Key.caip10": {
+    kind: "sync",
+    check: async () => {
+      assert.strictEqual(
+        Key.caip10(devKey, "eip155:1"),
+        await Effect.runPromise(Effect_.Key.caip10(devKey, "eip155:1"))
+      )
+    }
+  },
+  "Keystore.encryptedJson": {
+    kind: "sync",
+    check: async () => {
+      const promise = Keystore.encryptedJson({ password: "p" })
+      const effect = await Effect.runPromise(Effect_.Keystore.encryptedJson({ password: "p" }))
+      assert.strictEqual(promise.type, effect.type)
+      assert.throws(() => Keystore.encryptedJson({ password: "p", data: "{}" }))
+      assert.isTrue(
+        Exit.isFailure(await Effect.runPromiseExit(Effect_.Keystore.encryptedJson({ password: "p", data: "{}" })))
+      )
+    }
+  },
+  "Keystore.from": {
+    kind: "sync",
+    check: async () => {
+      const effect = Effect_.Keystore.from({
+        curves: ["secp256k1"],
+        create: () => Effect.die("unused"),
+        get: () => Effect.die("unused"),
+        list: Effect.succeed([]),
+        remove: () => Effect.die("unused"),
+        sign: () => Effect.die("unused")
+      })
+      assert.strictEqual(effect.type, secp256k1Only.type)
+      assert.deepStrictEqual(await Effect.runPromise(Effect_.Keystore.list(effect)), [])
+    }
+  },
+  "Keystore.create": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.create(secp256k1Only, { curve: "p256", signal }),
+      effect: () => Effect_.Keystore.create(secp256k1Only, { curve: "p256" })
+    }
+  },
+  "Keystore.get": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.get(memory, { id: "missing", signal }),
+      effect: () => Effect_.Keystore.get(memory, { id: "missing" })
+    }
+  },
+  "Keystore.list": {
+    kind: "async",
+    success: {
+      promise: (signal) => Keystore.list(memory, { signal }),
+      effect: () => Effect_.Keystore.list(memory)
+    },
+    failure: {
+      promise: (signal) => Keystore.list(secp256k1Only, { signal }),
+      effect: () => Effect_.Keystore.list(secp256k1Only)
+    }
+  },
+  "Keystore.remove": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.remove(memory, { id: "missing", signal }),
+      effect: () => Effect_.Keystore.remove(memory, { id: "missing" })
+    }
+  },
+  "Keystore.sign": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.sign(memory, { id: "missing", digest, signal }),
+      effect: () => Effect_.Keystore.sign(memory, { id: "missing", digest })
+    }
+  },
+  "Keystore.toAccount": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.toAccount(memory, { id: "missing", signal }),
+      effect: () => Effect_.Keystore.toAccount(memory, { id: "missing" })
+    }
+  },
+  "Keystore.toJson": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Keystore.toJson(memory, { signal }),
+      effect: () => Effect_.Keystore.toJson(memory)
+    }
+  },
   "Session.now": {
     kind: "sync",
     check: async () => {

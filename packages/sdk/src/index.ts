@@ -54,3 +54,21 @@ export * as Safe7579Account from "./accounts/Safe7579Account.ts"
  * @since 2.0.0
  */
 export * as SmartAccount from "./accounts/SmartAccount.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Key from "./keys/Key.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./keys/Keystore.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KeystoreError from "./keys/KeystoreError.ts"
