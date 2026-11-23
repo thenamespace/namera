@@ -60,9 +60,11 @@ const gzippedSize = (input: string) =>
           esbuild({ target: "es2022", minify: true })
         ],
         onwarn: (warning) => {
-          // Cycles inside dependencies (ox, Effect) are theirs to keep; a cycle through our own code still fails.
-          const thirdParty = warning.code === "CIRCULAR_DEPENDENCY" &&
-            (warning.ids ?? []).every((id) => id.includes("/node_modules/"))
+          // Cycles and misplaced `@__PURE__` comments inside dependencies (ox, Effect, @scure) are theirs to keep; the
+          // same warning in our own code still fails.
+          const thirdParty = (warning.code === "CIRCULAR_DEPENDENCY" &&
+            (warning.ids ?? []).every((id) => id.includes("/node_modules/")))
+            || (warning.code === "INVALID_ANNOTATION" && (warning.id ?? "").includes("/node_modules/"))
           if (!thirdParty) throw new Error(warning.message)
         }
       })

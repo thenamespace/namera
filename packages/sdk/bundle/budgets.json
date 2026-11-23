@@ -2,6 +2,9 @@
   "Session.ts": 1024,
   "ChainError.ts": 46080,
   "index.ts": 122880,
-  "KernelAccount.ts": 46080,
-  "SmartAccount.ts": 61440
+  "KernelAccount.ts": 56320,
+  "SmartAccount.ts": 61440,
+  "Keystore.ts": 76800,
+  "SessionKey.ts": 40960,
+  "BrowserKeystore.ts": 35840
 }
