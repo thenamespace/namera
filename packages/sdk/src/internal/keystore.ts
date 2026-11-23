@@ -4,12 +4,12 @@ import * as Predicate from "effect/Predicate"
 import * as Result from "effect/Result"
 import * as OxKeystore from "ox/Keystore"
 
-import * as core from "../../internal/core/key/key.ts"
-import { run } from "../../internal/promise.ts"
-import { type LocalAccount, localAccount } from "../../internal/viem/account.ts"
-import { isNameraError } from "../../NameraError.ts"
-import * as KeystoreError from "../KeystoreError.ts"
-import type { Key } from "./key.ts"
+import type { Key } from "../keys/Key.ts"
+import * as KeystoreError from "../keys/KeystoreError.ts"
+import { isNameraError } from "../NameraError.ts"
+import * as core from "./core/key/key.ts"
+import { run } from "./promise.ts"
+import { type LocalAccount, localAccount } from "./viem/account.ts"
 
 const TypeId = "~@namera-ai/sdk/keys/Keystore" as const
 
@@ -59,7 +59,12 @@ export const make = (store: Omit<Store, typeof TypeId>): Store => ({
       : Effect.fail(KeystoreError.invalidDigest({ store: { type: store.type }, digest }))
 })
 
-const newKey = (
+/**
+ * A new key's public data, with a fresh id and the current time.
+ *
+ * @internal
+ */
+export const newKey = (
   options: { readonly curve: core.Curve; readonly label?: string | undefined; readonly publicKey: `0x${string}` }
 ) =>
   Effect.map(Clock.currentTimeMillis, (millis): Key => ({
@@ -113,25 +118,86 @@ export type Kdf =
   }
   | { readonly type: "pbkdf2"; readonly iterations?: number | undefined }
 
-interface Encrypted {
+/**
+ * A key and its Web3 Secret Storage JSON.
+ *
+ * @internal
+ */
+export interface Encrypted {
   readonly key: Key
   readonly keystore: OxKeystore.Keystore
 }
 
-const exportVersion = 1
-
-const isEncrypted = (u: unknown): u is Encrypted =>
+/**
+ * Whether a value is an `Encrypted` entry. A missing `label` (JSON drops `undefined`) is allowed.
+ *
+ * @internal
+ */
+export const isEncrypted = (u: unknown): u is Encrypted =>
   Predicate.hasProperty(u, "key") && Predicate.hasProperty(u, "keystore")
   && Predicate.hasProperty(u.keystore, "crypto") && Predicate.hasProperty(u.keystore, "version")
+
+/**
+ * Restores a key read from JSON, which dropped its `label` when it was undefined.
+ *
+ * @internal
+ */
+export const restore = ({ key, keystore }: Encrypted): Encrypted => ({
+  key: { ...key, label: key.label ?? undefined },
+  keystore
+})
+
+/**
+ * Encrypts new keys with a password and decrypts them to sign. Deriving the key from the password is the slow part, so
+ * each key's derived key is kept once unlocked.
+ *
+ * @internal
+ */
+export const sealer = (options: {
+  readonly password: string
+  readonly kdf?: Kdf | undefined
+  readonly store: { readonly type: StoreType }
+}) => {
+  const derived = new Map<string, OxKeystore.Key>()
+  const kdf = options.kdf ?? { type: "scrypt" }
+
+  const derive = () =>
+    Effect.promise((): Promise<readonly [OxKeystore.Key, OxKeystore.DeriveOpts]> =>
+      kdf.type === "scrypt"
+        ? OxKeystore.scryptAsync({ password: options.password, n: kdf.n, r: kdf.r, p: kdf.p })
+        : OxKeystore.pbkdf2Async({ password: options.password, iterations: kdf.iterations })
+    )
+
+  return {
+    seal: Effect.fnUntraced(function*(request: { readonly curve: core.Curve; readonly label?: string | undefined }) {
+      const secret = core.generate(request.curve)
+      const key = yield* newKey({ ...request, publicKey: core.publicKey(request.curve, secret) })
+      const [derivedKey, opts] = yield* derive()
+      derived.set(key.id, derivedKey)
+      return { key, keystore: OxKeystore.encrypt(secret, derivedKey, { ...opts, id: key.id }) } satisfies Encrypted
+    }),
+    sign: Effect.fnUntraced(function*({ key, keystore }: Encrypted, digest: `0x${string}`) {
+      const derivedKey = derived.get(key.id)
+        ?? (yield* Effect.promise(() => OxKeystore.toKeyAsync(keystore, { password: options.password })))
+      const secret = yield* Effect.try({
+        try: () => OxKeystore.decrypt(keystore, derivedKey),
+        catch: (cause) => KeystoreError.locked({ store: options.store, cause })
+      })
+      derived.set(key.id, derivedKey)
+      return core.sign(key.curve, secret, digest)
+    }),
+    forget: (id: string) => void derived.delete(id)
+  }
+}
+
+const exportVersion = 1
 
 const parseExport = (data: string): ReadonlyArray<Encrypted> | undefined => {
   try {
     const parsed: unknown = JSON.parse(data)
     if (!Predicate.hasProperty(parsed, "version") || parsed.version !== exportVersion) return undefined
     if (!Predicate.hasProperty(parsed, "keys") || !Array.isArray(parsed.keys)) return undefined
-    if (!parsed.keys.every(isEncrypted)) return undefined
-    // JSON drops a key's `label` when it is undefined; restore it so loaded keys equal the ones created.
-    return parsed.keys.map(({ key, keystore }) => ({ key: { ...key, label: key.label ?? undefined }, keystore }))
+    return parsed.keys.every(isEncrypted) ? parsed.keys.map(restore) : undefined
   } catch {
     return undefined
   }
@@ -150,63 +216,33 @@ export const encryptedJson = (options: {
   const ref = { type: "encryptedJson" } as const
   const loaded = options.data === undefined ? [] : parseExport(options.data)
   if (loaded === undefined) {
-    return Result.fail(
-      KeystoreError.unavailable({ store: ref, detail: "the data is not an encryptedJson export" })
-    )
+    return Result.fail(KeystoreError.unavailable({ store: ref, detail: "the data is not an encryptedJson export" }))
   }
 
   const keys = new Map(loaded.map((entry) => [entry.key.id, entry]))
-  // Deriving the key from the password is the slow part, so each key's derived key is kept once unlocked.
-  const derived = new Map<string, OxKeystore.Key>()
-  const kdf = options.kdf ?? { type: "scrypt" }
-
-  const derive = () =>
-    Effect.promise((): Promise<readonly [OxKeystore.Key, OxKeystore.DeriveOpts]> =>
-      kdf.type === "scrypt"
-        ? OxKeystore.scryptAsync({ password: options.password, n: kdf.n, r: kdf.r, p: kdf.p })
-        : OxKeystore.pbkdf2Async({ password: options.password, iterations: kdf.iterations })
-    )
-
+  const { forget, seal, sign } = sealer({ password: options.password, kdf: options.kdf, store: ref })
   const entry = (id: string) =>
     Effect.suspend(() => {
       const found = keys.get(id)
       return found === undefined ? Effect.fail(KeystoreError.notFound({ store: ref, id })) : Effect.succeed(found)
     })
 
-  const privateKey = Effect.fnUntraced(function*(id: string) {
-    const { keystore } = yield* entry(id)
-    const key = derived.get(id) ??
-      (yield* Effect.promise(() => OxKeystore.toKeyAsync(keystore, { password: options.password })))
-    const decrypted = yield* Effect.try({
-      try: () => OxKeystore.decrypt(keystore, key),
-      catch: (cause) => KeystoreError.locked({ store: ref, cause })
-    })
-    derived.set(id, key)
-    return decrypted
-  })
-
   return Result.succeed(make({
     type: "encryptedJson",
     curves: core.curves,
-    create: Effect.fnUntraced(function*({ curve, label }) {
-      const secret = core.generate(curve)
-      const key = yield* newKey({ curve, label, publicKey: core.publicKey(curve, secret) })
-      const [derivedKey, opts] = yield* derive()
-      keys.set(key.id, { key, keystore: OxKeystore.encrypt(secret, derivedKey, { ...opts, id: key.id }) })
-      derived.set(key.id, derivedKey)
-      return key
-    }),
+    create: (request) =>
+      Effect.map(seal(request), (sealed) => {
+        keys.set(sealed.key.id, sealed)
+        return sealed.key
+      }),
     get: (id) => Effect.map(entry(id), ({ key }) => key),
     list: Effect.sync(() => Array.from(keys.values(), ({ key }) => key)),
     remove: (id) =>
       Effect.map(entry(id), () => {
         keys.delete(id)
-        derived.delete(id)
+        forget(id)
       }),
-    sign: Effect.fnUntraced(function*(id, digest) {
-      const { key } = yield* entry(id)
-      return core.sign(key.curve, yield* privateKey(id), digest)
-    }),
+    sign: (id, digest) => Effect.flatMap(entry(id), (found) => sign(found, digest)),
     toJson: Effect.sync(() => JSON.stringify({ version: exportVersion, keys: Array.from(keys.values()) }))
   }))
 }

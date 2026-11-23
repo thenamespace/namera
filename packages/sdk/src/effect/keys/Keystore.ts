@@ -7,8 +7,8 @@
 import * as Effect from "effect/Effect"
 
 import type { Curve } from "../../internal/core/key/key.ts"
+import * as internal from "../../internal/keystore.ts"
 import type { LocalAccount } from "../../internal/viem/account.ts"
-import * as internal from "../../keys/internal/keystore.ts"
 import type { Key } from "../../keys/Key.ts"
 import type * as Keystore_ from "../../keys/Keystore.ts"
 import type * as KeystoreError from "../../keys/KeystoreError.ts"

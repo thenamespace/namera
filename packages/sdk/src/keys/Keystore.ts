@@ -18,9 +18,9 @@
 import * as Result from "effect/Result"
 
 import type { Curve } from "../internal/core/key/key.ts"
+import * as internal from "../internal/keystore.ts"
 import { run, type RunOptions } from "../internal/promise.ts"
 import type { LocalAccount } from "../internal/viem/account.ts"
-import * as internal from "./internal/keystore.ts"
 import type { Key } from "./Key.ts"
 import type * as KeystoreError from "./KeystoreError.ts"
 
