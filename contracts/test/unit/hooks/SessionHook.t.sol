@@ -136,6 +136,45 @@ contract SessionHookTest is Test {
         hook.initializeWithMultiplexer(address(account), id, data);
     }
 
+    /// @dev Initialization runs during validation in enable mode, so it may write only storage associated with the
+    /// account (ERC-7562): every slot is keyed by the account as the innermost mapping key.
+    function test_initialize_writesOnlyAccountAssociatedSlots() public {
+        install(NEXUS);
+        bytes32 id = configId();
+        bytes memory data = abi.encode(policies(2, MockExecutionPolicy.Mode.Pass));
+
+        vm.record();
+        vm.prank(address(smartSession));
+        hook.initializeWithMultiplexer(address(account), id, data);
+        (, bytes32[] memory writes) = vm.accesses(address(hook));
+
+        // `_counts` is slot 1, `_policies` slot 2 (after `_installs`).
+        bytes32 countSlot =
+            keccak256(abi.encode(address(account), keccak256(abi.encode(id, uint256(1)))));
+        bytes32[3] memory expected = [
+            countSlot,
+            keccak256(
+                abi.encode(
+                    address(account),
+                    keccak256(abi.encode(uint256(0), keccak256(abi.encode(id, uint256(2)))))
+                )
+            ),
+            keccak256(
+                abi.encode(
+                    address(account),
+                    keccak256(abi.encode(uint256(1), keccak256(abi.encode(id, uint256(2)))))
+                )
+            )
+        ];
+        assertGt(writes.length, 0);
+        for (uint256 i; i < writes.length; ++i) {
+            bool known =
+                writes[i] == expected[0] || writes[i] == expected[1] || writes[i] == expected[2];
+            assertTrue(known, "a write outside the account's slots");
+        }
+        assertEq(uint256(vm.load(address(hook), countSlot)), 2);
+    }
+
     // --------------------------------------------------------------------------------------------
     // Validation
     // --------------------------------------------------------------------------------------------
