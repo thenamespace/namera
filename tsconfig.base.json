@@ -47,15 +47,7 @@
       // A stable public API must not expose unstable ones; internals, barrels and tests may.
       "overrides": [
         {
-          "exclude": [
-            "**/internal/**/*",
-            "**/index.ts",
-            "**/index.tsx",
-            "**/test/**/*",
-            "**/*.fixture.ts",
-            "**/scripts/**/*",
-            "**/contracts/script/**/*"
-          ],
+          "exclude": ["**/internal/**/*", "**/index.ts", "**/index.tsx", "**/test/**/*", "**/scripts/**/*"],
           "options": {
             "diagnosticSeverity": {
               "apiStabilityLeak": "error"
