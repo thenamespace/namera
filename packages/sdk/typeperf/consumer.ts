@@ -1,5 +1,5 @@
 // A consumer of the SDK's public entries, compiled by `pnpm type-cost` to measure what the SDK costs the type checker.
-import { Account, ChainError, KernelAccount, NameraError, Session } from "@namera-ai/sdk"
+import { ChainError, KernelAccount, NameraError, Session, SmartAccount } from "@namera-ai/sdk"
 import { Session as EffectSession } from "@namera-ai/sdk/effect"
 import * as Effect from "effect/Effect"
 
@@ -16,6 +16,6 @@ export const account = (client: KernelAccount.from.Options["client"], owner: Ker
   KernelAccount.from({ client, owner })
 
 export const sessionsReady = async (client: KernelAccount.from.Options["client"], address: `0x${string}`) => {
-  const detected = await Account.detect(client, { address })
+  const detected = await SmartAccount.detect(client, { address })
   return detected.type !== "unsupported" && detected.type !== "undeployed" && detected.sessionsInstalled
 }

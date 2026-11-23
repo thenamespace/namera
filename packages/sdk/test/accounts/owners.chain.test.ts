@@ -1,5 +1,5 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
-import { type Account, KernelAccount, NexusAccount, Safe7579Account } from "@namera-ai/sdk"
+import { KernelAccount, NexusAccount, Safe7579Account, type SmartAccount } from "@namera-ai/sdk"
 import { zeroAddress } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 
@@ -18,7 +18,7 @@ const typedData = {
 
 // Nexus and Safe7579 deploy through their factory first: a bundler that enforces ERC-7562 refuses to deploy them in a
 // user operation (their factories are unstaked; see their own tests).
-const builders: ReadonlyArray<readonly [string, () => Promise<Account.Account>, boolean]> = [
+const builders: ReadonlyArray<readonly [string, () => Promise<SmartAccount.SmartAccount>, boolean]> = [
   ["Kernel", () => KernelAccount.from({ client, owner: walletOwner }), false],
   ["Nexus", () => NexusAccount.from({ client, owner: walletOwner }), true],
   ["Safe7579", () => Safe7579Account.from({ client, owners: [walletOwner] }), true]

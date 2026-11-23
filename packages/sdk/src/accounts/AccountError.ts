@@ -8,6 +8,7 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { redactUrls } from "../internal/redact.ts"
 import { version } from "../internal/version.ts"
 import * as NameraError from "../NameraError.ts"
 
@@ -35,6 +36,11 @@ export class NotSupported extends Schema.TaggedError<NotSupported>("@namera-ai/s
   override get message(): string {
     return withDetail("The account is not a supported smart account", this.detail)
   }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Namera supports Kernel 3.3, Nexus 1.3.3 and Safe 1.4.1 with Safe7579 v2, on EntryPoint 0.7."
+  }
 }
 
 /**
@@ -53,6 +59,11 @@ export class SessionsNotInstalled
   override get message(): string {
     return withDetail("Smart Sessions is not installed on the account", this.detail)
   }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Install it with `SmartAccount.installSessions`, or batch `SmartAccount.installSessionsCalls` into an operation."
+  }
 }
 
 /**
@@ -70,6 +81,11 @@ export class SigningFailed
 {
   override get message(): string {
     return withDetail("The owner could not sign", this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "The owner's key or wallet failed to sign; its error is the reason's `cause`."
   }
 }
 
@@ -90,6 +106,11 @@ export class InvalidOptions
   override get message(): string {
     return withDetail("The account options are invalid", this.detail)
   }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Fix the option the message names."
+  }
 }
 
 /**
@@ -107,6 +128,11 @@ export class ChainMismatch
 {
   override get message(): string {
     return withDetail(`The account is on chain ${this.expected}, not ${this.actual}`, this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return `Use a client for chain ${this.expected}.`
   }
 }
 
@@ -158,7 +184,7 @@ export const AccountRef: Schema.Struct<{
  *
  * error.reason._tag // => "InvalidOptions"
  * error.shortMessage // => "The account options are invalid: threshold 2 with 1 owner"
- * error.metaMessages // => ["Account: safe7579"]
+ * error.metaMessages // => ["Account: safe7579", "Hint: Fix the option the message names."]
  * ```
  *
  * @stability experimental
@@ -180,16 +206,22 @@ export class AccountError extends Schema.TaggedError<AccountError>("@namera-ai/s
 
   get details(): string | undefined {
     const { cause } = this.reason
-    return Predicate.isError(cause) ? cause.message : undefined
+    return Predicate.isError(cause) ? redactUrls(cause.message) : undefined
   }
 
   get docsPath(): string | undefined {
     return undefined
   }
 
-  get metaMessages(): ReadonlyArray<string> | undefined {
+  get metaMessages(): ReadonlyArray<string> {
     const { address, type } = this.account
-    return [address === undefined ? `Account: ${type}` : `Account: ${type} at ${address}`]
+    return [
+      address === undefined ? `Account: ${type}` : `Account: ${type} at ${address}`,
+      ...(this.reason._tag === "NotSupported" && this.reason.implementation !== undefined
+        ? [`Implementation: ${this.reason.implementation}`]
+        : []),
+      `Hint: ${this.reason.hint}`
+    ]
   }
 
   get version(): string {

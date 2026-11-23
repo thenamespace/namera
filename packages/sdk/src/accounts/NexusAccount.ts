@@ -7,9 +7,9 @@
  */
 import type * as ChainError from "../ChainError.ts"
 import { run, type RunOptions } from "../internal/promise.ts"
-import type * as Account from "./Account.ts"
 import type * as AccountError from "./AccountError.ts"
 import * as internal from "./internal/nexus.ts"
+import type * as SmartAccount from "./SmartAccount.ts"
 
 /**
  * A Nexus account built by Namera.
@@ -18,7 +18,7 @@ import * as internal from "./internal/nexus.ts"
  * @category models
  * @since 2.0.0
  */
-export type NexusAccount = Account.Account<"nexus">
+export type NexusAccount = SmartAccount.SmartAccount<"nexus">
 
 /**
  * Builds a Nexus account for an owner, at its counterfactual address unless `address` is given.

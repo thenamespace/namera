@@ -1,20 +1,15 @@
 import * as External from "@namera-ai/contracts/External"
 import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
-import type { Hex } from "viem"
 
+import type * as ChainError from "../../ChainError.ts"
 import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
 import * as Safe7579 from "../../internal/core/account/safe7579.ts"
+import type { AccountClient, Hex, Owner } from "../../internal/viem/client.ts"
+import { ownerSigner } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
-import {
-  type AccountClient,
-  make,
-  type NameraSmartAccount,
-  type Owner,
-  ownerSigner,
-  requireChain
-} from "./smartAccount.ts"
+import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
 /** The Safe7579 versions Namera supports. */
 export type Version = `${keyof typeof External.safe7579}`
@@ -43,7 +38,7 @@ export const installSessionsCall = (address: Hex) => ({
 /** @internal */
 export const from = Effect.fnUntraced(function*(
   options: FromOptions
-): Effect.fn.Return<NameraSmartAccount<"safe7579">, AccountError.AccountError> {
+): Effect.fn.Return<NameraSmartAccount<"safe7579">, AccountError.AccountError | ChainError.ChainError> {
   const version = options.version ?? "2"
   const contracts = External.safe7579[version]
   const threshold = options.threshold ?? options.owners.length
@@ -81,7 +76,7 @@ export const from = Effect.fnUntraced(function*(
   const signAll = (sign: (signer: (typeof signers)[number]) => Effect.Effect<Hex, AccountError.AccountError>) =>
     Effect.forEach(signers, sign)
 
-  return yield* make({
+  return yield* define({
     metadata: { type: "safe7579", version, entryPoint: "0.7", eip7702: false },
     client,
     address,

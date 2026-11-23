@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External, SmartSession } from "@namera-ai/contracts"
-import { Account, KernelAccount } from "@namera-ai/sdk"
+import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import { toKernelSmartAccount } from "permissionless/accounts"
 import { parseAbi, parseEther, zeroAddress } from "viem"
 import { entryPoint07Address } from "viem/account-abstraction"
@@ -93,7 +93,7 @@ describe("KernelAccount", { concurrent: false }, () => {
     await devnet.fund(account.address)
 
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
     const recipient = newOwner().address
     const batch = await devnet.sendUserOperation(account, [{ to: recipient, value: 2n }, { to: recipient, value: 3n }])
@@ -130,10 +130,10 @@ describe("KernelAccount", { concurrent: false }, () => {
     const account = await KernelAccount.from({ client, owner: newOwner(), sessions: false })
     await devnet.fund(account.address)
     await devnet.sendUserOperation(account, [{ to: zeroAddress }])
-    assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isFalse(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
-    assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue((await devnet.sendUserOperation(account, SmartAccount.installSessionsCalls(account))).success)
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
   })
 
   it("delegates the owner's address through EIP-7702 in the first operation, with Smart Sessions", async () => {
@@ -147,7 +147,7 @@ describe("KernelAccount", { concurrent: false }, () => {
       await client.getCode({ address: owner.address }),
       `0xef0100${kernel.implementation.slice(2).toLowerCase()}`
     )
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: owner.address }))
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: owner.address }))
 
     const recipient = newOwner().address
     assert.isTrue(

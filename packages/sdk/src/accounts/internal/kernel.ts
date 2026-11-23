@@ -1,20 +1,15 @@
 import * as External from "@namera-ai/contracts/External"
 import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
-import { hashMessage, hashTypedData, type Hex, type PrivateKeyAccount } from "viem"
 
+import type * as ChainError from "../../ChainError.ts"
 import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
+import type { AccountClient, Hex, Owner, PrivateKeyAccount } from "../../internal/viem/client.ts"
+import { hashMessage, hashTypedData, ownerSigner } from "../../internal/viem/signing.ts"
 import type * as AccountError from "../AccountError.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
-import {
-  type AccountClient,
-  make,
-  type NameraSmartAccount,
-  type Owner,
-  ownerSigner,
-  requireChain
-} from "./smartAccount.ts"
+import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
 /** The Kernel versions Namera supports. */
 export type Version = keyof typeof External.kernel
@@ -84,7 +79,7 @@ const build = Effect.fnUntraced(function*(options: {
         raw: Kernel.wrappedHash({ hash, account: options.address, chainId: client.chain.id, version: domainVersion })
       })).pipe(Effect.map((signature) => Kernel.ownerSignature(contracts, signature, options.eip7702)))
 
-  return yield* make({
+  return yield* define({
     metadata: { type: "kernel", version: options.version, entryPoint: "0.7", eip7702: options.eip7702 },
     client,
     address: options.address,
@@ -101,7 +96,9 @@ const build = Effect.fnUntraced(function*(options: {
 })
 
 /** @internal */
-export const from = (options: FromOptions): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError> => {
+export const from = (
+  options: FromOptions
+): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> => {
   const version = options.version ?? "3.3"
   const contracts = External.kernel[version]
   const initData = Kernel.initData({
@@ -127,7 +124,7 @@ export const from = (options: FromOptions): Effect.Effect<NameraSmartAccount<"ke
 /** @internal */
 export const fromEip7702 = (
   options: FromEip7702Options
-): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError> => {
+): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> => {
   const version = options.version ?? "3.3"
   return build({
     client: options.client,

@@ -7,9 +7,9 @@
  */
 import type * as ChainError from "../ChainError.ts"
 import { run, type RunOptions } from "../internal/promise.ts"
-import type * as Account from "./Account.ts"
 import type * as AccountError from "./AccountError.ts"
 import * as internal from "./internal/kernel.ts"
+import type * as SmartAccount from "./SmartAccount.ts"
 
 /**
  * A Kernel account built by Namera.
@@ -18,7 +18,7 @@ import * as internal from "./internal/kernel.ts"
  * @category models
  * @since 2.0.0
  */
-export type KernelAccount = Account.Account<"kernel">
+export type KernelAccount = SmartAccount.SmartAccount<"kernel">
 
 /**
  * Builds a Kernel account for an owner, at its counterfactual address unless `address` is given.

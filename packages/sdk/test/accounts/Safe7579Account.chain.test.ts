@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External } from "@namera-ai/contracts"
-import { Account, AccountError, Safe7579Account } from "@namera-ai/sdk"
+import { AccountError, Safe7579Account, SmartAccount } from "@namera-ai/sdk"
 import {
   concat,
   decodeFunctionData,
@@ -83,7 +83,7 @@ describe("Safe7579Account", { concurrent: false }, () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()] })
     await devnet.fund(account.address)
     await devnet.deploy(account)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
 
@@ -137,10 +137,10 @@ describe("Safe7579Account", { concurrent: false }, () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()], sessions: false })
     await devnet.fund(account.address)
     await devnet.deploy(account)
-    assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isFalse(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
-    assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue((await devnet.sendUserOperation(account, SmartAccount.installSessionsCalls(account))).success)
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
   })
 
   it("rejects repeated owners and a threshold outside 1 to the number of owners", async () => {

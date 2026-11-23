@@ -12,7 +12,10 @@ describe("AccountError", () => {
     assert.strictEqual(error.reason._tag, "SigningFailed")
     assert.strictEqual(error.shortMessage, "The owner could not sign")
     assert.strictEqual(error.details, "user rejected the request")
-    assert.deepStrictEqual(error.metaMessages, ["Account: kernel at 0x0000000000000000000000000000000000000001"])
+    assert.deepStrictEqual(error.metaMessages, [
+      "Account: kernel at 0x0000000000000000000000000000000000000001",
+      "Hint: The owner's key or wallet failed to sign; its error is the reason's `cause`."
+    ])
     assert.strictEqual(error.reason.cause, cause)
   })
 
@@ -27,6 +30,7 @@ describe("AccountError", () => {
       error.reason._tag === "NotSupported" ? error.reason.implementation : undefined,
       "0x00000000000000000000000000000000000000aa"
     )
+    assert.include(error.metaMessages, "Implementation: 0x00000000000000000000000000000000000000aa")
   })
 
   it("is a Namera error, recognised across package copies", () => {
@@ -35,5 +39,6 @@ describe("AccountError", () => {
     assert.isTrue(AccountError.isAccountError(error))
     assert.isTrue(NameraError.isNameraError(error))
     assert.strictEqual(error.message, "The account is on chain 8453, not 1")
+    assert.include(error.metaMessages, "Hint: Use a client for chain 8453.")
   })
 })

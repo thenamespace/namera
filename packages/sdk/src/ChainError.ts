@@ -13,6 +13,7 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { redactUrl, redactUrls } from "./internal/redact.ts"
 import { version } from "./internal/version.ts"
 import * as NameraError from "./NameraError.ts"
 
@@ -32,12 +33,16 @@ const withDetail = (summary: string, detail: string | undefined) =>
  * @since 2.0.0
  */
 export class Transport extends Schema.TaggedError<Transport>("@namera-ai/sdk/ChainError/Transport")("Transport", {
-  url: Schema.optionalKey(Schema.String),
   detail,
   cause
 }) {
   override get message(): string {
     return withDetail("The chain could not be reached", this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Check the RPC URL and that the node is reachable."
   }
 }
 
@@ -56,6 +61,11 @@ export class Rpc extends Schema.TaggedError<Rpc>("@namera-ai/sdk/ChainError/Rpc"
   override get message(): string {
     return withDetail(`The node rejected the request with code ${this.code}`, this.detail)
   }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Check the request and that the node supports the method; the node's message is in `details`."
+  }
 }
 
 /**
@@ -73,6 +83,11 @@ export class Reverted extends Schema.TaggedError<Reverted>("@namera-ai/sdk/Chain
   override get message(): string {
     return withDetail("The call reverted", this.detail)
   }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Decode `reason.data` with the contract's ABI to see why it reverted."
+  }
 }
 
 /**
@@ -88,6 +103,11 @@ export class Timeout extends Schema.TaggedError<Timeout>("@namera-ai/sdk/ChainEr
 }) {
   override get message(): string {
     return withDetail("The request to the chain timed out", this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Retry, or raise the client transport's `timeout`."
   }
 }
 
@@ -111,7 +131,8 @@ export const ChainErrorReason: Schema.Union<[typeof Transport, typeof Rpc, typeo
 export type ChainErrorReason = typeof ChainErrorReason.Type
 
 /**
- * A failure talking to a chain. `reason` says which, and `method` names the JSON-RPC method when one was being called.
+ * A failure talking to a chain. `reason` says which; `method`, `chainId` and `url` say where, when known. `url` never
+ * includes credentials (user info, query, or a key in the path).
  *
  * **Example** (Narrowing on the reason)
  *
@@ -122,7 +143,7 @@ export type ChainErrorReason = typeof ChainErrorReason.Type
  *
  * error instanceof ChainError.ChainError && error.reason._tag === "Rpc" // => true
  * error.shortMessage // => "The node rejected the request with code -32601"
- * error.metaMessages // => ["Method: eth_chainId"]
+ * error.metaMessages[0] // => "Method: eth_chainId"
  * ```
  *
  * @stability experimental
@@ -131,6 +152,8 @@ export type ChainErrorReason = typeof ChainErrorReason.Type
  */
 export class ChainError extends Schema.TaggedError<ChainError>("@namera-ai/sdk/ChainError")("ChainError", {
   method: Schema.optionalKey(Schema.String),
+  chainId: Schema.optionalKey(Schema.Int),
+  url: Schema.optionalKey(Schema.String),
   reason: ChainErrorReason
 }) implements NameraError.Fields {
   readonly [TypeId] = TypeId
@@ -144,15 +167,20 @@ export class ChainError extends Schema.TaggedError<ChainError>("@namera-ai/sdk/C
 
   get details(): string | undefined {
     const { cause } = this.reason
-    return Predicate.isError(cause) ? cause.message : undefined
+    return Predicate.isError(cause) ? redactUrls(cause.message) : undefined
   }
 
   get docsPath(): string | undefined {
     return undefined
   }
 
-  get metaMessages(): ReadonlyArray<string> | undefined {
-    return this.method === undefined ? undefined : [`Method: ${this.method}`]
+  get metaMessages(): ReadonlyArray<string> {
+    return [
+      ...(this.method === undefined ? [] : [`Method: ${this.method}`]),
+      ...(this.chainId === undefined ? [] : [`Chain: ${this.chainId}`]),
+      ...(this.url === undefined ? [] : [`URL: ${this.url}`]),
+      `Hint: ${this.reason.hint}`
+    ]
   }
 
   get version(): string {
@@ -174,8 +202,8 @@ export class ChainError extends Schema.TaggedError<ChainError>("@namera-ai/sdk/C
 export const isChainError = (u: unknown): u is ChainError => Predicate.hasProperty(u, TypeId)
 
 /**
- * The options every `ChainError` constructor accepts: the JSON-RPC method being called, a detail for the message, and
- * the underlying failure.
+ * The options every `ChainError` constructor accepts: where the failure happened (the JSON-RPC method, the chain id
+ * and the endpoint URL, which is stored without credentials), a detail for the message, and the underlying failure.
  *
  * @stability experimental
  * @category models
@@ -183,12 +211,19 @@ export const isChainError = (u: unknown): u is ChainError => Predicate.hasProper
  */
 export interface Options {
   readonly method?: string | undefined
+  readonly chainId?: number | undefined
+  readonly url?: string | undefined
   readonly detail?: string | undefined
   readonly cause?: unknown
 }
 
-const make = (reason: ChainErrorReason, method: string | undefined) =>
-  new ChainError(method === undefined ? { reason } : { method, reason })
+const make = (reason: ChainErrorReason, { chainId, method, url }: Options) =>
+  new ChainError({
+    reason,
+    ...(method === undefined ? {} : { method }),
+    ...(chainId === undefined ? {} : { chainId }),
+    ...(url === undefined ? {} : { url: redactUrl(url) })
+  })
 
 const reasonFields = ({ cause, detail }: Options) => ({
   ...(detail === undefined ? {} : { detail }),
@@ -196,17 +231,13 @@ const reasonFields = ({ cause, detail }: Options) => ({
 })
 
 /**
- * Creates a `ChainError` for a transport failure. `url` is the endpoint that could not be reached.
+ * Creates a `ChainError` for a transport failure.
  *
  * @stability experimental
  * @category constructors
  * @since 2.0.0
  */
-export const transport = (options: Options & { readonly url?: string | undefined } = {}): ChainError =>
-  make(
-    new Transport({ ...reasonFields(options), ...(options.url === undefined ? {} : { url: options.url }) }),
-    options.method
-  )
+export const transport = (options: Options = {}): ChainError => make(new Transport(reasonFields(options)), options)
 
 /**
  * Creates a `ChainError` for a JSON-RPC error the node answered with.
@@ -216,7 +247,7 @@ export const transport = (options: Options & { readonly url?: string | undefined
  * @since 2.0.0
  */
 export const rpc = (options: Options & { readonly code: number }): ChainError =>
-  make(new Rpc({ ...reasonFields(options), code: options.code }), options.method)
+  make(new Rpc({ ...reasonFields(options), code: options.code }), options)
 
 /**
  * Creates a `ChainError` for a reverted call. `data` is the revert data, when known.
@@ -228,7 +259,7 @@ export const rpc = (options: Options & { readonly code: number }): ChainError =>
 export const reverted = (options: Options & { readonly data?: `0x${string}` | undefined } = {}): ChainError =>
   make(
     new Reverted({ ...reasonFields(options), ...(options.data === undefined ? {} : { data: options.data }) }),
-    options.method
+    options
   )
 
 /**
@@ -238,4 +269,4 @@ export const reverted = (options: Options & { readonly data?: `0x${string}` | un
  * @category constructors
  * @since 2.0.0
  */
-export const timeout = (options: Options = {}): ChainError => make(new Timeout(reasonFields(options)), options.method)
+export const timeout = (options: Options = {}): ChainError => make(new Timeout(reasonFields(options)), options)

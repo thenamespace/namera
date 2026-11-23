@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External, SmartSession } from "@namera-ai/contracts"
-import { Account, AccountError, KernelAccount, NexusAccount, Safe7579Account } from "@namera-ai/sdk"
+import { AccountError, KernelAccount, NexusAccount, Safe7579Account, SmartAccount } from "@namera-ai/sdk"
 import { toKernelSmartAccount } from "permissionless/accounts"
 import { createWalletClient, encodeFunctionData, http, parseAbi, zeroAddress } from "viem"
 import { entryPoint07Address } from "viem/account-abstraction"
@@ -14,7 +14,7 @@ const rejection = (promise: Promise<unknown>) =>
     (error: unknown) => error
   )
 
-describe("Account", { concurrent: false }, () => {
+describe("SmartAccount", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   it("detects an account another SDK deployed and connects to it", async () => {
@@ -29,7 +29,7 @@ describe("Account", { concurrent: false }, () => {
     await devnet.fund(deployedElsewhere.address)
     await devnet.sendUserOperation(deployedElsewhere, [{ to: zeroAddress }])
 
-    assert.deepStrictEqual(await Account.detect(client, { address: deployedElsewhere.address }), {
+    assert.deepStrictEqual(await SmartAccount.detect(client, { address: deployedElsewhere.address }), {
       type: "kernel",
       version: "3.3",
       eip7702: false,
@@ -37,7 +37,7 @@ describe("Account", { concurrent: false }, () => {
       sessionsInstalled: false
     })
 
-    const account = await Account.from({ client, address: deployedElsewhere.address, owner })
+    const account = await SmartAccount.fromAddress({ client, address: deployedElsewhere.address, owner })
     assert.strictEqual(account.namera.type, "kernel")
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
   })
@@ -46,7 +46,7 @@ describe("Account", { concurrent: false }, () => {
     const account = await Safe7579Account.from({ client, owners: [newOwner()] })
     await devnet.deploy(account)
 
-    assert.deepInclude(await Account.detect(client, { address: account.address }), {
+    assert.deepInclude(await SmartAccount.detect(client, { address: account.address }), {
       type: "safe7579",
       version: "2",
       eip7702: false,
@@ -60,9 +60,9 @@ describe("Account", { concurrent: false }, () => {
     await devnet.fund(owner.address)
     await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
-    const detected = await Account.detect(client, { address: owner.address })
+    const detected = await SmartAccount.detect(client, { address: owner.address })
     assert.deepInclude(detected, { type: "nexus", version: "1.3.3", eip7702: true, sessionsInstalled: true })
-    assert.deepStrictEqual(await Account.detect(client, { address: newOwner().address }), { type: "undeployed" })
+    assert.deepStrictEqual(await SmartAccount.detect(client, { address: newOwner().address }), { type: "undeployed" })
   })
 
   it("rejects an account whose implementation it doesn't support, naming the implementation", async () => {
@@ -99,11 +99,11 @@ describe("Account", { concurrent: false }, () => {
       })
     })
 
-    assert.deepStrictEqual(await Account.detect(client, { address }), {
+    assert.deepStrictEqual(await SmartAccount.detect(client, { address }), {
       type: "unsupported",
       implementation: safe.singletonL2.toLowerCase() as `0x${string}`
     })
-    const error = await rejection(Account.from({ client, address, owner }))
+    const error = await rejection(SmartAccount.fromAddress({ client, address, owner }))
     assert.isTrue(AccountError.isAccountError(error))
     assert.strictEqual((error as AccountError.AccountError).reason._tag, "NotSupported")
   })
@@ -113,11 +113,11 @@ describe("Account", { concurrent: false }, () => {
     await devnet.fund(account.address)
     await devnet.sendUserOperation(account, [{ to: zeroAddress }])
 
-    const receipt = await Account.installSessionsSync(devnet.bundlerClient(account, { bundleOnReceipt: true }))
+    const receipt = await SmartAccount.installSessionsSync(devnet.bundlerClient(account, { bundleOnReceipt: true }))
 
     assert.strictEqual(receipt.status, "success")
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
-    const [install, ...rest] = Account.installSessionsCalls(account)
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
+    const [install, ...rest] = SmartAccount.installSessionsCalls(account)
     assert.strictEqual(install?.to, account.address)
     assert.include(install?.data ?? "", SmartSession.v1.address.slice(2).toLowerCase())
     assert.strictEqual(rest.length, 0)

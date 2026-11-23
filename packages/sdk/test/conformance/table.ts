@@ -1,8 +1,9 @@
 import { assert } from "@effect/vitest"
-import { Account, KernelAccount, NexusAccount, Safe7579Account, Session } from "@namera-ai/sdk"
+import { KernelAccount, NexusAccount, Safe7579Account, Session, SmartAccount } from "@namera-ai/sdk"
 import * as Effect_ from "@namera-ai/sdk/effect"
 import { Effect } from "effect"
 import { createClient, http, zeroAddress } from "viem"
+import { entryPoint07Abi, entryPoint07Address } from "viem/account-abstraction"
 
 import { client, newOwner } from "../accounts/accounts.test-utils.ts"
 
@@ -34,6 +35,22 @@ export type Conformance =
 const chainless = createClient({ transport: http(client.transport.url) })
 const unreachable = createClient({ chain: client.chain, transport: http("http://127.0.0.1:1", { retryCount: 0 }) })
 const owner = newOwner()
+// A custom implementation whose address resolves (or fails) as given; nothing else is called while building it.
+const implementation = (address: Promise<`0x${string}`>): SmartAccount.Implementation => {
+  // Settled before use, so a rejected address never counts as unhandled.
+  address.catch(() => undefined)
+  return {
+    client,
+    entryPoint: { abi: entryPoint07Abi, address: entryPoint07Address, version: "0.7" },
+    getAddress: () => address,
+    encodeCalls: () => Promise.resolve("0x"),
+    getFactoryArgs: () => Promise.resolve({ factory: undefined, factoryData: undefined }),
+    getStubSignature: () => Promise.resolve("0x"),
+    signMessage: () => Promise.resolve("0x"),
+    signTypedData: () => Promise.resolve("0x"),
+    signUserOperation: () => Promise.resolve("0x")
+  }
+}
 const account = (value: unknown) => {
   const { address, namera } = value as KernelAccount.KernelAccount
   return { address, namera }
@@ -48,47 +65,59 @@ export const table: Record<string, Conformance> = {
       assert.isAtMost(Math.abs(effect - promise), 1)
     }
   },
-  "Account.detect": {
+  "SmartAccount.from": {
     kind: "async",
     success: {
-      promise: (signal) => Account.detect(client, { address: zeroAddress, signal }),
-      effect: () => Effect_.Account.detect(client, { address: zeroAddress })
+      promise: (signal) => SmartAccount.from(implementation(Promise.resolve(zeroAddress)), { signal }),
+      effect: () => Effect_.SmartAccount.from(implementation(Promise.resolve(zeroAddress))),
+      project: (value) => (value as { readonly address: string }).address
     },
     failure: {
-      promise: (signal) => Account.detect(unreachable, { address: zeroAddress, signal }),
-      effect: () => Effect_.Account.detect(unreachable, { address: zeroAddress })
+      promise: (signal) => SmartAccount.from(implementation(Promise.reject(new Error("no address"))), { signal }),
+      effect: () => Effect_.SmartAccount.from(implementation(Promise.reject(new Error("no address"))))
     }
   },
-  "Account.from": {
-    kind: "async",
-    failure: {
-      promise: (signal) => Account.from({ client, address: zeroAddress, owner, signal }),
-      effect: () => Effect_.Account.from({ client, address: zeroAddress, owner })
-    }
-  },
-  "Account.isSessionsInstalled": {
+  "SmartAccount.detect": {
     kind: "async",
     success: {
-      promise: (signal) => Account.isSessionsInstalled(client, { address: zeroAddress, signal }),
-      effect: () => Effect_.Account.isSessionsInstalled(client, { address: zeroAddress })
+      promise: (signal) => SmartAccount.detect(client, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.detect(client, { address: zeroAddress })
     },
     failure: {
-      promise: (signal) => Account.isSessionsInstalled(unreachable, { address: zeroAddress, signal }),
-      effect: () => Effect_.Account.isSessionsInstalled(unreachable, { address: zeroAddress })
+      promise: (signal) => SmartAccount.detect(unreachable, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.detect(unreachable, { address: zeroAddress })
     }
   },
-  "Account.installSessions": {
+  "SmartAccount.fromAddress": {
     kind: "async",
     failure: {
-      promise: (signal) => Account.installSessions(client, { signal }),
-      effect: () => Effect_.Account.installSessions(client)
+      promise: (signal) => SmartAccount.fromAddress({ client, address: zeroAddress, owner, signal }),
+      effect: () => Effect_.SmartAccount.fromAddress({ client, address: zeroAddress, owner })
     }
   },
-  "Account.installSessionsSync": {
+  "SmartAccount.isSessionsInstalled": {
+    kind: "async",
+    success: {
+      promise: (signal) => SmartAccount.isSessionsInstalled(client, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.isSessionsInstalled(client, { address: zeroAddress })
+    },
+    failure: {
+      promise: (signal) => SmartAccount.isSessionsInstalled(unreachable, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.isSessionsInstalled(unreachable, { address: zeroAddress })
+    }
+  },
+  "SmartAccount.installSessions": {
     kind: "async",
     failure: {
-      promise: (signal) => Account.installSessionsSync(client, { signal }),
-      effect: () => Effect_.Account.installSessionsSync(client)
+      promise: (signal) => SmartAccount.installSessions(client, { signal }),
+      effect: () => Effect_.SmartAccount.installSessions(client)
+    }
+  },
+  "SmartAccount.installSessionsSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.installSessionsSync(client, { signal }),
+      effect: () => Effect_.SmartAccount.installSessionsSync(client)
     }
   },
   "KernelAccount.from": {

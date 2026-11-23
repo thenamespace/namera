@@ -7,9 +7,9 @@
  */
 import type * as ChainError from "../ChainError.ts"
 import { run, type RunOptions } from "../internal/promise.ts"
-import type * as Account from "./Account.ts"
 import type * as AccountError from "./AccountError.ts"
 import * as internal from "./internal/safe7579.ts"
+import type * as SmartAccount from "./SmartAccount.ts"
 
 /**
  * A Safe7579 account built by Namera.
@@ -18,7 +18,7 @@ import * as internal from "./internal/safe7579.ts"
  * @category models
  * @since 2.0.0
  */
-export type Safe7579Account = Account.Account<"safe7579">
+export type Safe7579Account = SmartAccount.SmartAccount<"safe7579">
 
 /**
  * Builds a Safe7579 account for its owners, at its counterfactual address unless `address` is given.

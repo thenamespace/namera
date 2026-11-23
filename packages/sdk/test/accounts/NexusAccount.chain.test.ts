@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External } from "@namera-ai/contracts"
-import { Account, NexusAccount } from "@namera-ai/sdk"
+import { NexusAccount, SmartAccount } from "@namera-ai/sdk"
 import { decodeFunctionData, parseAbi, zeroAddress, zeroHash } from "viem"
 
 import { client, devnet, newOwner } from "./accounts.test-utils.ts"
@@ -68,7 +68,7 @@ describe("NexusAccount", { concurrent: false }, () => {
     const account = await NexusAccount.from({ client, owner: newOwner() })
     await devnet.fund(account.address)
     await devnet.deploy(account)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
 
@@ -113,10 +113,10 @@ describe("NexusAccount", { concurrent: false }, () => {
     const account = await NexusAccount.from({ client, owner: newOwner(), sessions: false })
     await devnet.fund(account.address)
     await devnet.deploy(account)
-    assert.isFalse(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isFalse(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
-    assert.isTrue((await devnet.sendUserOperation(account, Account.installSessionsCalls(account))).success)
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: account.address }))
+    assert.isTrue((await devnet.sendUserOperation(account, SmartAccount.installSessionsCalls(account))).success)
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
   })
 
   it("delegates the owner's address through EIP-7702 in the first operation, with Smart Sessions", async () => {
@@ -129,7 +129,7 @@ describe("NexusAccount", { concurrent: false }, () => {
       await client.getCode({ address: owner.address }),
       `0xef0100${nexus.implementation.slice(2).toLowerCase()}`
     )
-    assert.isTrue(await Account.isSessionsInstalled(client, { address: owner.address }))
+    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: owner.address }))
     assert.isTrue(
       (await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }, { to: zeroAddress, value: 2n }]))
         .success

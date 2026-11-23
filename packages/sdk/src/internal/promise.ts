@@ -1,10 +1,9 @@
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
-import * as Predicate from "effect/Predicate"
 
 import { isNameraError } from "../NameraError.ts"
-import { fromUnknown } from "./chainError.ts"
+import { fromUnknown, isForeign } from "./chainError.ts"
 
 /**
  * The options every Promise function accepts besides its own.
@@ -31,9 +30,3 @@ export const run = <A, E>(effect: Effect.Effect<A, E>, options?: RunOptions): Pr
     throw failure
   })
 }
-
-// viem's and ox's errors extend their `BaseError`, which sets a string `shortMessage` and `version` (viem's is the bare
-// version, ox's is `ox@<version>`).
-const isForeign = (u: unknown): boolean =>
-  Predicate.isError(u) && Predicate.hasProperty(u, "shortMessage") && Predicate.isString(u.shortMessage)
-  && Predicate.hasProperty(u, "version") && Predicate.isString(u.version)

@@ -1,31 +1,23 @@
 import * as External from "@namera-ai/contracts/External"
 import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
-import {
-  getAddress,
-  type Hex,
-  type PrivateKeyAccount,
-  toPrefixedMessage,
-  type TypedDataDefinition,
-  zeroHash
-} from "viem"
-import { call } from "viem/actions"
-import { wrapTypedDataSignature } from "viem/experimental/erc7739"
 
 import type * as ChainError from "../../ChainError.ts"
-import { fromUnknown } from "../../internal/chainError.ts"
 import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
 import * as Nexus from "../../internal/core/account/nexus.ts"
+import { type AccountClient, call, type Hex, type Owner, type PrivateKeyAccount } from "../../internal/viem/client.ts"
+import {
+  getAddress,
+  ownerSigner,
+  toPrefixedMessage,
+  type TypedDataDefinition,
+  wrapTypedData
+} from "../../internal/viem/signing.ts"
 import type * as AccountError from "../AccountError.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
-import {
-  type AccountClient,
-  make,
-  type NameraSmartAccount,
-  type Owner,
-  ownerSigner,
-  requireChain
-} from "./smartAccount.ts"
+import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
+
+const zeroHash = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 /** The Nexus versions Namera supports. */
 export type Version = keyof typeof External.nexus
@@ -103,14 +95,10 @@ const build = Effect.fnUntraced(function*(options: {
       primaryType: "TypedDataSign",
       message: { contents: typedData.message, ...verifierDomain }
     } as unknown as TypedDataDefinition).pipe(
-      Effect.map((signature) =>
-        Nexus.ownerSignature(
-          wrapTypedDataSignature({ ...typedData, signature } as Parameters<typeof wrapTypedDataSignature>[0])
-        )
-      )
+      Effect.map((signature) => Nexus.ownerSignature(wrapTypedData(typedData, signature)))
     )
 
-  return yield* make({
+  return yield* define({
     metadata: { type: "nexus", version: options.version, entryPoint: "0.7", eip7702: options.eip7702 },
     client,
     address: options.address,
@@ -146,12 +134,8 @@ export const from = Effect.fnUntraced(function*(
     smartSession: options.sessions === false ? undefined : SmartSession.v1.address,
     index: options.index ?? BigInt("0")
   })
-  const address = options.address ?? Nexus.decodeAddress(
-    (yield* Effect.tryPromise({
-      try: () => call(options.client, { to: contracts.factory, data: addressCall }),
-      catch: (cause) => fromUnknown(cause, "eth_call")
-    })).data ?? "0x"
-  )
+  const address = options.address ??
+    Nexus.decodeAddress((yield* call(options.client, { to: contracts.factory, data: addressCall })) ?? "0x")
   return yield* build({
     client: options.client,
     owner: options.owner,
@@ -165,7 +149,7 @@ export const from = Effect.fnUntraced(function*(
 /** @internal */
 export const fromEip7702 = (
   options: FromEip7702Options
-): Effect.Effect<NameraSmartAccount<"nexus">, AccountError.AccountError> => {
+): Effect.Effect<NameraSmartAccount<"nexus">, AccountError.AccountError | ChainError.ChainError> => {
   const version = options.version ?? "1.3.3"
   return build({
     client: options.client,

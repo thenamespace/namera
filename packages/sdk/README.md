@@ -21,11 +21,13 @@ Every module is also importable on its own (`@namera-ai/sdk/Session`).
 
 ## Accounts
 
-Kernel 3.3, Nexus 1.3.3 and Safe 1.4.1 with Safe7579 v2 are viem `SmartAccount`s, so viem's bundler client, paymasters
-and wagmi use them unchanged. New accounts install Smart Sessions in their deploying operation unless `sessions: false`.
+Every account is viem's `SmartAccount`, so viem's bundler client, paymasters and wagmi use it unchanged.
+`KernelAccount.from` (Kernel 3.3), `NexusAccount.from` (Nexus 1.3.3) and `Safe7579Account.from` (Safe 1.4.1 with
+Safe7579 v2) are built on `SmartAccount.from`, which takes viem's `toSmartAccount` options. New accounts install Smart
+Sessions in their deploying operation unless `sessions: false`.
 
 ```ts
-import { Account, KernelAccount } from "@namera-ai/sdk"
+import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import { createPublicClient, http, zeroAddress } from "viem"
 import { createBundlerClient } from "viem/account-abstraction"
 import { privateKeyToAccount } from "viem/accounts"
@@ -38,7 +40,8 @@ const account = await KernelAccount.from({ client, owner })
 const bundler = createBundlerClient({ account, client, transport: http(process.env.BUNDLER_URL) })
 await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
 
-await Account.detect(client, { address: account.address }) // { type: "kernel", version: "3.3", sessionsInstalled: true, … }
+await SmartAccount.detect(client, { address: account.address }) // { type: "kernel", version: "3.3", sessionsInstalled: true, … }
+const existing = await SmartAccount.fromAddress({ client, address, owner }) // an account another SDK created
 ```
 
 `KernelAccount.fromEip7702` and `NexusAccount.fromEip7702` use the owner's own address. As with any viem EIP-7702
@@ -55,8 +58,11 @@ await bundler.sendUserOperation({ calls, authorization })
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or
-`Timeout`). Every error carries viem's error fields (`shortMessage`, `details`, `metaMessages`, `version`), and raw
-viem and ox errors are translated into a Namera error with the original kept as the cause.
+`Timeout`; `AccountError` with `NotSupported`, `SigningFailed`, …), handled with `Effect.catchTag` and
+`Effect.catchReason` in the Effect API. Every error carries viem's error fields (`shortMessage`, `details`,
+`metaMessages`, `version`); `metaMessages` names where it happened (method, chain, endpoint) and ends with a hint.
+Raw viem and ox errors are translated into a Namera error with the original kept as the cause. Endpoints never show
+credentials: user info, the query and key-like path segments are removed.
 
 ```ts
 import { ChainError, NameraError } from "@namera-ai/sdk"

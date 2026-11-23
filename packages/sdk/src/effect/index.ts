@@ -29,12 +29,6 @@ export * as Session from "./Session.ts"
  * @stability experimental
  * @since 2.0.0
  */
-export * as Account from "./accounts/Account.ts"
-
-/**
- * @stability experimental
- * @since 2.0.0
- */
 export * as AccountError from "./accounts/AccountError.ts"
 
 /**
@@ -54,3 +48,9 @@ export * as NexusAccount from "./accounts/NexusAccount.ts"
  * @since 2.0.0
  */
 export * as Safe7579Account from "./accounts/Safe7579Account.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SmartAccount from "./accounts/SmartAccount.ts"

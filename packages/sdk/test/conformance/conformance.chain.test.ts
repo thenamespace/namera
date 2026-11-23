@@ -1,5 +1,5 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
-import { Account, KernelAccount } from "@namera-ai/sdk"
+import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import * as PromiseApi from "@namera-ai/sdk"
 import * as EffectApi from "@namera-ai/sdk/effect"
 import { Cause, Effect, Exit } from "effect"
@@ -90,7 +90,7 @@ describe("the Promise and Effect APIs", { concurrent: false }, () => {
     })
 
     assert.strictEqual(
-      await rejection(Account.installSessionsSync(bundler, { signal: controller.signal })),
+      await rejection(SmartAccount.installSessionsSync(bundler, { signal: controller.signal })),
       controller.signal.reason
     )
   })
