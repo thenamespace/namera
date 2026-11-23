@@ -106,7 +106,18 @@ const stakeKernelFactory = async (
 export type Context = {
   readonly anvil: { readonly url: string }
   readonly alto: { readonly url: string }
+  readonly anvil2: { readonly url: string }
+  readonly alto2: { readonly url: string }
 }
+
+/**
+ * The chain ids of the devnet's two chains: the default one, and a second one for multichain tests.
+ *
+ * @stability experimental
+ * @category constants
+ * @since 0.1.0
+ */
+export const chainIds = { first: 31337, second: 31338 } as const
 
 /**
  * The key `globalSetup` provides its `Context` under; read it in tests with Vitest's `inject`.
@@ -228,26 +239,32 @@ export type GlobalSetup = (project: {
  * @since 0.1.0
  */
 export const globalSetup = (): GlobalSetup => {
-  let anvilUrl = ""
+  const urls = { first: "", second: "" }
+  // A worker's alto for one of its chains; `rpcUrl` is that chain's anvil, which starts on first use.
+  const alto = (chain: keyof typeof urls) => (poolId: number) =>
+    Instance.alto({
+      entrypoints: [entryPoint07Address],
+      rpcUrl: `${urls[chain]}/${poolId}`,
+      executorPrivateKeys: [developmentKey(8)],
+      utilityPrivateKey: developmentKey(9),
+      // Always on: see the module documentation. `patches/@pimlico__alto@0.0.21.patch` makes it work on anvil.
+      safeMode: true,
+      bundleMode: "manual",
+      enableDebugEndpoints: true
+    })
   return Server.setup({
     instances: {
       // Osaka, as mainnet: it has the P-256 precompile (EIP-7951) passkey validators use. prool 0.3.0's type predates
       // Osaka; anvil takes the name.
-      anvil: Instance.anvil({ hardfork: "Osaka" as never }),
-      alto: (poolId: number) =>
-        Instance.alto({
-          entrypoints: [entryPoint07Address],
-          rpcUrl: `${anvilUrl}/${poolId}`,
-          executorPrivateKeys: [developmentKey(8)],
-          utilityPrivateKey: developmentKey(9),
-          // Always on: see the module documentation. `patches/@pimlico__alto@0.0.21.patch` makes it work on anvil.
-          safeMode: true,
-          bundleMode: "manual",
-          enableDebugEndpoints: true
-        })
+      anvil: Instance.anvil({ hardfork: "Osaka" as never, chainId: chainIds.first }),
+      alto: alto("first"),
+      // The second chain starts only for the tests that connect to it (`from(context, { chain: "second" })`).
+      anvil2: Instance.anvil({ hardfork: "Osaka" as never, chainId: chainIds.second }),
+      alto2: alto("second")
     },
     setup(context, project) {
-      anvilUrl = context.anvil.url
+      urls.first = context.anvil.url
+      urls.second = context.anvil2.url
       project.provide(contextKey, context)
     }
   })
@@ -255,7 +272,8 @@ export const globalSetup = (): GlobalSetup => {
 
 /**
  * Connects to the current worker's devnet, installing EntryPoint 0.7, the account fixtures and Namera's contracts on
- * first use.
+ * first use. `chain: "second"` connects to the worker's second chain (chain id 31338), with the same contracts, for
+ * multichain tests.
  *
  * **Example** (Isolating each test)
  *
@@ -278,8 +296,14 @@ export const globalSetup = (): GlobalSetup => {
  * @category constructors
  * @since 0.1.0
  */
-export const from = async (context: Context): Promise<Devnet> => {
-  const { alto, anvil } = Server.get(context)
+export const from = async (
+  context: Context,
+  options: { readonly chain?: "first" | "second" | undefined } = {}
+): Promise<Devnet> => {
+  const servers = Server.get(context)
+  const second = options.chain === "second"
+  const anvil = second ? servers.anvil2 : servers.anvil
+  const alto = second ? servers.alto2 : servers.alto
   const node = createClient({ transport: http(anvil.url) })
   const bundler = createClient({ transport: http(alto.url) })
   const request = (client: typeof node, method: string, params: ReadonlyArray<unknown> = []) =>
@@ -309,7 +333,11 @@ export const from = async (context: Context): Promise<Devnet> => {
   // Starts alto after the code is in place, so its own setup lands before the first snapshot.
   await request(bundler, "eth_supportedEntryPoints")
 
-  const chain = defineChain({ ...foundry, rpcUrls: { default: { http: [anvil.url] } } })
+  const chain = defineChain({
+    ...foundry,
+    ...(second ? { id: chainIds.second, name: "Foundry 2" } : {}),
+    rpcUrls: { default: { http: [anvil.url] } }
+  })
   const client: PublicClient<Transport, Chain> = createPublicClient({ chain, transport: http(anvil.url) })
 
   const snapshot = () => request(node, "evm_snapshot") as Promise<Hex>
