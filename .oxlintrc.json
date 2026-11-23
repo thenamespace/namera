@@ -104,6 +104,27 @@
     },
     {
       "files": [
+        "packages/sdk/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "Only the viem adapter (src/internal/viem/) imports viem, so another viem major needs another adapter, not changes across the SDK. Import from the adapter."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
         "packages/sdk/src/internal/core/**"
       ],
       "rules": {
@@ -121,6 +142,14 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/viem/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     }
   ]
