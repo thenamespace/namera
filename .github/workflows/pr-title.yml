@@ -1,6 +1,6 @@
-# The PR title becomes the squash commit: Conventional Commits with the types commitlint accepts
-# (.config/commitlint.config.ts, klarity's preset). pull_request_target runs this workflow from
-# the base branch for forks too; it never checks out or runs PR code.
+# The PR title becomes the squash commit: Conventional Commits with the types and scope format
+# commitlint accepts (commitlint.config.ts). pull_request_target runs this workflow from the base
+# branch for forks too; it never checks out or runs PR code.
 name: PR title
 
 on:

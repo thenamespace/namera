@@ -1,4 +1,7 @@
 rules:
+  # The npm cooldown is 1 day on purpose: it matches pnpm's `minimumReleaseAge` (dependabot.yml).
+  dependabot-cooldown:
+    disable: true
   # Actions are referenced by major version tags (`@v7`) kept current by Dependabot, not commit
   # SHA pins, so tag references are expected.
   unpinned-uses:

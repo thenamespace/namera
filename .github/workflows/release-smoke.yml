@@ -70,6 +70,6 @@ jobs:
           run-id: ${{ inputs.release-run-id }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/release-candidate
-      - run: >-
-          pnpm release:smoke --pack-dir "$RUNNER_TEMP/release-candidate"
-          --provenance "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+      # --provenance also requires each version's SLSA attestation from this repository's release.yml
+      # (the repository is read from each package's `repository.url`).
+      - run: pnpm release:smoke --pack-dir "$RUNNER_TEMP/release-candidate" --provenance

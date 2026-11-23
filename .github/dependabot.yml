@@ -12,8 +12,8 @@ updates:
       github-actions:
         patterns: ["*"]
 
-  # npm dependencies, including the pnpm catalog. Effect and the Oxc tools are excluded from the
-  # cooldown, matching `minimumReleaseAgeExclude` in pnpm-workspace.yaml.
+  # npm dependencies, including the pnpm catalog. The 1-day cooldown matches `minimumReleaseAge`
+  # in pnpm-workspace.yaml, and the same packages are exempt from it.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -24,13 +24,13 @@ updates:
       exclude:
         - "effect"
         - "@effect/*"
-        - "oxlint"
-        - "oxlint-tsgolint"
-        - "dprint"
+        - "@effect-kit/*"
+    ignore:
+      # TypeScript majors change the compiler API and the language service patch: move them by hand.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       effect:
-        patterns: ["effect", "@effect/*"]
-      oxc:
-        patterns: ["oxlint", "oxlint-tsgolint", "dprint"]
+        patterns: ["effect", "@effect/*", "@effect-kit/*"]
       dependencies:
         patterns: ["*"]

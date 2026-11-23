@@ -1,6 +1,6 @@
-# Pull requests, pushes to main, the merge queue and manual runs: formatting, lint, types, builds
-# and tests (and package metadata when the repository publishes), plus a security audit of the
-# workflows.
+# Pull requests, pushes to main, the merge queue and manual runs. Each job runs one stage of
+# `pnpm check`, so a failure names the stage; tests also run on the oldest supported Node, the SDK's
+# runtime smoke test on Bun, Deno and Chromium, and the contracts through Slither and Halmos.
 name: CI
 
 on:
@@ -21,14 +21,106 @@ env:
   FOUNDRY_VERSION: v1.9.0
 
 jobs:
-  check:
-    # The version PR only changes versions and changelogs, and GitHub does not run workflows on
-    # PRs the workflow token opens; dispatch CI on its branch to check it.
+  static:
+    name: Static
+    # GitHub does not run workflows on PRs the workflow token opens: the version PR is checked by
+    # dispatching CI on its branch, and again by the release before publishing.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.user.login != 'github-actions[bot]' ||
       github.event.pull_request.head.repo.full_name != github.repository ||
       github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm circular
+      - run: pnpm docs:check
+      # Barrels, exports maps, the version module, @namera-ai/contracts and the devnet's bytecode.
+      - name: Require generated files to be committed
+        run: pnpm codegen:check
+
+  types:
+    name: Types
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pnpm typecheck:tsc
+      - run: pnpm test:types
+
+  build:
+    name: Build
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pnpm build
+      - run: pnpm check:dist
+      - run: pnpm api-snapshot --check
+      - run: pnpm bundle-size
+      - run: pnpm type-cost
+      - run: pnpm pack:check
+
+  test:
+    name: Test (Node ${{ matrix.node || 'from .node-version' }})
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Empty uses .node-version; 22.19.0 is the oldest Node the packages support (`engines`).
+        node: ["", "22.19.0"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+          node-version: ${{ matrix.node }}
+      - run: pnpm test
+      - run: pnpm test:docs
+
+  contracts:
+    name: Contracts
+    needs: static
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -44,17 +136,18 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           cache: pnpm
-      - run: pnpm check
-      - run: pnpm pack:check
+      - run: pnpm test:contracts
 
-  # The SDK's runtime smoke test on every runtime it supports besides Node 26 and workerd, which `pnpm check` covers.
+  # The SDK's runtime smoke test on the runtimes the Test job doesn't cover (it runs Node and workerd).
   runtime:
+    name: Runtime (${{ matrix.runtime }})
+    needs: static
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        runtime: [node-22, bun, deno, chromium]
+        runtime: [bun, deno, chromium]
     env:
       NAMERA_RUNTIME_TESTS: "1"
     steps:
@@ -67,13 +160,6 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           cache: pnpm
-      - if: matrix.runtime == 'node-22'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          package-manager-cache: false
-      - if: matrix.runtime == 'node-22'
-        run: node node_modules/vitest/vitest.mjs run --project @namera-ai/sdk/runtime
       - if: matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@v2
         with:
@@ -93,6 +179,8 @@ jobs:
         run: pnpm exec vitest run --project @namera-ai/sdk/browser
 
   analyze:
+    name: Contract analysis
+    needs: static
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -112,6 +200,7 @@ jobs:
         run: pnpm --filter @namera-ai/contracts-sol symbolic
 
   zizmor:
+    name: Workflow audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

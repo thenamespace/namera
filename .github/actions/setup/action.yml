@@ -1,9 +1,9 @@
 name: Workspace setup
-description: Install Node from .node-version, pnpm from packageManager, and the frozen workspace dependencies
+description: Install Node (from .node-version unless overridden), pnpm from packageManager, and the frozen workspace dependencies
 
 inputs:
   node-version:
-    description: Override the Node version in .node-version
+    description: Node version to use instead of .node-version (for a minimum-version test)
     default: ""
   cache:
     description: Dependency cache to enable (pnpm or empty)
@@ -27,9 +27,16 @@ runs:
     - uses: pnpm/action-setup@v6
 
     - uses: actions/setup-node@v7
+      if: inputs.node-version == ''
+      with:
+        node-version-file: .node-version
+        cache: ${{ inputs.cache }}
+        package-manager-cache: false
+
+    - uses: actions/setup-node@v7
+      if: inputs.node-version != ''
       with:
         node-version: ${{ inputs.node-version }}
-        node-version-file: .node-version
         cache: ${{ inputs.cache }}
         package-manager-cache: false
 
