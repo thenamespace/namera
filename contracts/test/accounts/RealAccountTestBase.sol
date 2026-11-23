@@ -5,6 +5,7 @@ import {ERC4337} from "solady/accounts/ERC4337.sol";
 
 import {PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
 
+import {SessionHook} from "src/hooks/SessionHook.sol";
 import {AllowPolicy} from "src/policies/AllowPolicy.sol";
 import {SpendPolicy} from "src/policies/SpendPolicy.sol";
 import {ISessionValidator} from "src/smart-sessions/interfaces/ISessionValidator.sol";
@@ -24,13 +25,22 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
     using SessionBuilder for Session;
 
     address internal smartAccount;
+    SessionHook internal sessionHook;
 
-    /// @dev Deploys the account for `owner` with SmartSession installed as a validator.
+    /// @dev Deploys the account for `owner` with SmartSession installed as a validator, and SessionHook when
+    /// `withSessionHook()`.
     function deployAccount() internal virtual returns (address);
+
+    /// @dev Whether the account is deployed with SessionHook running for SmartSession's operations.
+    function withSessionHook() internal pure virtual returns (bool) {
+        return false;
+    }
 
     function setUp() public virtual override {
         super.setUp();
         AccountFixtures.install();
+        sessionHook = new SessionHook();
+        vm.label(address(sessionHook), "SessionHook");
         smartAccount = deployAccount();
         vm.label(smartAccount, "smartAccount");
         vm.deal(smartAccount, 100 ether);

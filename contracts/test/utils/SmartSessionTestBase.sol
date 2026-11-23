@@ -149,10 +149,16 @@ abstract contract SmartSessionTestBase is Test {
         uint192 key = sessionNonceKey();
         op.sender = sender;
         op.nonce = entryPoint.getNonce(sender, key);
-        op.callData = callData;
+        op.callData = wrapCallData(callData);
         op.accountGasLimits = bytes32((uint256(2_000_000) << 128) | 1_000_000);
         op.preVerificationGas = 100_000;
         op.gasFees = bytes32((uint256(1 gwei) << 128) | 1 gwei);
+    }
+
+    /// @dev How the account receives a session operation's calldata: as is, or (Kernel with SessionHook bound to
+    /// SmartSession) wrapped in `executeUserOp`.
+    function wrapCallData(bytes memory callData) internal view virtual returns (bytes memory) {
+        return callData;
     }
 
     /// @dev Nonce key that routes a user op to SmartSession. MockAccount: validator address in the top 20 bytes.

@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
+import {SmartSessionTestBase} from "../utils/SmartSessionTestBase.sol";
 import {RealAccountTestBase} from "./RealAccountTestBase.sol";
+import {SessionHookFlows} from "./SessionHookFlows.sol";
+
+interface ISafe7579Modules {
+    function uninstallModule(uint256 moduleType, address module, bytes calldata deInitData) external;
+}
 
 interface ISafeProxyFactory {
     function createProxyWithNonce(address singleton, bytes memory initializer, uint256 saltNonce)
@@ -46,17 +52,26 @@ contract Safe7579Test is RealAccountTestBase {
     address internal constant LAUNCHPAD = 0x75798463024Bda64D83c94A64Bc7D7eaB41300eF;
     address internal constant OWNABLE_VALIDATOR = 0x000000000013fdB5234E4E3162a810F54d9f7E98;
 
-    function deployAccount() internal override returns (address) {
+    function deployAccount() internal virtual override returns (address) {
         address[] memory owners = new address[](1);
         owners[0] = owner;
 
-        ISafe7579Launchpad.ModuleInit[] memory validators = new ISafe7579Launchpad.ModuleInit[](2);
+        ISafe7579Launchpad.ModuleInit[] memory validators =
+            new ISafe7579Launchpad.ModuleInit[](withSessionHook() ? 3 : 2);
         validators[0] = ISafe7579Launchpad.ModuleInit({
             module: OWNABLE_VALIDATOR, initData: abi.encode(uint256(1), owners), moduleType: 1
         });
         validators[1] = ISafe7579Launchpad.ModuleInit({
             module: address(smartSession), initData: "", moduleType: 1
         });
+        if (withSessionHook()) {
+            // The deployed Safe7579 passes a hook's install data to it unchanged.
+            validators[2] = ISafe7579Launchpad.ModuleInit({
+                module: address(sessionHook),
+                initData: abi.encode(uint8(3), address(smartSession)),
+                moduleType: 4
+            });
+        }
         bytes memory addSafe7579 = abi.encodeCall(
             ISafe7579Launchpad.addSafe7579, (ADAPTER, validators, new address[](0), 0)
         );
@@ -69,12 +84,60 @@ contract Safe7579Test is RealAccountTestBase {
     }
 
     /// @dev Safe7579 nonce key: validator address ‖ 4-byte key.
-    function sessionNonceKey() internal view override returns (uint192) {
+    function sessionNonceKey() internal view virtual override returns (uint192) {
         return uint192(uint160(address(smartSession))) << 32;
     }
 
     /// @dev Safe7579 ERC-1271: validator address ‖ signature; OwnableValidator checks the raw hash.
-    function ownerSignature(address, bytes32 digest) internal view override returns (bytes memory) {
+    function ownerSignature(address, bytes32 digest)
+        internal
+        view
+        virtual
+        override
+        returns (bytes memory)
+    {
         return abi.encodePacked(OWNABLE_VALIDATOR, signRaw(ownerKey, digest));
+    }
+}
+
+/// @notice Safe7579 with SessionHook as the account's hook: execution policies on top of every session flow.
+contract Safe7579SessionHookTest is Safe7579Test, SessionHookFlows {
+    function deployAccount()
+        internal
+        override(Safe7579Test, RealAccountTestBase)
+        returns (address)
+    {
+        return Safe7579Test.deployAccount();
+    }
+
+    function sessionNonceKey()
+        internal
+        view
+        override(Safe7579Test, SmartSessionTestBase)
+        returns (uint192)
+    {
+        return Safe7579Test.sessionNonceKey();
+    }
+
+    function ownerSignature(address account, bytes32 digest)
+        internal
+        view
+        override(Safe7579Test, SmartSessionTestBase)
+        returns (bytes memory)
+    {
+        return Safe7579Test.ownerSignature(account, digest);
+    }
+
+    function setUp() public override(RealAccountTestBase, SessionHookFlows) {
+        SessionHookFlows.setUp();
+    }
+
+    function withSessionHook() internal pure override returns (bool) {
+        return true;
+    }
+
+    function unbindSessionHook() internal override {
+        vm.prank(smartAccount);
+        ISafe7579Modules(smartAccount).uninstallModule(4, address(sessionHook), "");
     }
 }
