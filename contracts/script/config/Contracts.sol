@@ -13,7 +13,7 @@ struct ContractSpec {
 }
 
 /// @notice Every contract the deploy pipeline manages, in deployment order, read from
-/// `script/config/contracts.json`. The repository tooling (`namera-dev contracts`) reads the same file,
+/// `script/config/contracts.json`. The repository tooling (`pnpm contracts:<action>`) reads the same file,
 /// so the list has a single source.
 library Contracts {
     string internal constant CONFIG = "script/config/contracts.json";

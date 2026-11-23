@@ -8,7 +8,7 @@ import {DeterministicDeployer} from "./lib/DeterministicDeployer.sol";
 import {Preflight} from "./lib/Preflight.sol";
 
 /// @notice Deploys every contract in `Contracts.all()` that is missing on the target chain. Safe to
-/// re-run: deployed contracts are skipped. `namera-dev contracts record` turns the broadcast receipts
+/// re-run: deployed contracts are skipped. `pnpm contracts:record` turns the broadcast receipts
 /// into `deployments/<chainId>.json`.
 /// Usage: forge script script/Deploy.s.sol --rpc-url <url> --account <keystore> --broadcast
 contract Deploy is Script {
