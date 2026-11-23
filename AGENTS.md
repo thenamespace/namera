@@ -89,7 +89,8 @@ one only when the flagged pattern is the point, for the next line only
 (`@effect-kit/oxc`): import modules (`effect/Effect`), not barrels; relative imports end in `.ts`;
 `Array<T>`, not `T[]`. Namera's rules (`scripts/oxlint/`) keep the SDK's layers apart: only
 `src/internal/promise.ts` runs effects (`namera/no-effect-run`), a feature imports only its own or
-its ancestors' `internal/` (`namera/no-foreign-internal`), and `src/internal/core` is viem-free.
+its ancestors' `internal/` (`namera/no-foreign-internal`), `src/internal/core` is viem-free, and only the viem
+adapter `src/internal/viem/` imports viem (types included), so another viem major is another adapter.
 Never disable a rule file-wide.
 
 Packages export their source during development (`"./*": "./src/*.ts"`) and their build when
