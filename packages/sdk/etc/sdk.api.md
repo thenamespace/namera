@@ -256,8 +256,8 @@ export declare const isNameraError: (u: unknown) => u is NameraError;
  *
  * **When to use**
  *
- * Use in a `catch` block around viem calls, such as sending a user operation from a Namera session account, to get
- * a typed error to narrow on.
+ * Use when catching a failed viem call, such as sending a user operation from a Namera session account, to get a
+ * typed error to narrow on.
  *
  * **Details**
  *
@@ -400,6 +400,8 @@ export declare function detect(client: Client<Transport, Chain | undefined>, opt
  */
 export declare namespace detect {
     /**
+     * The options of `Account.detect`.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -416,6 +418,8 @@ export declare namespace detect {
      */
     type ReturnType = internal.Detected;
     /**
+     * The errors `Account.detect` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -460,12 +464,16 @@ export declare namespace from {
         readonly owners?: ReadonlyArray<Owner> | undefined;
     }
     /**
+     * What `Account.from` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = Account;
     /**
+     * The errors `Account.from` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -513,6 +521,8 @@ export declare function installSessions(client: Client<Transport, Chain | undefi
  */
 export declare namespace installSessions {
     /**
+     * The errors `Account.installSessions` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -540,6 +550,8 @@ export declare function installSessionsSync(client: Client<Transport, Chain | un
  */
 export declare namespace installSessionsSync {
     /**
+     * The errors `Account.installSessionsSync` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -562,6 +574,8 @@ export declare function isSessionsInstalled(client: Client<Transport, Chain | un
  */
 export declare namespace isSessionsInstalled {
     /**
+     * The options of `Account.isSessionsInstalled`.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -570,6 +584,8 @@ export declare namespace isSessionsInstalled {
         readonly address: Hex;
     }
     /**
+     * The errors `Account.isSessionsInstalled` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -872,12 +888,16 @@ export declare namespace from {
     interface Options extends internal.FromOptions, RunOptions {
     }
     /**
+     * What `KernelAccount.from` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = KernelAccount;
     /**
+     * The errors `KernelAccount.from` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -919,12 +939,16 @@ export declare namespace fromEip7702 {
     interface Options extends internal.FromEip7702Options, RunOptions {
     }
     /**
+     * What `KernelAccount.fromEip7702` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = KernelAccount;
     /**
+     * The errors `KernelAccount.fromEip7702` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -1005,12 +1029,16 @@ export declare namespace from {
     interface Options extends internal.FromOptions, RunOptions {
     }
     /**
+     * What `NexusAccount.from` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = NexusAccount;
     /**
+     * The errors `NexusAccount.from` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -1052,12 +1080,16 @@ export declare namespace fromEip7702 {
     interface Options extends internal.FromEip7702Options, RunOptions {
     }
     /**
+     * What `NexusAccount.fromEip7702` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = NexusAccount;
     /**
+     * The errors `NexusAccount.fromEip7702` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
@@ -1142,12 +1174,16 @@ export declare namespace from {
     interface Options extends internal.FromOptions, RunOptions {
     }
     /**
+     * What `Safe7579Account.from` resolves to.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0
      */
     type ReturnType = Safe7579Account;
     /**
+     * The errors `Safe7579Account.from` can fail with.
+     *
      * @stability experimental
      * @category utility types
      * @since 2.0.0

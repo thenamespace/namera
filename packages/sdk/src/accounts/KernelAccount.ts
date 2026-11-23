@@ -71,12 +71,16 @@ export declare namespace from {
    */
   export interface Options extends internal.FromOptions, RunOptions {}
   /**
+   * What `KernelAccount.from` resolves to.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
    */
   export type ReturnType = KernelAccount
   /**
+   * The errors `KernelAccount.from` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -121,12 +125,16 @@ export declare namespace fromEip7702 {
    */
   export interface Options extends internal.FromEip7702Options, RunOptions {}
   /**
+   * What `KernelAccount.fromEip7702` resolves to.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
    */
   export type ReturnType = KernelAccount
   /**
+   * The errors `KernelAccount.fromEip7702` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0

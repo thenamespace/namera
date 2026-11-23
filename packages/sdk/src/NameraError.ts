@@ -92,8 +92,8 @@ export const isNameraError = (u: unknown): u is NameraError => Predicate.hasProp
  *
  * **When to use**
  *
- * Use in a `catch` block around viem calls, such as sending a user operation from a Namera session account, to get
- * a typed error to narrow on.
+ * Use when catching a failed viem call, such as sending a user operation from a Namera session account, to get a
+ * typed error to narrow on.
  *
  * **Details**
  *

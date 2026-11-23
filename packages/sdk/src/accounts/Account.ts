@@ -97,6 +97,8 @@ export function detect(
  */
 export declare namespace detect {
   /**
+   * The options of `Account.detect`.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -113,6 +115,8 @@ export declare namespace detect {
    */
   export type ReturnType = internal.Detected
   /**
+   * The errors `Account.detect` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -161,12 +165,16 @@ export declare namespace from {
     readonly owners?: ReadonlyArray<Owner> | undefined
   }
   /**
+   * What `Account.from` resolves to.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
    */
   export type ReturnType = Account
   /**
+   * The errors `Account.from` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -222,6 +230,8 @@ export function installSessions(
  */
 export declare namespace installSessions {
   /**
+   * The errors `Account.installSessions` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -256,6 +266,8 @@ export function installSessionsSync(
  */
 export declare namespace installSessionsSync {
   /**
+   * The errors `Account.installSessionsSync` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -285,6 +297,8 @@ export function isSessionsInstalled(
  */
 export declare namespace isSessionsInstalled {
   /**
+   * The options of `Account.isSessionsInstalled`.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
@@ -293,6 +307,8 @@ export declare namespace isSessionsInstalled {
     readonly address: Hex
   }
   /**
+   * The errors `Account.isSessionsInstalled` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0

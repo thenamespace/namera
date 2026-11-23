@@ -75,12 +75,16 @@ export declare namespace from {
    */
   export interface Options extends internal.FromOptions, RunOptions {}
   /**
+   * What `Safe7579Account.from` resolves to.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
    */
   export type ReturnType = Safe7579Account
   /**
+   * The errors `Safe7579Account.from` can fail with.
+   *
    * @stability experimental
    * @category utility types
    * @since 2.0.0
