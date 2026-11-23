@@ -26,6 +26,8 @@ interface ISmartSession {
     error InvalidPermissionId(PermissionId permissionId);
     error InvalidMode();
     error InvalidUserOpSender(address sender);
+    /// @dev Namera: the operation is tagged for SessionHook with another session's permission id.
+    error InvalidSessionHookTag(PermissionId permissionId);
     error NoPoliciesSet(PermissionId permissionId);
     error PolicyViolation(PermissionId permissionId, address policy);
     error SignerNotFound(PermissionId permissionId, address account);

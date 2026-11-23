@@ -162,6 +162,8 @@ uint256 constant ERC7579_MODULE_TYPE_STATELESS_VALIDATOR = 7;
 bytes4 constant ERC7579_EXECUTE_SELECTOR = 0xe9ae5c53;
 /// @dev Selector of ERC-4337 `executeUserOp(PackedUserOperation,bytes32)`.
 bytes4 constant ERC4337_EXECUTE_USER_OP_SELECTOR = 0x8dd7712f;
+/// @dev Namera: the last word of an operation tagged for `SessionHook` (`… ‖ permissionId ‖ SESSION_HOOK_TAG`).
+bytes32 constant SESSION_HOOK_TAG = keccak256("namera.session-hook.tag");
 
 enum PolicyType {
     NA,

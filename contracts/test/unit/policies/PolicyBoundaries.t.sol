@@ -390,6 +390,50 @@ contract UserOpCallsBoundaryTest is Test {
         assertTrue(found);
     }
 
+    /// @dev Kernel with SessionHook wraps every session operation in `executeUserOp`; the policies read the wrapped
+    /// `execute`, or a budget could be bypassed by wrapping.
+    function test_readsTheExecuteWrappedInExecuteUserOp() public view {
+        bytes memory execute =
+            PolicyCalls.withTime(PolicyCalls.single(address(7), 5, hex"abcd"), 42);
+        bytes memory wrapped = abi.encodePacked(bytes4(0x8dd7712f), execute);
+
+        UserOpCalls.Call[] memory calls = harness.decode(wrapped, address(1));
+        assertEq(calls.length, 1);
+        assertEq(calls[0].target, address(7));
+        assertEq(calls[0].value, 5);
+        (bool found, uint256 t) = harness.timestamp(wrapped);
+        assertTrue(found);
+        assertEq(t, 42);
+        // `executeUserOp` alone is not an execution.
+        assertEq(harness.decode(hex"8dd7712f", address(1))[0].target, address(1));
+    }
+
+    /// @dev SessionHook's tag follows the stated time: `… ‖ time ‖ permissionId ‖ tag`.
+    function test_findsTheStatedTimeBeforeSessionHooksTag() public view {
+        bytes memory execute = PolicyCalls.withTime(PolicyCalls.single(address(7), 0, ""), 42);
+        bytes32 tag = keccak256("namera.session-hook.tag");
+        (bool found, uint256 t) =
+            harness.timestamp(abi.encodePacked(execute, keccak256("permission"), tag));
+        assertTrue(found);
+        assertEq(t, 42);
+        (found, t) = harness.timestamp(
+            abi.encodePacked(bytes4(0x8dd7712f), execute, keccak256("permission"), tag)
+        );
+        assertTrue(found);
+        assertEq(t, 42);
+
+        // Two words after the time that are not the tag: no stated time.
+        (found,) = harness.timestamp(
+            abi.encodePacked(execute, keccak256("permission"), keccak256("other"))
+        );
+        assertFalse(found);
+        // A tag without the time before it.
+        (found,) = harness.timestamp(
+            abi.encodePacked(PolicyCalls.single(address(7), 0, ""), keccak256("p"), tag)
+        );
+        assertFalse(found);
+    }
+
     function test_theStatedTimeMayBeTheLast48BitSecond() public view {
         bytes memory callData =
             PolicyCalls.withTime(PolicyCalls.single(address(7), 0, ""), type(uint48).max);

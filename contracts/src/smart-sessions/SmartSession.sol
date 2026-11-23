@@ -137,55 +137,16 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             });
         }
 
-        // Every action needs at least one policy, so open permissions require an explicit permissive policy.
-        bytes4 selector = bytes4(userOp.callData[:4]);
-        if (selector == ERC7579_EXECUTE_SELECTOR) {
-            bytes32 mode = userOp.callData.executionMode();
-            bytes1 callType = LibERC7579.getCallType(mode);
-            // Only the default exec type, and no mode selector or payload: an account that interprets them
-            // (e.g. ERC-7821 batch of batches) could decode the execution data differently from this module.
-            if (uint256(mode) << 8 != 0) revert UnsupportedExecutionType();
-            if (callType == LibERC7579.CALLTYPE_BATCH) {
-                vd = vd.intersect(
-                    $actionPolicies.actionPolicies
-                        .checkBatch7579Exec({
-                            userOp: userOp, permissionId: permissionId, minPolicies: 1
-                        })
-                );
-            } else if (callType == LibERC7579.CALLTYPE_SINGLE) {
-                (address target, uint256 value, bytes calldata callData) =
-                    LibERC7579.decodeSingle(userOp.callData.decodeUserOpCallData());
-                vd = vd.intersect(
-                    $actionPolicies.actionPolicies
-                        .checkSingle7579Exec({
-                            permissionId: permissionId,
-                            target: target,
-                            value: value,
-                            callData: callData,
-                            minPolicies: 1
-                        })
-                );
-            } else {
-                // Delegatecall and static call types are not supported.
-                revert UnsupportedCallType(callType);
-            }
-        } else if (selector == ERC4337_EXECUTE_USER_OP_SELECTOR) {
-            // executeUserOp would hand the whole user operation to the account unchecked.
-            revert UnsupportedExecutionType();
-        } else {
-            // Any other account function is an action on the account itself.
-            ActionId actionId = account.toActionId(selector);
-            vd = vd.intersect(
-                $actionPolicies.actionPolicies[actionId].check({
-                    permissionId: permissionId,
-                    callOnIPolicy: abi.encodeCall(
-                        IActionPolicy.checkAction,
-                        (permissionId.toConfigId(actionId), account, account, 0, userOp.callData)
-                    ),
-                    minPolicies: 1
-                })
-            );
-        }
+        // Namera: an operation tagged for SessionHook must name the session that validates it, or another session
+        // could run this one's execution policies (and change their state) with its own operation.
+        bytes calldata callData = userOp.callData;
+        uint256 length = callData.length;
+        if (
+            length >= 64 && bytes32(callData[length - 32:]) == SESSION_HOOK_TAG
+                && bytes32(callData[length - 64:length - 32]) != PermissionId.unwrap(permissionId)
+        ) revert InvalidSessionHookTag(permissionId);
+
+        vd = vd.intersect(_checkActions(permissionId, callData, account));
 
         // Reverts if the session has no validator.
         bool validSig = $sessionValidators.isValidISessionValidator({
@@ -194,6 +155,61 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         if (!validSig) return ERC4337_VALIDATION_FAILED;
 
         return vd.intersect(_sessionValidityData(permissionId, account));
+    }
+
+    /// @dev Checks the operation's calls against the session's action policies. `callData` is the user operation's
+    /// calldata; `executeUserOp(execute(…))` (Kernel, with SessionHook bound) is checked as the inner `execute`.
+    function _checkActions(PermissionId permissionId, bytes calldata callData, address account)
+        internal
+        returns (ValidationData vd)
+    {
+        // Every action needs at least one policy, so open permissions require an explicit permissive policy.
+        bytes4 selector = bytes4(callData[:4]);
+        if (selector == ERC4337_EXECUTE_USER_OP_SELECTOR) {
+            // Namera: Kernel runs a validator's hook (SessionHook) only through `executeUserOp`, which executes
+            // `callData[4:]`; that inner call is checked as the operation and must be `execute`.
+            callData = callData[4:];
+            selector = bytes4(callData[:4]);
+            if (selector != ERC7579_EXECUTE_SELECTOR) revert UnsupportedExecutionType();
+        }
+        if (selector == ERC7579_EXECUTE_SELECTOR) {
+            bytes32 mode = callData.executionMode();
+            bytes1 callType = LibERC7579.getCallType(mode);
+            // Only the default exec type, and no mode selector or payload: an account that interprets them
+            // (e.g. ERC-7821 batch of batches) could decode the execution data differently from this module.
+            if (uint256(mode) << 8 != 0) revert UnsupportedExecutionType();
+            if (callType == LibERC7579.CALLTYPE_BATCH) {
+                vd = $actionPolicies.actionPolicies
+                    .checkBatch7579Exec({
+                        executeCallData: callData, permissionId: permissionId, minPolicies: 1
+                    });
+            } else if (callType == LibERC7579.CALLTYPE_SINGLE) {
+                (address target, uint256 value, bytes calldata targetCallData) =
+                    LibERC7579.decodeSingle(callData.decodeUserOpCallData());
+                vd = $actionPolicies.actionPolicies
+                    .checkSingle7579Exec({
+                        permissionId: permissionId,
+                        target: target,
+                        value: value,
+                        callData: targetCallData,
+                        minPolicies: 1
+                    });
+            } else {
+                // Delegatecall and static call types are not supported.
+                revert UnsupportedCallType(callType);
+            }
+        } else {
+            // Any other account function is an action on the account itself.
+            ActionId actionId = account.toActionId(selector);
+            vd = $actionPolicies.actionPolicies[actionId].check({
+                permissionId: permissionId,
+                callOnIPolicy: abi.encodeCall(
+                    IActionPolicy.checkAction,
+                    (permissionId.toConfigId(actionId), account, account, 0, callData)
+                ),
+                minPolicies: 1
+            });
+        }
     }
 
     /// @dev Session-key ERC-1271 check after ERC-7739 unwrapping. Returns false unless the session is enabled and

@@ -154,11 +154,11 @@ library PolicyLib {
     /// @dev Checks every execution of an ERC-7579 batch and intersects the results.
     function checkBatch7579Exec(
         mapping(ActionId => Policy) storage $policies,
-        ERC4337.PackedUserOperation calldata userOp,
+        bytes calldata executeCallData,
         PermissionId permissionId,
         uint256 minPolicies
     ) internal returns (ValidationData vd) {
-        Execution[] calldata executions = userOp.callData.decodeUserOpCallData().decodeBatch();
+        Execution[] calldata executions = executeCallData.decodeUserOpCallData().decodeBatch();
         uint256 length = executions.length;
         if (length == 0) revert ISmartSession.NoExecutionsInBatch();
 
