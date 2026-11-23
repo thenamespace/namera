@@ -584,8 +584,8 @@ export declare const entryPoint: {
 };
 /**
  * ZeroDev's Kernel smart account: its factory, the staked FactoryStaker that accounts deploy
- * through, the implementation, and the owner's root validator: the ECDSA validator for a key, the
- * WebAuthn validator for a passkey.
+ * through, the implementation, and the ECDSA validator, the root validator of a key owner (passkey
+ * owners use Namera's WebAuthnValidator).
  *
  * **Details**
  *
@@ -601,7 +601,6 @@ export declare const kernel: {
         readonly factoryStaker: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
         readonly implementation: "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28";
         readonly ecdsaValidator: "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57";
-        readonly webAuthnValidator: "0x7ab16Ff354AcB328452F1D445b3Ddee9a91e9e69";
     };
 };
 /**
@@ -3011,6 +3010,487 @@ export declare const v1: Contract.Version<typeof abiV1>;
 export {};
 ```
 
+## WebAuthnValidator.d.ts
+
+```ts
+import type * as Contract from "./Contract.ts";
+declare const abiV1: readonly [{
+    readonly type: "function";
+    readonly name: "MAX_PASSKEYS";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "MULTICHAIN_TYPEHASH";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "REPLAY_SAFE_HASH_TYPEHASH";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "addPasskey";
+    readonly inputs: readonly [{
+        readonly name: "passkey";
+        readonly type: "tuple";
+        readonly internalType: "struct WebAuthnAssertion.Passkey";
+        readonly components: readonly [{
+            readonly name: "x";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "y";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "requireUserVerification";
+            readonly type: "bool";
+            readonly internalType: "bool";
+        }, {
+            readonly name: "rpIdHash";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }];
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "credentialId";
+    readonly inputs: readonly [{
+        readonly name: "x";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "y";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "eip712Domain";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "fields";
+        readonly type: "bytes1";
+        readonly internalType: "bytes1";
+    }, {
+        readonly name: "name";
+        readonly type: "string";
+        readonly internalType: "string";
+    }, {
+        readonly name: "version";
+        readonly type: "string";
+        readonly internalType: "string";
+    }, {
+        readonly name: "chainId";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "verifyingContract";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "salt";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "extensions";
+        readonly type: "uint256[]";
+        readonly internalType: "uint256[]";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "getPasskeys";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "threshold";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "credentialIds";
+        readonly type: "bytes32[]";
+        readonly internalType: "bytes32[]";
+    }, {
+        readonly name: "passkeys";
+        readonly type: "tuple[]";
+        readonly internalType: "struct WebAuthnAssertion.Passkey[]";
+        readonly components: readonly [{
+            readonly name: "x";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "y";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "requireUserVerification";
+            readonly type: "bool";
+            readonly internalType: "bool";
+        }, {
+            readonly name: "rpIdHash";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }];
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "isInitialized";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "isModuleType";
+    readonly inputs: readonly [{
+        readonly name: "moduleTypeId";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "isValidSignatureWithSender";
+    readonly inputs: readonly [{
+        readonly name: "sender";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "hash";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "signature";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes4";
+        readonly internalType: "bytes4";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "multichainChallenge";
+    readonly inputs: readonly [{
+        readonly name: "root";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "onInstall";
+    readonly inputs: readonly [{
+        readonly name: "data";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "onUninstall";
+    readonly inputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "removePasskey";
+    readonly inputs: readonly [{
+        readonly name: "id";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "replaySafeHash";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "hash";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "setThreshold";
+    readonly inputs: readonly [{
+        readonly name: "threshold";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "validateSignatureWithData";
+    readonly inputs: readonly [{
+        readonly name: "hash";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "signature";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }, {
+        readonly name: "data";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "validateUserOp";
+    readonly inputs: readonly [{
+        readonly name: "userOp";
+        readonly type: "tuple";
+        readonly internalType: "struct ERC4337.PackedUserOperation";
+        readonly components: readonly [{
+            readonly name: "sender";
+            readonly type: "address";
+            readonly internalType: "address";
+        }, {
+            readonly name: "nonce";
+            readonly type: "uint256";
+            readonly internalType: "uint256";
+        }, {
+            readonly name: "initCode";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "callData";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "accountGasLimits";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "preVerificationGas";
+            readonly type: "uint256";
+            readonly internalType: "uint256";
+        }, {
+            readonly name: "gasFees";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "paymasterAndData";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "signature";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }];
+    }, {
+        readonly name: "userOpHash";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "event";
+    readonly name: "PasskeyAdded";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }, {
+        readonly name: "credentialId";
+        readonly type: "bytes32";
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "x";
+        readonly type: "bytes32";
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "y";
+        readonly type: "bytes32";
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "event";
+    readonly name: "PasskeyRemoved";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }, {
+        readonly name: "credentialId";
+        readonly type: "bytes32";
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "event";
+    readonly name: "ThresholdSet";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }, {
+        readonly name: "threshold";
+        readonly type: "uint256";
+        readonly indexed: false;
+        readonly internalType: "uint256";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "error";
+    readonly name: "DuplicatePasskey";
+    readonly inputs: readonly [{
+        readonly name: "credentialId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "InvalidPasskey";
+    readonly inputs: readonly [{
+        readonly name: "x";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "y";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "InvalidThreshold";
+    readonly inputs: readonly [{
+        readonly name: "threshold";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "count";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "NotInitialized";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "PasskeyNotFound";
+    readonly inputs: readonly [{
+        readonly name: "credentialId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "TooManyPasskeys";
+    readonly inputs: readonly [{
+        readonly name: "max";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}];
+/**
+ * Version 1 of Namera's `WebAuthnValidator` contract (`namera.webauthn-validator.v1`): its ABI,
+ * CREATE2 address and the record of every chain it is deployed on.
+ *
+ * **Details**
+ *
+ * The address commits to the salt `keccak256(label)` and to the initcode built with solc
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
+ * every chain.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 0.1.0
+ */
+export declare const v1: Contract.Version<typeof abiV1>;
+export {};
+```
+
 ## index.d.ts
 
 ```ts
@@ -3038,6 +3518,14 @@ export * as SmartSession from "./SmartSession.ts";
  * @since 0.1.0
  */
 export * as ECDSASessionValidator from "./ECDSASessionValidator.ts";
+/**
+ * Namera's `WebAuthnValidator` contract: ABI, CREATE2 address and deployment records, one export
+ * per version (`WebAuthnValidator.v1`, …).
+ *
+ * @stability experimental
+ * @since 0.1.0
+ */
+export * as WebAuthnValidator from "./WebAuthnValidator.ts";
 /**
  * Namera's `AllowPolicy` contract: ABI, CREATE2 address and deployment records, one export per
  * version (`AllowPolicy.v1`, …).

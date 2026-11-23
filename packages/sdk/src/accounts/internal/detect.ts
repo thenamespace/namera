@@ -17,6 +17,7 @@ import { isWebAuthnAccount, type WebAuthnAccount } from "../../internal/viem/sig
 import * as AccountError from "../AccountError.ts"
 import * as Kernel from "./kernel.ts"
 import * as Nexus from "./nexus.ts"
+import * as Passkeys from "./passkeys.ts"
 import * as Safe7579 from "./safe7579.ts"
 import { isSessionsInstalled } from "./sessions.ts"
 import type { NameraSmartAccount } from "./smartAccount.ts"
@@ -103,8 +104,8 @@ export const detect = Effect.fnUntraced(function*(
 export interface FromAddressOptions {
   readonly client: AccountClient
   readonly address: Hex
-  readonly owner?: Owner | WebAuthnAccount | undefined
-  readonly owners?: ReadonlyArray<Owner> | undefined
+  readonly owner?: Owner | Passkeys.Owner | undefined
+  readonly owners?: ReadonlyArray<Owner> | ReadonlyArray<WebAuthnAccount> | undefined
 }
 
 /** Builds the Namera account for an existing account, choosing its type from `detect`. @internal */
@@ -112,7 +113,8 @@ export const fromAddress = Effect.fnUntraced(function*(
   options: FromAddressOptions
 ): Effect.fn.Return<NameraSmartAccount, AccountError.AccountError | ChainError.ChainError> {
   const ref = { type: "unknown", address: options.address } as const
-  const owners = options.owners ?? (options.owner === undefined ? [] : [options.owner])
+  const owners: ReadonlyArray<Owner | Passkeys.Owner> = options.owners ??
+    (options.owner === undefined ? [] : [options.owner])
   const [owner] = owners
   if (owner === undefined) {
     return yield* AccountError.invalidOptions({ account: ref, detail: "an owner is required" })
@@ -130,23 +132,30 @@ export const fromAddress = Effect.fnUntraced(function*(
       break
   }
 
-  // Passkey owners are supported on Kernel only, through ZeroDev's WebAuthn validator.
-  const ecdsaOwners = owners.filter((owner): owner is Owner => !isWebAuthnAccount(owner))
-  if (ecdsaOwners.length !== owners.length) {
-    if (detected.type !== "kernel" || detected.eip7702) {
+  // Passkey owners sign through WebAuthnValidator, which an EIP-7702 account cannot have as its owner.
+  if (owners.some((owner) => Passkeys.isOwner(owner))) {
+    if (detected.eip7702) {
       return yield* AccountError.invalidOptions({
         account: { type: detected.type, address: options.address },
-        detail: "passkey owners are supported on Kernel accounts that are not EIP-7702"
+        detail: "an EIP-7702 account's owner is its own local key, not a passkey"
       })
     }
-    return yield* Kernel.from({
-      client: options.client,
-      owner,
-      version: detected.version as never,
-      address: options.address,
-      sessions: false
-    })
+    const passkeys = owners.length === 1 && Passkeys.isOwner(owner)
+      ? owner
+      : { passkeys: owners.filter((owner): owner is WebAuthnAccount => isWebAuthnAccount(owner as never)) }
+    const common = { client: options.client, address: options.address, sessions: false } as const
+    switch (detected.type) {
+      case "kernel":
+        return yield* Kernel.from({ ...common, owner: passkeys, version: detected.version as never })
+      case "nexus":
+        return yield* Nexus.from({ ...common, owner: passkeys, version: detected.version as never })
+      case "safe7579": {
+        const group = "passkeys" in passkeys ? passkeys : { passkeys: [passkeys], threshold: 1 }
+        return yield* Safe7579.from({ ...common, owners: group.passkeys, threshold: group.threshold })
+      }
+    }
   }
+  const ecdsaOwners = owners as ReadonlyArray<Owner>
 
   switch (detected.type) {
     case "safe7579":

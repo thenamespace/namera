@@ -26,6 +26,15 @@ export * as SmartSession from "./SmartSession.ts"
 export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"
 
 /**
+ * Namera's `WebAuthnValidator` contract: ABI, CREATE2 address and deployment records, one export
+ * per version (`WebAuthnValidator.v1`, …).
+ *
+ * @stability experimental
+ * @since 0.1.0
+ */
+export * as WebAuthnValidator from "./WebAuthnValidator.ts"
+
+/**
  * Namera's `AllowPolicy` contract: ABI, CREATE2 address and deployment records, one export per
  * version (`AllowPolicy.v1`, …).
  *

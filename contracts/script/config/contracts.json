@@ -9,6 +9,10 @@
       "label": "namera.ecdsa-session-validator.v1"
     },
     {
+      "artifact": "WebAuthnValidator.sol:WebAuthnValidator",
+      "label": "namera.webauthn-validator.v1"
+    },
+    {
       "artifact": "AllowPolicy.sol:AllowPolicy",
       "label": "namera.allow-policy.v1"
     },

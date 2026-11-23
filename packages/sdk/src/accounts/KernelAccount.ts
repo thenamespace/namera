@@ -1,6 +1,6 @@
 /**
- * ZeroDev's Kernel 3.3 as a viem smart account, owned by one key with the ECDSA validator as root, and as an
- * EIP-7702 delegation of the owner's own address.
+ * ZeroDev's Kernel 3.3 as a viem smart account, owned by one key with the ECDSA validator as root or by passkeys with
+ * Namera's `WebAuthnValidator` as root, and as an EIP-7702 delegation of the owner's own address.
  *
  * @stability experimental
  * @since 2.0.0
@@ -62,10 +62,11 @@ export function from(options: from.Options): Promise<from.ReturnType> {
  */
 export declare namespace from {
   /**
-   * The client (with a chain), the owner (a local key, a JSON-RPC wallet, or a passkey: viem's WebAuthn account), and
-   * optionally the `version` (`"3.3"`), `index` (the counterfactual salt, `0n`), an existing `address`, and `sessions`
-   * (install Smart Sessions at deploy, `true`). A passkey owner verifies through ZeroDev's WebAuthn validator, with
-   * the P-256 precompile where the chain has one.
+   * The client (with a chain), the owner (a local key, a JSON-RPC wallet, a passkey: viem's WebAuthn account, or
+   * `{ passkeys, threshold }` for up to 16 passkeys of which `threshold` sign), and optionally the `version`
+   * (`"3.3"`), `index` (the counterfactual salt, `0n`), an existing `address`, and `sessions` (install Smart Sessions
+   * at deploy, `true`). Passkeys verify through Namera's `WebAuthnValidator`, with the P-256 precompile where the
+   * chain has one.
    *
    * @stability experimental
    * @category utility types

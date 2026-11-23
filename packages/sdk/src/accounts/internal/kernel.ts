@@ -5,24 +5,10 @@ import * as Effect from "effect/Effect"
 import type * as ChainError from "../../ChainError.ts"
 import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
-import * as WebAuthn from "../../internal/core/account/webauthn.ts"
-import {
-  type AccountClient,
-  type ChainClient,
-  hasP256Precompile,
-  type Hex,
-  type Owner,
-  type PrivateKeyAccount
-} from "../../internal/viem/client.ts"
-import {
-  hashMessage,
-  hashTypedData,
-  isWebAuthnAccount,
-  ownerSigner,
-  passkeySigner,
-  type WebAuthnAccount
-} from "../../internal/viem/signing.ts"
+import type { AccountClient, ChainClient, Hex, Owner, PrivateKeyAccount } from "../../internal/viem/client.ts"
+import { hashMessage, hashTypedData, ownerSigner } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
+import * as Passkeys from "./passkeys.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
 import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
@@ -32,7 +18,7 @@ export type Version = keyof typeof External.kernel
 /** The options of `from`. */
 export interface FromOptions {
   readonly client: AccountClient
-  readonly owner: Owner | WebAuthnAccount
+  readonly owner: Owner | Passkeys.Owner
   readonly version?: Version | undefined
   readonly index?: bigint | undefined
   readonly address?: Hex | undefined
@@ -99,31 +85,32 @@ const ecdsaSigning = (
   }
 }
 
-// A passkey signs the hash itself as its WebAuthn challenge: the user operation hash, or the ERC-1271 digest wrapped in
-// Kernel's domain. The precompile flag follows the chain, so verification costs P-256 precompile gas where it exists.
+// Passkeys sign the user operation hash, or the ERC-1271 digest wrapped in Kernel's domain, which WebAuthnValidator then
+// binds to the account and chain.
 const passkeySigning = Effect.fnUntraced(function*(
   client: ChainClient,
-  owner: WebAuthnAccount,
-  contracts: Kernel.Contracts,
-  ref: AccountError.Options["account"]
-): Effect.fn.Return<Signing, ChainError.ChainError> {
-  const usePrecompile = yield* hasP256Precompile(client)
-  const signer = passkeySigner(owner, ref, usePrecompile)
+  owners: Passkeys.Owners,
+  ref: AccountError.Options["account"] & { readonly address: Hex }
+): Effect.fn.Return<Signing & { readonly passkeys: Passkeys.Signing }, ChainError.ChainError> {
+  const passkeys = yield* Passkeys.signing(client, owners, ref)
   return {
-    rootValidator: contracts.webAuthnValidator,
-    stubSignature: WebAuthn.stubSignature(usePrecompile),
-    signUserOperationHash: signer.sign,
+    passkeys,
+    rootValidator: Passkeys.validator,
+    stubSignature: passkeys.stubSignature,
+    signUserOperationHash: passkeys.signUserOperationHash,
     sign1271: (hash, { address, client, domainVersion }) =>
-      signer.sign(Kernel.wrappedHash({ hash, account: address, chainId: client.chain.id, version: domainVersion }))
+      passkeys.sign1271(
+        Kernel.wrappedHash({ hash, account: address, chainId: client.chain.id, version: domainVersion })
+      )
   }
 })
 
 const build = Effect.fnUntraced(function*(options: {
   readonly client: AccountClient
-  readonly signing: (client: ChainClient, ref: AccountError.Options["account"]) => Effect.Effect<
-    Signing,
-    ChainError.ChainError
-  >
+  readonly signing: (
+    client: ChainClient,
+    ref: AccountError.Options["account"] & { readonly address: Hex }
+  ) => Effect.Effect<Signing & { readonly passkeys?: Passkeys.Signing }, ChainError.ChainError>
   readonly version: Version
   readonly address: Hex
   readonly eip7702: boolean
@@ -141,7 +128,7 @@ const build = Effect.fnUntraced(function*(options: {
       Effect.map((signature) => Kernel.ownerSignature(signing.rootValidator, signature, options.eip7702))
     )
 
-  return yield* define({
+  const account = yield* define({
     metadata: { type: "kernel", version: options.version, entryPoint: "0.7", eip7702: options.eip7702 },
     client,
     address: options.address,
@@ -155,6 +142,7 @@ const build = Effect.fnUntraced(function*(options: {
     signMessage: (message) => sign1271(hashMessage(message)),
     signTypedData: (typedData) => sign1271(hashTypedData(typedData))
   })
+  return signing.passkeys === undefined ? account : Passkeys.register(account, signing.passkeys)
 })
 
 /** @internal */
@@ -163,13 +151,13 @@ export const from = Effect.fnUntraced(function*(
 ): Effect.fn.Return<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> {
   const version = options.version ?? "3.3"
   const contracts = External.kernel[version]
-  const { owner } = options
-  const passkey = isWebAuthnAccount(owner)
+  const passkeys = Passkeys.isOwner(options.owner)
+    ? yield* Passkeys.fromOwner(options.owner, { type: "kernel" })
+    : undefined
+  const owner = options.owner as Owner
   const initData = Kernel.initData({
-    rootValidator: passkey ? contracts.webAuthnValidator : contracts.ecdsaValidator,
-    validatorData: passkey
-      ? WebAuthn.validatorData({ publicKey: owner.publicKey, id: owner.id })
-      : owner.address,
+    rootValidator: passkeys === undefined ? contracts.ecdsaValidator : Passkeys.validator,
+    validatorData: passkeys === undefined ? owner.address : Passkeys.installData(passkeys),
     smartSession: options.sessions === false ? undefined : SmartSession.v1.address
   })
   const { address, factory, factoryData } = Kernel.deployment({
@@ -180,9 +168,9 @@ export const from = Effect.fnUntraced(function*(
   return yield* build({
     client: options.client,
     signing: (client, ref) =>
-      passkey
-        ? passkeySigning(client, owner, contracts, ref)
-        : Effect.succeed(ecdsaSigning(client, owner, contracts, ref, false)),
+      passkeys === undefined
+        ? Effect.succeed(ecdsaSigning(client, owner, contracts, ref, false))
+        : passkeySigning(client, passkeys, ref),
     version,
     address: options.address ?? address,
     eip7702: false,
@@ -196,7 +184,7 @@ export const fromEip7702 = (
 ): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> => {
   const version = options.version ?? "3.3"
   const contracts = External.kernel[version]
-  if (isWebAuthnAccount(options.owner as Owner | WebAuthnAccount)) {
+  if (Passkeys.isOwner(options.owner as Owner | Passkeys.Owner)) {
     return Effect.fail(
       AccountError.invalidOptions({
         account: { type: "kernel" },

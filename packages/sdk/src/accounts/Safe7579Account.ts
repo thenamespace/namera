@@ -1,6 +1,6 @@
 /**
- * Safe 1.4.1 with Rhinestone's Safe7579 v2 adapter as a viem smart account: one or more owners on OwnableValidator,
- * with a signing threshold.
+ * Safe 1.4.1 with Rhinestone's Safe7579 v2 adapter as a viem smart account: one or more key owners on
+ * OwnableValidator, or passkeys on Namera's `WebAuthnValidator`, with a signing threshold.
  *
  * @stability experimental
  * @since 2.0.0
@@ -31,8 +31,9 @@ export type Safe7579Account = SmartAccount.SmartAccount<"safe7579">
  *
  * **Gotchas**
  *
- * Fails with `AccountError` (`InvalidOptions`) when the owners repeat or `threshold` is not between 1 and the
- * number of owners. Safe7579 has no EIP-7702 path. Deployment costs about twice a Kernel's.
+ * Fails with `AccountError` (`InvalidOptions`) when the owners repeat, mix keys and passkeys, or `threshold` is not
+ * between 1 and the number of owners. Safe7579 has no EIP-7702 path. Deployment costs about twice a Kernel's. A
+ * passkey Safe's own owner is an address no key controls, so only its validator signs.
  *
  * **Example** (A two-of-two Safe7579 account)
  *
@@ -66,8 +67,9 @@ export function from(options: from.Options): Promise<from.ReturnType> {
  */
 export declare namespace from {
   /**
-   * The client (with a chain), the `owners` and optionally the `threshold` (all owners), `version` (`"2"`), `index`
-   * (the salt nonce, `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+   * The client (with a chain), the `owners` (keys or JSON-RPC wallets, or up to 16 passkeys) and optionally the
+   * `threshold` (all key owners, one passkey), `version` (`"2"`), `index` (the salt nonce, `0n`), an existing
+   * `address`, and `sessions` (install Smart Sessions at deploy, `true`).
    *
    * @stability experimental
    * @category utility types

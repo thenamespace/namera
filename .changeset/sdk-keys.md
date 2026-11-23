@@ -2,7 +2,7 @@
 "@namera-ai/sdk": minor
 ---
 
-Keys and session keys for agents, and passkey owners.
+Keys and session keys for agents.
 
 - `Key`: a key's public half with its addresses per chain namespace (`Key.address`, `Key.caip10`; `eip155` now,
   `tron` and `solana` reserved).
@@ -12,7 +12,5 @@ Keys and session keys for agents, and passkey owners.
   `Keystore.toAccount` turns a secp256k1 key into a viem account.
 - `SessionKey.ecdsa` and `SessionKey.ecdsaThreshold`: the agent's signer as `ECDSASessionValidator` checks it, and
   `SessionKey.toValidatorData`.
-- Passkey owners on Kernel accounts (`KernelAccount.from({ owner: webAuthnAccount })`), verified by ZeroDev's WebAuthn
-  validator with the P-256 precompile where the chain has one.
 - `KeystoreError` and `SessionKeyError`, Effect v4 error families with hints.
 - `@napi-rs/keyring` is an optional peer dependency, for `Keystore.osKeychain`.

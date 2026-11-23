@@ -9,7 +9,7 @@ import { signMessage, signTypedData } from "viem/actions"
 import { wrapTypedDataSignature } from "viem/experimental/erc7739"
 
 import * as AccountError from "../../accounts/AccountError.ts"
-import { encodeSignature } from "../core/account/webauthn.ts"
+import { type Assertion, toAssertion } from "../core/account/webauthn.ts"
 import type { ChainClient, Hex, Owner } from "./client.ts"
 
 /**
@@ -73,29 +73,18 @@ export type { WebAuthnAccount }
 export const isWebAuthnAccount = (owner: Owner | WebAuthnAccount): owner is WebAuthnAccount => owner.type === "webAuthn"
 
 /**
- * Signs a hash with a passkey, as the WebAuthn challenge, and encodes the assertion for ZeroDev's WebAuthn validator.
- * Failures become `AccountError` (`SigningFailed`).
+ * A passkey owner's signer: it signs a challenge with the passkey (one WebAuthn prompt) and returns the assertion the
+ * WebAuthn validator reads.
  *
  * @internal
  */
-export const passkeySigner = (
-  owner: WebAuthnAccount,
-  account: AccountError.Options["account"],
-  usePrecompile: boolean
-) => ({
-  sign: (hash: Hex): Effect.Effect<Hex, AccountError.AccountError> =>
+export const passkeySigner = (owner: WebAuthnAccount, account: AccountError.Options["account"]) => ({
+  sign: (challenge: Hex): Effect.Effect<Assertion, AccountError.AccountError> =>
     Effect.tryPromise({
-      try: () => owner.sign({ hash }),
+      try: () => owner.sign({ hash: challenge }),
       catch: (cause) => AccountError.signingFailed({ account, cause })
     }).pipe(Effect.map(({ signature, webauthn }) => {
       const { r, s } = Signature.fromHex(signature)
-      return encodeSignature({
-        authenticatorData: webauthn.authenticatorData,
-        clientDataJSON: webauthn.clientDataJSON,
-        typeIndex: webauthn.typeIndex ?? 0,
-        r: BigInt(r),
-        s: BigInt(s),
-        usePrecompile
-      })
+      return toAssertion({ publicKey: owner.publicKey, r: BigInt(r), s: BigInt(s), ...webauthn })
     }))
 })

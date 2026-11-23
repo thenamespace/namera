@@ -13,7 +13,6 @@ export interface Contracts {
   readonly factoryStaker: Hex.Hex
   readonly implementation: Hex.Hex
   readonly ecdsaValidator: Hex.Hex
-  readonly webAuthnValidator: Hex.Hex
 }
 
 const initialize = AbiFunction.from(
@@ -42,8 +41,8 @@ export const validatorInstallData = (validatorData: Hex.Hex): Hex.Hex =>
   )
 
 /**
- * Kernel's `initialize` call: the owner's validator as root (the ECDSA validator with the owner's address, or the
- * WebAuthn validator with the passkey's data), and SmartSession installed when given.
+ * Kernel's `initialize` call: the owner's validator as root (the ECDSA validator with the owner's address, or
+ * WebAuthnValidator with the passkeys' data), and SmartSession installed when given.
  *
  * @internal
  */

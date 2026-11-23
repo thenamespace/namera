@@ -242,6 +242,33 @@ export const table: Record<string, Conformance> = {
       effect: () => Effect_.SmartAccount.fromAddress({ client, address: zeroAddress, owner })
     }
   },
+  "SmartAccount.signUserOperations": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.signUserOperations({
+          userOperations: [{ account: await KernelAccount.from({ client, owner }), userOperation: {} }],
+          signal
+        }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) =>
+            Effect_.SmartAccount.signUserOperations({ userOperations: [{ account, userOperation: {} }] })
+          )
+        )
+    }
+  },
+  "SmartAccount.getMultichainStubSignature": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.getMultichainStubSignature(await KernelAccount.from({ client, owner }), { count: 2, signal }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) => Effect_.SmartAccount.getMultichainStubSignature(account, { count: 2 }))
+        )
+    }
+  },
   "SmartAccount.isSessionsInstalled": {
     kind: "async",
     success: {

@@ -57,17 +57,23 @@ await bundler.sendUserOperation({ calls, authorization })
 
 ### Passkey owners
 
-A passkey (viem's `WebAuthnAccount`) can own a Kernel account. It verifies through ZeroDev's WebAuthn validator, with
-the P-256 precompile where the chain has one:
+A passkey (viem's `WebAuthnAccount`) can own a Kernel, Nexus or Safe7579 account. It verifies through Namera's
+`WebAuthnValidator`, with the P-256 precompile where the chain has one, and its ERC-1271 signatures are bound to the
+account and chain:
 
 ```ts
 import { toWebAuthnAccount } from "viem/account-abstraction"
 
 const owner = toWebAuthnAccount({ credential })
 const account = await KernelAccount.from({ client, owner })
+
+// Up to 16 passkeys, two of which sign each operation.
+const shared = await NexusAccount.from({ client, owner: { passkeys: [laptop, phone, key], threshold: 2 } })
 ```
 
-Nexus, Safe7579 and EIP-7702 accounts take local keys and JSON-RPC wallets only.
+One prompt can sign user operations on several chains: prepare each with `SmartAccount.getMultichainStubSignature`
+as its `signature`, then sign them together with `SmartAccount.signUserOperations`. EIP-7702 accounts take local keys
+only.
 
 ## Keys
 

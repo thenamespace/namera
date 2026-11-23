@@ -10,6 +10,7 @@ import {
   type SmartAccount,
   type SmartAccountImplementation,
   toSmartAccount,
+  type UserOperation,
   waitForUserOperationReceipt as viemWaitForUserOperationReceipt
 } from "viem/account-abstraction"
 import { readContract } from "viem/actions"
@@ -59,18 +60,31 @@ export const build = <const implementation extends SmartAccountImplementation>(
 ): Promise<SmartAccount<implementation>> => toSmartAccount(implementation) as Promise<SmartAccount<implementation>>
 
 /**
+ * A prepared user operation to sign: what viem's `prepareUserOperation` returns, or what a smart account's
+ * `signUserOperation` receives. Fields may be absent or `undefined`; the hash needs those an EntryPoint 0.7 operation
+ * has.
+ */
+export type UserOperationToSign =
+  & {
+    readonly [Field in keyof UserOperation<"0.7">]?: UserOperation<"0.7">[Field] | undefined
+  }
+  & { readonly chainId?: number | undefined }
+
+/**
  * The hash a user operation's owner signs.
  *
  * @internal
  */
 export const userOperationHash = (options: {
-  readonly userOperation: Parameters<SmartAccountImplementation["signUserOperation"]>[0]
+  readonly userOperation: UserOperationToSign
   readonly sender: Hex
   readonly chainId: number
 }): Hex => {
   const { chainId = options.chainId, ...operation } = options.userOperation
   return getUserOperationHash({
-    userOperation: { ...operation, sender: operation.sender ?? options.sender, signature: "0x" },
+    userOperation: { ...operation, sender: operation.sender ?? options.sender, signature: "0x" } as UserOperation<
+      "0.7"
+    >,
     entryPointAddress: entryPoint.address,
     entryPointVersion: entryPoint.version,
     chainId

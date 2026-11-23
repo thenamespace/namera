@@ -40,28 +40,55 @@ export const sortOwners = (owners: ReadonlyArray<Hex.Hex>): ReadonlyArray<Hex.He
   [...owners].sort((a, b) => (Hex.toBigInt(a) < Hex.toBigInt(b) ? -1 : 1))
 
 /**
- * The Safe `setup` call that adds the Safe7579 adapter through the launchpad, with the owners on OwnableValidator,
- * SmartSession as a second validator when given, and no registry attesters.
+ * Who owns a Safe7579 account: owner addresses on OwnableValidator (also the Safe's own owners), or a validator module
+ * installed with its data (Namera's `WebAuthnValidator` for passkeys).
+ *
+ * @internal
+ */
+export type Owner =
+  | { readonly type: "ownable"; readonly owners: ReadonlyArray<Hex.Hex>; readonly threshold: bigint }
+  | { readonly type: "module"; readonly validator: Hex.Hex; readonly data: Hex.Hex }
+
+/**
+ * The Safe owner of an account whose owner is a validator module. A Safe needs at least one owner; this one is an
+ * address derived from a hash, so no key signs for it and the Safe's own `execTransaction` path stays closed.
+ *
+ * @internal
+ */
+export const moduleOwnedSafeOwner: Hex.Hex = Address.checksum(
+  Hex.slice(Hash.keccak256(Hex.fromString("namera.safe7579.module-owned")), 12)
+)
+
+/**
+ * The Safe `setup` call that adds the Safe7579 adapter through the launchpad, with the owner's validator (OwnableValidator
+ * or a module), SmartSession as a second validator when given, and no registry attesters.
  *
  * @internal
  */
 export const initializer = (options: {
   readonly contracts: Contracts
-  readonly owners: ReadonlyArray<Hex.Hex>
-  readonly threshold: bigint
+  readonly owner: Owner
   readonly smartSession?: Hex.Hex | undefined
 }): Hex.Hex => {
-  const owners = sortOwners(options.owners)
-  const ownable = AbiParameters.encode(AbiParameters.from(["uint256", "address[]"]), [options.threshold, owners])
+  const { owner } = options
+  const safeOwners = owner.type === "ownable" ? sortOwners(owner.owners) : [moduleOwnedSafeOwner]
+  const safeThreshold = owner.type === "ownable" ? owner.threshold : BigInt(1)
+  const validator = owner.type === "ownable"
+    ? {
+      module: options.contracts.ownableValidator,
+      initData: AbiParameters.encode(AbiParameters.from(["uint256", "address[]"]), [owner.threshold, safeOwners]),
+      moduleType: MODULE_TYPE_VALIDATOR
+    }
+    : { module: owner.validator, initData: owner.data, moduleType: MODULE_TYPE_VALIDATOR }
   const modules = [
-    { module: options.contracts.ownableValidator, initData: ownable, moduleType: MODULE_TYPE_VALIDATOR },
+    validator,
     ...(options.smartSession === undefined
       ? []
       : [{ module: options.smartSession, initData: "0x" as const, moduleType: MODULE_TYPE_VALIDATOR }])
   ]
   return AbiFunction.encodeData(setup, [
-    owners,
-    options.threshold,
+    safeOwners,
+    safeThreshold,
     options.contracts.launchpad,
     AbiFunction.encodeData(addSafe7579, [options.contracts.adapter, modules, [], 0]),
     options.contracts.adapter,
@@ -95,12 +122,11 @@ export const deployment = (options: {
 })
 
 /**
- * The owners' nonce key: the OwnableValidator address ‖ a 4-byte key of 0.
+ * The nonce key that selects a validator: its address ‖ a 4-byte key of 0.
  *
  * @internal
  */
-export const ownerNonceKey = (contracts: Contracts): bigint =>
-  Hex.toBigInt(Hex.concat(contracts.ownableValidator, "0x00000000"))
+export const validatorNonceKey = (validator: Hex.Hex): bigint => Hex.toBigInt(Hex.concat(validator, "0x00000000"))
 
 /**
  * Concatenates owner signatures, as OwnableValidator reads them in a user operation (the nonce key selects it).
@@ -110,9 +136,8 @@ export const ownerNonceKey = (contracts: Contracts): bigint =>
 export const concatSignatures = (signatures: ReadonlyArray<Hex.Hex>): Hex.Hex => Hex.concat(...signatures)
 
 /**
- * Prefixes owner signatures for ERC-1271 with the validator they are for, OwnableValidator.
+ * Prefixes an owner signature for ERC-1271 with the validator it is for.
  *
  * @internal
  */
-export const ownerSignature = (contracts: Contracts, signatures: ReadonlyArray<Hex.Hex>): Hex.Hex =>
-  Hex.concat(contracts.ownableValidator, ...signatures)
+export const ownerSignature = (validator: Hex.Hex, signature: Hex.Hex): Hex.Hex => Hex.concat(validator, signature)

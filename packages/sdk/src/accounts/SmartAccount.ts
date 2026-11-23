@@ -1,6 +1,6 @@
 /**
  * Smart accounts as viem builds them: build one from an implementation, connect to an existing one, detect what an
- * address holds, and install Smart Sessions.
+ * address holds, install Smart Sessions, and sign user operations on several chains with one passkey prompt.
  *
  * **Details**
  *
@@ -26,10 +26,13 @@ import type {
   BundlerClient,
   SmartAccount as ViemSmartAccount,
   SmartAccountImplementation,
-  TransactionReceipt
+  TransactionReceipt,
+  UserOperationToSign
 } from "../internal/viem/smartAccount.ts"
 import type * as AccountError from "./AccountError.ts"
 import * as detect_ from "./internal/detect.ts"
+import * as multichain from "./internal/multichain.ts"
+import type * as PasskeyOwners from "./internal/passkeys.ts"
 import * as sessions from "./internal/sessions.ts"
 import * as internal from "./internal/smartAccount.ts"
 
@@ -73,13 +76,32 @@ export type Owner = Owner_
 
 /**
  * A passkey owner: viem's WebAuthn account (`toWebAuthnAccount`), which signs with the device's authenticator.
- * Supported on Kernel accounts, through ZeroDev's WebAuthn validator.
+ * Kernel, Nexus and Safe7579 accounts verify it through Namera's `WebAuthnValidator`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
 export type Passkey = WebAuthnAccount
+
+/**
+ * Several passkey owners of one account and how many of them must sign each operation (`threshold`, 1 by default).
+ * An account holds up to 16 passkeys.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkeys = Exclude<PasskeyOwners.Owner, WebAuthnAccount>
+
+/**
+ * A prepared user operation to sign, as viem's `prepareUserOperation` returns it.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type UserOperation = UserOperationToSign
 
 /**
  * A call an account makes, as viem's bundler client takes them.
@@ -196,8 +218,9 @@ export function fromAddress(options: fromAddress.Options): Promise<fromAddress.R
  */
 export declare namespace fromAddress {
   /**
-   * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several). A passkey owner
-   * works for a Kernel account.
+   * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several keys). Passkey owners
+   * work for Kernel, Nexus and Safe7579 accounts that are not EIP-7702: one passkey, or `{ passkeys, threshold }`
+   * when more than one must sign.
    *
    * @stability experimental
    * @category utility types
@@ -206,8 +229,8 @@ export declare namespace fromAddress {
   export interface Options extends RunOptions {
     readonly client: AccountClient
     readonly address: Hex
-    readonly owner?: Owner | Passkey | undefined
-    readonly owners?: ReadonlyArray<Owner> | undefined
+    readonly owner?: Owner | Passkey | Passkeys | undefined
+    readonly owners?: ReadonlyArray<Owner> | ReadonlyArray<Passkey> | undefined
   }
   /**
    * What `SmartAccount.fromAddress` resolves to.
@@ -414,4 +437,129 @@ export declare namespace isSessionsInstalled {
    * @since 2.0.0
    */
   export type ErrorType = ChainError.ChainError
+}
+
+/**
+ * Signs user operations for accounts on several chains with one prompt per signing passkey, and returns each
+ * operation's signature, in order.
+ *
+ * **When to use**
+ *
+ * Use when one owner action spans chains, such as installing the same grant on Base and Arbitrum: the passkeys sign
+ * once, instead of once per chain.
+ *
+ * **Details**
+ *
+ * The passkeys sign a Merkle root of the user operation hashes; each signature carries its operation's proof, and
+ * `WebAuthnValidator` checks the operation is a leaf of the signed root. Every account must be one Namera built with
+ * passkey owners, signed by the same passkeys.
+ *
+ * **Gotchas**
+ *
+ * A multichain signature is longer than a single-chain one. Prepare each operation with
+ * `getMultichainStubSignature` as its `signature`, so the gas estimate covers the proof, then send it with the
+ * returned signature.
+ *
+ * **Example** (Signing operations on two chains with one passkey prompt)
+ *
+ * ```ts
+ * import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
+ * import { createPublicClient, http, zeroAddress } from "viem"
+ * import { createBundlerClient, toWebAuthnAccount } from "viem/account-abstraction"
+ * import { arbitrum, base } from "viem/chains"
+ *
+ * declare const credential: { id: string; publicKey: `0x${string}` }
+ * const passkey = toWebAuthnAccount({ credential })
+ * const calls = [{ to: zeroAddress, value: 0n }]
+ *
+ * const chains = await Promise.all([base, arbitrum].map(async (chain) => {
+ *   const client = createPublicClient({ chain, transport: http() })
+ *   const account = await KernelAccount.from({ client, owner: passkey })
+ *   const bundler = createBundlerClient({ account, client, transport: http(`https://bundler.example/${chain.id}`) })
+ *   const signature = await SmartAccount.getMultichainStubSignature(account, { count: 2 })
+ *   const userOperation = await bundler.prepareUserOperation({ calls, signature })
+ *   return { account, bundler, userOperation }
+ * }))
+ *
+ * const signatures = await SmartAccount.signUserOperations({ userOperations: chains })
+ * await Promise.all(chains.map(({ bundler, userOperation }, i) =>
+ *   bundler.sendUserOperation({ ...userOperation, signature: signatures[i]! })
+ * ))
+ * ```
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function signUserOperations(options: signUserOperations.Options): Promise<ReadonlyArray<Hex>> {
+  return run(multichain.signUserOperations(options.userOperations), options)
+}
+
+/**
+ * Types of `SmartAccount.signUserOperations`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace signUserOperations {
+  /**
+   * The user operations to sign, each with the account it is for.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly userOperations: ReadonlyArray<{ readonly account: SmartAccount; readonly userOperation: UserOperation }>
+  }
+  /**
+   * The errors `SmartAccount.signUserOperations` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError
+}
+
+/**
+ * Returns a stub signature of a multichain signature's shape, to prepare one of `count` user operations that
+ * `signUserOperations` will sign together.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export function getMultichainStubSignature(
+  account: SmartAccount,
+  options: getMultichainStubSignature.Options
+): Promise<Hex> {
+  return run(multichain.stubSignature(account, options.count), options)
+}
+
+/**
+ * Types of `SmartAccount.getMultichainStubSignature`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getMultichainStubSignature {
+  /**
+   * How many user operations the multichain signature will cover.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly count: number
+  }
+  /**
+   * The errors `SmartAccount.getMultichainStubSignature` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError
 }

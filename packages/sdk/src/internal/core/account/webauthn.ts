@@ -1,76 +1,260 @@
 import * as AbiParameters from "ox/AbiParameters"
 import * as Base64 from "ox/Base64"
+import * as Bytes from "ox/Bytes"
 import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 import * as PublicKey from "ox/PublicKey"
+import * as TypedData from "ox/TypedData"
 
-const validatorDataParameters = AbiParameters.from([
-  "(uint256 x, uint256 y) webAuthnData",
-  "bytes32 authenticatorIdHash"
-])
+// The encodings of Namera's `WebAuthnValidator` (contracts/src/validators/WebAuthnValidator.sol): what an account
+// installs it with, the packed signature it reads, and the digests passkeys sign.
 
 /**
- * What ZeroDev's WebAuthn validator is initialised with for a passkey: its public key `(x, y)` and the keccak256 of
- * its credential id (base64url).
+ * A passkey as the validator stores it: its P-256 public key, and whether assertions need the User Verified flag.
  *
  * @internal
  */
-export const validatorData = (options: { readonly publicKey: Hex.Hex; readonly id: string }): Hex.Hex => {
-  const { x, y } = PublicKey.fromHex(options.publicKey)
-  return AbiParameters.encode(validatorDataParameters, [
-    { x: Hex.toBigInt(x), y: Hex.toBigInt(y) },
-    // Stryker disable next-line StringLiteral: hex is ox's default output
-    Hash.keccak256(Base64.toBytes(options.id), { as: "Hex" })
-  ])
+export interface Passkey {
+  readonly publicKey: Hex.Hex
+  readonly requireUserVerification: boolean
 }
 
-const signatureParameters = AbiParameters.from([
-  "bytes authenticatorData",
-  "string clientDataJSON",
-  "uint256 responseTypeLocation",
-  "uint256 r",
-  "uint256 s",
-  "bool usePrecompiled"
-])
+/**
+ * One WebAuthn assertion: what a passkey returned for a challenge, with where `clientDataJSON` holds its fields.
+ *
+ * @internal
+ */
+export interface Assertion {
+  readonly credentialId: Hex.Hex
+  readonly r: bigint
+  readonly s: bigint
+  readonly challengeIndex: number
+  readonly typeIndex: number
+  readonly authenticatorData: Hex.Hex
+  readonly clientDataJSON: string
+}
 
 /**
- * A WebAuthn assertion as the validator reads it. With `usePrecompile` it verifies P-256 through the RIP-7212 / EIP-7951
- * precompile; otherwise in Solidity, at far higher gas.
+ * A multichain signature's root and the proof that a user operation hash is one of its leaves.
+ *
+ * @internal
+ */
+export interface Multichain {
+  readonly root: Hex.Hex
+  readonly proof: ReadonlyArray<Hex.Hex>
+}
+
+// P-256's group order and half of it: the validator accepts only low-s signatures.
+const n = BigInt("0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551")
+const halfN = n / BigInt(2)
+
+/**
+ * An assertion from a passkey's answer: the signature with `s` made low, and the field indexes the authenticator
+ * library reported, or found in `clientDataJSON` when it did not.
+ *
+ * @internal
+ */
+export const toAssertion = (options: {
+  readonly publicKey: Hex.Hex
+  readonly r: bigint
+  readonly s: bigint
+  readonly authenticatorData: Hex.Hex
+  readonly clientDataJSON: string
+  readonly challengeIndex?: number | undefined
+  readonly typeIndex?: number | undefined
+}): Assertion => ({
+  credentialId: credentialId(options.publicKey),
+  r: options.r,
+  s: options.s > halfN ? n - options.s : options.s,
+  challengeIndex: options.challengeIndex ?? options.clientDataJSON.indexOf("\"challenge\":\""),
+  typeIndex: options.typeIndex ?? options.clientDataJSON.indexOf("\"type\":\"webauthn.get\""),
+  authenticatorData: options.authenticatorData,
+  clientDataJSON: options.clientDataJSON
+})
+
+const passkeysParameters = AbiParameters.from([
+  "uint256 threshold",
+  "(bytes32 x, bytes32 y, bool requireUserVerification, bytes32 rpIdHash)[] passkeys"
+])
+
+const zeroHash: Hex.Hex = "0x0000000000000000000000000000000000000000000000000000000000000000"
+const stubWord: Hex.Hex = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+const coordinates = (publicKey: Hex.Hex) => {
+  const { x, y } = PublicKey.fromHex(publicKey)
+  return { x: Hex.padLeft(x, 32), y: Hex.padLeft(y, 32) }
+}
+
+/**
+ * The validator's id of a passkey: `keccak256(abi.encode(x, y))`.
+ *
+ * @internal
+ */
+export const credentialId = (publicKey: Hex.Hex): Hex.Hex => {
+  const { x, y } = coordinates(publicKey)
+  return Hash.keccak256(AbiParameters.encode(AbiParameters.from(["bytes32", "bytes32"]), [x, y]))
+}
+
+/**
+ * The validator's install data, also its stateless session config: `abi.encode(threshold, passkeys)`.
+ *
+ * @internal
+ */
+export const installData = (options: {
+  readonly threshold: number
+  readonly passkeys: ReadonlyArray<Passkey>
+}): Hex.Hex =>
+  AbiParameters.encode(passkeysParameters, [
+    BigInt(options.threshold),
+    options.passkeys.map((passkey) => ({
+      ...coordinates(passkey.publicKey),
+      requireUserVerification: passkey.requireUserVerification,
+      rpIdHash: zeroHash
+    }))
+  ])
+
+/**
+ * The validator's packed signature: `mode ‖ backend ‖ [root ‖ proofLength ‖ proof] ‖ count ‖ assertions`, the
+ * assertions sorted by credential id as the validator requires.
  *
  * @internal
  */
 export const encodeSignature = (options: {
-  readonly authenticatorData: Hex.Hex
-  readonly clientDataJSON: string
-  readonly typeIndex: number
-  readonly r: bigint
-  readonly s: bigint
-  readonly usePrecompile: boolean
-}): Hex.Hex =>
-  AbiParameters.encode(signatureParameters, [
-    options.authenticatorData,
-    options.clientDataJSON,
-    BigInt(options.typeIndex),
-    options.r,
-    options.s,
-    options.usePrecompile
-  ])
+  readonly precompile: boolean
+  readonly multichain?: Multichain | undefined
+  readonly assertions: ReadonlyArray<Assertion>
+}): Hex.Hex => {
+  const assertions = [...options.assertions].sort((a, b) =>
+    // Stryker disable next-line EqualityOperator: credential ids of distinct passkeys never collide
+    Hex.toBigInt(a.credentialId) < Hex.toBigInt(b.credentialId) ? -1 : 1
+  )
+  const header = options.multichain === undefined
+    ? [Hex.fromNumber(0, { size: 1 }), backend(options.precompile)]
+    : [
+      Hex.fromNumber(1, { size: 1 }),
+      backend(options.precompile),
+      options.multichain.root,
+      Hex.fromNumber(options.multichain.proof.length, { size: 1 }),
+      ...options.multichain.proof
+    ]
+  return Hex.concat(
+    ...header,
+    Hex.fromNumber(assertions.length, { size: 1 }),
+    ...assertions.map(encodeAssertion)
+  )
+}
+
+const backend = (precompile: boolean) => Hex.fromNumber(precompile ? 0 : 1, { size: 1 })
+
+const encodeAssertion = (assertion: Assertion): Hex.Hex => {
+  const clientDataJSON = Hex.fromString(assertion.clientDataJSON)
+  return Hex.concat(
+    assertion.credentialId,
+    Hex.fromNumber(assertion.r, { size: 32 }),
+    Hex.fromNumber(assertion.s, { size: 32 }),
+    Hex.fromNumber(assertion.challengeIndex, { size: 2 }),
+    Hex.fromNumber(assertion.typeIndex, { size: 2 }),
+    Hex.fromNumber(Hex.size(assertion.authenticatorData), { size: 2 }),
+    assertion.authenticatorData,
+    Hex.fromNumber(Hex.size(clientDataJSON), { size: 2 }),
+    clientDataJSON
+  )
+}
 
 /**
- * A WebAuthn signature of the right shape for gas estimation (permissionless's), with the precompile flag the real
- * signature will carry.
+ * What a passkey signs for an ERC-1271 check of `hash` on `account`: an EIP-712 digest in the validator's domain.
  *
  * @internal
  */
-export const stubSignature = (usePrecompile: boolean): Hex.Hex =>
+export const replaySafeHash = (options: {
+  readonly validator: Hex.Hex
+  readonly chainId: number
+  readonly account: Hex.Hex
+  readonly hash: Hex.Hex
+}): Hex.Hex =>
+  TypedData.getSignPayload({
+    domain: { name: "WebAuthnValidator", version: "1", chainId: options.chainId, verifyingContract: options.validator },
+    types: { ReplaySafeHash: [{ name: "account", type: "address" }, { name: "hash", type: "bytes32" }] },
+    primaryType: "ReplaySafeHash",
+    message: { account: options.account, hash: options.hash }
+  })
+
+const multichainTypeHash = Hash.keccak256(Hex.fromString("WebAuthnMultichain(bytes32 root)"))
+
+/**
+ * What passkeys sign to approve every user operation under a multichain root.
+ *
+ * @internal
+ */
+export const multichainChallenge = (root: Hex.Hex): Hex.Hex =>
+  Hash.keccak256(AbiParameters.encode(AbiParameters.from(["bytes32", "bytes32"]), [multichainTypeHash, root]))
+
+const leaf = (userOperationHash: Hex.Hex): Hex.Hex =>
+  Hash.keccak256(AbiParameters.encode(AbiParameters.from(["bytes32"]), [userOperationHash]))
+
+const parent = (a: Hex.Hex, b: Hex.Hex): Hex.Hex =>
+  Hex.toBigInt(a) < Hex.toBigInt(b) ? Hash.keccak256(Hex.concat(a, b)) : Hash.keccak256(Hex.concat(b, a))
+
+/**
+ * The Merkle tree over user operation hashes (leaves `keccak256(abi.encode(hash))`, sorted pairs, an odd node moves
+ * up as is): its root, and each hash's proof in input order.
+ *
+ * @internal
+ */
+export const multichainTree = (
+  userOperationHashes: ReadonlyArray<Hex.Hex>
+): { readonly root: Hex.Hex; readonly proofs: ReadonlyArray<ReadonlyArray<Hex.Hex>> } => {
+  let level = userOperationHashes.map(leaf)
+  // Where each input's node is in the current level.
+  let positions = userOperationHashes.map((_, index) => index)
+  const proofs: Array<Array<Hex.Hex>> = userOperationHashes.map(() => [])
+
+  while (level.length > 1) {
+    positions.forEach((position, index) => {
+      const sibling = position % 2 === 0 ? position + 1 : position - 1
+      if (sibling < level.length) proofs[index]!.push(level[sibling]!)
+    })
+    const next: Array<Hex.Hex> = []
+    for (let i = 0; i < level.length; i += 2) {
+      next.push(i + 1 < level.length ? parent(level[i]!, level[i + 1]!) : level[i]!)
+    }
+    level = next
+    positions = positions.map((position) => Math.floor(position / 2))
+  }
+  return { root: level[0]!, proofs }
+}
+
+// A Chrome-shaped assertion with a long extra key, so a stub is no smaller than a real assertion; r and s are in range
+// so the Solidity backend runs its full verification during estimation.
+const stubAssertion = {
+  r: BigInt("0x6f4c1f3a96e8de29b4b5c0f0f9e7f7a3e4a1b8d5c2f6e9a0b3c7d1e4f8a2b5c9"),
+  s: BigInt("0x2a7e5b8c1d4f6a9e3b7c0d2f5a8e1b4c7d0a3f6e9b2c5d8a1e4f7b0c3d6e9a2b"),
+  challengeIndex: 23,
+  typeIndex: 1,
+  authenticatorData: Hex.concat(Hash.sha256(Hex.fromString("localhost")), "0x1d00000000"),
+  clientDataJSON: `{"type":"webauthn.get","challenge":"${
+    Base64.fromBytes(Bytes.fromHex(zeroHash), { url: true, pad: false })
+  }","origin":"https://localhost","crossOrigin":false,"other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}`
+}
+
+/**
+ * A signature of the real one's shape for gas estimation: one assertion per signing passkey, the same backend, and
+ * the same multichain proof length.
+ *
+ * @internal
+ */
+export const stubSignature = (options: {
+  readonly precompile: boolean
+  readonly credentialIds: ReadonlyArray<Hex.Hex>
+  readonly multichainProofLength?: number | undefined
+}): Hex.Hex =>
   encodeSignature({
-    authenticatorData: "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97631d00000000",
-    clientDataJSON:
-      "{\"type\":\"webauthn.get\",\"challenge\":\"tbxXNFS9X_4Byr1cMwqKrIGB-_30a0QhZ6y7ucM0BOE\",\"origin\":\"http://localhost:3000\",\"crossOrigin\":false, \"other_keys_can_be_added_here\":\"do not compare clientDataJSON against a template. See https://goo.gl/yabPex\"}",
-    typeIndex: 1,
-    r: BigInt("44941127272049826721201904734628716258498742255959991581049806490182030242267"),
-    s: BigInt("9910254599581058084911561569808925251374718953855182016200087235935345969636"),
-    usePrecompile
+    precompile: options.precompile,
+    // Non-zero filler: zero calldata bytes cost less, and the estimate must cover a real root and proof.
+    multichain: options.multichainProofLength === undefined
+      ? undefined
+      : { root: stubWord, proof: Array.from({ length: options.multichainProofLength }, () => stubWord) },
+    assertions: options.credentialIds.map((credentialId) => ({ credentialId, ...stubAssertion }))
   })
 
 /**

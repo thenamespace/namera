@@ -1,6 +1,6 @@
 /**
- * Biconomy's Nexus 1.3.3 as a viem smart account, owned by one key on its default (K1) validator, and as an
- * EIP-7702 delegation of the owner's own address.
+ * Biconomy's Nexus 1.3.3 as a viem smart account, owned by one key on its default (K1) validator or by passkeys on
+ * Namera's `WebAuthnValidator`, and as an EIP-7702 delegation of the owner's own address.
  *
  * @stability experimental
  * @since 2.0.0
@@ -62,8 +62,10 @@ export function from(options: from.Options): Promise<from.ReturnType> {
  */
 export declare namespace from {
   /**
-   * The client (with a chain), the owner, and optionally the `version` (`"1.3.3"`), `index` (the counterfactual salt,
-   * `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+   * The client (with a chain), the owner (a local key, a JSON-RPC wallet, a passkey, or `{ passkeys, threshold }`
+   * for up to 16 passkeys of which `threshold` sign), and optionally the `version` (`"1.3.3"`), `index` (the
+   * counterfactual salt, `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+   * Passkeys verify through Namera's `WebAuthnValidator`, installed as a validator module.
    *
    * @stability experimental
    * @category utility types

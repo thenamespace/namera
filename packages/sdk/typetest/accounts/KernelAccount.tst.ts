@@ -1,4 +1,11 @@
-import { type AccountError, type ChainError, KernelAccount, type Safe7579Account, SmartAccount } from "@namera-ai/sdk"
+import {
+  type AccountError,
+  type ChainError,
+  KernelAccount,
+  type NexusAccount,
+  type Safe7579Account,
+  SmartAccount
+} from "@namera-ai/sdk"
 import type { KernelAccount as EffectKernelAccount, SmartAccount as EffectSmartAccount } from "@namera-ai/sdk/effect"
 import type { Effect } from "effect"
 import { describe, expect, it } from "tstyche"
@@ -12,9 +19,29 @@ describe("KernelAccount", () => {
     expect<KernelAccount.KernelAccount["namera"]["type"]>().type.toBe<"kernel">()
   })
 
-  it("takes a local key, a JSON-RPC wallet or a passkey as owner, and only a local key for EIP-7702", () => {
-    expect<KernelAccount.from.Options["owner"]>().type.toBe<LocalAccount | JsonRpcAccount | WebAuthnAccount>()
+  it("takes a local key, a JSON-RPC wallet, a passkey or several passkeys as owner, and only a local key for EIP-7702", () => {
+    type Owner = LocalAccount | JsonRpcAccount | WebAuthnAccount | SmartAccount.Passkeys
+    expect<KernelAccount.from.Options["owner"]>().type.toBe<Owner>()
+    expect<NexusAccount.from.Options["owner"]>().type.toBe<Owner>()
+    expect<SmartAccount.Passkeys>().type.toBe<{
+      readonly passkeys: ReadonlyArray<WebAuthnAccount>
+      readonly threshold?: number | undefined
+    }>()
+    expect<Safe7579Account.from.Options["owners"]>().type.toBe<
+      ReadonlyArray<LocalAccount | JsonRpcAccount> | ReadonlyArray<WebAuthnAccount>
+    >()
     expect<KernelAccount.fromEip7702.Options["owner"]>().type.toBe<PrivateKeyAccount>()
+  })
+
+  it("signs multichain user operations with what prepareUserOperation returns", () => {
+    expect(SmartAccount.signUserOperations).type.toBe<
+      (options: SmartAccount.signUserOperations.Options) => Promise<ReadonlyArray<`0x${string}`>>
+    >()
+    expect<ReturnType<typeof EffectSmartAccount.signUserOperations>>().type.toBe<
+      Effect.Effect<ReadonlyArray<`0x${string}`>, AccountError.AccountError>
+    >()
+    expect<{ readonly callData: `0x${string}`; readonly factory: `0x${string}` | undefined }>().type
+      .toBeAssignableTo<SmartAccount.UserOperation>()
   })
 
   it("returns a Promise in the Promise API and an Effect without requirements in the Effect API", () => {

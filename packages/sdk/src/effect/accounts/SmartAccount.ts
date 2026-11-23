@@ -1,6 +1,6 @@
 /**
  * The Effect form of `SmartAccount`: build an account from an implementation, connect to an existing one, detect what
- * an address holds, and install Smart Sessions.
+ * an address holds, install Smart Sessions, and sign user operations on several chains with one passkey prompt.
  *
  * @stability experimental
  * @since 2.0.0
@@ -9,6 +9,7 @@ import type * as Effect from "effect/Effect"
 
 import type * as AccountError from "../../accounts/AccountError.ts"
 import * as detect_ from "../../accounts/internal/detect.ts"
+import * as multichain from "../../accounts/internal/multichain.ts"
 import * as sessions from "../../accounts/internal/sessions.ts"
 import * as internal from "../../accounts/internal/smartAccount.ts"
 import type * as SmartAccount_ from "../../accounts/SmartAccount.ts"
@@ -116,3 +117,28 @@ export const isSessionsInstalled = (
   client: ReadClient,
   options: { readonly address: Hex }
 ): Effect.Effect<boolean, ChainError.ChainError> => sessions.isSessionsInstalled(client, options.address)
+
+/**
+ * Signs user operations for accounts on several chains with one prompt per signing passkey, and returns each
+ * operation's signature, in order.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const signUserOperations = (
+  options: Omit<SmartAccount_.signUserOperations.Options, "signal">
+): Effect.Effect<ReadonlyArray<Hex>, AccountError.AccountError> => multichain.signUserOperations(options.userOperations)
+
+/**
+ * Returns a stub signature of a multichain signature's shape, to prepare one of `count` user operations that
+ * `signUserOperations` will sign together.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export const getMultichainStubSignature = (
+  account: SmartAccount,
+  options: { readonly count: number }
+): Effect.Effect<Hex, AccountError.AccountError> => multichain.stubSignature(account, options.count)
