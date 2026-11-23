@@ -337,7 +337,8 @@ export declare namespace detect {
 }
 
 /**
- * Returns the calls that install Smart Sessions on an account, to batch with other calls in one user operation.
+ * Returns the calls that install Smart Sessions on an account, with SessionHook to run sessions' execution policies,
+ * to batch with other calls in one user operation.
  *
  * @stability experimental
  * @category constructors
@@ -424,7 +425,9 @@ export declare namespace installSessionsSync {
 }
 
 /**
- * Checks whether Smart Sessions is installed on the account at an address. An undeployed account has none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
+ * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
+ * none.
  *
  * @stability experimental
  * @category getters

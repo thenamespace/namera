@@ -856,6 +856,11 @@ const abiV1 = [
   },
   {
     "type": "error",
+    "name": "InvalidSessionHookTag",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  {
+    "type": "error",
     "name": "InvalidSessionValidity",
     "inputs": [{ "name": "validAfter", "type": "uint48", "internalType": "uint48" }, {
       "name": "validUntil",
@@ -937,10 +942,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0x0e4D5D3db32D13E138056d09D1aaeEBCf7946c0C",
+  "address": "0xC7016a7e939D480E7257aFe636058701973704ca",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0x44cee64cc94ae49c81a13119690e35c0cfc629cbe62a8dca1d2e494ba53554aa",
+  "initcodeHash": "0x5af70e072a18325c026d88b40a721cad15d2c9dd05e185c3eab4b3b8e14fd5ff",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
   "abi": abiV1,
   "deployments": {}

@@ -1,10 +1,15 @@
 import * as External from "@namera-ai/contracts/External"
-import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
 
 import type * as ChainError from "../../ChainError.ts"
-import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
+import {
+  encodeCalls,
+  encodeInstallModule,
+  MODULE_TYPE_HOOK,
+  MODULE_TYPE_VALIDATOR
+} from "../../internal/core/account/erc7579.ts"
 import * as Safe7579 from "../../internal/core/account/safe7579.ts"
+import * as SessionHook from "../../internal/core/account/sessionHook.ts"
 import type { AccountClient, ChainClient, Hex, Owner } from "../../internal/viem/client.ts"
 import {
   hashMessage,
@@ -17,6 +22,7 @@ import {
 } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
 import * as Passkeys from "./passkeys.ts"
+import { sessionModules } from "./sessionModules.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
 import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
@@ -35,14 +41,21 @@ export interface FromOptions {
 }
 
 /**
- * The call that installs Smart Sessions on a Safe7579 account, as a validator.
+ * The calls that install Smart Sessions on a Safe7579 account, as a validator, with SessionHook as the account's hook.
  *
  * @internal
  */
-export const installSessionsCall = (address: Hex) => ({
-  to: address,
-  data: encodeInstallModule(MODULE_TYPE_VALIDATOR, SmartSession.v1.address, "0x")
-})
+export const installSessionsCalls = (address: Hex): ReadonlyArray<{ readonly to: Hex; readonly data: Hex }> => [
+  { to: address, data: encodeInstallModule(MODULE_TYPE_VALIDATOR, sessionModules.smartSession, "0x") },
+  {
+    to: address,
+    data: encodeInstallModule(
+      MODULE_TYPE_HOOK,
+      sessionModules.sessionHook,
+      SessionHook.installData("safe7579", sessionModules.smartSession)
+    )
+  }
+]
 
 /** How the owners sign: their validator, the stub, and user operation and ERC-1271 signatures. */
 interface Signing {
@@ -149,7 +162,7 @@ export const from = Effect.fnUntraced(function*(
         owners: keys.owners.map((owner) => owner.address),
         threshold: BigInt(keys.threshold)
       },
-    smartSession: options.sessions === false ? undefined : SmartSession.v1.address
+    sessions: options.sessions === false ? undefined : sessionModules
   })
   const deployment = Safe7579.deployment({ contracts, initializer, index: options.index ?? BigInt("0") })
   const address = options.address ?? deployment.address

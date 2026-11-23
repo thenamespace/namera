@@ -26,8 +26,9 @@ export type NexusAccount = SmartAccount.SmartAccount<"nexus">
  * **Details**
  *
  * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
- * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator,
- * so an agent's first operation needs no separate owner transaction.
+ * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator and
+ * SessionHook as the account's hook, so an agent's first operation needs no separate owner transaction. An account
+ * can have one hook only.
  *
  * **Example** (Sending a user operation from a Nexus account)
  *

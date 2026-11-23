@@ -13,6 +13,10 @@
       "label": "namera.webauthn-validator.v1"
     },
     {
+      "artifact": "SessionHook.sol:SessionHook",
+      "label": "namera.session-hook.v1"
+    },
+    {
       "artifact": "AllowPolicy.sol:AllowPolicy",
       "label": "namera.allow-policy.v1"
     },

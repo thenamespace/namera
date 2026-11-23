@@ -27,7 +27,8 @@ export type KernelAccount = SmartAccount.SmartAccount<"kernel">
  *
  * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
  * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator for
- * `execute`, so an agent's first operation needs no separate owner transaction.
+ * `execute`, with SessionHook bound to it to run sessions' execution policies, so an agent's first operation needs no
+ * separate owner transaction. Kernel then runs every Smart Sessions operation through `executeUserOp`.
  *
  * **Example** (Sending a user operation from a Kernel account)
  *

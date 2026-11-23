@@ -6,6 +6,7 @@ import * as TypedData from "ox/TypedData"
 
 import { predictAddress } from "./erc1967.ts"
 import { encodeInstallModule, MODULE_TYPE_VALIDATOR } from "./erc7579.ts"
+import * as SessionHook from "./sessionHook.ts"
 
 /** The contracts of one Kernel version. @internal */
 export interface Contracts {
@@ -29,36 +30,58 @@ const EXECUTE = "0xe9ae5c53"
 const validatorId = (validator: Hex.Hex) => Hex.concat("0x01", validator)
 
 /**
- * The validator install data Kernel expects: hook (`address(1)`, none) ‖ `abi.encode(validatorData, hookData,
- * selectorData)`, granting the validator `execute`.
+ * The validator install data Kernel expects: hook ‖ `abi.encode(validatorData, hookData, selectorData)`, granting the
+ * validator `execute`. Without a hook, `address(1)` (none); with one, `hookData` is flag `0xff` (always run the
+ * hook's `onInstall`) ‖ the hook's install data.
  *
  * @internal
  */
-export const validatorInstallData = (validatorData: Hex.Hex): Hex.Hex =>
+export const validatorInstallData = (
+  validatorData: Hex.Hex,
+  hook?: { readonly address: Hex.Hex; readonly data: Hex.Hex } | undefined
+): Hex.Hex =>
   Hex.concat(
-    "0x0000000000000000000000000000000000000001",
-    AbiParameters.encode(AbiParameters.from(["bytes", "bytes", "bytes"]), [validatorData, "0x", EXECUTE])
+    hook === undefined ? "0x0000000000000000000000000000000000000001" : hook.address,
+    AbiParameters.encode(AbiParameters.from(["bytes", "bytes", "bytes"]), [
+      validatorData,
+      hook === undefined ? "0x" : Hex.concat("0xff", hook.data),
+      EXECUTE
+    ])
+  )
+
+/**
+ * The call that installs Smart Sessions as a validator for `execute`, with SessionHook bound to it: Kernel then
+ * runs the hook around every Smart Sessions operation, which must come through `executeUserOp`.
+ *
+ * @internal
+ */
+export const installSessionsData = (sessions: SessionHook.Sessions): Hex.Hex =>
+  encodeInstallModule(
+    MODULE_TYPE_VALIDATOR,
+    sessions.smartSession,
+    validatorInstallData("0x", {
+      address: sessions.sessionHook,
+      data: SessionHook.installData("kernel", sessions.smartSession)
+    })
   )
 
 /**
  * Kernel's `initialize` call: the owner's validator as root (the ECDSA validator with the owner's address, or
- * WebAuthnValidator with the passkeys' data), and SmartSession installed when given.
+ * WebAuthnValidator with the passkeys' data), and Smart Sessions with SessionHook installed when given.
  *
  * @internal
  */
 export const initData = (options: {
   readonly rootValidator: Hex.Hex
   readonly validatorData: Hex.Hex
-  readonly smartSession?: Hex.Hex | undefined
+  readonly sessions?: SessionHook.Sessions | undefined
 }): Hex.Hex =>
   AbiFunction.encodeData(initialize, [
     validatorId(options.rootValidator),
     "0x0000000000000000000000000000000000000000",
     options.validatorData,
     "0x",
-    options.smartSession === undefined
-      ? []
-      : [encodeInstallModule(MODULE_TYPE_VALIDATOR, options.smartSession, validatorInstallData("0x"))]
+    options.sessions === undefined ? [] : [installSessionsData(options.sessions)]
   ])
 
 /**

@@ -12,6 +12,9 @@ export interface Call {
 /** @internal */
 export const MODULE_TYPE_VALIDATOR = BigInt("1")
 
+/** ERC-7579 module type of a hook. @internal */
+export const MODULE_TYPE_HOOK = BigInt("4")
+
 const execute = AbiFunction.from("function execute(bytes32 mode, bytes executionCalldata)")
 const installModule = AbiFunction.from("function installModule(uint256 moduleTypeId, address module, bytes initData)")
 const isModuleInstalled = AbiFunction.from(

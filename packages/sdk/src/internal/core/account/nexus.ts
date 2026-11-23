@@ -2,6 +2,8 @@ import * as AbiFunction from "ox/AbiFunction"
 import * as AbiParameters from "ox/AbiParameters"
 import * as Hex from "ox/Hex"
 
+import * as SessionHook from "./sessionHook.ts"
+
 /** The contracts of one Nexus version. @internal */
 export interface Contracts {
   readonly factory: Hex.Hex
@@ -35,28 +37,30 @@ const zeroAddress = "0x0000000000000000000000000000000000000000"
 
 /**
  * The bootstrap call that initialises a Nexus account: the owner on the default validator or as a validator module,
- * and SmartSession as another validator when given.
+ * and Smart Sessions as another validator with SessionHook as the account's hook when given.
  *
  * @internal
  */
-export const bootstrapCall = (options: { readonly owner: Owner; readonly smartSession?: Hex.Hex | undefined }) => {
-  const sessions = options.smartSession === undefined ? [] : [{ module: options.smartSession, data: "0x" as const }]
+export const bootstrapCall = (options: {
+  readonly owner: Owner
+  readonly sessions?: SessionHook.Sessions | undefined
+}) => {
+  const { sessions } = options
+  const validators: ReadonlyArray<{ readonly module: Hex.Hex; readonly data: Hex.Hex }> = sessions === undefined
+    ? []
+    : [{ module: sessions.smartSession, data: "0x" }]
+  const hook: { readonly module: Hex.Hex; readonly data: Hex.Hex } = sessions === undefined
+    ? { module: zeroAddress, data: "0x" }
+    : { module: sessions.sessionHook, data: SessionHook.installData("nexus", sessions.smartSession) }
   if (options.owner.type === "module") {
     return AbiFunction.encodeData(initNexusScoped, [
-      [{ module: options.owner.validator, data: options.owner.data }, ...sessions],
-      { module: zeroAddress, data: "0x" }
+      [{ module: options.owner.validator, data: options.owner.data }, ...validators],
+      hook
     ])
   }
-  return sessions.length === 0
+  return sessions === undefined
     ? AbiFunction.encodeData(initNexusWithDefaultValidator, [options.owner.address])
-    : AbiFunction.encodeData(initNexusWithModules, [
-      options.owner.address,
-      sessions,
-      [],
-      { module: zeroAddress, data: "0x" },
-      [],
-      []
-    ])
+    : AbiFunction.encodeData(initNexusWithModules, [options.owner.address, validators, [], hook, [], []])
 }
 
 /**
@@ -72,7 +76,7 @@ export const bootstrapCall = (options: { readonly owner: Owner; readonly smartSe
 export const deployment = (options: {
   readonly contracts: Contracts
   readonly owner: Owner
-  readonly smartSession?: Hex.Hex | undefined
+  readonly sessions?: SessionHook.Sessions | undefined
   readonly index: bigint
 }): { readonly factoryData: Hex.Hex; readonly addressCall: Hex.Hex } => {
   const initData = AbiParameters.encode(AbiParameters.from(["address", "bytes"]), [

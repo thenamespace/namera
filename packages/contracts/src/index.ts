@@ -35,6 +35,15 @@ export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"
 export * as WebAuthnValidator from "./WebAuthnValidator.ts"
 
 /**
+ * Namera's `SessionHook` contract: ABI, CREATE2 address and deployment records, one export per
+ * version (`SessionHook.v1`, …).
+ *
+ * @stability experimental
+ * @since 0.1.0
+ */
+export * as SessionHook from "./SessionHook.ts"
+
+/**
  * Namera's `AllowPolicy` contract: ABI, CREATE2 address and deployment records, one export per
  * version (`AllowPolicy.v1`, …).
  *

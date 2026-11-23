@@ -1,10 +1,15 @@
 import * as External from "@namera-ai/contracts/External"
-import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
 
 import type * as ChainError from "../../ChainError.ts"
-import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
+import {
+  encodeCalls,
+  encodeInstallModule,
+  MODULE_TYPE_HOOK,
+  MODULE_TYPE_VALIDATOR
+} from "../../internal/core/account/erc7579.ts"
 import * as Nexus from "../../internal/core/account/nexus.ts"
+import * as SessionHook from "../../internal/core/account/sessionHook.ts"
 import {
   type AccountClient,
   call,
@@ -25,6 +30,7 @@ import {
 } from "../../internal/viem/signing.ts"
 import type * as AccountError from "../AccountError.ts"
 import * as Passkeys from "./passkeys.ts"
+import { sessionModules } from "./sessionModules.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
 import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
@@ -55,14 +61,21 @@ export interface FromEip7702Options {
 const domainVersions: Record<Version, string> = { "1.3.3": "1.3.2" }
 
 /**
- * The call that installs Smart Sessions on a Nexus account, as a validator.
+ * The calls that install Smart Sessions on a Nexus account, as a validator, with SessionHook as the account's hook.
  *
  * @internal
  */
-export const installSessionsCall = (address: Hex) => ({
-  to: address,
-  data: encodeInstallModule(MODULE_TYPE_VALIDATOR, SmartSession.v1.address, "0x")
-})
+export const installSessionsCalls = (address: Hex): ReadonlyArray<{ readonly to: Hex; readonly data: Hex }> => [
+  { to: address, data: encodeInstallModule(MODULE_TYPE_VALIDATOR, sessionModules.smartSession, "0x") },
+  {
+    to: address,
+    data: encodeInstallModule(
+      MODULE_TYPE_HOOK,
+      sessionModules.sessionHook,
+      SessionHook.installData("nexus", sessionModules.smartSession)
+    )
+  }
+]
 
 /** How the owner signs: its validator's nonce lane, the stub, and user operation and ERC-1271 signatures. */
 interface Signing {
@@ -198,7 +211,7 @@ export const from = Effect.fnUntraced(function*(
     owner: passkeys === undefined
       ? { type: "default", address: owner.address }
       : { type: "module", validator: Passkeys.validator, data: Passkeys.installData(passkeys) },
-    smartSession: options.sessions === false ? undefined : SmartSession.v1.address,
+    sessions: options.sessions === false ? undefined : sessionModules,
     index: options.index ?? BigInt("0")
   })
   const address = options.address ??
@@ -228,6 +241,6 @@ export const fromEip7702 = (
     address: options.owner.address,
     eip7702: true,
     authorization: { account: options.owner, address: External.nexus[version].implementation },
-    firstCalls: options.sessions === false ? undefined : [installSessionsCall(options.owner.address)]
+    firstCalls: options.sessions === false ? undefined : installSessionsCalls(options.owner.address)
   })
 }

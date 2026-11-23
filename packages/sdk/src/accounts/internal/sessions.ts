@@ -1,4 +1,3 @@
-import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
 
 import * as ChainError from "../../ChainError.ts"
@@ -6,8 +5,10 @@ import {
   type Call,
   decodeIsModuleInstalled,
   encodeIsModuleInstalled,
+  MODULE_TYPE_HOOK,
   MODULE_TYPE_VALIDATOR
 } from "../../internal/core/account/erc7579.ts"
+import * as SessionHook from "../../internal/core/account/sessionHook.ts"
 import { call, code, type Hex, type ReadClient } from "../../internal/viem/client.ts"
 import {
   type BundlerClient,
@@ -19,31 +20,49 @@ import * as AccountError from "../AccountError.ts"
 import * as Kernel from "./kernel.ts"
 import * as Nexus from "./nexus.ts"
 import * as Safe7579 from "./safe7579.ts"
+import { sessionModules } from "./sessionModules.ts"
 import type { NameraSmartAccount } from "./smartAccount.ts"
 
-/** Checks whether Smart Sessions is installed on the account as a validator. @internal */
+// A view that reverts (no such function, no code) reads as `undefined`.
+const read = (client: ReadClient, to: Hex, data: Hex) =>
+  call(client, { to, data }).pipe(
+    Effect.map((result) => (result === undefined || result === "0x" ? undefined : result)),
+    Effect.orElseSucceed(() => undefined)
+  )
+
+/**
+ * Checks whether Smart Sessions is installed on the account as a validator, with SessionHook running for its
+ * operations: as the account's hook (Nexus, Safe7579), or bound to Smart Sessions' validation (Kernel).
+ *
+ * @internal
+ */
 export const isSessionsInstalled = Effect.fnUntraced(function*(
   client: ReadClient,
   address: Hex
 ): Effect.fn.Return<boolean, ChainError.ChainError> {
   if ((yield* code(client, address)) === undefined) return false
-  // An account that doesn't implement the view reverts, so it has no Smart Sessions either.
-  const result = yield* call(client, {
-    to: address,
-    data: encodeIsModuleInstalled(MODULE_TYPE_VALIDATOR, SmartSession.v1.address)
-  }).pipe(Effect.orElseSucceed(() => undefined))
-  return result !== undefined && result !== "0x" && decodeIsModuleInstalled(result)
+  const validator = yield* read(
+    client,
+    address,
+    encodeIsModuleInstalled(MODULE_TYPE_VALIDATOR, sessionModules.smartSession)
+  )
+  if (validator === undefined || !decodeIsModuleInstalled(validator)) return false
+
+  const hook = yield* read(client, address, encodeIsModuleInstalled(MODULE_TYPE_HOOK, sessionModules.sessionHook))
+  if (hook !== undefined && decodeIsModuleInstalled(hook)) return true
+  const bound = yield* read(client, address, SessionHook.encodeValidationConfig(sessionModules.smartSession))
+  return bound !== undefined && BigInt(SessionHook.decodeValidationHook(bound)) === BigInt(sessionModules.sessionHook)
 })
 
 /** The calls that install Smart Sessions on a Namera account, for batching with other calls. @internal */
 export const installSessionsCalls = (account: NameraSmartAccount): ReadonlyArray<Call> => {
   switch (account.namera.type) {
     case "kernel":
-      return [Kernel.installSessionsCall(account.address)]
+      return Kernel.installSessionsCalls(account.address)
     case "nexus":
-      return [Nexus.installSessionsCall(account.address)]
+      return Nexus.installSessionsCalls(account.address)
     case "safe7579":
-      return [Safe7579.installSessionsCall(account.address)]
+      return Safe7579.installSessionsCalls(account.address)
   }
 }
 

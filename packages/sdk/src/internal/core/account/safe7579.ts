@@ -5,7 +5,8 @@ import * as ContractAddress from "ox/ContractAddress"
 import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 
-import { MODULE_TYPE_VALIDATOR } from "./erc7579.ts"
+import { MODULE_TYPE_HOOK, MODULE_TYPE_VALIDATOR } from "./erc7579.ts"
+import * as SessionHook from "./sessionHook.ts"
 
 /** The contracts of one Safe7579 version. @internal */
 export interface Contracts {
@@ -61,14 +62,15 @@ export const moduleOwnedSafeOwner: Hex.Hex = Address.checksum(
 
 /**
  * The Safe `setup` call that adds the Safe7579 adapter through the launchpad, with the owner's validator (OwnableValidator
- * or a module), SmartSession as a second validator when given, and no registry attesters.
+ * or a module), Smart Sessions as a second validator and SessionHook as the hook when given, and no registry
+ * attesters.
  *
  * @internal
  */
 export const initializer = (options: {
   readonly contracts: Contracts
   readonly owner: Owner
-  readonly smartSession?: Hex.Hex | undefined
+  readonly sessions?: SessionHook.Sessions | undefined
 }): Hex.Hex => {
   const { owner } = options
   const safeOwners = owner.type === "ownable" ? sortOwners(owner.owners) : [moduleOwnedSafeOwner]
@@ -82,9 +84,16 @@ export const initializer = (options: {
     : { module: owner.validator, initData: owner.data, moduleType: MODULE_TYPE_VALIDATOR }
   const modules = [
     validator,
-    ...(options.smartSession === undefined
+    ...(options.sessions === undefined
       ? []
-      : [{ module: options.smartSession, initData: "0x" as const, moduleType: MODULE_TYPE_VALIDATOR }])
+      : [
+        { module: options.sessions.smartSession, initData: "0x" as const, moduleType: MODULE_TYPE_VALIDATOR },
+        {
+          module: options.sessions.sessionHook,
+          initData: SessionHook.installData("safe7579", options.sessions.smartSession),
+          moduleType: MODULE_TYPE_HOOK
+        }
+      ])
   ]
   return AbiFunction.encodeData(setup, [
     safeOwners,

@@ -27,7 +27,7 @@ export type Safe7579Account = SmartAccount.SmartAccount<"safe7579">
  *
  * The Safe proxy factory deploys the account in the first user operation, adding the Safe7579 adapter through its
  * launchpad with no registry attesters. With `sessions` (the default) that deployment also installs Smart Sessions
- * as a validator. User operations and ERC-1271 signatures carry `threshold` owner signatures.
+ * as a validator and SessionHook as the account's hook. User operations and ERC-1271 signatures carry `threshold` owner signatures.
  *
  * **Gotchas**
  *

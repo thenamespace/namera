@@ -1,14 +1,14 @@
 import * as External from "@namera-ai/contracts/External"
-import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Effect from "effect/Effect"
 
 import type * as ChainError from "../../ChainError.ts"
-import { encodeCalls, encodeInstallModule, MODULE_TYPE_VALIDATOR } from "../../internal/core/account/erc7579.ts"
+import { encodeCalls } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
 import type { AccountClient, ChainClient, Hex, Owner, PrivateKeyAccount } from "../../internal/viem/client.ts"
 import { hashMessage, hashTypedData, ownerSigner } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
 import * as Passkeys from "./passkeys.ts"
+import { sessionModules } from "./sessionModules.ts"
 import { DUMMY_ECDSA_SIGNATURE } from "./signatures.ts"
 import { define, type NameraSmartAccount, requireChain } from "./smartAccount.ts"
 
@@ -34,14 +34,13 @@ export interface FromEip7702Options {
 }
 
 /**
- * The call that installs Smart Sessions on a Kernel account, as a validator for `execute`.
+ * The calls that install Smart Sessions on a Kernel account, as a validator for `execute` with SessionHook bound to it.
  *
  * @internal
  */
-export const installSessionsCall = (address: Hex) => ({
-  to: address,
-  data: encodeInstallModule(MODULE_TYPE_VALIDATOR, SmartSession.v1.address, Kernel.validatorInstallData("0x"))
-})
+export const installSessionsCalls = (address: Hex): ReadonlyArray<{ readonly to: Hex; readonly data: Hex }> => [
+  { to: address, data: Kernel.installSessionsData(sessionModules) }
+]
 
 /**
  * How the owner signs: its root validator, what it signs a user operation hash and an ERC-1271 digest with, and the
@@ -168,7 +167,7 @@ export const fromValidator = Effect.fnUntraced(function*(
   const initData = Kernel.initData({
     rootValidator: passkeys === undefined ? contracts.ecdsaValidator : Passkeys.validator,
     validatorData: passkeys === undefined ? owner.address : Passkeys.installData(passkeys),
-    smartSession: options.sessions === false ? undefined : SmartSession.v1.address
+    sessions: options.sessions === false ? undefined : sessionModules
   })
   const { address, factory, factoryData } = Kernel.deployment({
     contracts,
@@ -217,6 +216,6 @@ export const fromEip7702 = (
     eip7702: true,
     root: true,
     authorization: { account: options.owner, address: contracts.implementation },
-    firstCalls: options.sessions === false ? undefined : [installSessionsCall(options.owner.address)]
+    firstCalls: options.sessions === false ? undefined : installSessionsCalls(options.owner.address)
   })
 }
