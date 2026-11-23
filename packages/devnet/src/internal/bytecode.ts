@@ -1,4 +1,4 @@
-// Written by `namera-dev devnet bytecode` from contracts/test/fixtures/accounts and the Foundry build; do not edit.
+// Written by `node scripts/bin.ts devnet bytecode` from contracts/test/fixtures/accounts and the Foundry build; do not edit.
 
 /** @internal */
 export const fixtures: ReadonlyArray<

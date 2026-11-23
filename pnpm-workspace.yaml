@@ -1,45 +1,44 @@
 packages:
-  - "apps/*"
-  - "contracts"
-  - "packages/*"
-  - "tools/*"
+  - apps/*
+  - contracts
+  - packages/*
+  - scratchpad
+  - scripts
 
-# Versions shared by the workspace: the toolchain every package uses (TypeScript, Node types,
-# Oxlint, Vitest) and dependencies referenced by more than one package.json. A dependency only one
-# package uses is pinned in that package.json instead.
+# Versions referenced by more than one package.json. A dependency only one package uses is pinned
+# in that package.json instead.
 catalog:
-  "@effect/tsgo": "0.73.2"
   "@effect/vitest": "4.1.5"
-  "@interfere/landmines": "0.1.1"
   "@types/node": "26.6.6"
   effect: "4.1.5"
-  klarity: "0.3.0"
-  oxlint: "1.94.0"
   typescript: "7.0.2"
   viem: "2.58.4"
-  vitest: "5.1.1"
+
+engineStrict: true
+# Exact versions when adding dependencies; published libraries write their ranges by hand.
+savePrefix: ""
+# Scripts refuse to run on an install that no longer matches the lockfile.
+verifyDepsBeforeRun: error
 
 # A release must be a day old before it installs, so a compromised version is likely caught first.
 minimumReleaseAge: 1440
-
-# Pinned to their latest release on purpose: Effect, the Oxc tools and dprint (with their
-# platform binaries) ship together and are upgraded as soon as they are out.
+# Effect ships the language service, test helpers and runtime together, and @effect-kit republishes
+# Effect's repository tools with provenance: take their releases at once.
 minimumReleaseAgeExclude:
   - effect
   - "@effect/*"
-  - oxlint
-  - "@oxlint/*"
-  - dprint
-  - "@dprint/*"
+  - "@effect-kit/*"
 
+# Dependency install scripts are denied unless listed as true.
 allowBuilds:
-  dprint: true
-  esbuild: true
+  dprint: false
+  esbuild: false
   lefthook: true
   # alto's optional native accelerators; both fall back to JavaScript.
   msgpackr-extract: false
   protobufjs: false
+  # Miniflare's workerd runtime downloads its binary on install (the SDK's Cloudflare Workers test).
   workerd: true
 
 patchedDependencies:
-  '@pimlico/alto@0.0.21': patches/@pimlico__alto@0.0.21.patch
+  "@pimlico/alto@0.0.21": patches/@pimlico__alto@0.0.21.patch

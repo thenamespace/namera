@@ -1,20 +1,17 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
-  "changelog": [
-    "@changesets/changelog-github",
-    {
-      "repo": "thenamespace/namera"
-    }
-  ],
-  "access": "public",
-  "baseBranch": "main",
+  "$schema": "https://unpkg.com/@changesets/config@4.0.0-next.8/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "thenamespace/namera" }],
   "commit": false,
-  "fixed": [],
-  "ignore": [],
+  "format": false,
   "linked": [],
-  "privatePackages": {
-    "tag": false,
-    "version": false
-  },
-  "updateInternalDependencies": "patch"
+  "fixed": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["scratchpad", "scripts"],
+  "privatePackages": false,
+  "snapshot": {
+    "useCalculatedVersion": false,
+    "prereleaseTemplate": "{tag}-{commit}"
+  }
 }

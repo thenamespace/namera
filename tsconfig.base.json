@@ -4,14 +4,16 @@
   "compilerOptions": {
     "outDir": "${configDir}/dist",
     "rootDir": "${configDir}/src",
-    "tsBuildInfoFile": "${configDir}/dist/.tsbuildinfo",
+    // Incremental builds with project references.
     "incremental": true,
     "composite": true,
+    // Modern JavaScript that stays compatible with the Node.js module system.
     "target": "ES2022",
     "module": "NodeNext",
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
     "allowJs": false,
+    // `.ts` imports in source become `.js` in dist; Node can run the source directly.
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
     "declarationMap": true,
@@ -22,47 +24,45 @@
     "noUnusedParameters": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
+    // Tests type-check against these declarations through project references.
     "stripInternal": false,
     "skipLibCheck": true,
     "noErrorTruncation": true,
+    // No ambient `@types/*`; a package opts in (`"types": ["node"]`).
     "types": [],
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "effectFn": [
-          "untraced"
-        ],
-        "namespaceImportPackages": [
-          "effect",
-          "@effect/*"
-        ],
-        "diagnosticSeverity": {
-          "unstableApiUsage": "off",
-          "experimentalApiUsage": "off",
-          "effectFnOpportunity": "error"
-        },
-        "includeSuggestionsInTsc": false,
-        "ignoreEffectWarningsInTscExitCode": true,
-        "ignoreEffectErrorsInTscExitCode": false,
-        "overrides": [
-          {
-            "exclude": [
-              "**/internal/**/*",
-              "**/index.ts",
-              "**/test/**/*",
-              "**/*.test.ts",
-              "**/*.fixture.ts",
-              "**/tools/**/*",
-              "**/contracts/script/**/*"
-            ],
-            "options": {
-              "diagnosticSeverity": {
-                "apiStabilityLeak": "error"
-              }
+    "jsx": "react-jsx",
+    "plugins": [{
+      "name": "@effect/language-service",
+      "effectFn": ["untraced"],
+      "namespaceImportPackages": ["effect", "@effect/*", "@namera-ai/*"],
+      "diagnosticSeverity": {
+        "globalErrorInEffectFailure": "off",
+        "unstableApiUsage": "off",
+        "experimentalApiUsage": "off",
+        "effectFnOpportunity": "error"
+      },
+      "includeSuggestionsInTsc": false,
+      "ignoreEffectWarningsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": false,
+      // A stable public API must not expose unstable ones; internals, barrels and tests may.
+      "overrides": [
+        {
+          "exclude": [
+            "**/internal/**/*",
+            "**/index.ts",
+            "**/index.tsx",
+            "**/test/**/*",
+            "**/*.fixture.ts",
+            "**/scripts/**/*",
+            "**/contracts/script/**/*"
+          ],
+          "options": {
+            "diagnosticSeverity": {
+              "apiStabilityLeak": "error"
             }
           }
-        ]
-      }
-    ]
+        }
+      ]
+    }]
   }
 }

@@ -1,20 +1,36 @@
+# Ignores generated, local and secret files for every language this repository may grow into.
+# Lockfiles (pnpm-lock.yaml, Cargo.lock, uv.lock, go.sum, …) and tool configs are committed.
+
 # ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
 .pnpm-store/
 .pnp.*
 .yarn/*
 !.yarn/patches/
+!.yarn/plugins/
 !.yarn/releases/
 bower_components/
 jspm_packages/
+web_modules/
 
-# ── Package builds and packed tarballs ────────────────────────────────────────
+# ── JavaScript and TypeScript builds ──────────────────────────────────────────
 dist/
 build/
 out/
-*.tgz
+lib-cov/
 *.tsbuildinfo
+*.tgz
 next-env.d.ts
+
+# ── Repository tooling output ─────────────────────────────────────────────────
+# jsdocs model, bundle-size reports, local release packs, scratchpad probes.
+.data/
+stats.txt
+tmp/
+scratchpad/*
+!scratchpad/index.ts
+!scratchpad/package.json
+!scratchpad/tsconfig.json
 
 # ── Frameworks ────────────────────────────────────────────────────────────────
 # Next.js
@@ -26,24 +42,32 @@ next-env.d.ts
 .tanstack/
 .vite/
 vite.config.*.timestamp-*
-# Astro, Svelte, Nuxt, Remix, React Router
+vitest.config.*.timestamp-*
+# Astro, Svelte, Nuxt, Remix / React Router, Solid, Qwik
 .astro/
 .svelte-kit/
 .nuxt/
 .react-router/
-# Docs generators (Fumadocs, Docusaurus, VitePress)
+.solid/
+.vercel_build_output/
+# Docs generators (Fumadocs, Docusaurus, VitePress, Mintlify)
 .source/
 .docusaurus/
 **/.vitepress/cache/
 **/.vitepress/dist/
+.mintlify/
 # Expo / React Native
 .expo/
 .expo-shared/
+web-build/
 ios/Pods/
+ios/build/
 android/.gradle/
+android/app/build/
 *.jks
+*.keystore
+!debug.keystore
 *.p8
-*.p12
 *.mobileprovision
 # Storybook
 storybook-static/
@@ -51,26 +75,32 @@ storybook-static/
 .vercel/
 .netlify/
 .wrangler/
-.dev.vars
+.dev.vars*
+!.dev.vars.example
 .serverless/
 .sst/
 .amplify/
 .firebase/
+.railway/
+.fly/
 
 # ── Tool caches ───────────────────────────────────────────────────────────────
 .turbo/
+.nx/
 .cache/
 .parcel-cache/
 .eslintcache
-.oxlintcache
 .stylelintcache
-.vitest/
 .swc/
+.esbuild/
+.rollup.cache/
+.webpack/
 *.cpuprofile
 *.heapprofile
-.codegen-check/
+*.heapsnapshot
 
 # ── Tests and reports ─────────────────────────────────────────────────────────
+# Vitest browser-mode screenshot baselines (__screenshots__/) are committed; only failures are not.
 coverage/
 .nyc_output/
 .stryker-tmp/
@@ -80,14 +110,16 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
-__screenshots__/
+**/__screenshots__/**/*-actual.*
+**/__screenshots__/**/*-diff.*
 junit.xml
+.vitest-reports/
 
 # ── Rust ──────────────────────────────────────────────────────────────────────
 target/
 **/*.rs.bk
 *.pdb
-# Cargo.lock is committed for binaries and workspaces; keep it.
+.cargo/credentials*
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
@@ -96,7 +128,7 @@ __pycache__/
 *.so
 .venv/
 venv/
-.python-version.local
+.env/
 *.egg-info/
 *.egg
 .eggs/
@@ -106,6 +138,7 @@ pip-wheel-metadata/
 .ruff_cache/
 .pyright/
 .pytype/
+.pyre/
 .tox/
 .nox/
 .hypothesis/
@@ -113,29 +146,70 @@ pip-wheel-metadata/
 htmlcov/
 .coverage
 .coverage.*
-# uv.lock and poetry.lock are committed; keep them.
+.python-version.local
 
 # ── Go ────────────────────────────────────────────────────────────────────────
 /bin/
 *.test
 *.out
+go.work
 go.work.sum
 
-# ── Solidity / Foundry / Hardhat ──────────────────────────────────────────────
-# Foundry and Hardhat projects live in their own folder (e.g. contracts/).
+# ── JVM: Java, Kotlin, Gradle, Maven ──────────────────────────────────────────
+.gradle/
+.kotlin/
+*.class
+hs_err_pid*
+replay_pid*
+local.properties
+
+# ── Swift and Xcode ───────────────────────────────────────────────────────────
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.swiftpm/
+.build/
+
+# ── C, C++ and Zig ────────────────────────────────────────────────────────────
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+.zig-cache/
+zig-cache/
+zig-out/
+
+# ── Dart and Flutter ──────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# ── Ruby ──────────────────────────────────────────────────────────────────────
+.bundle/
+vendor/bundle/
+
+# ── Solidity: Foundry and Hardhat ─────────────────────────────────────────────
+# Foundry and Hardhat projects live in their own folder (for example contracts/).
 **/contracts/cache/
 **/contracts/out/
 **/contracts/artifacts/
 **/contracts/broadcast/*/31337/
 typechain-types/
+# This repository's Foundry project: Soldeer dependencies, every broadcast (deployments are
+# recorded in contracts/deployments/), coverage and mutation reports.
 contracts/broadcast/
 contracts/dependencies/
 contracts/lcov.info
 contracts/mutation-report.json
 contracts/gas-report.*
-*.keystore
 
-# ── Containers and infrastructure ─────────────────────────────────────────────
+# ── Containers, infrastructure and Nix ────────────────────────────────────────
 .terraform/
 *.tfstate
 *.tfstate.*
@@ -143,6 +217,10 @@ contracts/gas-report.*
 !*.tfvars.example
 .pulumi/
 docker-compose.override.yml
+compose.override.yml
+.direnv/
+/result
+/result-*
 
 # ── Databases ─────────────────────────────────────────────────────────────────
 *.sqlite
@@ -152,38 +230,45 @@ docker-compose.override.yml
 *.db-wal
 *.db-shm
 pgdata/
+dump.rdb
 
 # ── Environment and secrets ───────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
 !.env.*.example
+.envrc.local
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
+*.gpg
 id_rsa*
 id_ed25519*
 .npmrc.local
 gha-creds-*.json
 service-account*.json
+credentials.json
+.secrets/
 
-# ── Local working state (plans, research, scratch) ────────────────────────────
+# ── Local working state ───────────────────────────────────────────────────────
 research/
 scratch/
-tmp/
 temp/
 *.local
 *.local.*
 
 # ── Agents ────────────────────────────────────────────────────────────────────
-# Shared skills and settings are committed; per-user state is not.
+# Shared instructions and skills (AGENTS.md, .agents/, .claude/skills/) are committed; per-user
+# state is not.
 .claude/settings.local.json
 .claude/worktrees/
 .codex/
 .cursor/
 .aider*
+.continue/
+.windsurf/
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
@@ -193,6 +278,7 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # ── Editors ───────────────────────────────────────────────────────────────────
 .idea/
@@ -201,14 +287,17 @@ lerna-debug.log*
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+!.vscode/tasks.json
 *.code-workspace
 .fleet/
 .zed/
+.history/
 *.swp
 *.swo
 *~
 \#*\#
 .\#*
+*.sublime-workspace
 
 # ── Operating systems ─────────────────────────────────────────────────────────
 .DS_Store
@@ -217,12 +306,11 @@ lerna-debug.log*
 ._*
 .Spotlight-V100
 .Trashes
+.fseventsd
 Thumbs.db
 ehthumbs.db
 desktop.ini
 $RECYCLE.BIN/
 .directory
 .Trash-*
-
-# Generated API docs (docgen)
-packages/*/docs/
+.nfs*

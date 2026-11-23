@@ -7,19 +7,19 @@
     }
   ],
   "include": [
-    "**/vitest.*.ts",
-    "./vitest.setup.ts",
+    "./vitest.*.ts",
+    "./scripts/**/*.ts",
     "./packages/*/test/**/*.ts",
+    "./packages/*/test/**/*.tsx",
     "./packages/*/typetest/**/*.ts",
     "./packages/*/benchmark/**/*.ts",
-    "./tools/*/test/**/*.ts",
     "./packages/*/bundle/**/*.ts",
-    "./scripts/**/*.ts"
+    "./contracts/script/**/*.ts"
   ],
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
-    "./tools/oxc/test/fixtures/**"
+    "./scripts/test/oxlint/fixtures/**"
   ],
   "compilerOptions": {
     "rootDir": ".",
@@ -29,8 +29,13 @@
     "types": [
       "node"
     ],
-    "tsBuildInfoFile": "${configDir}/node_modules/.cache/tsconfig.tests.tsbuildinfo",
     "paths": {
+      "@namera-ai/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@namera-ai/contracts/*": [
+        "./packages/contracts/src/*.ts"
+      ],
       "@namera-ai/sdk": [
         "./packages/sdk/src/index.ts"
       ],
@@ -40,6 +45,36 @@
       "@namera-ai/sdk/*": [
         "./packages/sdk/src/*.ts"
       ]
-    }
+    },
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "effectFn": [
+          "untraced"
+        ],
+        "namespaceImportPackages": [],
+        "includeSuggestionsInTsc": false,
+        "ignoreEffectWarningsInTscExitCode": true,
+        "ignoreEffectErrorsInTscExitCode": false,
+        "overrides": [
+          {
+            "include": [
+              "**/typetest/**/*.ts"
+            ],
+            "options": {
+              "diagnosticSeverity": {
+                "floatingEffect": "off"
+              }
+            }
+          }
+        ],
+        "diagnosticSeverity": {
+          "unknownInEffectCatch": "off",
+          "multipleEffectProvide": "off",
+          "unstableApiUsage": "off",
+          "effectFnOpportunity": "error"
+        }
+      }
+    ]
   }
 }

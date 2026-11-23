@@ -1,14 +1,13 @@
-# Git hooks: dprint and oxlint on staged files, commitlint on the message, lint, typecheck and tests before a push.
 min_version: 2.1.0
 
 pre-commit:
   jobs:
     - name: format
-      glob: "*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,json,jsonc,md}"
+      glob: "*.{ts,tsx,js,jsx,mjs,json,md}"
       run: pnpm exec dprint fmt --allow-no-files {staged_files}
       stage_fixed: true
     - name: lint
-      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
+      glob: "*.{ts,tsx,js,jsx,mjs}"
       run: pnpm exec oxlint --deny-warnings {staged_files}
     - name: solidity
       root: contracts/
@@ -19,9 +18,9 @@ pre-commit:
 commit-msg:
   jobs:
     - name: commitlint
-      run: pnpm exec commitlint --config .config/commitlint.config.ts --edit {1}
+      run: pnpm exec commitlint --edit {1}
 
 pre-push:
   jobs:
     - name: check
-      run: pnpm lint && pnpm typecheck && pnpm test && pnpm test-types && pnpm test:contracts
+      run: pnpm lint && pnpm typecheck && pnpm test && pnpm test:types && pnpm test:contracts

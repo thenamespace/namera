@@ -11,7 +11,9 @@
     "viem"
   ],
   "homepage": "https://github.com/thenamespace/namera/tree/main/packages/contracts#readme",
-  "bugs": "https://github.com/thenamespace/namera/issues",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera/issues"
+  },
   "license": "Apache-2.0",
   "author": "Vedant Chainani (https://github.com/envoy1084)",
   "repository": {
@@ -28,7 +30,7 @@
     "CHANGELOG.md"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [],
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
@@ -46,11 +48,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist && tsc -b tsconfig.json && pnpm babel",
-    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
-    "typecheck": "tsc -b tsconfig.json",
-    "pack:check": "publint && attw --pack . --profile esm-only",
-    "docgen": "docgen"
+    "build": "tsc -b tsconfig.json && babel dist --plugins annotate-pure-calls --out-dir dist --source-maps"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
@@ -59,6 +57,6 @@
     "viem": "catalog:"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.19.0"
   }
 }

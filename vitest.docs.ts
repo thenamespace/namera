@@ -3,9 +3,10 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   plugins: [Doctest.plugin()],
+  resolve: { tsconfigPaths: true },
   test: {
     passWithNoTests: true,
     include: [],
-    includeSource: ["packages/*/src/**/*.ts"]
+    includeSource: ["packages/*/src/**/*.{ts,tsx}"]
   }
 })

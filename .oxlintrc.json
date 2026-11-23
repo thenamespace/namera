@@ -1,32 +1,11 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
   "extends": [
-    "./tools/oxc/oxlintrc.json"
-  ],
-  "ignorePatterns": [
-    "**/dist",
-    "**/coverage",
-    "**/*.tsbuildinfo",
-    "**/CHANGELOG.md",
-    "contracts/dependencies/**",
-    "tools/oxc/test/fixtures/**",
-    "contracts/out/**",
-    "contracts/cache/**",
-    "contracts/broadcast/**",
-    "research/**",
-    "**/.*",
-    "!.changeset",
-    "!.changeset/**/*",
-    "!.config",
-    "!.config/**/*",
-    "!.github",
-    "!.github/**/*",
-    "!.vscode",
-    "!.vscode/**/*"
+    "./node_modules/@effect-kit/oxc/oxlintrc.json"
   ],
   "jsPlugins": [
-    "@namera-ai/oxc/oxlint",
-    "@namera-ai/oxc/oxlint/namera",
+    "@effect-kit/oxc/oxlint",
+    "./scripts/oxlint/namera.ts",
     {
       "name": "landmines-testing",
       "specifier": "@interfere/landmines/testing"
@@ -36,7 +15,38 @@
       "specifier": "@interfere/landmines/structure"
     }
   ],
+  "ignorePatterns": [
+    "**/dist",
+    "**/build",
+    "**/coverage",
+    "**/.data",
+    "tmp/**",
+    "research/**",
+    "**/.next/**",
+    "**/.output/**",
+    "**/routeTree.gen.ts",
+    "**/CHANGELOG.md",
+    "contracts/broadcast/**",
+    "contracts/cache/**",
+    "contracts/dependencies/**",
+    "contracts/out/**",
+    "scripts/test/oxlint/fixtures/**"
+  ],
   "rules": {
+    "effect/no-import-from-barrel-package": [
+      "error",
+      {
+        "checkPatterns": [
+          "^effect$",
+          "^effect/(.+/)?[a-z][a-z0-9]*$",
+          "^@effect/[^/]+$",
+          "^@effect/[^/]+/(.+/)?[a-z][a-z0-9]*$",
+          "^@namera-ai/[^/]+$",
+          "^@namera-ai/[^/]+/(.+/)?[a-z][a-z0-9]*$"
+        ],
+        "checkRelativeIndexImports": true
+      }
+    ],
     "landmines-testing/no-fixed-sleep": "error",
     "landmines-testing/no-flake-masking": "error",
     "landmines-testing/no-test-doubles": "error",
@@ -47,21 +57,14 @@
   "overrides": [
     {
       "files": [
-        "**/{test,typetest,examples,benchmark,typeperf,bundle,scripts,script}/**",
+        "**/{test,typetest,examples,benchmark,typeperf,bundle,scripts,script,scratchpad}/**",
         "**/vitest.*.ts",
-        ".config/**"
+        "commitlint.config.ts"
       ],
       "rules": {
+        "effect/no-bigint-literals": "off",
         "eslint/no-console": "off",
         "effect/no-import-from-barrel-package": "off"
-      }
-    },
-    {
-      "files": [
-        "tools/cli/**"
-      ],
-      "rules": {
-        "eslint/no-console": "off"
       }
     },
     {
@@ -69,7 +72,7 @@
         "**/test/**"
       ],
       "rules": {
-        "eslint/no-restricted-imports": [
+        "no-restricted-imports": [
           "error",
           {
             "paths": [
@@ -96,7 +99,9 @@
       ],
       "rules": {
         "namera/no-effect-run": "error",
-        "namera/no-foreign-internal": "error"
+        "namera/no-foreign-internal": "error",
+        "effect/no-bigint-literals": "off",
+        "effect/no-unused-internal": "off"
       }
     },
     {
@@ -112,7 +117,7 @@
         "packages/sdk/src/internal/core/**"
       ],
       "rules": {
-        "eslint/no-restricted-imports": [
+        "no-restricted-imports": [
           "error",
           {
             "patterns": [

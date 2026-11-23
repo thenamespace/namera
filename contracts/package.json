@@ -10,7 +10,6 @@
     "test": "forge test",
     "lint": "forge fmt --check && forge lint",
     "format": "forge fmt",
-    "typecheck": "tsc -p tsconfig.json",
     "analyze": "forge clean && slither .",
     "symbolic": "halmos --match-contract Symbolic",
     "coverage": "forge coverage --no-match-coverage '(test|script|dependencies)/' --report summary --report lcov",

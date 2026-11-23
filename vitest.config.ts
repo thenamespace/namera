@@ -10,6 +10,7 @@ export const exclude = [
   "**/typetest/**",
   "**/typeperf/**",
   "**/coverage/**",
+  "**/test/fixtures/**",
   "**/*.d.ts",
   "**/*.config.*",
   "**/vitest.*"
@@ -32,7 +33,7 @@ const shared: ViteUserConfig = {
     sequence: {
       concurrent: true
     },
-    include: ["test/**/*.test.ts"],
+    include: ["test/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["html", "text-summary"],
@@ -67,6 +68,7 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     projects: [
+      project("scripts", "scripts"),
       project("@namera-ai/contracts", "packages/contracts"),
       project("@namera-ai/devnet", "packages/devnet", { test: { globalSetup: ["test/setup/devnet.ts"] } }),
       // The SDK's unit tests need no chain; `*.chain.test.ts` run against the devnet.
@@ -74,8 +76,6 @@ export default defineConfig({
       project("@namera-ai/sdk/chain", "packages/sdk", {
         test: { include: ["test/**/*.chain.test.ts"], globalSetup: ["test/setup/devnet.ts"] }
       }),
-      project("@namera-ai/tools", "tools/cli"),
-      project("@namera-ai/oxc", "tools/oxc"),
       ...runtimeTests
     ]
   }
