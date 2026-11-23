@@ -371,6 +371,41 @@ contract SessionHookTest is Test {
     }
 
     // --------------------------------------------------------------------------------------------
+    // IExecutionPolicy and ExecutionPolicyBase
+    // --------------------------------------------------------------------------------------------
+
+    /// @dev The interface applications implement: a change to it changes this id.
+    function test_interface_idIsPinned() public pure {
+        assertEq(
+            type(IExecutionPolicy).interfaceId,
+            bytes4(keccak256("preCheck(bytes32,address,bytes)"))
+                ^ bytes4(keccak256("postCheck(bytes32,address,bytes)"))
+        );
+    }
+
+    function test_policyBase_reportsItsInterfacesAndKeysByMultiplexer() public {
+        assertTrue(policy.supportsInterface(type(IExecutionPolicy).interfaceId));
+        assertTrue(policy.supportsInterface(type(IPolicy).interfaceId));
+        assertTrue(policy.supportsInterface(0x01ffc9a7));
+        assertFalse(policy.supportsInterface(type(IUserOpPolicy).interfaceId));
+
+        vm.expectEmit(address(policy));
+        emit IPolicy.PolicySet(PERMISSION, address(this), address(account));
+        policy.initializeWithMultiplexer(
+            address(account), PERMISSION, abi.encode(MockExecutionPolicy.Mode.RevertPre)
+        );
+        assertEq(
+            uint8(policy.modes(PERMISSION, address(this), address(account))),
+            uint8(MockExecutionPolicy.Mode.RevertPre)
+        );
+        // Another multiplexer's configuration of the same id is separate.
+        assertEq(
+            uint8(policy.modes(PERMISSION, address(hook), address(account))),
+            uint8(MockExecutionPolicy.Mode.Pass)
+        );
+    }
+
+    // --------------------------------------------------------------------------------------------
     // Helpers
     // --------------------------------------------------------------------------------------------
 

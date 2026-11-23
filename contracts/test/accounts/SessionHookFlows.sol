@@ -162,6 +162,41 @@ abstract contract SessionHookFlows is RealAccountTestBase {
         assertEq(target.value(), 1);
     }
 
+    /// @dev Any tail but the session's own tag fails validation: a hooked session never executes unchecked.
+    function testFuzz_hook_onlyTheSessionsOwnTagExecutes(bytes32 permissionWord, bytes32 tagWord)
+        public
+    {
+        Session memory session = hookedSession("fuzz tail", MockExecutionPolicy.Mode.Pass);
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, tagged(callSetValue(1), permissionId)), session));
+        bool own =
+            permissionWord == PermissionId.unwrap(permissionId) && tagWord == sessionHook.TAG();
+
+        ERC4337.PackedUserOperation memory op = signUse(
+            userOp(smartAccount, abi.encodePacked(callSetValue(2), permissionWord, tagWord)),
+            permissionId
+        );
+        if (!own) vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
+        handleOp(op);
+
+        assertEq(target.value(), own ? 2 : 1);
+        assertEq(executionPolicy.postChecks(smartAccount), own ? 2 : 1);
+    }
+
+    /// @dev A validated, tagged operation executes exactly when its execution policies pass.
+    function testFuzz_hook_thePoliciesDecideExecution(uint8 seed) public {
+        MockExecutionPolicy.Mode mode = MockExecutionPolicy.Mode(seed % 3);
+        Session memory session = hookedSession("fuzz mode", mode);
+        PermissionId permissionId = smartSession.getPermissionId(session);
+
+        handleOp(signEnable(userOp(smartAccount, tagged(callSetValue(7), permissionId)), session));
+
+        bool passes = mode == MockExecutionPolicy.Mode.Pass;
+        assertTrue(smartSession.isPermissionEnabled(permissionId, smartAccount));
+        assertEq(target.value(), passes ? 7 : 0);
+        assertEq(executionPolicy.postChecks(smartAccount), passes ? 1 : 0);
+    }
+
     /// @dev Removes SessionHook from SmartSession's operations the way the account allows.
     function unbindSessionHook() internal virtual;
 }

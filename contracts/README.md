@@ -45,7 +45,8 @@ Configuration comes from the environment, then `contracts/.env`.
 
 ```
 src/smart-sessions/     Namera's fork of Smart Sessions (LGPL/AGPL, see its NOTICE.md)
-src/validators/         ECDSASessionValidator
+src/validators/         ECDSASessionValidator, WebAuthnValidator
+src/hooks/              SessionHook, IExecutionPolicy and ExecutionPolicyBase (execution policies)
 src/policies/           Namera's policies (Apache-2.0), one per `Policy.*` builder, and their libraries in lib/
 script/                 Deploy.s.sol, Status.s.sol, fixture fetcher
 script/config/          contracts.json: every managed contract with its versioned label (salt), read by Contracts.sol
@@ -64,7 +65,7 @@ test/fixtures/          deployed bytecode of the account contracts, one `<name>@
 ## Tests
 
 All tests run locally without an RPC. EntryPoint v0.7 is compiled from eth-infinitism/account-abstraction
-v0.7.0 (test-only dependency, with OpenZeppelin 5.0.2) and deployed at its canonical address. The real
+v0.7.0 (test-only dependency, with OpenZeppelin 5.6.1) and deployed at its canonical address. The real
 account contracts (Kernel, Nexus, Safe + Safe7579 and their validators and factories) are loaded from
 deployed bytecode in `test/fixtures/accounts/` at their canonical addresses, so account tests
 exercise exactly what is deployed on chain. Each account test only supplies how to deploy the account, its nonce key layout and its owner
@@ -94,7 +95,9 @@ a UTC day); a period of 0 is the lifetime and needs no time. Counters are keyed 
 re-enabling a session never resets them.
 
 **Storage.** Every slot is `keccak256(account ‖ x) + n` (`lib/PolicyStorage.sol`), ERC-7562 associated storage;
-configurations are stored as words, so no dynamic storage arrays are needed. `@namera-ai/devnet`'s ERC-7562 test traces
+configurations are stored as words, so no dynamic storage arrays are needed. On Kernel with `SessionHook`, every
+session operation is `executeUserOp(execute(…))`: the policies read the wrapped `execute`, and the time before
+`SessionHook`'s tag. `@namera-ai/devnet`'s ERC-7562 test traces
 a real session operation's validation and checks both rules on these contracts.
 
 **Signatures.** A session key's ERC-1271 signature carries the signed struct's EIP-712 `encodeData`, and Smart Sessions
@@ -103,6 +106,52 @@ checks that it hashes to the signed struct before passing it to policies that im
 cap, and nothing else. A field rule compares field `index` as an unsigned word (`ArgPolicy`'s conditions); a dynamic or
 nested field's word is its hash. `policyData`, which Smart Sessions passes unchecked, is room for later policies that
 verify nested fields themselves.
+
+## Execution policies
+
+Validation policies run during `validateUserOp`, where ERC-7562 forbids oracles, balances and the clock, and before the
+calls happen. **Execution policies** run around the calls instead, so they can check what an operation actually did.
+Namera ships the infrastructure; applications write the policies.
+
+- **`SessionHook`** is both:
+  - a session's **user operation policy**: its init data, `abi.encode(ExecutionPolicyData[])` (at most 8), lists the
+    session's execution policies, so the owner's session signature covers them;
+  - the account's **ERC-7579 hook**: on Kernel it is bound to Smart Sessions' validation, on Nexus and Safe7579 it is
+    the account's hook. Its install data is `abi.encode(uint8 flavour, address smartSession)`, with flavour 1 Kernel,
+    2 Nexus, 3 Safe7579.
+- **The tag.** A session operation names its session at the end of its calldata, `… ‖ time ‖ permissionId ‖
+  keccak256("namera.session-hook.tag")`. During validation, `SessionHook` requires its session's own tag, a plain
+  `execute` (wrapped in `executeUserOp` on Kernel), no call to the hook, the account or the session's execution
+  policies, and the hook to still be installed (read from the account). Smart Sessions rejects a tag naming another
+  session. During execution the hook reads the tag and runs that session's policies. Calldata, not state, carries the
+  session across, so identical operations in one bundle each run them. Untagged operations (the owner's, sessions
+  without execution policies) pass through.
+
+### Writing an execution policy
+
+Inherit `src/hooks/ExecutionPolicyBase.sol` (Apache-2.0) and implement:
+
+- `_configure(id, multiplexer, account, initData)`: stores the session's configuration. It runs during validation in
+  enable mode, so it follows ERC-7562: storage keyed by the account, no banned opcodes.
+- `_preCheck(id, multiplexer, account, execData)`: before the calls. It returns a context, such as balances, which the
+  hook hands back unchanged. `execData` is the `execute` calldata, tail included.
+- `_postCheck(id, multiplexer, account, context)`: after the calls. Revert to reject the operation.
+
+Rules that keep a policy safe when the agent writes the whole batch:
+
+- **Value with an oracle.** Never use a pool's spot price or a vault's share price, which the same batch can move
+  first.
+- **Measure outcomes.** Compare balances before and after; don't trust decoded calldata. Balance deltas don't see
+  approvals or signatures, so keep `ApprovalPolicy` and the target allowlist on the session too.
+- **Never catch, and keep gas bounded.** Any revert, out of gas included, rejects the operation. The hook never
+  catches one.
+- **Failures cost gas.** A failed execution is included and paid for, unlike a validation failure. Pair execution
+  policies with `RateLimitPolicy` and `GasPolicy`, and simulate before sending.
+- **Keep state per session.** Key it by `id → multiplexer → account`, as validation policies key on Smart Sessions.
+
+Revert reasons: on Kernel a policy's revert reaches the receipt as `ExecutionPolicyViolation(permissionId, policy,
+reason)`, but an inner call's revert is lost (`ExecutionReverted()`). Safe7579 reports every execution failure as
+`ExecutionFailed()`. Simulate to explain failures.
 
 ## Deterministic deployment
 
