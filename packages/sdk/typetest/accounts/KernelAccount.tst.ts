@@ -3,7 +3,7 @@ import type { KernelAccount as EffectKernelAccount, SmartAccount as EffectSmartA
 import type { Effect } from "effect"
 import { describe, expect, it } from "tstyche"
 import type { JsonRpcAccount, LocalAccount, PrivateKeyAccount } from "viem"
-import type { SmartAccount as ViemSmartAccount } from "viem/account-abstraction"
+import type { SmartAccount as ViemSmartAccount, WebAuthnAccount } from "viem/account-abstraction"
 
 describe("KernelAccount", () => {
   it("is a viem SmartAccount with Namera's metadata", () => {
@@ -12,8 +12,8 @@ describe("KernelAccount", () => {
     expect<KernelAccount.KernelAccount["namera"]["type"]>().type.toBe<"kernel">()
   })
 
-  it("takes a local key or a JSON-RPC wallet as owner, and only a local key for EIP-7702", () => {
-    expect<KernelAccount.from.Options["owner"]>().type.toBe<LocalAccount | JsonRpcAccount>()
+  it("takes a local key, a JSON-RPC wallet or a passkey as owner, and only a local key for EIP-7702", () => {
+    expect<KernelAccount.from.Options["owner"]>().type.toBe<LocalAccount | JsonRpcAccount | WebAuthnAccount>()
     expect<KernelAccount.fromEip7702.Options["owner"]>().type.toBe<PrivateKeyAccount>()
   })
 

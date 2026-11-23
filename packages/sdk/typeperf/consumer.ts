@@ -1,6 +1,15 @@
 // A consumer of the SDK's public entries, compiled by `pnpm type-cost` to measure what the SDK costs the type checker.
-import { ChainError, KernelAccount, NameraError, Session, SmartAccount } from "@namera-ai/sdk"
-import { Session as EffectSession } from "@namera-ai/sdk/effect"
+import {
+  ChainError,
+  KernelAccount,
+  Key,
+  Keystore,
+  NameraError,
+  Session,
+  SessionKey,
+  SmartAccount
+} from "@namera-ai/sdk"
+import { Keystore as EffectKeystore, Session as EffectSession } from "@namera-ai/sdk/effect"
 import * as Effect from "effect/Effect"
 
 export const validUntil: number = Session.now() + 3600
@@ -19,3 +28,14 @@ export const sessionsReady = async (client: KernelAccount.from.Options["client"]
   const detected = await SmartAccount.detect(client, { address })
   return detected.type !== "unsupported" && detected.type !== "undeployed" && detected.sessionsInstalled
 }
+
+export const agentKey = async () => {
+  const store = Keystore.memory()
+  const key = await Keystore.create(store, { curve: "secp256k1" })
+  return {
+    sessionKey: SessionKey.ecdsa(Key.address(key, "eip155")),
+    account: await Keystore.toAccount(store, { id: key.id })
+  }
+}
+
+export const effectKey = EffectKeystore.create(EffectKeystore.memory(), { curve: "secp256k1" })
