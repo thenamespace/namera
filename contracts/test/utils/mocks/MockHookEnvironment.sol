@@ -73,3 +73,32 @@ contract MockSmartSessionViews {
         return hasHook;
     }
 }
+
+/// @notice Answers any call with a raw, configurable response per selector, for the malformed answers SessionHook must
+/// read as "no" from an account, Smart Sessions or a policy.
+contract MockProbe {
+    struct Response {
+        bool reverts;
+        bytes data;
+    }
+
+    mapping(bytes4 selector => Response) internal responses;
+
+    function respond(bytes4 selector, bool reverts, bytes calldata data) external {
+        responses[selector] = Response(reverts, data);
+    }
+
+    fallback(bytes calldata input) external returns (bytes memory) {
+        Response memory response = responses[bytes4(input[:4])];
+        bytes memory data = response.data;
+        if (response.reverts) {
+            assembly ("memory-safe") {
+                revert(add(data, 0x20), mload(data))
+            }
+        }
+        // Raw, not ABI-encoded as `bytes`.
+        assembly ("memory-safe") {
+            return(add(data, 0x20), mload(data))
+        }
+    }
+}

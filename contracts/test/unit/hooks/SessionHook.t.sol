@@ -14,6 +14,7 @@ import {MockExecutionPolicy} from "../../utils/mocks/MockExecutionPolicy.sol";
 import {
     IHook,
     MockHookAccount,
+    MockProbe,
     MockSmartSessionViews
 } from "../../utils/mocks/MockHookEnvironment.sol";
 import {MockTarget} from "../../utils/mocks/MockTarget.sol";
@@ -45,10 +46,13 @@ contract SessionHookTest is Test {
     function test_module_isAHookAndAUserOpPolicy() public view {
         assertTrue(hook.isModuleType(4));
         assertFalse(hook.isModuleType(1));
+        assertFalse(hook.isModuleType(5));
         assertTrue(hook.supportsInterface(type(IUserOpPolicy).interfaceId));
         assertTrue(hook.supportsInterface(type(IPolicy).interfaceId));
         assertTrue(hook.supportsInterface(0x01ffc9a7));
         assertFalse(hook.supportsInterface(type(IExecutionPolicy).interfaceId));
+        assertFalse(hook.supportsInterface(0x00000000));
+        assertFalse(hook.supportsInterface(0xffffffff));
     }
 
     function test_install_recordsFlavourAndSmartSession() public {
@@ -110,6 +114,15 @@ contract SessionHookTest is Test {
             )
         );
         hook.initializeWithMultiplexer(address(account), id, data);
+
+        address[2] memory others = [address(1), address(type(uint160).max)];
+        for (uint256 i; i < others.length; ++i) {
+            vm.prank(others[i]);
+            vm.expectRevert(
+                abi.encodeWithSelector(SessionHook.OnlySmartSession.selector, others[i])
+            );
+            hook.initializeWithMultiplexer(address(account), id, data);
+        }
     }
 
     function test_initialize_rejectsWhatIsNotAnExecutionPolicy() public {
@@ -127,6 +140,26 @@ contract SessionHookTest is Test {
         }
     }
 
+    /// @dev A contract answering the interface probe with anything but one ABI-encoded `true` is no policy.
+    function test_initialize_readsAMalformedInterfaceAnswerAsNo() public {
+        install(NEXUS);
+        bytes32 id = configId();
+        bytes4 probe = IPolicy.supportsInterface.selector;
+        MockProbe answers = new MockProbe();
+        bytes[3] memory data = [abi.encode(true), bytes(""), abi.encode(true, uint256(0))];
+        bool[3] memory reverts = [true, false, false];
+        for (uint256 i; i < data.length; ++i) {
+            answers.respond(probe, reverts[i], data[i]);
+            SessionHook.ExecutionPolicyData[] memory list = new SessionHook.ExecutionPolicyData[](1);
+            list[0] = SessionHook.ExecutionPolicyData(address(answers), "");
+            vm.prank(address(smartSession));
+            vm.expectRevert(
+                abi.encodeWithSelector(SessionHook.NotExecutionPolicy.selector, address(answers))
+            );
+            hook.initializeWithMultiplexer(address(account), id, abi.encode(list));
+        }
+    }
+
     function test_initialize_capsThePolicies() public {
         install(NEXUS);
         bytes32 id = configId();
@@ -134,6 +167,9 @@ contract SessionHookTest is Test {
         vm.prank(address(smartSession));
         vm.expectRevert(abi.encodeWithSelector(SessionHook.TooManyExecutionPolicies.selector, 9));
         hook.initializeWithMultiplexer(address(account), id, data);
+
+        initialize(policies(8, MockExecutionPolicy.Mode.Pass));
+        assertEq(hook.getExecutionPolicies(address(account), PERMISSION).length, 8);
     }
 
     /// @dev Initialization runs during validation in enable mode, so it may write only storage associated with the
@@ -209,6 +245,49 @@ contract SessionHookTest is Test {
         op.callData = callData;
         // Not from the installed Smart Sessions module.
         assertEq(hook.checkUserOpPolicy(configId(), op), 1);
+        account.setHook(address(hook));
+        assertEq(checkFrom(address(1), configId(), callData), 1);
+        assertEq(checkFrom(address(type(uint160).max), configId(), callData), 1);
+        assertEq(checkFrom(address(smartSession), configId(), callData), 0);
+        // Another session's configuration.
+        assertEq(checkFrom(address(smartSession), bytes32(0), callData), 1);
+        assertEq(checkFrom(address(smartSession), bytes32(type(uint256).max), callData), 1);
+    }
+
+    /// @dev An account answering the binding probe with anything but its exact ABI encoding is not bound.
+    function test_check_readsAMalformedBindingAnswerAsUnbound() public {
+        MockProbe probed = new MockProbe();
+        vm.prank(address(probed));
+        hook.onInstall(abi.encode(KERNEL, address(smartSession)));
+        bytes4 kernelProbe = bytes4(keccak256("validationConfig(bytes21)"));
+        bytes memory callData = tagged(executeSingle(address(target)));
+
+        probed.respond(kernelProbe, false, abi.encode(uint32(1), address(hook)));
+        assertEq(checkAccount(address(probed), callData), 0);
+        bytes[5] memory data = [
+            abi.encode(address(hook)),
+            abi.encode(uint32(1), address(hook), uint256(0)),
+            abi.encode(uint32(1), address(hook)),
+            abi.encode(uint32(1), address(type(uint160).max)),
+            abi.encode(uint32(1), address(1))
+        ];
+        bool[5] memory reverts = [false, false, true, false, false];
+        for (uint256 i; i < data.length; ++i) {
+            probed.respond(kernelProbe, reverts[i], data[i]);
+            assertEq(checkAccount(address(probed), callData), 1);
+        }
+
+        vm.prank(address(probed));
+        hook.onInstall(abi.encode(NEXUS, address(smartSession)));
+        bytes4 hookProbe = bytes4(keccak256("isModuleInstalled(uint256,address,bytes)"));
+        probed.respond(hookProbe, false, abi.encode(true));
+        assertEq(checkAccount(address(probed), callData), 0);
+        bytes[3] memory answers = [bytes(""), abi.encode(true, uint256(0)), abi.encode(true)];
+        bool[3] memory failed = [false, false, true];
+        for (uint256 i; i < answers.length; ++i) {
+            probed.respond(hookProbe, failed[i], answers[i]);
+            assertEq(checkAccount(address(probed), callData), 1);
+        }
     }
 
     function test_check_rejectsMissingOrForeignTags() public {
@@ -260,6 +339,30 @@ contract SessionHookTest is Test {
             1
         );
         assertEq(check(tagged(abi.encodePacked(bytes4(0x8dd7712f)))), 1);
+
+        // Only `executeUserOp` is unwrapped, and only `execute` is an execution: selectors on either side are not.
+        bytes memory execute = executeSingle(address(target));
+        assertEq(check(abi.encodePacked(bytes4(0x8dd7712e), tagged(execute))), 1);
+        assertEq(check(abi.encodePacked(bytes4(0x8dd77130), tagged(execute))), 1);
+        bytes memory body = new bytes(execute.length - 4);
+        for (uint256 i; i < body.length; ++i) {
+            body[i] = execute[i + 4];
+        }
+        assertEq(check(tagged(abi.encodePacked(bytes4(0xe9ae5c54), body))), 1);
+        assertEq(check(tagged(abi.encodePacked(bytes4(0xe9ae5c52), body))), 1);
+        // A single execution too short to name its target.
+        assertEq(
+            check(
+                tagged(
+                    abi.encodeWithSignature(
+                        "execute(bytes32,bytes)",
+                        LibERC7579.encodeMode(LibERC7579.CALLTYPE_SINGLE, 0, 0, 0),
+                        hex"01"
+                    )
+                )
+            ),
+            1
+        );
     }
 
     function test_check_rejectsCallsToTheHookTheAccountOrAPolicy() public {
@@ -278,6 +381,10 @@ contract SessionHookTest is Test {
         Execution[] memory allowed = new Execution[](1);
         allowed[0] = Execution(address(target), 0, "");
         assertEq(check(tagged(executeBatch(allowed))), 0);
+        // Addresses on either side of the forbidden ones are allowed.
+        assertEq(check(tagged(executeSingle(address(0)))), 0);
+        assertEq(check(tagged(executeSingle(address(1)))), 0);
+        assertEq(check(tagged(executeSingle(address(type(uint160).max)))), 0);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -323,6 +430,13 @@ contract SessionHookTest is Test {
             ""
         );
         assertEq(hook.preCheck(address(0), 0, hex"e9ae"), "");
+        assertEq(hook.preCheck(address(0), 0, hex"e9ae5c53"), "");
+        assertEq(
+            hook.preCheck(
+                address(0), 0, abi.encodePacked(bytes4(0xe9ae5c54), hook.tag(PERMISSION))
+            ),
+            ""
+        );
         hook.postCheck("");
         vm.stopPrank();
 
@@ -344,6 +458,42 @@ contract SessionHookTest is Test {
                 abi.encodeWithSelector(SessionHook.PermissionNotEnabled.selector, PERMISSION)
             );
             hook.preCheck(address(0), 0, execData);
+        }
+
+        // The tag alone, `execute`'s selector leading the permission id, is a tagged `execute`.
+        bytes32 permissionId = bytes32(abi.encodePacked(bytes4(0xe9ae5c53), bytes28(0)));
+        bytes memory tail = hook.tag(permissionId);
+        vm.prank(address(account));
+        vm.expectRevert(
+            abi.encodeWithSelector(SessionHook.PermissionNotEnabled.selector, permissionId)
+        );
+        hook.preCheck(address(0), 0, tail);
+    }
+
+    /// @dev Smart Sessions answering either view with anything but one ABI-encoded `true` disables the session.
+    function test_execution_readsAMalformedSessionAnswerAsDisabled() public {
+        MockProbe probe = new MockProbe();
+        vm.prank(address(account));
+        hook.onInstall(abi.encode(NEXUS, address(probe)));
+        bytes memory execData = tagged(executeSingle(address(target)));
+        bytes4[2] memory views = [
+            bytes4(keccak256("isPermissionEnabled(bytes32,address)")),
+            bytes4(keccak256("isUserOpPolicyEnabled(address,bytes32,address)"))
+        ];
+        bytes[3] memory data = [bytes(""), abi.encode(true, uint256(0)), abi.encode(true)];
+        bool[3] memory reverts = [false, false, true];
+
+        for (uint256 v; v < views.length; ++v) {
+            for (uint256 i; i < data.length; ++i) {
+                probe.respond(views[0], false, abi.encode(true));
+                probe.respond(views[1], false, abi.encode(true));
+                probe.respond(views[v], reverts[i], data[i]);
+                vm.prank(address(account));
+                vm.expectRevert(
+                    abi.encodeWithSelector(SessionHook.PermissionNotEnabled.selector, PERMISSION)
+                );
+                hook.preCheck(address(0), 0, execData);
+            }
         }
     }
 
@@ -382,6 +532,24 @@ contract SessionHookTest is Test {
             abi.encodeWithSelector(SessionHook.InvalidContext.selector, address(account))
         );
         account.runChecks(asHook, execData, forged);
+
+        // Contexts hashing on either side of the real one.
+        vm.prank(address(account));
+        bytes32 real = keccak256(hook.preCheck(address(0), 0, execData));
+        bool below;
+        bool above;
+        for (uint256 salt; !(below && above); ++salt) {
+            bytes memory other =
+                abi.encode(PERMISSION, new address[](0), new bytes32[](salt), new bytes[](0));
+            bool lower = keccak256(other) < real;
+            if (lower ? below : above) continue;
+            if (lower) below = true;
+            else above = true;
+            vm.expectRevert(
+                abi.encodeWithSelector(SessionHook.InvalidContext.selector, address(account))
+            );
+            account.runChecks(asHook, execData, other);
+        }
 
         // Consumed: the same context can't be replayed.
         vm.expectRevert(
@@ -491,10 +659,25 @@ contract SessionHookTest is Test {
     }
 
     function check(bytes memory callData) internal returns (uint256) {
+        return checkFrom(address(smartSession), configId(), callData);
+    }
+
+    function checkFrom(address caller, bytes32 id, bytes memory callData)
+        internal
+        returns (uint256)
+    {
         ERC4337.PackedUserOperation memory op;
         op.sender = address(account);
         op.callData = callData;
-        bytes32 id = configId();
+        vm.prank(caller);
+        return hook.checkUserOpPolicy(id, op);
+    }
+
+    function checkAccount(address sender, bytes memory callData) internal returns (uint256) {
+        ERC4337.PackedUserOperation memory op;
+        op.sender = sender;
+        op.callData = callData;
+        bytes32 id = hook.configId(sender, PERMISSION);
         vm.prank(address(smartSession));
         return hook.checkUserOpPolicy(id, op);
     }

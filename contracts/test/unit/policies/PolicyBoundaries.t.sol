@@ -404,8 +404,30 @@ contract UserOpCallsBoundaryTest is Test {
         (bool found, uint256 t) = harness.timestamp(wrapped);
         assertTrue(found);
         assertEq(t, 42);
-        // `executeUserOp` alone is not an execution.
-        assertEq(harness.decode(hex"8dd7712f", address(1))[0].target, address(1));
+        // `executeUserOp` alone is not an execution: a call to the account with nothing left.
+        UserOpCalls.Call[] memory alone = harness.decode(hex"8dd7712f", address(1));
+        assertEq(alone[0].target, address(1));
+        assertEq(alone[0].data, "");
+        // Calldata too short for a selector is a call to the account.
+        assertEq(harness.decode(hex"01", address(1))[0].data, hex"01");
+
+        // Only `executeUserOp` is unwrapped: a selector on either side is a call to the account.
+        bytes4[2] memory others = [bytes4(0x8dd7712e), bytes4(0x8dd77130)];
+        for (uint256 i; i < others.length; ++i) {
+            bytes memory other = abi.encodePacked(others[i], execute);
+            assertEq(harness.decode(other, address(1))[0].target, address(1));
+            (found,) = harness.timestamp(other);
+            assertFalse(found);
+        }
+    }
+
+    function test_calldataTooShortForAnExecuteStatesNoTime() public view {
+        bytes[3] memory short =
+            [bytes(""), bytes(hex"e9ae5c53"), abi.encodePacked(bytes4(0xe9ae5c53), bytes32(0))];
+        for (uint256 i; i < short.length; ++i) {
+            (bool found,) = harness.timestamp(short[i]);
+            assertFalse(found);
+        }
     }
 
     /// @dev SessionHook's tag follows the stated time: `… ‖ time ‖ permissionId ‖ tag`.
