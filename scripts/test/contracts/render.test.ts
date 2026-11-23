@@ -12,7 +12,8 @@ describe("packageSources", () => {
       module,
       "export const kernel = {\"3.3\": {\"factory\": \"0x2577507b78c2008Ff367261CB6285d44ba5eF2E9\"}} as const;"
     )
-    assert.include(module, "Keyed by version (`3.3`).")
+    // The version note is a `**Details**` section: a TSDoc short description is one paragraph.
+    assert.include(module, " * **Details**\n *\n * Keyed by version (`3.3`).")
     assert.include(
       packageSources([contract], [], external).get("index.ts"),
       "export * as External from \"./External.ts\";"

@@ -568,6 +568,8 @@ export {};
 /**
  * The ERC-4337 EntryPoint every supported account and bundler uses.
  *
+ * **Details**
+ *
  * Keyed by version (`0.7`). The addresses are the same on every chain Namera supports.
  *
  * @stability experimental
@@ -583,6 +585,8 @@ export declare const entryPoint: {
 /**
  * ZeroDev's Kernel smart account: its factory, the staked FactoryStaker that accounts deploy
  * through, the implementation and the ECDSA validator, the owner's root validator.
+ *
+ * **Details**
  *
  * Keyed by version (`3.3`). The addresses are the same on every chain Namera supports.
  *
@@ -602,6 +606,8 @@ export declare const kernel: {
  * Biconomy's Nexus smart account: its factory, implementation, bootstrap and default (K1)
  * validator.
  *
+ * **Details**
+ *
  * Keyed by version (`1.3.3`). The addresses are the same on every chain Namera supports.
  *
  * @stability experimental
@@ -619,6 +625,8 @@ export declare const nexus: {
 /**
  * Safe 1.4.1 with Rhinestone's Safe7579 adapter: the Safe proxy factory and L2 singleton, the
  * adapter and its launchpad, and the OwnableValidator for the owners.
+ *
+ * **Details**
  *
  * Keyed by version (`2`). The addresses are the same on every chain Namera supports.
  *

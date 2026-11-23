@@ -35,7 +35,8 @@
     "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./*": "./src/*.ts",
-    "./internal/*": null
+    "./internal/*": null,
+    "./index": null
   },
   "publishConfig": {
     "access": "public",
@@ -44,7 +45,8 @@
       "./package.json": "./package.json",
       ".": "./dist/index.js",
       "./*": "./dist/*.js",
-      "./internal/*": null
+      "./internal/*": null,
+      "./index": null
     }
   },
   "scripts": {

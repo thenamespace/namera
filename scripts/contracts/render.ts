@@ -184,6 +184,7 @@ const externalModule = (external: ExternalConfig) =>
           docComment(
             [
               description,
+              "**Details**",
               `Keyed by version (${
                 Arr.join(Arr.map(Rec.keys(versions), (version) => `\`${version}\``), ", ")
               }). The addresses are the same on every chain Namera supports.`
