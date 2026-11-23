@@ -190,7 +190,7 @@ catalogs:
       version: 2.58.4
 
 patchedDependencies:
-  '@pimlico/alto@0.0.21': 8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b
+  '@pimlico/alto@0.0.21': 1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76
 
 importers:
 
@@ -309,10 +309,10 @@ importers:
     dependencies:
       '@pimlico/alto':
         specifier: 0.0.21
-        version: 0.0.21(patch_hash=8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b)(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.0.21(patch_hash=1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76)(supports-color@7.2.0)(typescript@7.0.2)
       prool:
         specifier: 0.3.0
-        version: 0.3.0(@pimlico/alto@0.0.21(patch_hash=8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b)(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0))
+        version: 0.3.0(@pimlico/alto@0.0.21(patch_hash=1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76)(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0))
       viem:
         specifier: 'catalog:'
         version: 2.58.4(typescript@7.0.2)(zod@4.6.6)
@@ -7288,7 +7288,7 @@ snapshots:
 
   '@oxlint/plugins@1.94.0': {}
 
-  '@pimlico/alto@0.0.21(patch_hash=8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b)(supports-color@7.2.0)(typescript@7.0.2)':
+  '@pimlico/alto@0.0.21(patch_hash=1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76)(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
       '@fastify/cors': 8.4.2
       '@fastify/websocket': 10.0.1
@@ -9603,7 +9603,7 @@ snapshots:
     dependencies:
       tdigest: 0.1.3
 
-  prool@0.3.0(@pimlico/alto@0.0.21(patch_hash=8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b)(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0)):
+  prool@0.3.0(@pimlico/alto@0.0.21(patch_hash=1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76)(supports-color@7.2.0)(typescript@7.0.2))(debug@4.4.3(supports-color@7.2.0)):
     dependencies:
       change-case: 5.4.4
       eventemitter3: 5.0.1
@@ -9612,7 +9612,7 @@ snapshots:
       http-proxy: 1.18.1(debug@4.4.3(supports-color@7.2.0))
       tar: 7.2.0
     optionalDependencies:
-      '@pimlico/alto': 0.0.21(patch_hash=8802551364137184a840bbd0227661f808980efc2de237b17a4fedd5098fed4b)(supports-color@7.2.0)(typescript@7.0.2)
+      '@pimlico/alto': 0.0.21(patch_hash=1203313375502cab601b1f51aaeb784ec272ce6b671fe14c2cf98dc9240f1f76)(supports-color@7.2.0)(typescript@7.0.2)
     transitivePeerDependencies:
       - debug
 

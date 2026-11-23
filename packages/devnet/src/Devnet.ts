@@ -231,7 +231,9 @@ export const globalSetup = (): GlobalSetup => {
   let anvilUrl = ""
   return Server.setup({
     instances: {
-      anvil: Instance.anvil({ hardfork: "Prague" }),
+      // Osaka, as mainnet: it has the P-256 precompile (EIP-7951) passkey validators use. prool 0.3.0's type predates
+      // Osaka; anvil takes the name.
+      anvil: Instance.anvil({ hardfork: "Osaka" as never }),
       alto: (poolId: number) =>
         Instance.alto({
           entrypoints: [entryPoint07Address],

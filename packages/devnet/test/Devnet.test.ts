@@ -39,6 +39,19 @@ describe("Devnet", { concurrent: false }, () => {
     }
   })
 
+  // RIP-7212's test vector; the precompile answers 1 for a valid signature and nothing for an invalid one.
+  it("runs Osaka, with the P-256 precompile passkey validators need", async () => {
+    const vector = "0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4d"
+      + "a73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac"
+      + "36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60"
+      + "4aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff3"
+      + "7618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e" as Hex
+    const p256 = "0x0000000000000000000000000000000000000100"
+
+    assert.strictEqual(BigInt((await client.call({ to: p256, data: vector })).data ?? "0x0"), 1n)
+    assert.isUndefined((await client.call({ to: p256, data: `0x00${vector.slice(4)}` })).data)
+  })
+
   it("deploys a Kernel 3.3 account and runs its first user operation through alto", async () => {
     const account = await kernelAccount()
     await devnet.fund(account.address)
