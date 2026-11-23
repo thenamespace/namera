@@ -11,7 +11,7 @@ Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
 
 ## Development
 
-Requires Node.js 26 and pnpm 12.
+Requires Node.js 26 (`.node-version`), pnpm 12 and [Foundry](https://getfoundry.sh) 1.9.
 
 ```sh
 pnpm install

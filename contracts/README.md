@@ -27,7 +27,7 @@ cp .env.example .env  # deployer keystore name, Etherscan key, optional RPC over
 | `pnpm snapshot`          | Gas snapshot                                                      |
 | `pnpm fixtures:accounts` | Refresh deployed account bytecode in `test/fixtures/accounts/`    |
 
-Deployment runs from the repository root through `namera-dev contracts` (Effect, `tools/cli`):
+Deployment runs from the repository root through `node scripts/bin.ts contracts` (the repository's Effect CLI in `scripts/`):
 
 | Command (repository root) | What it does                                                          |
 | ------------------------- | --------------------------------------------------------------------- |
@@ -50,7 +50,7 @@ src/policies/           Namera's policies (Apache-2.0), one per `Policy.*` build
 script/                 Deploy.s.sol, Status.s.sol, fixture fetcher
 script/config/          contracts.json: every managed contract with its versioned label (salt), read by Contracts.sol
 chains/                 chains.json: supported chains, RPCs and verifiers
-deployments/            <chainId>.json provenance records written by `namera-dev contracts record` (committed)
+deployments/            <chainId>.json provenance records written by `pnpm contracts:record` (committed)
 test/utils/             shared setup: EntryPoint and account fixtures, session builder, test base, mocks
 test/unit/              library and validator tests, with fuzzing
 test/integration/       SmartSession behaviour through a mock ERC-7579 account and the EntryPoint
@@ -127,7 +127,7 @@ Managed contracts (`script/config/contracts.json`, the single list Solidity and 
 
 ## Deployment records
 
-`namera-dev contracts deploy` broadcasts `Deploy.s.sol`, then writes `deployments/<chainId>.json`
+`pnpm contracts:deploy` broadcasts `Deploy.s.sol`, then writes `deployments/<chainId>.json`
 with one record per contract:
 
 | Field                                 | Source                                                                |
