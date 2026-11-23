@@ -23,7 +23,19 @@ export * as NameraError from "./NameraError.ts"
  * @stability experimental
  * @since 2.0.0
  */
+export * as Policy from "./Policy.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as Session from "./Session.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionError from "./SessionError.ts"
 
 /**
  * @stability experimental

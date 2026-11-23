@@ -4,6 +4,7 @@ import {
   Key,
   Keystore,
   NexusAccount,
+  Policy,
   Safe7579Account,
   Session,
   SessionKey,
@@ -202,6 +203,62 @@ export const table: Record<string, Conformance> = {
     failure: {
       promise: (signal) => Keystore.toJson(memory, { signal }),
       effect: () => Effect_.Keystore.toJson(memory)
+    }
+  },
+  "SessionKey.passkey": {
+    kind: "sync",
+    check: async () => {
+      const passkey = {
+        publicKey:
+          "0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+      }
+      assert.deepStrictEqual(SessionKey.passkey(passkey), await Effect.runPromise(Effect_.SessionKey.passkey(passkey)))
+      assert.throws(() => SessionKey.passkey({ publicKey: "0x" }))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.SessionKey.passkey({ publicKey: "0x" }))))
+    }
+  },
+  "SessionKey.passkeyThreshold": {
+    kind: "sync",
+    check: async () => {
+      assert.throws(() => SessionKey.passkeyThreshold({ threshold: 1, passkeys: [] }))
+      assert.isTrue(
+        Exit.isFailure(await Effect.runPromiseExit(Effect_.SessionKey.passkeyThreshold({ threshold: 1, passkeys: [] })))
+      )
+    }
+  },
+  "Session.from": {
+    kind: "sync",
+    check: async () => {
+      const options = {
+        signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+        validUntil: 2_000_000_000,
+        salt: `0x${"11".repeat(32)}`,
+        policies: [Policy.nativeTransfer({ to: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" })]
+      } as const
+      assert.deepStrictEqual(Session.from(options), await Effect.runPromise(Effect_.Session.from(options)))
+      assert.throws(() => Session.from({ ...options, validUntil: "never" }))
+      assert.isTrue(
+        Exit.isFailure(await Effect.runPromiseExit(Effect_.Session.from({ ...options, validUntil: "never" })))
+      )
+    }
+  },
+  "Session.validate": {
+    kind: "sync",
+    check: async () => {
+      const session = Session.from({
+        signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+        validUntil: Session.expiresIn({ days: 1 }),
+        policies: [Policy.nativeTransfer({ to: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" })]
+      })
+      assert.deepStrictEqual(Session.validate(session), await Effect.runPromise(Effect_.Session.validate(session)))
+    }
+  },
+  "Session.expiresIn": {
+    kind: "sync",
+    check: async () => {
+      const promise = Session.expiresIn({ hours: 1 })
+      const effect = await Effect.runPromise(Effect_.Session.expiresIn({ hours: 1 }))
+      assert.isAtMost(Math.abs(effect - promise), 1)
     }
   },
   "Session.now": {

@@ -121,8 +121,54 @@ const sessionKey = SessionKey.ecdsa(Key.address(key, "eip155")) // what the owne
 | `Keystore.osKeychain({ service })`     | `@namera-ai/sdk/node`    | the OS keychain, with the optional `@napi-rs/keyring` |
 | `Keystore.webCrypto()`                 | `@namera-ai/sdk/browser` | browsers: non-extractable P-256 keys in IndexedDB     |
 
-`SessionKey.ecdsaThreshold({ threshold, signers })` makes a k-of-n session key. Failures are `KeystoreError` and
-`SessionKeyError`.
+`SessionKey.ecdsaThreshold({ threshold, signers })` makes a k-of-n session key. `SessionKey.passkey({ publicKey })`
+(and `passkeyThreshold`) makes a passkey session key, checked by `WebAuthnValidator` from the session's own config.
+Failures are `KeystoreError` and `SessionKeyError`.
+
+## Sessions and policies
+
+A session is a signer, a time window and a list of policies. Building one does no I/O; everything a session allows
+or limits is a `Policy`, deny by default.
+
+```ts
+import { Policy, Session, SessionKey } from "@namera-ai/sdk"
+
+const session = Session.from({
+  signer: SessionKey.ecdsa(agentAddress),
+  validUntil: Session.expiresIn({ days: 7 }),
+  policies: [
+    Policy.erc20Transfer({ token: USDC, to: [merchant], amount: { lte: 50_000000n } }),
+    Policy.function({
+      address: router,
+      abi: routerAbi,
+      functionName: "exactInputSingle",
+      args: { params: { recipient: owner } }
+    }),
+    Policy.spend({ token: USDC, amount: 200_000000n, period: "day" }),
+    Policy.rateLimit({ count: 20, period: "hour" })
+  ]
+})
+
+Session.validate(session) // { ok, problems, warnings }, each with a stable code
+Session.describe(session) // plain-language lines for a confirmation screen
+Session.toSmartSession(session) // Smart Sessions' Session struct, for enableSessions
+```
+
+| Kind      | Builders                                                                           |
+| --------- | ---------------------------------------------------------------------------------- |
+| Calls     | `function`, `erc20Transfer`, `erc20Approve`, `nativeTransfer`, `call`, `anyCall`   |
+| Limits    | `spend`, `value`, `rateLimit`, `gas`, `approvals` (per `"hour"` … `"lifetime"`)    |
+| Signing   | `signTypedData` (conditions on message fields, enforced on chain)                  |
+| Execution | `execution` (an `IExecutionPolicy` contract, run by SessionHook around every call) |
+| Other     | `custom` (any `IPolicy` contract)                                                  |
+
+Conditions are plain values: `x` (equal), `[a, b]` (one of), `{ lte }`, `{ lt }`, `{ gte }`, `{ gt }`,
+`{ between: [low, high] }`. `Policy.function` infers its `args` from a `const` ABI; conditions apply to static
+arguments and static struct fields. `Session.from` throws `SessionError` (`InvalidSession`) listing every malformed
+part; `Session.validate` reports errors such as `NO_CALL_POLICY`, `OVERLAPPING_CALLS`, `CONFLICTING_LIMITS`,
+`EXECUTION_WITHOUT_LIMITS` (execution policies need `Policy.rateLimit` and `Policy.gas`) and `SIGNS_FOR_ACCOUNT`, and
+warnings such as `UNRESTRICTED_AMOUNT_ARG`, `ANY_CALL` and `LONG_SESSION`. `Policy.signMessage` is refused: Smart
+Sessions can't check personal messages.
 
 ## Errors
 

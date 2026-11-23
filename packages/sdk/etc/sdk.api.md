@@ -196,6 +196,7 @@ import type { AccountError } from "./accounts/AccountError.ts";
 import type { ChainError } from "./ChainError.ts";
 import type { KeystoreError } from "./keys/KeystoreError.ts";
 import type { SessionKeyError } from "./keys/SessionKeyError.ts";
+import type { SessionError } from "./SessionError.ts";
 /**
  * Marks every Namera error, whichever copy of the package created it.
  *
@@ -221,7 +222,7 @@ export declare const TypeId: "~@namera-ai/sdk/NameraError";
  * @category models
  * @since 2.0.0
  */
-export type NameraError = AccountError | ChainError | KeystoreError | SessionKeyError;
+export type NameraError = AccountError | ChainError | KeystoreError | SessionError | SessionKeyError;
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
  * the same way.
@@ -283,9 +284,836 @@ export declare const isNameraError: (u: unknown) => u is NameraError;
 export declare const decode: <E>(error: E) => NameraError | E;
 ```
 
+## Policy.d.ts
+
+```ts
+/**
+ * Policies: everything a session allows or limits. Call policies say what the agent may call, limit policies how
+ * much and how often, signing policies what it may sign, and execution policies check each operation around its
+ * calls.
+ *
+ * **Details**
+ *
+ * Three rules hold for every session:
+ *
+ * - Deny by default: the agent may only make calls a call policy allows.
+ * - Every policy must pass: a call must be allowed and every limit must still have room.
+ * - Limits apply to everything they are about: `Policy.spend({ token })` counts every transfer and approval of that
+ *   token in the session.
+ *
+ * Each builder returns a plain value; `Session.from` checks it and `Session` compiles it to Namera's policy contracts.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type * as Abi from "ox/Abi";
+import type * as AbiFunction from "ox/AbiFunction";
+import type * as AbiParameter from "ox/AbiParameter";
+import type * as internal from "./internal/core/session/policy.ts";
+/**
+ * A condition on a value: the value itself (equal), a list (one of), or one bound: `{ lt }`, `{ lte }`, `{ gt }`,
+ * `{ gte }` or `{ between: [low, high] }`. Bounds compare unsigned integers only.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Condition<T> = internal.Condition<T>;
+/**
+ * A condition comparing for equality: the value itself, or a list of allowed values.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Equality<T> = internal.Equality<T>;
+/**
+ * How long a limit's budget lasts before it starts again: `"hour"`, `"day"` (a UTC day), `"week"`, `"month"` (30
+ * days), `"lifetime"` (never resets) or `{ seconds }`. Periods are aligned to the Unix epoch.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Period = internal.Period;
+/**
+ * Any policy.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Policy = internal.Policy;
+/**
+ * The conditions an ABI parameter takes: equality for addresses, booleans and `bytesN`, any condition for unsigned
+ * integers, conditions on the fields of a struct. Dynamic and signed parameters take none.
+ *
+ * @stability experimental
+ * @category utility types
+ * @since 2.0.0
+ */
+export type ConditionOf<parameter> = parameter extends {
+    readonly type: "tuple";
+    readonly components: infer components extends ReadonlyArray<AbiParameter.AbiParameter>;
+} ? ArgumentConditions<components> : parameter extends {
+    readonly type: "address";
+} ? Equality<`0x${string}`> : parameter extends {
+    readonly type: "bool";
+} ? Equality<boolean> : parameter extends {
+    readonly type: `uint${string}`;
+} ? parameter extends {
+    readonly type: `${string}]`;
+} ? never : Condition<bigint> : parameter extends {
+    readonly type: `bytes${infer size}`;
+} ? size extends "" ? never : size extends `${string}]` ? never : Equality<`0x${string}`> : never;
+/**
+ * The conditions a function's arguments take, by argument name; an argument left out may be anything.
+ *
+ * @stability experimental
+ * @category utility types
+ * @since 2.0.0
+ */
+export type ArgumentConditions<parameters extends ReadonlyArray<AbiParameter.AbiParameter>> = {
+    readonly [parameter in parameters[number] as parameter["name"] extends `${infer name}` ? name extends "" ? never : name : never]?: ConditionOf<parameter>;
+};
+/**
+ * The names `Policy.function` takes for `abi`: its functions' names, or a full signature (for an overloaded one);
+ * any string for an ABI that isn't `const`.
+ *
+ * @stability experimental
+ * @category utility types
+ * @since 2.0.0
+ */
+export type FunctionName<abi> = abi extends Abi.Abi ? AbiFunction.ExtractNames<abi> | `${string}(${string})` : string;
+/**
+ * The argument conditions of `functionName` in `abi`: typed from a `const` ABI, any object otherwise.
+ *
+ * @stability experimental
+ * @category utility types
+ * @since 2.0.0
+ */
+export type ArgsOf<abi, functionName extends string> = abi extends Abi.Abi ? functionName extends AbiFunction.ExtractNames<abi> ? ArgumentConditions<AbiFunction.FromAbi<abi, functionName>["inputs"]> : {
+    readonly [name: string]: unknown;
+} : {
+    readonly [name: string]: unknown;
+};
+declare const fn: <const abi extends Abi.Abi | ReadonlyArray<unknown>, functionName extends FunctionName<abi>>(options: function_.Options<abi, functionName>) => internal.FunctionPolicy;
+export { 
+/**
+ * Allows calling one function of a contract, viem-style `{ address, abi, functionName }`, with conditions on its
+ * arguments (`args`, inferred from the ABI) and on the value sent (`value`).
+ *
+ * **Details**
+ *
+ * Conditions apply to static arguments and to the fields of static structs: what `ArgPolicy` reads at a fixed
+ * offset. An overloaded function is named by its signature, such as `"transfer(address,uint256)"`.
+ *
+ * **Example** (Swapping at most 50 USDC, for the owner)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy } from "@namera-ai/sdk"
+ *
+ * const abi = [{
+ *   type: "function",
+ *   name: "swap",
+ *   stateMutability: "nonpayable",
+ *   inputs: [{ name: "recipient", type: "address" }, { name: "amountIn", type: "uint256" }],
+ *   outputs: []
+ * }] as const
+ *
+ * const policy = Policy.function({
+ *   address: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD",
+ *   abi,
+ *   functionName: "swap",
+ *   args: { recipient: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", amountIn: { lte: 50_000000n } }
+ * })
+ *
+ * policy.type // => "function"
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+fn as function };
+/**
+ * Types of `Policy.function`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace function_ {
+    /**
+     * The contract, its ABI, the function, and conditions on its arguments and value.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options<abi extends Abi.Abi | ReadonlyArray<unknown>, functionName extends string> {
+        readonly address: `0x${string}`;
+        readonly abi: abi;
+        readonly functionName: functionName;
+        readonly args?: ArgsOf<abi, functionName> | undefined;
+        readonly value?: Condition<bigint> | undefined;
+    }
+}
+/**
+ * Allows ERC-20 `transfer(to, amount)` of a token, with conditions on the recipient and the amount.
+ *
+ * **Example** (Paying one merchant at most 50 USDC per transfer)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy } from "@namera-ai/sdk"
+ *
+ * const policy = Policy.erc20Transfer({
+ *   token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+ *   to: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"],
+ *   amount: { lte: 50_000000n }
+ * })
+ *
+ * policy.type // => "erc20Transfer"
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const erc20Transfer: (options: erc20Transfer.Options) => internal.Erc20TransferPolicy;
+/**
+ * Types of `Policy.erc20Transfer`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace erc20Transfer {
+    /**
+     * The token, and conditions on the recipient (`to`) and the `amount`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly token: `0x${string}`;
+        readonly to?: Equality<`0x${string}`> | undefined;
+        readonly amount?: Condition<bigint> | undefined;
+    }
+}
+/**
+ * Allows ERC-20 `approve(spender, amount)` of a token, with conditions on the spender and the amount.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const erc20Approve: (options: erc20Approve.Options) => internal.Erc20ApprovePolicy;
+/**
+ * Types of `Policy.erc20Approve`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace erc20Approve {
+    /**
+     * The token, and conditions on the `spender` and the `amount`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly token: `0x${string}`;
+        readonly spender?: Equality<`0x${string}`> | undefined;
+        readonly amount?: Condition<bigint> | undefined;
+    }
+}
+/**
+ * Allows sending native currency, without calldata, to the listed addresses, with a condition on the value.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const nativeTransfer: (options: nativeTransfer.Options) => internal.NativeTransferPolicy;
+/**
+ * Types of `Policy.nativeTransfer`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace nativeTransfer {
+    /**
+     * The recipients, and a condition on the `value` sent.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly to: Equality<`0x${string}`>;
+        readonly value?: Condition<bigint> | undefined;
+    }
+}
+/**
+ * Allows calling a function by its selector with any arguments. `Session.validate` warns: prefer `Policy.function`.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const call: (options: call.Options) => internal.CallPolicy;
+/**
+ * Types of `Policy.call`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace call {
+    /**
+     * The contract, the 4-byte selector, and a condition on the value sent.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly to: `0x${string}`;
+        readonly selector: `0x${string}`;
+        readonly value?: Condition<bigint> | undefined;
+    }
+}
+/**
+ * Allows any call to any contract except the account itself and Smart Sessions. Needs `unsafe: true`;
+ * `Session.validate` warns.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const anyCall: (options: {
+    readonly unsafe: true;
+}) => internal.AnyCallPolicy;
+/**
+ * Limits how much of an ERC-20 token the session may spend per period: transfers, and approvals unless a
+ * `Policy.approvals` covers the token.
+ *
+ * **Details**
+ *
+ * The amount requested counts, so fee-on-transfer and rebasing tokens count what was asked. A token may have one
+ * limit per period, such as a daily budget and a lifetime one.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const spend: (options: spend.Options) => internal.SpendPolicy;
+/**
+ * Types of `Policy.spend`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace spend {
+    /**
+     * The token, the most it may spend, and per which period.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly token: `0x${string}`;
+        readonly amount: bigint;
+        readonly period: Period;
+    }
+}
+/**
+ * Limits how much native currency the session may send per period, across all calls.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const value: (options: value.Options) => internal.ValuePolicy;
+/**
+ * Types of `Policy.value`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace value {
+    /**
+     * The most it may send, in wei, and per which period.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly amount: bigint;
+        readonly period: Period;
+    }
+}
+/**
+ * Limits how many user operations the session may send per period.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const rateLimit: (options: rateLimit.Options) => internal.RateLimitPolicy;
+/**
+ * Types of `Policy.rateLimit`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace rateLimit {
+    /**
+     * How many operations, and per which period.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly count: number;
+        readonly period: Period;
+    }
+}
+/**
+ * Limits the gas the session may spend per period, counted at its worst case (`maxFeePerGas` × every gas limit),
+ * sponsored operations included.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const gas: (options: gas.Options) => internal.GasPolicy;
+/**
+ * Types of `Policy.gas`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace gas {
+    /**
+     * The most it may cost, in wei, and per which period.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly maxCost: bigint;
+        readonly period: Period;
+    }
+}
+/**
+ * Limits ERC-20 approvals (`approve`, `increaseAllowance`) of the listed tokens, and Permit2 approvals of them, to
+ * the listed spenders and at most `maxAmount` each. Revoking (amount 0) is always allowed.
+ *
+ * **Details**
+ *
+ * It limits approvals other policies allow (`Policy.erc20Approve`, `Policy.call`, `Policy.anyCall`); it allows
+ * nothing by itself. With it, `Policy.spend` stops counting that token's approvals.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const approvals: (options: approvals.Options) => internal.ApprovalsPolicy;
+/**
+ * Types of `Policy.approvals`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace approvals {
+    /**
+     * The tokens, the spenders they may be approved to, and the most each approval may be for.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly tokens: ReadonlyArray<`0x${string}`>;
+        readonly spenders: ReadonlyArray<`0x${string}`>;
+        readonly maxAmount: bigint;
+    }
+}
+/**
+ * Allows signing EIP-712 typed data of one type for one app domain, through the account's ERC-1271 (ERC-7739
+ * `TypedDataSign`), with conditions on the message's fields enforced on chain.
+ *
+ * **Details**
+ *
+ * The domain needs a `verifyingContract`. Field conditions apply to atomic fields (`address`, `uintN`, `bool`,
+ * `bytesN`; `string` and `bytes` compare for equality, by hash). Session signatures always carry the typed data, so
+ * `SignaturePolicy` reads the fields that were signed.
+ *
+ * **Example** (A USDC permit to one spender, for at most 5 USDC)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy } from "@namera-ai/sdk"
+ *
+ * const policy = Policy.signTypedData({
+ *   domain: { name: "USD Coin", version: "2", chainId: 8453, verifyingContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
+ *   types: {
+ *     Permit: [
+ *       { name: "owner", type: "address" },
+ *       { name: "spender", type: "address" },
+ *       { name: "value", type: "uint256" },
+ *       { name: "nonce", type: "uint256" },
+ *       { name: "deadline", type: "uint256" }
+ *     ]
+ *   },
+ *   primaryType: "Permit",
+ *   message: { spender: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", value: { lte: 5_000000n } }
+ * })
+ *
+ * policy.primaryType // => "Permit"
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const signTypedData: (options: signTypedData.Options) => internal.SignTypedDataPolicy;
+/**
+ * Types of `Policy.signTypedData`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace signTypedData {
+    /**
+     * The app's EIP-712 domain, its types, the primary type it may sign, and conditions on the message's fields.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly domain: internal.SignTypedDataPolicy["domain"];
+        readonly types: internal.SignTypedDataPolicy["types"];
+        readonly primaryType: string;
+        readonly message?: {
+            readonly [field: string]: unknown;
+        } | undefined;
+    }
+}
+/**
+ * Signing personal messages. Smart Sessions supports only ERC-7739's `TypedDataSign`, so `Session.validate`
+ * refuses a session with this policy (`SIGN_MESSAGE_UNSUPPORTED`).
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const signMessage: (options?: {
+    readonly prefix?: string | undefined;
+}) => internal.SignMessagePolicy;
+/**
+ * Checks every operation of the session with an execution policy: a contract implementing `IExecutionPolicy`,
+ * run by SessionHook before and after the operation's calls.
+ *
+ * **Details**
+ *
+ * A session takes at most 8. It also needs `Policy.rateLimit` and `Policy.gas`, since an operation an execution
+ * policy rejects is still included, and its gas paid.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const execution: (options: execution.Options) => internal.ExecutionPolicy;
+/**
+ * Types of `Policy.execution`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace execution {
+    /**
+     * The execution policy contract, and its configuration for this session.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly address: `0x${string}`;
+        readonly initData: `0x${string}`;
+    }
+}
+/**
+ * Any policy contract implementing Smart Sessions' `IPolicy`: an action policy that allows calling `selector` on
+ * `to` (`kind: "call"`), a user operation policy (`"limit"`), or an ERC-1271 policy (`"signature"`).
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const custom: (options: custom.Options) => internal.CustomPolicy;
+/**
+ * Types of `Policy.custom`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace custom {
+    /**
+     * The policy contract, its configuration, its kind, and for a call policy the call it allows.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Options = {
+        readonly kind: "call";
+        readonly address: `0x${string}`;
+        readonly initData: `0x${string}`;
+        readonly to: `0x${string}`;
+        readonly selector: `0x${string}`;
+    } | {
+        readonly kind: "limit" | "signature";
+        readonly address: `0x${string}`;
+        readonly initData: `0x${string}`;
+    };
+}
+```
+
 ## Session.d.ts
 
 ```ts
+import type * as compile from "./internal/core/session/compile.ts";
+import type * as DescribeCore from "./internal/core/session/describe.ts";
+import type * as core from "./internal/core/session/session.ts";
+import type * as SessionKey from "./keys/SessionKey.ts";
+import type * as Policy from "./Policy.ts";
+import type * as SessionError from "./SessionError.ts";
+/**
+ * A session, normalised by `Session.from`: policies sorted and deduplicated, a salt always set.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Session = core.Session;
+/**
+ * Checks whether a value is a `Session`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSession: (u: unknown) => u is Session;
+/**
+ * Builds a session from its signer, window and policies, and normalises it: policies sorted and deduplicated, a
+ * random salt unless one is given.
+ *
+ * **Details**
+ *
+ * `validUntil` is required: a session without an end needs `validUntil: "never"` with `unsafe: true`. `validAfter`
+ * defaults to 0 (valid at once). `sponsored` lets the session's operations use a paymaster. `label` stays off chain.
+ *
+ * **Gotchas**
+ *
+ * Throws `SessionError` (`InvalidSession`) listing every malformed part, such as an invalid address, an unknown
+ * function or argument, or a condition on a dynamic argument. A well-formed session can still be refused by
+ * `Session.validate`.
+ *
+ * **Example** (A checkout agent for seven days)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy, Session, SessionKey } from "@namera-ai/sdk"
+ *
+ * const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+ * const session = Session.from({
+ *   signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+ *   validUntil: Session.expiresIn({ days: 7 }),
+ *   policies: [
+ *     Policy.erc20Transfer({ token: USDC, to: ["0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"], amount: { lte: 50_000000n } }),
+ *     Policy.spend({ token: USDC, amount: 200_000000n, period: "day" }),
+ *     Policy.rateLimit({ count: 20, period: "hour" })
+ *   ],
+ *   label: "checkout agent"
+ * })
+ *
+ * session.policies.length // => 3
+ * Session.validate(session).ok // => true
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Session;
+/**
+ * Types of `Session.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The session's signer, window, policies, and whether it may use a paymaster.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly signer: SessionKey.SessionKey;
+        readonly policies: ReadonlyArray<Policy.Policy>;
+        readonly validAfter?: number | undefined;
+        readonly validUntil: number | "never";
+        readonly salt?: `0x${string}` | undefined;
+        readonly sponsored?: boolean | undefined;
+        readonly unsafe?: boolean | undefined;
+        readonly label?: string | undefined;
+    }
+    /**
+     * The errors `Session.from` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = SessionError.SessionError;
+}
+/**
+ * Checks a session against the contracts' rules and Namera's safety rules, and reports everything at once:
+ * `problems` (errors with stable codes) that make the session unusable or not what it says, and `warnings` worth a
+ * second look. `ok` is true without problems.
+ *
+ * **Details**
+ *
+ * Errors include sessions without call policies, empty or past windows, two limits of one kind, two policies on one
+ * call, forbidden targets, oversized signer configs, personal-message signing, and execution policies without rate
+ * and gas limits. With `account`, a session signing for the account's own domain is refused too. Warnings include
+ * unconditioned address and amount arguments, `Policy.call`, `Policy.anyCall`, sessions over 90 days or without an
+ * end, and sponsored sessions without `Policy.gas`.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function validate(session: Session, options?: validate.Options): validate.ReturnType;
+/**
+ * Types of `Session.validate`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace validate {
+    /**
+     * The account the session is for, when known, and the time to check against (default: now).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly account?: `0x${string}` | undefined;
+        readonly now?: number | undefined;
+    }
+    /**
+     * Whether the session is usable, its problems and its warnings.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface ReturnType {
+        readonly ok: boolean;
+        readonly problems: ReadonlyArray<SessionError.Problem>;
+        readonly warnings: ReadonlyArray<SessionError.Problem>;
+    }
+}
+/**
+ * Describes a session in plain language, one line each for its signer, window, sponsorship and policies, for owner
+ * confirmation screens and agent prompts.
+ *
+ * **Details**
+ *
+ * Token amounts show in raw units unless `tokens` gives the token's symbol and decimals.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function describe(session: Session, options?: describe.Options): ReadonlyArray<string>;
+/**
+ * Types of `Session.describe`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace describe {
+    /**
+     * Token symbols and decimals to format amounts with, by token address.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly tokens?: DescribeCore.Tokens | undefined;
+    }
+}
+/**
+ * Returns the session's on-chain id, computed as Smart Sessions does from the session validator, the session key's
+ * config and the salt. It is the same on every chain.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const getPermissionId: (session: Session) => `0x${string}`;
+/**
+ * Smart Sessions' `Session` struct, with the field names of its ABI: what `enableSessions` takes and the owner's
+ * signature covers.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SmartSession = compile.Compiled;
+/**
+ * Compiles a session to Smart Sessions' `Session` struct: its session validator and config, an action per allowed
+ * call with its policies, user operation policies for the limits (and SessionHook for execution policies), ERC-1271
+ * policies and ERC-7739 contents for signing, and its window.
+ *
+ * **When to use**
+ *
+ * Use to enable a session yourself, such as with `SmartSession.enableSessions` from the account; grants do it for
+ * you.
+ *
+ * **Example** (Allowing one native transfer target)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy, Session, SessionKey } from "@namera-ai/sdk"
+ *
+ * const session = Session.from({
+ *   signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+ *   validUntil: 2_000_000_000,
+ *   policies: [Policy.nativeTransfer({ to: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" })]
+ * })
+ * const struct = Session.toSmartSession(session)
+ *
+ * struct.actions[0]?.actionTargetSelector // => "0xffffffff"
+ * struct.validUntil // => 2_000_000_000
+ * ```
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toSmartSession: (session: Session) => SmartSession;
 /**
  * Returns the current time in whole seconds, the unit of a session's `validAfter` and `validUntil`.
  *
@@ -325,6 +1153,168 @@ export declare namespace now {
      */
     type ReturnType = number;
 }
+/**
+ * Returns a `validUntil` that long from now, in whole seconds.
+ *
+ * **Example** (A session for one week)
+ *
+ * ```ts import.meta.vitest
+ * import { Session } from "@namera-ai/sdk"
+ *
+ * Session.expiresIn({ days: 7 }) > Session.now() // => true
+ * ```
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function expiresIn(options: expiresIn.Options): number;
+/**
+ * Types of `Session.expiresIn`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace expiresIn {
+    /**
+     * How long from now: days, hours, minutes and seconds, added up.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly days?: number | undefined;
+        readonly hours?: number | undefined;
+        readonly minutes?: number | undefined;
+        readonly seconds?: number | undefined;
+    }
+}
+```
+
+## SessionError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import { problemCodes } from "./internal/core/session/problem.ts";
+import * as NameraError from "./NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/SessionError";
+/**
+ * One problem with a session: a stable `code`, a sentence saying what is wrong, and the index of the policy it is
+ * about, if any.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const Problem: Schema.Struct<{
+    readonly code: Schema.Literals<typeof problemCodes>;
+    readonly message: Schema.String;
+    readonly policy: Schema.optionalKey<Schema.Number>;
+}>;
+/**
+ * One problem with a session.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Problem = typeof Problem.Type;
+declare const InvalidSession_base: Schema.Class<InvalidSession, Schema.TaggedStruct<"InvalidSession", {
+    readonly problems: Schema.$Array<Schema.Struct<{
+        readonly code: Schema.Literals<typeof problemCodes>;
+        readonly message: Schema.String;
+        readonly policy: Schema.optionalKey<Schema.Number>;
+    }>>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The session can't be built or used as described. `problems` lists everything wrong at once.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidSession extends InvalidSession_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+/**
+ * Schema for the reason of a `SessionError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const SessionErrorReason: typeof InvalidSession;
+/**
+ * The specific failure behind a `SessionError`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SessionErrorReason = InvalidSession;
+declare const SessionError_base: Schema.Class<SessionError, Schema.TaggedStruct<"SessionError", {
+    readonly reason: typeof InvalidSession;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A session that can't be built or used. `reason` says what is wrong.
+ *
+ * **Example** (Reading the problems)
+ *
+ * ```ts import.meta.vitest
+ * import { Policy, Session, SessionError, SessionKey } from "@namera-ai/sdk"
+ *
+ * const caught = (): unknown => {
+ *   try {
+ *     return Session.from({
+ *       signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+ *       validUntil: "never",
+ *       policies: [Policy.nativeTransfer({ to: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" })]
+ *     })
+ *   } catch (error) {
+ *     return error
+ *   }
+ * }
+ * const error = caught() as SessionError.SessionError
+ *
+ * SessionError.isSessionError(error) // => true
+ * error.reason.problems[0]?.code // => "UNSAFE_REQUIRED"
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionError extends SessionError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/SessionError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    readonly cause: InvalidSession;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string>;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is a `SessionError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSessionError: (u: unknown) => u is SessionError;
+/**
+ * A `SessionError` for a list of problems.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const invalidSession: (problems: ReadonlyArray<Problem>) => SessionError;
+export {};
 ```
 
 ## accounts/AccountError.d.ts
@@ -2082,10 +3072,92 @@ export * from "../ChainError.ts";
 export * from "../NameraError.ts";
 ```
 
+## effect/Policy.d.ts
+
+```ts
+/**
+ * Policies, shared with the Promise API: the builders are pure and return the same values.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../Policy.ts";
+```
+
 ## effect/Session.d.ts
 
 ```ts
 import * as Effect from "effect/Effect";
+import * as Session_ from "../Session.ts";
+import type * as SessionError from "../SessionError.ts";
+/**
+ * A session, normalised by `Session.from`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Session = Session_.Session;
+/**
+ * Checks whether a value is a `Session`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSession: (u: unknown) => u is Session;
+/**
+ * Builds a session from its signer, window and policies, and normalises it, failing with `SessionError`
+ * (`InvalidSession`) listing every malformed part.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: Session_.from.Options) => Effect.Effect<Session, SessionError.SessionError>;
+/**
+ * Checks a session against the contracts' rules and Namera's safety rules at the `Clock`'s time, reporting every
+ * problem and warning at once.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const validate: (session: Session, options?: {
+    readonly account?: `0x${string}` | undefined;
+}) => Effect.Effect<Session_.validate.ReturnType>;
+/**
+ * Describes a session in plain language.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const describe: (session: Session, options?: Session_.describe.Options) => ReadonlyArray<string>;
+/**
+ * Returns the session's on-chain id, the same on every chain.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const getPermissionId: (session: Session) => `0x${string}`;
+/**
+ * Smart Sessions' `Session` struct.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SmartSession = Session_.SmartSession;
+/**
+ * Compiles a session to Smart Sessions' `Session` struct.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toSmartSession: (session: Session) => SmartSession;
 /**
  * Returns the current time in whole seconds from Effect's `Clock`, the unit of a session's `validAfter` and
  * `validUntil`.
@@ -2114,6 +3186,26 @@ import * as Effect from "effect/Effect";
  * @since 2.0.0
  */
 export declare const now: () => Effect.Effect<number>;
+/**
+ * Returns a `validUntil` that long after the `Clock`'s time, in whole seconds.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const expiresIn: (options: Session_.expiresIn.Options) => Effect.Effect<number>;
+```
+
+## effect/SessionError.d.ts
+
+```ts
+/**
+ * Failures describing a session, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../SessionError.ts";
 ```
 
 ## effect/accounts/AccountError.d.ts
@@ -2619,7 +3711,17 @@ export * as NameraError from "./NameraError.ts";
  * @stability experimental
  * @since 2.0.0
  */
+export * as Policy from "./Policy.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as Session from "./Session.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionError from "./SessionError.ts";
 /**
  * @stability experimental
  * @since 2.0.0
@@ -2911,6 +4013,22 @@ import type * as SessionKeyError from "../../keys/SessionKeyError.ts";
  */
 export type SessionKey = SessionKey_.SessionKey;
 /**
+ * A session key of secp256k1 keys, checked by `ECDSASessionValidator`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Ecdsa = SessionKey_.Ecdsa;
+/**
+ * A session key of passkeys, checked by `WebAuthnValidator` from the session's config.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = SessionKey_.Passkey;
+/**
  * Checks whether a value is a `SessionKey`.
  *
  * @stability experimental
@@ -2933,7 +4051,7 @@ export declare const toValidatorData: (sessionKey: SessionKey) => `0x${string}`;
  * @category constructors
  * @since 2.0.0
  */
-export declare const ecdsa: (address: string) => Effect.Effect<SessionKey, SessionKeyError.SessionKeyError>;
+export declare const ecdsa: (address: string) => Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError>;
 /**
  * A session key of several secp256k1 keys, `threshold` of which must sign.
  *
@@ -2941,7 +4059,23 @@ export declare const ecdsa: (address: string) => Effect.Effect<SessionKey, Sessi
  * @category constructors
  * @since 2.0.0
  */
-export declare const ecdsaThreshold: (options: SessionKey_.ecdsaThreshold.Options) => Effect.Effect<SessionKey, SessionKeyError.SessionKeyError>;
+export declare const ecdsaThreshold: (options: SessionKey_.ecdsaThreshold.Options) => Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError>;
+/**
+ * A session key of one passkey: its P-256 public key.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const passkey: (passkey: SessionKey_.passkey.Passkey) => Effect.Effect<Passkey, SessionKeyError.SessionKeyError>;
+/**
+ * A session key of several passkeys, `threshold` of which must sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const passkeyThreshold: (options: SessionKey_.passkeyThreshold.Options) => Effect.Effect<Passkey, SessionKeyError.SessionKeyError>;
 ```
 
 ## effect/keys/SessionKeyError.d.ts
@@ -3044,7 +4178,17 @@ export * as NameraError from "./NameraError.ts";
  * @stability experimental
  * @since 2.0.0
  */
+export * as Policy from "./Policy.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as Session from "./Session.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionError from "./SessionError.ts";
 /**
  * @stability experimental
  * @since 2.0.0
@@ -3861,16 +5005,33 @@ export {};
 ## keys/SessionKey.d.ts
 
 ```ts
-import { type EcdsaSessionKey } from "../internal/core/sessionKey.ts";
+import { type EcdsaSessionKey, type PasskeySessionKey } from "../internal/core/sessionKey.ts";
 import type * as SessionKeyError from "./SessionKeyError.ts";
 /**
- * A session key: `threshold` of the `signers` (checksummed, ascending) sign the session's user operations.
+ * A session key: `threshold` of its secp256k1 `signers` (checksummed, ascending), or of its `passkeys` (ordered by
+ * credential id), sign the session's user operations.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type SessionKey = EcdsaSessionKey;
+export type SessionKey = Ecdsa | Passkey;
+/**
+ * A session key of secp256k1 keys, checked by `ECDSASessionValidator`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Ecdsa = EcdsaSessionKey;
+/**
+ * A session key of passkeys, checked by `WebAuthnValidator` from the session's config.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = PasskeySessionKey;
 /**
  * Checks whether a value is a `SessionKey`.
  *
@@ -3880,8 +5041,9 @@ export type SessionKey = EcdsaSessionKey;
  */
 export declare const isSessionKey: (u: unknown) => u is SessionKey;
 /**
- * Returns what `ECDSASessionValidator` reads for the session key, `abi.encode(uint256 threshold, address[] signers)`:
- * a session's `sessionValidatorInitData` in Smart Sessions.
+ * Returns what the session key's validator reads, a session's `sessionValidatorInitData` in Smart Sessions:
+ * `ECDSASessionValidator`'s `abi.encode(uint256 threshold, address[] signers)`, or `WebAuthnValidator`'s
+ * `abi.encode(uint256 threshold, (bytes32 x, bytes32 y, bool requireUserVerification, bytes32 rpIdHash)[])`.
  *
  * **When to use**
  *
@@ -3914,7 +5076,7 @@ export declare const toValidatorData: (sessionKey: SessionKey) => `0x${string}`;
  * @category constructors
  * @since 2.0.0
  */
-export declare function ecdsa(address: string): SessionKey;
+export declare function ecdsa(address: string): Ecdsa;
 /**
  * Types of `SessionKey.ecdsa`.
  *
@@ -3964,7 +5126,7 @@ export declare namespace ecdsa {
  * @category constructors
  * @since 2.0.0
  */
-export declare function ecdsaThreshold(options: ecdsaThreshold.Options): SessionKey;
+export declare function ecdsaThreshold(options: ecdsaThreshold.Options): Ecdsa;
 /**
  * Types of `SessionKey.ecdsaThreshold`.
  *
@@ -3992,6 +5154,104 @@ export declare namespace ecdsaThreshold {
      */
     type ErrorType = SessionKeyError.SessionKeyError;
 }
+/**
+ * A session key of one passkey: its P-256 public key, such as a viem WebAuthn account's `publicKey`.
+ *
+ * **Details**
+ *
+ * The passkey must assert user verification unless `requireUserVerification` is `false`. `WebAuthnValidator`
+ * checks the passkey from the session's config, so nothing is installed on the account.
+ *
+ * **Gotchas**
+ *
+ * Throws `SessionKeyError` (`InvalidPublicKey`) for a key that is not an uncompressed P-256 public key.
+ *
+ * **Example** (A passkey as a session key)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk"
+ *
+ * const sessionKey = SessionKey.passkey({
+ *   publicKey:
+ *     "0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
+ * })
+ *
+ * sessionKey.type // => "passkey"
+ * sessionKey.passkeys[0]?.requireUserVerification // => true
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function passkey(passkey: passkey.Passkey): Passkey;
+/**
+ * Types of `SessionKey.passkey`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace passkey {
+    /**
+     * A passkey's public key, and whether its assertions must carry user verification (default `true`).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Passkey {
+        readonly publicKey: string;
+        readonly requireUserVerification?: boolean | undefined;
+    }
+    /**
+     * The errors `SessionKey.passkey` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = SessionKeyError.SessionKeyError;
+}
+/**
+ * A session key of several passkeys, `threshold` of which must sign.
+ *
+ * **Gotchas**
+ *
+ * Throws `SessionKeyError`: `NoSigners`, `InvalidPublicKey`, `DuplicateSigner`, or `InvalidThreshold` for a
+ * threshold outside 1 to the number of passkeys.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function passkeyThreshold(options: passkeyThreshold.Options): Passkey;
+/**
+ * Types of `SessionKey.passkeyThreshold`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace passkeyThreshold {
+    /**
+     * How many passkeys must sign, and the passkeys.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly threshold: number;
+        readonly passkeys: ReadonlyArray<passkey.Passkey>;
+    }
+    /**
+     * The errors `SessionKey.passkeyThreshold` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = SessionKeyError.SessionKeyError;
+}
 ```
 
 ## keys/SessionKeyError.d.ts
@@ -4011,6 +5271,21 @@ declare const InvalidAddress_base: Schema.Class<InvalidAddress, Schema.TaggedStr
  * @since 2.0.0
  */
 export declare class InvalidAddress extends InvalidAddress_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const InvalidPublicKey_base: Schema.Class<InvalidPublicKey, Schema.TaggedStruct<"InvalidPublicKey", {
+    readonly value: Schema.String;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A passkey's public key is not an uncompressed P-256 key: 64 bytes (x ‖ y), or 65 starting with `0x04`.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidPublicKey extends InvalidPublicKey_base {
     get message(): string;
     /** What to do about it. */
     get hint(): string;
@@ -4068,6 +5343,7 @@ export declare class InvalidThreshold extends InvalidThreshold_base {
  */
 export declare const SessionKeyErrorReason: Schema.Union<[
     typeof InvalidAddress,
+    typeof InvalidPublicKey,
     typeof NoSigners,
     typeof DuplicateSigner,
     typeof InvalidThreshold
@@ -4081,7 +5357,7 @@ export declare const SessionKeyErrorReason: Schema.Union<[
  */
 export type SessionKeyErrorReason = typeof SessionKeyErrorReason.Type;
 declare const SessionKeyError_base: Schema.Class<SessionKeyError, Schema.TaggedStruct<"SessionKeyError", {
-    readonly reason: Schema.Union<[typeof InvalidAddress, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]>;
+    readonly reason: Schema.Union<[typeof InvalidAddress, typeof InvalidPublicKey, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]>;
 }>, import("effect/Cause").YieldableError>;
 /**
  * An invalid session key description. `reason` says what is wrong.
@@ -4112,7 +5388,7 @@ declare const SessionKeyError_base: Schema.Class<SessionKeyError, Schema.TaggedS
 export declare class SessionKeyError extends SessionKeyError_base implements NameraError.Fields {
     readonly [TypeId]: "~@namera-ai/sdk/keys/SessionKeyError";
     readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
-    readonly cause: DuplicateSigner | InvalidAddress | InvalidThreshold | NoSigners;
+    readonly cause: DuplicateSigner | InvalidAddress | InvalidPublicKey | InvalidThreshold | NoSigners;
     get shortMessage(): string;
     get details(): string | undefined;
     get docsPath(): string | undefined;
