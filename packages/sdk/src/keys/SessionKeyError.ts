@@ -1,6 +1,6 @@
 /**
- * Failures describing a session key: an invalid signer address, no signers, a repeated signer, or a threshold outside
- * 1 to the number of signers.
+ * Failures describing a session key: an invalid signer address or passkey public key, no signers, a repeated signer,
+ * or a threshold outside 1 to the number of signers.
  *
  * @stability experimental
  * @since 2.0.0
@@ -34,6 +34,29 @@ export class InvalidAddress
   /** What to do about it. */
   get hint(): string {
     return "Pass the agent's address: 0x followed by 40 hex characters, with a correct checksum if mixed-case."
+  }
+}
+
+/**
+ * A passkey's public key is not an uncompressed P-256 key: 64 bytes (x ‖ y), or 65 starting with `0x04`.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class InvalidPublicKey
+  extends Schema.TaggedError<InvalidPublicKey>("@namera-ai/sdk/keys/SessionKeyError/InvalidPublicKey")(
+    "InvalidPublicKey",
+    { value: Schema.String }
+  )
+{
+  override get message(): string {
+    return `${this.value} is not a P-256 public key`
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Pass the passkey's `publicKey`, as a viem WebAuthn account holds it."
   }
 }
 
@@ -111,8 +134,8 @@ export class InvalidThreshold
  * @since 2.0.0
  */
 export const SessionKeyErrorReason: Schema.Union<
-  [typeof InvalidAddress, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]
-> = Schema.Union([InvalidAddress, NoSigners, DuplicateSigner, InvalidThreshold])
+  [typeof InvalidAddress, typeof InvalidPublicKey, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]
+> = Schema.Union([InvalidAddress, InvalidPublicKey, NoSigners, DuplicateSigner, InvalidThreshold])
 
 /**
  * The specific failure behind a `SessionKeyError`.

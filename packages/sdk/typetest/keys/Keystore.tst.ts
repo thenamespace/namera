@@ -28,14 +28,19 @@ describe("Keystore", () => {
 
 describe("SessionKey", () => {
   it("returns the session key in the Promise API and an Effect failing with SessionKeyError in the Effect API", () => {
-    expect<ReturnType<typeof SessionKey.ecdsa>>().type.toBe<SessionKey.SessionKey>()
+    expect<ReturnType<typeof SessionKey.ecdsa>>().type.toBe<SessionKey.Ecdsa>()
     expect<ReturnType<typeof EffectSessionKey.ecdsa>>().type.toBe<
-      Effect.Effect<SessionKey.SessionKey, SessionKeyError.SessionKeyError>
+      Effect.Effect<SessionKey.Ecdsa, SessionKeyError.SessionKeyError>
+    >()
+    expect<ReturnType<typeof SessionKey.passkey>>().type.toBe<SessionKey.Passkey>()
+    expect<ReturnType<typeof EffectSessionKey.passkeyThreshold>>().type.toBe<
+      Effect.Effect<SessionKey.Passkey, SessionKeyError.SessionKeyError>
     >()
   })
 
-  it("describes ECDSA signers", () => {
-    expect<SessionKey.SessionKey["type"]>().type.toBe<"ecdsa">()
-    expect<SessionKey.SessionKey["signers"]>().type.toBe<ReadonlyArray<`0x${string}`>>()
+  it("describes ECDSA signers and passkeys", () => {
+    expect<SessionKey.SessionKey["type"]>().type.toBe<"ecdsa" | "passkey">()
+    expect<SessionKey.Ecdsa["signers"]>().type.toBe<ReadonlyArray<`0x${string}`>>()
+    expect<SessionKey.Passkey["passkeys"][number]["publicKey"]>().type.toBe<`0x${string}`>()
   })
 })

@@ -20,6 +20,24 @@ import type * as SessionKeyError from "../../keys/SessionKeyError.ts"
 export type SessionKey = SessionKey_.SessionKey
 
 /**
+ * A session key of secp256k1 keys, checked by `ECDSASessionValidator`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Ecdsa = SessionKey_.Ecdsa
+
+/**
+ * A session key of passkeys, checked by `WebAuthnValidator` from the session's config.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = SessionKey_.Passkey
+
+/**
  * Checks whether a value is a `SessionKey`.
  *
  * @stability experimental
@@ -44,7 +62,9 @@ export const toValidatorData: (sessionKey: SessionKey) => `0x${string}` = Sessio
  * @category constructors
  * @since 2.0.0
  */
-export const ecdsa = (address: string): Effect.Effect<SessionKey, SessionKeyError.SessionKeyError> =>
+export const ecdsa = (
+  address: string
+): Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError> =>
   Effect.fromResult(internal.ecdsaThreshold({ threshold: 1, signers: [address] }))
 
 /**
@@ -56,4 +76,27 @@ export const ecdsa = (address: string): Effect.Effect<SessionKey, SessionKeyErro
  */
 export const ecdsaThreshold = (
   options: SessionKey_.ecdsaThreshold.Options
-): Effect.Effect<SessionKey, SessionKeyError.SessionKeyError> => Effect.fromResult(internal.ecdsaThreshold(options))
+): Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError> => Effect.fromResult(internal.ecdsaThreshold(options))
+
+/**
+ * A session key of one passkey: its P-256 public key.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const passkey = (
+  passkey: SessionKey_.passkey.Passkey
+): Effect.Effect<Passkey, SessionKeyError.SessionKeyError> =>
+  Effect.fromResult(internal.passkeyThreshold({ threshold: 1, passkeys: [passkey] }))
+
+/**
+ * A session key of several passkeys, `threshold` of which must sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const passkeyThreshold = (
+  options: SessionKey_.passkeyThreshold.Options
+): Effect.Effect<Passkey, SessionKeyError.SessionKeyError> => Effect.fromResult(internal.passkeyThreshold(options))
