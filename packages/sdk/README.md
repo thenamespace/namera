@@ -55,6 +55,48 @@ const authorization = await signAuthorization(client, account.authorization!)
 await bundler.sendUserOperation({ calls, authorization })
 ```
 
+### Passkey owners
+
+A passkey (viem's `WebAuthnAccount`) can own a Kernel account. It verifies through ZeroDev's WebAuthn validator, with
+the P-256 precompile where the chain has one:
+
+```ts
+import { toWebAuthnAccount } from "viem/account-abstraction"
+
+const owner = toWebAuthnAccount({ credential })
+const account = await KernelAccount.from({ client, owner })
+```
+
+Nexus, Safe7579 and EIP-7702 accounts take local keys and JSON-RPC wallets only.
+
+## Keys
+
+A `Keystore` holds an agent's keys by curve (secp256k1, ed25519, p256) and signs inside the store; private keys never
+leave it. `Keystore.toAccount` turns a secp256k1 key into a viem account.
+
+```ts
+import { Key, Keystore, SessionKey } from "@namera-ai/sdk"
+import { Keystore as NodeKeystore } from "@namera-ai/sdk/node"
+
+const store = NodeKeystore.osKeychain({ service: "my-agent" })
+const key = await Keystore.create(store, { curve: "secp256k1", label: "agent-1" })
+const agent = await Keystore.toAccount(store, { id: key.id }) // a viem account
+
+const sessionKey = SessionKey.ecdsa(Key.address(key, "eip155")) // what the owner puts in the session
+```
+
+| Store                                  | Import                   | Where                                                 |
+| -------------------------------------- | ------------------------ | ----------------------------------------------------- |
+| `Keystore.memory()`                    | `@namera-ai/sdk`         | anywhere; keys last as long as the process            |
+| `Keystore.encryptedJson({ password })` | `@namera-ai/sdk`         | anywhere; export with `Keystore.toJson`               |
+| `Keystore.from({ … })`                 | `@namera-ai/sdk`         | your own backend (a database, an HSM, a KMS)          |
+| `Keystore.file({ path, password })`    | `@namera-ai/sdk/node`    | Node, Bun, Deno: one encrypted `0600` file per key    |
+| `Keystore.osKeychain({ service })`     | `@namera-ai/sdk/node`    | the OS keychain, with the optional `@napi-rs/keyring` |
+| `Keystore.webCrypto()`                 | `@namera-ai/sdk/browser` | browsers: non-extractable P-256 keys in IndexedDB     |
+
+`SessionKey.ecdsaThreshold({ threshold, signers })` makes a k-of-n session key. Failures are `KeystoreError` and
+`SessionKeyError`.
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or

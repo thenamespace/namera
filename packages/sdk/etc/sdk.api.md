@@ -194,6 +194,8 @@ export {};
 ```ts
 import type { AccountError } from "./accounts/AccountError.ts";
 import type { ChainError } from "./ChainError.ts";
+import type { KeystoreError } from "./keys/KeystoreError.ts";
+import type { SessionKeyError } from "./keys/SessionKeyError.ts";
 /**
  * Marks every Namera error, whichever copy of the package created it.
  *
@@ -219,7 +221,7 @@ export declare const TypeId: "~@namera-ai/sdk/NameraError";
  * @category models
  * @since 2.0.0
  */
-export type NameraError = AccountError | ChainError;
+export type NameraError = AccountError | ChainError | KeystoreError | SessionKeyError;
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
  * the same way.
@@ -619,8 +621,10 @@ export declare function from(options: from.Options): Promise<from.ReturnType>;
  */
 export declare namespace from {
     /**
-     * The client (with a chain), the owner, and optionally the `version` (`"3.3"`), `index` (the counterfactual salt,
-     * `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+     * The client (with a chain), the owner (a local key, a JSON-RPC wallet, or a passkey: viem's WebAuthn account), and
+     * optionally the `version` (`"3.3"`), `index` (the counterfactual salt, `0n`), an existing `address`, and `sessions`
+     * (install Smart Sessions at deploy, `true`). A passkey owner verifies through ZeroDev's WebAuthn validator, with
+     * the P-256 precompile where the chain has one.
      *
      * @stability experimental
      * @category utility types
@@ -959,6 +963,7 @@ import type * as ChainError from "../ChainError.ts";
 import type { Call as Call_ } from "../internal/core/account/erc7579.ts";
 import { type RunOptions } from "../internal/promise.ts";
 import type { AccountClient, Hex, Owner as Owner_, ReadClient } from "../internal/viem/client.ts";
+import type { WebAuthnAccount } from "../internal/viem/signing.ts";
 import type { BundlerClient, SmartAccount as ViemSmartAccount, SmartAccountImplementation, TransactionReceipt } from "../internal/viem/smartAccount.ts";
 import type * as AccountError from "./AccountError.ts";
 import * as detect_ from "./internal/detect.ts";
@@ -996,6 +1001,15 @@ export type Implementation = SmartAccountImplementation;
  * @since 2.0.0
  */
 export type Owner = Owner_;
+/**
+ * A passkey owner: viem's WebAuthn account (`toWebAuthnAccount`), which signs with the device's authenticator.
+ * Supported on Kernel accounts, through ZeroDev's WebAuthn validator.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = WebAuthnAccount;
 /**
  * A call an account makes, as viem's bundler client takes them.
  *
@@ -1100,7 +1114,8 @@ export declare function fromAddress(options: fromAddress.Options): Promise<fromA
  */
 export declare namespace fromAddress {
     /**
-     * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several).
+     * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several). A passkey owner
+     * works for a Kernel account.
      *
      * @stability experimental
      * @category utility types
@@ -1109,7 +1124,7 @@ export declare namespace fromAddress {
     interface Options extends RunOptions {
         readonly client: AccountClient;
         readonly address: Hex;
-        readonly owner?: Owner | undefined;
+        readonly owner?: Owner | Passkey | undefined;
         readonly owners?: ReadonlyArray<Owner> | undefined;
     }
     /**
@@ -1338,6 +1353,82 @@ export * as Safe7579Account from "./Safe7579Account.ts";
  * @since 2.0.0
  */
 export * as SmartAccount from "./SmartAccount.ts";
+```
+
+## browser/Keystore.d.ts
+
+```ts
+/**
+ * Key stores for browsers: P-256 keys the browser holds, through WebCrypto and IndexedDB.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type { Store } from "../internal/keystore.ts";
+/**
+ * A store of non-extractable P-256 WebCrypto keys in IndexedDB: the browser holds them, and no script on the page,
+ * Namera included, can read a private key.
+ *
+ * **When to use**
+ *
+ * Use to keep P-256 session keys in a browser. They sign through a P-256 session validator, which Namera adds after
+ * launch; secp256k1 keys (EVM accounts) need another store, such as `Keystore.encryptedJson`.
+ *
+ * **Gotchas**
+ *
+ * - p256 only: browsers have no secp256k1, so creating one fails with `KeystoreError` (`CurveUnsupported`).
+ * - WebCrypto hashes what it signs with SHA-256, so the store's `prehash` is `"sha256"`: `Keystore.sign` returns a
+ *   signature of the SHA-256 of the digest.
+ *
+ * **Example** (A P-256 key in the browser)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ * import { Keystore as BrowserKeystore } from "@namera-ai/sdk/browser"
+ *
+ * const store = BrowserKeystore.webCrypto()
+ * const key = await Keystore.create(store, { curve: "p256", label: "session" })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const webCrypto: (options?: webCrypto.Options) => Store;
+/**
+ * Types of `Keystore.webCrypto`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace webCrypto {
+    /**
+     * The IndexedDB database the keys are kept in (`"namera-keys"` by default).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly database?: string | undefined;
+    }
+}
+```
+
+## browser/index.d.ts
+
+```ts
+/**
+ * Browser key stores: P-256 keys the browser holds. Use them with `Keystore` from `@namera-ai/sdk`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
 ```
 
 ## effect/ChainError.d.ts
@@ -1653,6 +1744,35 @@ export * as Safe7579Account from "./Safe7579Account.ts";
 export * as SmartAccount from "./SmartAccount.ts";
 ```
 
+## effect/browser/Keystore.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/browser`'s `Keystore`: the same store, used with the Effect API's `Keystore`
+ * functions.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../../browser/Keystore.ts";
+```
+
+## effect/browser/index.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/browser`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
+```
+
 ## effect/index.d.ts
 
 ```ts
@@ -1702,6 +1822,380 @@ export * as Safe7579Account from "./accounts/Safe7579Account.ts";
  * @since 2.0.0
  */
 export * as SmartAccount from "./accounts/SmartAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Key from "./keys/Key.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./keys/Keystore.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KeystoreError from "./keys/KeystoreError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKey from "./keys/SessionKey.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKeyError from "./keys/SessionKeyError.ts";
+```
+
+## effect/keys/Key.d.ts
+
+```ts
+/**
+ * The Effect form of `Key`: a key's addresses on each chain namespace, failing in the error channel.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import * as Effect from "effect/Effect";
+import * as Key_ from "../../keys/Key.ts";
+import type * as KeystoreError from "../../keys/KeystoreError.ts";
+/**
+ * A key's curve.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Curve = Key_.Curve;
+/**
+ * A chain namespace (CAIP-2) a key may have an address on.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Namespace = Key_.Namespace;
+/**
+ * A key a store holds. The private key never leaves the store.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Key = Key_.Key;
+/**
+ * Checks whether a value is a `Key`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isKey: (u: unknown) => u is Key;
+/**
+ * Returns the key's address on a chain namespace.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const address: (key: Key, namespace: Namespace) => Effect.Effect<`0x${string}`, KeystoreError.KeystoreError>;
+/**
+ * Returns the key's CAIP-10 account id on a chain, such as `eip155:8453:0x…`.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const caip10: (key: Key, chain: `${Namespace}:${string}`) => Effect.Effect<string, KeystoreError.KeystoreError>;
+```
+
+## effect/keys/Keystore.d.ts
+
+```ts
+/**
+ * The Effect form of `Keystore`: where an agent's keys live and sign, with failures in the error channel.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import * as Effect from "effect/Effect";
+import type { Curve } from "../../internal/core/key/key.ts";
+import type { LocalAccount } from "../../internal/viem/account.ts";
+import type { Key } from "../../keys/Key.ts";
+import type * as Keystore_ from "../../keys/Keystore.ts";
+import type * as KeystoreError from "../../keys/KeystoreError.ts";
+/**
+ * A key store.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Keystore = Keystore_.Keystore;
+/**
+ * How `encryptedJson` derives its encryption key from the password.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Kdf = Keystore_.Kdf;
+/**
+ * Checks whether a value is a `Keystore`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isKeystore: (u: unknown) => u is Keystore;
+/**
+ * A store that keeps keys in memory for the process's lifetime, on every curve.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const memory: () => Keystore;
+/**
+ * A store that encrypts each key with a password, on every curve, in any runtime. Fails with `KeystoreError`
+ * (`Unavailable`) when `data` is not an export of this store.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const encryptedJson: (options: Keystore_.encryptedJson.Options) => Effect.Effect<Keystore, KeystoreError.KeystoreError>;
+/**
+ * A store on your own backend, whose operations return Effects.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (backend: {
+    readonly curves: ReadonlyArray<Curve>;
+    readonly create: (options: {
+        readonly curve: Curve;
+        readonly label?: string | undefined;
+    }) => Effect.Effect<Key, KeystoreError.KeystoreError>;
+    readonly get: (id: string) => Effect.Effect<Key, KeystoreError.KeystoreError>;
+    readonly list: Effect.Effect<ReadonlyArray<Key>, KeystoreError.KeystoreError>;
+    readonly remove: (id: string) => Effect.Effect<void, KeystoreError.KeystoreError>;
+    readonly sign: (id: string, digest: `0x${string}`) => Effect.Effect<`0x${string}`, KeystoreError.KeystoreError>;
+}) => Keystore;
+/**
+ * Creates a key on a curve, and returns it.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const create: (store: Keystore, options: {
+    readonly curve: Curve;
+    readonly label?: string | undefined;
+}) => Effect.Effect<Key, KeystoreError.KeystoreError>;
+/**
+ * Returns a key by id.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const get: (store: Keystore, options: {
+    readonly id: string;
+}) => Effect.Effect<Key, KeystoreError.KeystoreError>;
+/**
+ * Returns every key in the store.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare const list: (store: Keystore) => Effect.Effect<ReadonlyArray<Key>, KeystoreError.KeystoreError>;
+/**
+ * Removes a key from the store.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const remove: (store: Keystore, options: {
+    readonly id: string;
+}) => Effect.Effect<void, KeystoreError.KeystoreError>;
+/**
+ * Signs a 32-byte digest with a key, as it is.
+ *
+ * @stability experimental
+ * @category signing
+ * @since 2.0.0
+ */
+export declare const sign: (store: Keystore, options: {
+    readonly id: string;
+    readonly digest: `0x${string}`;
+}) => Effect.Effect<`0x${string}`, KeystoreError.KeystoreError>;
+/**
+ * Returns a viem account that signs with a secp256k1 key in the store.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toAccount: (store: Keystore, options: {
+    readonly id: string;
+}) => Effect.Effect<LocalAccount, KeystoreError.KeystoreError>;
+/**
+ * Exports an `encryptedJson` store as JSON.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toJson: (store: Keystore) => Effect.Effect<string, KeystoreError.KeystoreError>;
+```
+
+## effect/keys/KeystoreError.d.ts
+
+```ts
+/**
+ * Failures storing, reading or signing with keys, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../../keys/KeystoreError.ts";
+```
+
+## effect/keys/SessionKey.d.ts
+
+```ts
+/**
+ * The Effect form of `SessionKey`: the agent's signer as a session sees it, failing in the error channel.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import * as Effect from "effect/Effect";
+import * as SessionKey_ from "../../keys/SessionKey.ts";
+import type * as SessionKeyError from "../../keys/SessionKeyError.ts";
+/**
+ * A session key: `threshold` of the `signers` sign the session's user operations.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SessionKey = SessionKey_.SessionKey;
+/**
+ * Checks whether a value is a `SessionKey`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSessionKey: (u: unknown) => u is SessionKey;
+/**
+ * Returns what `ECDSASessionValidator` reads for the session key: a session's `sessionValidatorInitData`.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toValidatorData: (sessionKey: SessionKey) => `0x${string}`;
+/**
+ * A session key of one secp256k1 key: the agent's address.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const ecdsa: (address: string) => Effect.Effect<SessionKey, SessionKeyError.SessionKeyError>;
+/**
+ * A session key of several secp256k1 keys, `threshold` of which must sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const ecdsaThreshold: (options: SessionKey_.ecdsaThreshold.Options) => Effect.Effect<SessionKey, SessionKeyError.SessionKeyError>;
+```
+
+## effect/keys/SessionKeyError.d.ts
+
+```ts
+/**
+ * Failures describing a session key, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../../keys/SessionKeyError.ts";
+```
+
+## effect/keys/index.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/keys`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Key from "./Key.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KeystoreError from "./KeystoreError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKey from "./SessionKey.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKeyError from "./SessionKeyError.ts";
+```
+
+## effect/node/Keystore.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/node`'s `Keystore`: the same stores, used with the Effect API's `Keystore`
+ * functions.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../../node/Keystore.ts";
+```
+
+## effect/node/index.d.ts
+
+```ts
+/**
+ * The Effect form of `@namera-ai/sdk/node`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
 ```
 
 ## index.d.ts
@@ -1753,4 +2247,1213 @@ export * as Safe7579Account from "./accounts/Safe7579Account.ts";
  * @since 2.0.0
  */
 export * as SmartAccount from "./accounts/SmartAccount.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Key from "./keys/Key.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./keys/Keystore.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KeystoreError from "./keys/KeystoreError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKey from "./keys/SessionKey.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKeyError from "./keys/SessionKeyError.ts";
+```
+
+## keys/Key.d.ts
+
+```ts
+import type { Curve as Curve_ } from "../internal/core/key/key.ts";
+import * as internal from "./internal/key.ts";
+import type * as KeystoreError from "./KeystoreError.ts";
+/**
+ * A key's curve: `secp256k1` (EVM, later Tron), `ed25519` (later Solana) or `p256` (passkeys and WebCrypto).
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Curve = Curve_;
+/**
+ * A chain namespace (CAIP-2) a key may have an address on.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Namespace = internal.Namespace;
+/**
+ * A key a store holds: its id and label, curve, public key (uncompressed for secp256k1 and p256, 32 bytes for
+ * ed25519) and creation time in seconds. The private key never leaves the store.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Key = internal.Key;
+/**
+ * Checks whether a value is a `Key`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isKey: (u: unknown) => u is Key;
+/**
+ * Returns the key's address on a chain namespace.
+ *
+ * **Gotchas**
+ *
+ * Throws `KeystoreError` (`CurveUnsupported`) for an `eip155` address of a key that is not secp256k1, and
+ * (`NamespaceUnsupported`) for `tron` and `solana` until they are supported.
+ *
+ * **Example** (The EVM address of a key)
+ *
+ * ```ts
+ * import { Key, Keystore } from "@namera-ai/sdk"
+ *
+ * const store = Keystore.memory()
+ * const key = await Keystore.create(store, { curve: "secp256k1" })
+ * const address = Key.address(key, "eip155")
+ * ```
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function address(key: Key, namespace: Namespace): address.ReturnType;
+/**
+ * Types of `Key.address`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace address {
+    /**
+     * The address: checksummed hex on `eip155`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ReturnType = `0x${string}`;
+    /**
+     * The errors `Key.address` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Returns the key's CAIP-10 account id on a chain, such as `eip155:8453:0x…`.
+ *
+ * **Gotchas**
+ *
+ * Throws the same `KeystoreError`s as `Key.address`.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function caip10(key: Key, chain: `${Namespace}:${string}`): string;
+/**
+ * Types of `Key.caip10`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace caip10 {
+    /**
+     * The errors `Key.caip10` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+```
+
+## keys/Keystore.d.ts
+
+```ts
+import type { Curve } from "../internal/core/key/key.ts";
+import * as internal from "../internal/keystore.ts";
+import { type RunOptions } from "../internal/promise.ts";
+import type { LocalAccount } from "../internal/viem/account.ts";
+import type { Key } from "./Key.ts";
+import type * as KeystoreError from "./KeystoreError.ts";
+/**
+ * A key store. Create one with `memory`, `encryptedJson` or `from`, or with the Node and browser entries.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Keystore = internal.Store;
+/**
+ * How `encryptedJson` derives its encryption key from the password: scrypt (the default, `n` 262144) or PBKDF2. Lower
+ * the cost where key derivation is slow, such as Cloudflare Workers' free plan.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Kdf = internal.Kdf;
+/**
+ * Checks whether a value is a `Keystore`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isKeystore: (u: unknown) => u is Keystore;
+/**
+ * A store that keeps keys in memory for the process's lifetime, on every curve.
+ *
+ * **When to use**
+ *
+ * Use when testing, or for short-lived agents: keys are lost when the process ends.
+ *
+ * **Example** (Creating a key and signing with it)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ *
+ * const store = Keystore.memory()
+ * const key = await Keystore.create(store, { curve: "secp256k1", label: "agent-1" })
+ * const signature = await Keystore.sign(store, { id: key.id, digest: `0x${"11".repeat(32)}` })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const memory: () => Keystore;
+/**
+ * A store that encrypts each key with a password (Web3 Secret Storage), on every curve, in any runtime. Export it
+ * with `toJson` and open the export again with `data`.
+ *
+ * **Gotchas**
+ *
+ * Throws `KeystoreError` (`Unavailable`) when `data` is not an export of this store. A wrong password shows when a
+ * key is used: signing fails with `Locked`.
+ *
+ * **Example** (Saving and reopening a store)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ *
+ * const store = Keystore.encryptedJson({ password: "correct horse battery staple" })
+ * await Keystore.create(store, { curve: "secp256k1" })
+ * const data = await Keystore.toJson(store)
+ *
+ * const reopened = Keystore.encryptedJson({ password: "correct horse battery staple", data })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function encryptedJson(options: encryptedJson.Options): Keystore;
+/**
+ * Types of `Keystore.encryptedJson`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace encryptedJson {
+    /**
+     * The password, an export to open (`data`), and the key derivation (`kdf`).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly password: string;
+        readonly data?: string | undefined;
+        readonly kdf?: Kdf | undefined;
+    }
+    /**
+     * The errors `Keystore.encryptedJson` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * A store on your own backend, such as a database, an HSM or a KMS. A failure that is not a `KeystoreError` becomes
+ * one (`Unavailable`), with your error as cause.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (backend: from.Backend) => Keystore;
+/**
+ * Types of `Keystore.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The backend: the curves it supports and its operations. `sign` signs a 32-byte digest as it is.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Backend {
+        readonly curves: ReadonlyArray<Curve>;
+        readonly create: (options: {
+            readonly curve: Curve;
+            readonly label?: string | undefined;
+        }) => Promise<Key>;
+        readonly get: (id: string) => Promise<Key>;
+        readonly list: () => Promise<ReadonlyArray<Key>>;
+        readonly remove: (id: string) => Promise<void>;
+        readonly sign: (id: string, digest: `0x${string}`) => Promise<`0x${string}`>;
+    }
+}
+/**
+ * Creates a key on a curve, and returns it.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function create(store: Keystore, options: create.Options): Promise<Key>;
+/**
+ * Types of `Keystore.create`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace create {
+    /**
+     * The curve, and a label to recognise the key by.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly curve: Curve;
+        readonly label?: string | undefined;
+    }
+    /**
+     * The errors `Keystore.create` can fail with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Returns a key by id.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function get(store: Keystore, options: get.Options): Promise<Key>;
+/**
+ * Types of `Keystore.get`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace get {
+    /**
+     * The key's id.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly id: string;
+    }
+    /**
+     * The errors `Keystore.get` can fail with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Returns every key in the store.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export declare function list(store: Keystore, options?: RunOptions): Promise<ReadonlyArray<Key>>;
+/**
+ * Types of `Keystore.list`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace list {
+    /**
+     * The errors `Keystore.list` can fail with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Removes a key from the store.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function remove(store: Keystore, options: remove.Options): Promise<void>;
+/**
+ * Types of `Keystore.remove`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace remove {
+    /**
+     * The key's id.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly id: string;
+    }
+    /**
+     * The errors `Keystore.remove` can fail with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Signs a 32-byte digest with a key, as it is: no hashing or prefixing. secp256k1 signatures are `r ‖ s ‖ v` (65
+ * bytes), p256 `r ‖ s` (64 bytes), ed25519 64 bytes. A store whose `prehash` is `"sha256"` (WebCrypto) signs the
+ * SHA-256 of the digest instead, which WebCrypto can't avoid.
+ *
+ * **When to use**
+ *
+ * Use to sign a digest you computed yourself. To sign messages, typed data or transactions, use `toAccount`.
+ *
+ * @stability experimental
+ * @category signing
+ * @since 2.0.0
+ */
+export declare function sign(store: Keystore, options: sign.Options): Promise<`0x${string}`>;
+/**
+ * Types of `Keystore.sign`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace sign {
+    /**
+     * The key's id and the 32-byte digest.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly id: string;
+        readonly digest: `0x${string}`;
+    }
+    /**
+     * The errors `Keystore.sign` can fail with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Returns a viem account that signs with a secp256k1 key in the store: messages, typed data, transactions and
+ * EIP-7702 authorizations. Use it as a session key, a smart account owner, or any viem signer.
+ *
+ * **Example** (A stored key as a viem account)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ *
+ * const store = Keystore.memory()
+ * const key = await Keystore.create(store, { curve: "secp256k1" })
+ * const account = await Keystore.toAccount(store, { id: key.id })
+ * const signature = await account.signMessage({ message: "hello" })
+ * ```
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare function toAccount(store: Keystore, options: toAccount.Options): Promise<LocalAccount>;
+/**
+ * Types of `Keystore.toAccount`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace toAccount {
+    /**
+     * The key's id.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly id: string;
+    }
+    /**
+     * The errors `Keystore.toAccount` can fail with: the key is missing, or not secp256k1.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+/**
+ * Exports an `encryptedJson` store: its keys, still encrypted, as JSON to save and reopen with `encryptedJson({ data
+ * })`.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare function toJson(store: Keystore, options?: RunOptions): Promise<string>;
+/**
+ * Types of `Keystore.toJson`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace toJson {
+    /**
+     * The errors `Keystore.toJson` can fail with: `Unavailable` for a store that is not `encryptedJson`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = KeystoreError.KeystoreError;
+}
+```
+
+## keys/KeystoreError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import * as NameraError from "../NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/keys/KeystoreError";
+declare const NotFound_base: Schema.Class<NotFound, Schema.TaggedStruct<"NotFound", {
+    readonly id: Schema.String;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * No key with this id is in the store.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class NotFound extends NotFound_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const Locked_base: Schema.Class<Locked, Schema.TaggedStruct<"Locked", {
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The store could not decrypt the key: the password is wrong, or the stored data is damaged.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class Locked extends Locked_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const CurveUnsupported_base: Schema.Class<CurveUnsupported, Schema.TaggedStruct<"CurveUnsupported", {
+    readonly curve: Schema.Literals<readonly ["secp256k1", "ed25519", "p256"]>;
+    readonly supported: Schema.optionalKey<Schema.$Array<Schema.Literals<readonly ["secp256k1", "ed25519", "p256"]>>>;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The store or the operation does not support the key's curve.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class CurveUnsupported extends CurveUnsupported_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const NamespaceUnsupported_base: Schema.Class<NamespaceUnsupported, Schema.TaggedStruct<"NamespaceUnsupported", {
+    readonly namespace: Schema.String;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * Addresses of this chain namespace are not supported yet.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class NamespaceUnsupported extends NamespaceUnsupported_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const Unavailable_base: Schema.Class<Unavailable, Schema.TaggedStruct<"Unavailable", {
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The store's backend can't be used here: a missing optional package, no OS keychain service, no IndexedDB, or a
+ * store that does not support the operation.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class Unavailable extends Unavailable_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const InvalidDigest_base: Schema.Class<InvalidDigest, Schema.TaggedStruct<"InvalidDigest", {
+    readonly digest: Schema.String;
+    readonly detail: Schema.optionalKey<Schema.String>;
+    readonly cause: Schema.optional<Schema.Defect>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A digest to sign that is not 32 bytes of hex.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidDigest extends InvalidDigest_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+/**
+ * Schema for the reason of a `KeystoreError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const KeystoreErrorReason: Schema.Union<[
+    typeof NotFound,
+    typeof Locked,
+    typeof CurveUnsupported,
+    typeof NamespaceUnsupported,
+    typeof InvalidDigest,
+    typeof Unavailable
+]>;
+/**
+ * The specific failure behind a `KeystoreError`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type KeystoreErrorReason = typeof KeystoreErrorReason.Type;
+/**
+ * Schema for the store a `KeystoreError` is about.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const StoreRef: Schema.Struct<{
+    readonly type: Schema.Literals<readonly ["memory", "encryptedJson", "file", "osKeychain", "webCrypto", "custom"]>;
+}>;
+declare const KeystoreError_base: Schema.Class<KeystoreError, Schema.TaggedStruct<"KeystoreError", {
+    readonly store: Schema.optionalKey<Schema.Struct<{
+        readonly type: Schema.Literals<readonly ["memory", "encryptedJson", "file", "osKeychain", "webCrypto", "custom"]>;
+    }>>;
+    readonly reason: Schema.Union<[typeof NotFound, typeof Locked, typeof CurveUnsupported, typeof NamespaceUnsupported, typeof InvalidDigest, typeof Unavailable]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A failure storing, reading or signing with a key. `store` says which store, when one was involved; `reason` what
+ * failed. Messages never include passwords or keys.
+ *
+ * **Example** (Narrowing on the reason)
+ *
+ * ```ts import.meta.vitest
+ * import { KeystoreError } from "@namera-ai/sdk"
+ *
+ * const error = KeystoreError.notFound({ store: { type: "memory" }, id: "agent-1" })
+ *
+ * error.reason._tag // => "NotFound"
+ * error.shortMessage // => "No key agent-1 in the store"
+ * error.metaMessages // => ["Store: memory", "Hint: List the store's keys with `Keystore.list`."]
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class KeystoreError extends KeystoreError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/keys/KeystoreError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    readonly cause: CurveUnsupported | InvalidDigest | Locked | NamespaceUnsupported | NotFound | Unavailable;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string>;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is a `KeystoreError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isKeystoreError: (u: unknown) => u is KeystoreError;
+/**
+ * The options every `KeystoreError` constructor accepts: the store, a detail for the message, and the underlying
+ * failure.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export interface Options {
+    readonly store?: typeof StoreRef.Type | undefined;
+    readonly detail?: string | undefined;
+    readonly cause?: unknown;
+}
+/**
+ * Creates a `KeystoreError` for a key id the store does not have.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const notFound: (options: Options & {
+    readonly id: string;
+}) => KeystoreError;
+/**
+ * Creates a `KeystoreError` for a key the store could not decrypt.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const locked: (options?: Options) => KeystoreError;
+/**
+ * Creates a `KeystoreError` for a curve the store or operation does not support. `supported` lists those it does.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const curveUnsupported: (options: Options & {
+    readonly curve: "secp256k1" | "ed25519" | "p256";
+    readonly supported?: ReadonlyArray<"secp256k1" | "ed25519" | "p256"> | undefined;
+}) => KeystoreError;
+/**
+ * Creates a `KeystoreError` for a chain namespace whose addresses are not supported yet.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const namespaceUnsupported: (options: Options & {
+    readonly namespace: string;
+}) => KeystoreError;
+/**
+ * Creates a `KeystoreError` for a digest that is not 32 bytes.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const invalidDigest: (options: Options & {
+    readonly digest: string;
+}) => KeystoreError;
+/**
+ * Creates a `KeystoreError` for a store that can't be used here.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const unavailable: (options?: Options) => KeystoreError;
+export {};
+```
+
+## keys/SessionKey.d.ts
+
+```ts
+import { type EcdsaSessionKey } from "../internal/core/sessionKey.ts";
+import type * as SessionKeyError from "./SessionKeyError.ts";
+/**
+ * A session key: `threshold` of the `signers` (checksummed, ascending) sign the session's user operations.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SessionKey = EcdsaSessionKey;
+/**
+ * Checks whether a value is a `SessionKey`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSessionKey: (u: unknown) => u is SessionKey;
+/**
+ * Returns what `ECDSASessionValidator` reads for the session key, `abi.encode(uint256 threshold, address[] signers)`:
+ * a session's `sessionValidatorInitData` in Smart Sessions.
+ *
+ * **When to use**
+ *
+ * Use when building Smart Sessions' session struct yourself; `Session` does it for you.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const toValidatorData: (sessionKey: SessionKey) => `0x${string}`;
+/**
+ * A session key of one secp256k1 key: the agent's address.
+ *
+ * **Gotchas**
+ *
+ * Throws `SessionKeyError` (`InvalidAddress`) for a value that is not an address.
+ *
+ * **Example** (The agent's key as a session key)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk"
+ *
+ * const sessionKey = SessionKey.ecdsa("0x70997970c51812dc3a010c7d01b50e0d17dc79c8")
+ *
+ * sessionKey.signers // => ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"]
+ * sessionKey.threshold // => 1
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function ecdsa(address: string): SessionKey;
+/**
+ * Types of `SessionKey.ecdsa`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace ecdsa {
+    /**
+     * The errors `SessionKey.ecdsa` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = SessionKeyError.SessionKeyError;
+}
+/**
+ * A session key of several secp256k1 keys, `threshold` of which must sign. The signers are sorted for you.
+ *
+ * **When to use**
+ *
+ * Use to split an agent's authority over several keys, such as two of three agent processes.
+ *
+ * **Gotchas**
+ *
+ * Throws `SessionKeyError`: `NoSigners`, `InvalidAddress`, `DuplicateSigner`, or `InvalidThreshold` for a threshold
+ * outside 1 to the number of signers.
+ *
+ * **Example** (Two of three agent keys)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk"
+ *
+ * const sessionKey = SessionKey.ecdsaThreshold({
+ *   threshold: 2,
+ *   signers: [
+ *     "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+ *     "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+ *     "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+ *   ]
+ * })
+ *
+ * sessionKey.signers[0] // => "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function ecdsaThreshold(options: ecdsaThreshold.Options): SessionKey;
+/**
+ * Types of `SessionKey.ecdsaThreshold`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace ecdsaThreshold {
+    /**
+     * How many signers must sign, and the signers' addresses.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly threshold: number;
+        readonly signers: ReadonlyArray<string>;
+    }
+    /**
+     * The errors `SessionKey.ecdsaThreshold` can throw.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = SessionKeyError.SessionKeyError;
+}
+```
+
+## keys/SessionKeyError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import * as NameraError from "../NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/keys/SessionKeyError";
+declare const InvalidAddress_base: Schema.Class<InvalidAddress, Schema.TaggedStruct<"InvalidAddress", {
+    readonly value: Schema.String;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A signer is not a 20-byte hex address, or its checksum is wrong.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidAddress extends InvalidAddress_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const NoSigners_base: Schema.Class<NoSigners, Schema.TaggedStruct<"NoSigners", {}>, import("effect/Cause").YieldableError>;
+/**
+ * The session key has no signers.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class NoSigners extends NoSigners_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const DuplicateSigner_base: Schema.Class<DuplicateSigner, Schema.TaggedStruct<"DuplicateSigner", {
+    readonly signer: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A signer appears more than once.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class DuplicateSigner extends DuplicateSigner_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const InvalidThreshold_base: Schema.Class<InvalidThreshold, Schema.TaggedStruct<"InvalidThreshold", {
+    readonly threshold: Schema.Number;
+    readonly signers: Schema.Int;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The threshold is not a whole number from 1 to the number of signers.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidThreshold extends InvalidThreshold_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+/**
+ * Schema for the reason of a `SessionKeyError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const SessionKeyErrorReason: Schema.Union<[
+    typeof InvalidAddress,
+    typeof NoSigners,
+    typeof DuplicateSigner,
+    typeof InvalidThreshold
+]>;
+/**
+ * The specific failure behind a `SessionKeyError`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SessionKeyErrorReason = typeof SessionKeyErrorReason.Type;
+declare const SessionKeyError_base: Schema.Class<SessionKeyError, Schema.TaggedStruct<"SessionKeyError", {
+    readonly reason: Schema.Union<[typeof InvalidAddress, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * An invalid session key description. `reason` says what is wrong.
+ *
+ * **Example** (Narrowing on the reason)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey, SessionKeyError } from "@namera-ai/sdk"
+ *
+ * const caught = (): unknown => {
+ *   try {
+ *     return SessionKey.ecdsaThreshold({ threshold: 3, signers: ["0x0000000000000000000000000000000000000001"] })
+ *   } catch (error) {
+ *     return error
+ *   }
+ * }
+ * const error = caught() as SessionKeyError.SessionKeyError
+ *
+ * SessionKeyError.isSessionKeyError(error) // => true
+ * error.reason._tag // => "InvalidThreshold"
+ * error.metaMessages // => ["Hint: Use a whole threshold from 1 to 1."]
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionKeyError extends SessionKeyError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/keys/SessionKeyError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    readonly cause: DuplicateSigner | InvalidAddress | InvalidThreshold | NoSigners;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string>;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is a `SessionKeyError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isSessionKeyError: (u: unknown) => u is SessionKeyError;
+export {};
+```
+
+## keys/index.d.ts
+
+```ts
+/**
+ * Keys for agents: stores that hold and sign with them, keys as viem accounts, and the session keys sessions run on.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Key from "./Key.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as KeystoreError from "./KeystoreError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKey from "./SessionKey.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKeyError from "./SessionKeyError.ts";
+```
+
+## node/Keystore.d.ts
+
+```ts
+/**
+ * Key stores for Node (and Bun and Deno for files): an encrypted file per key, and the OS keychain.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import type { Kdf, Store } from "../internal/keystore.ts";
+/**
+ * A store that keeps each key in an encrypted JSON file (Web3 Secret Storage) in a folder, on every curve. The folder
+ * is created `0700` and each file `0600`.
+ *
+ * **When to use**
+ *
+ * Use with servers and agents that keep keys on disk across restarts.
+ *
+ * **Example** (Keys in a folder)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ * import { Keystore as NodeKeystore } from "@namera-ai/sdk/node"
+ *
+ * const store = NodeKeystore.file({ path: "./keys", password: process.env.KEYS_PASSWORD! })
+ * const key = await Keystore.create(store, { curve: "secp256k1", label: "agent-1" })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const file: (options: file.Options) => Store;
+/**
+ * Types of `Keystore.file`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace file {
+    /**
+     * The folder, the password, and the key derivation (`kdf`, scrypt by default).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly path: string;
+        readonly password: string;
+        readonly kdf?: Kdf | undefined;
+    }
+}
+/**
+ * A store that keeps keys in the OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service), on
+ * every curve, through the optional `@napi-rs/keyring` package.
+ *
+ * **Gotchas**
+ *
+ * Install `@napi-rs/keyring` to use it. Without it, or without a keychain service (a Linux server without Secret
+ * Service), every operation fails with `KeystoreError` (`Unavailable`).
+ *
+ * **Example** (Keys in the OS keychain)
+ *
+ * ```ts
+ * import { Keystore } from "@namera-ai/sdk"
+ * import { Keystore as NodeKeystore } from "@namera-ai/sdk/node"
+ *
+ * const store = NodeKeystore.osKeychain({ service: "my-agent" })
+ * const key = await Keystore.create(store, { curve: "secp256k1" })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const osKeychain: (options: osKeychain.Options) => Store;
+/**
+ * Types of `Keystore.osKeychain`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace osKeychain {
+    /**
+     * The keychain service the keys are stored under, such as your app's name.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly service: string;
+    }
+}
+```
+
+## node/index.d.ts
+
+```ts
+/**
+ * Node's key stores: an encrypted file per key, and the OS keychain. Use them with `Keystore` from
+ * `@namera-ai/sdk`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Keystore from "./Keystore.ts";
 ```

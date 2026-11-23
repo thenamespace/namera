@@ -57,7 +57,9 @@ Dependencies point inward: apps depend on packages, packages never depend on app
 Also: `pnpm coverage` (v8 coverage), `pnpm --filter @namera-ai/sdk mutation` (StrykerJS on `src/internal/core`, 100%
 break threshold), and the SDK's runtime smoke test as the CI `Runtime` jobs run it:
 `NAMERA_RUNTIME_TESTS=1 pnpm vitest run --project @namera-ai/sdk/runtime` (with Bun or Deno) or
-`--project @namera-ai/sdk/browser` (Chromium).
+`--project @namera-ai/sdk/browser` (Chromium, which also runs the WebCrypto key store's tests in `test/browser/`). The OS
+keychain store's suite runs only with `NAMERA_KEYCHAIN_TESTS=1` (the CI `Keychain (macOS)` job), since it writes to
+the machine's real keychain.
 
 ## Validation
 
