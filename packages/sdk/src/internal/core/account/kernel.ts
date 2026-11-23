@@ -13,6 +13,7 @@ export interface Contracts {
   readonly factoryStaker: Hex.Hex
   readonly implementation: Hex.Hex
   readonly ecdsaValidator: Hex.Hex
+  readonly webAuthnValidator: Hex.Hex
 }
 
 const initialize = AbiFunction.from(
@@ -41,19 +42,20 @@ export const validatorInstallData = (validatorData: Hex.Hex): Hex.Hex =>
   )
 
 /**
- * Kernel's `initialize` call: the ECDSA validator as root for `owner`, and SmartSession installed when given.
+ * Kernel's `initialize` call: the owner's validator as root (the ECDSA validator with the owner's address, or the
+ * WebAuthn validator with the passkey's data), and SmartSession installed when given.
  *
  * @internal
  */
 export const initData = (options: {
-  readonly contracts: Contracts
-  readonly owner: Hex.Hex
+  readonly rootValidator: Hex.Hex
+  readonly validatorData: Hex.Hex
   readonly smartSession?: Hex.Hex | undefined
 }): Hex.Hex =>
   AbiFunction.encodeData(initialize, [
-    validatorId(options.contracts.ecdsaValidator),
+    validatorId(options.rootValidator),
     "0x0000000000000000000000000000000000000000",
-    options.owner,
+    options.validatorData,
     "0x",
     options.smartSession === undefined
       ? []
@@ -94,7 +96,7 @@ export const deployment = (options: {
  *
  * @internal
  */
-export const ownerNonceKey = (contracts: Contracts): bigint => Hex.toBigInt(contracts.ecdsaValidator) << BigInt("16")
+export const ownerNonceKey = (rootValidator: Hex.Hex): bigint => Hex.toBigInt(rootValidator) << BigInt("16")
 
 /**
  * The digest the owner signs for an ERC-1271 check of `hash`: the hash wrapped as EIP-712 `Kernel(bytes32 hash)` in
@@ -116,10 +118,10 @@ export const wrappedHash = (options: {
   })
 
 /**
- * Prefixes an owner signature with the validator it is for: the ECDSA validator, or `0x00` (the account itself)
- * when the account is an EIP-7702 delegated EOA.
+ * Prefixes an owner signature with the validator it is for: the root validator, or `0x00` (the account itself) when
+ * the account is an EIP-7702 delegated EOA.
  *
  * @internal
  */
-export const ownerSignature = (contracts: Contracts, signature: Hex.Hex, eip7702: boolean): Hex.Hex =>
-  eip7702 ? Hex.concat("0x00", signature) : Hex.concat(validatorId(contracts.ecdsaValidator), signature)
+export const ownerSignature = (rootValidator: Hex.Hex, signature: Hex.Hex, eip7702: boolean): Hex.Hex =>
+  eip7702 ? Hex.concat("0x00", signature) : Hex.concat(validatorId(rootValidator), signature)

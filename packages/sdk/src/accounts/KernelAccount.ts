@@ -62,8 +62,10 @@ export function from(options: from.Options): Promise<from.ReturnType> {
  */
 export declare namespace from {
   /**
-   * The client (with a chain), the owner, and optionally the `version` (`"3.3"`), `index` (the counterfactual salt,
-   * `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
+   * The client (with a chain), the owner (a local key, a JSON-RPC wallet, or a passkey: viem's WebAuthn account), and
+   * optionally the `version` (`"3.3"`), `index` (the counterfactual salt, `0n`), an existing `address`, and `sessions`
+   * (install Smart Sessions at deploy, `true`). A passkey owner verifies through ZeroDev's WebAuthn validator, with
+   * the P-256 precompile where the chain has one.
    *
    * @stability experimental
    * @category utility types

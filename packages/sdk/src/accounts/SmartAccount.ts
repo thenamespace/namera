@@ -21,6 +21,7 @@ import type * as ChainError from "../ChainError.ts"
 import type { Call as Call_ } from "../internal/core/account/erc7579.ts"
 import { run, type RunOptions } from "../internal/promise.ts"
 import type { AccountClient, Hex, Owner as Owner_, ReadClient } from "../internal/viem/client.ts"
+import type { WebAuthnAccount } from "../internal/viem/signing.ts"
 import type {
   BundlerClient,
   SmartAccount as ViemSmartAccount,
@@ -69,6 +70,16 @@ export type Implementation = SmartAccountImplementation
  * @since 2.0.0
  */
 export type Owner = Owner_
+
+/**
+ * A passkey owner: viem's WebAuthn account (`toWebAuthnAccount`), which signs with the device's authenticator.
+ * Supported on Kernel accounts, through ZeroDev's WebAuthn validator.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = WebAuthnAccount
 
 /**
  * A call an account makes, as viem's bundler client takes them.
@@ -185,7 +196,8 @@ export function fromAddress(options: fromAddress.Options): Promise<fromAddress.R
  */
 export declare namespace fromAddress {
   /**
-   * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several).
+   * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several). A passkey owner
+   * works for a Kernel account.
    *
    * @stability experimental
    * @category utility types
@@ -194,7 +206,7 @@ export declare namespace fromAddress {
   export interface Options extends RunOptions {
     readonly client: AccountClient
     readonly address: Hex
-    readonly owner?: Owner | undefined
+    readonly owner?: Owner | Passkey | undefined
     readonly owners?: ReadonlyArray<Owner> | undefined
   }
   /**

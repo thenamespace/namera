@@ -18,7 +18,8 @@ export const entryPoint = {
 
 /**
  * ZeroDev's Kernel smart account: its factory, the staked FactoryStaker that accounts deploy
- * through, the implementation and the ECDSA validator, the owner's root validator.
+ * through, the implementation, and the owner's root validator: the ECDSA validator for a key, the
+ * WebAuthn validator for a passkey.
  *
  * **Details**
  *
@@ -33,7 +34,8 @@ export const kernel = {
     "factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
     "factoryStaker": "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
     "implementation": "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28",
-    "ecdsaValidator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57"
+    "ecdsaValidator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57",
+    "webAuthnValidator": "0x7ab16Ff354AcB328452F1D445b3Ddee9a91e9e69"
   }
 } as const
 

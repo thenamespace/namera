@@ -8,6 +8,7 @@ import { call as viemCall, getCode, getStorageAt } from "viem/actions"
 
 import type * as ChainError from "../../ChainError.ts"
 import { type Context, fromUnknown } from "../chainError.ts"
+import { isPrecompileAnswer, precompileProbe } from "../core/account/webauthn.ts"
 
 /**
  * An account owner: a local key or a JSON-RPC wallet account (EIP-1193), which signs through the client.
@@ -102,4 +103,23 @@ export const call = (
   Effect.tryPromise({
     try: async () => (await viemCall(client, { to: request.to, data: request.data })).data,
     catch: (cause) => fromUnknown(cause, context(client, "eth_call"))
+  })
+
+// One probe per client: whether its chain has the P-256 precompile does not change.
+const precompiles = new WeakMap<ReadClient, Promise<boolean>>()
+
+/**
+ * Whether the client's chain has the P-256 precompile at `0x100` (RIP-7212 / EIP-7951), probed once per client with
+ * RIP-7212's test vector.
+ *
+ * @internal
+ */
+export const hasP256Precompile = (client: ReadClient): Effect.Effect<boolean, ChainError.ChainError> =>
+  Effect.suspend(() => {
+    const cached = precompiles.get(client)
+    if (cached !== undefined) return Effect.promise(() => cached)
+    return call(client, precompileProbe).pipe(
+      Effect.map(isPrecompileAnswer),
+      Effect.tap((answer) => Effect.sync(() => precompiles.set(client, Promise.resolve(answer))))
+    )
   })

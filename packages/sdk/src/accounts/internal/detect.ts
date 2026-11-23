@@ -13,6 +13,7 @@ import {
   type ReadClient,
   storageAt
 } from "../../internal/viem/client.ts"
+import { isWebAuthnAccount, type WebAuthnAccount } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
 import * as Kernel from "./kernel.ts"
 import * as Nexus from "./nexus.ts"
@@ -102,7 +103,7 @@ export const detect = Effect.fnUntraced(function*(
 export interface FromAddressOptions {
   readonly client: AccountClient
   readonly address: Hex
-  readonly owner?: Owner | undefined
+  readonly owner?: Owner | WebAuthnAccount | undefined
   readonly owners?: ReadonlyArray<Owner> | undefined
 }
 
@@ -123,16 +124,53 @@ export const fromAddress = Effect.fnUntraced(function*(
       return yield* AccountError.notSupported({ account: ref, detail: "no account is deployed at the address" })
     case "unsupported":
       return yield* AccountError.notSupported({ account: ref, implementation: detected.implementation })
+    case "kernel":
+    case "nexus":
     case "safe7579":
-      return yield* Safe7579.from({ client: options.client, owners, address: options.address, sessions: false })
+      break
+  }
+
+  // Passkey owners are supported on Kernel only, through ZeroDev's WebAuthn validator.
+  const ecdsaOwners = owners.filter((owner): owner is Owner => !isWebAuthnAccount(owner))
+  if (ecdsaOwners.length !== owners.length) {
+    if (detected.type !== "kernel" || detected.eip7702) {
+      return yield* AccountError.invalidOptions({
+        account: { type: detected.type, address: options.address },
+        detail: "passkey owners are supported on Kernel accounts that are not EIP-7702"
+      })
+    }
+    return yield* Kernel.from({
+      client: options.client,
+      owner,
+      version: detected.version as never,
+      address: options.address,
+      sessions: false
+    })
+  }
+
+  switch (detected.type) {
+    case "safe7579":
+      return yield* Safe7579.from({
+        client: options.client,
+        owners: ecdsaOwners,
+        address: options.address,
+        sessions: false
+      })
     case "kernel":
     case "nexus": {
       const build = detected.type === "kernel" ? Kernel : Nexus
       const version = detected.version as never
+      const [ecdsaOwner] = ecdsaOwners as [Owner]
       if (!detected.eip7702) {
-        return yield* build.from({ client: options.client, owner, version, address: options.address, sessions: false })
+        return yield* build.from({
+          client: options.client,
+          owner: ecdsaOwner,
+          version,
+          address: options.address,
+          sessions: false
+        })
       }
-      if (owner.type !== "local" || !sameAddress(owner.address, options.address)) {
+      if (ecdsaOwner.type !== "local" || !sameAddress(ecdsaOwner.address, options.address)) {
         return yield* AccountError.invalidOptions({
           account: { type: detected.type, address: options.address },
           detail: "an EIP-7702 account's owner is its own local key"
@@ -140,7 +178,7 @@ export const fromAddress = Effect.fnUntraced(function*(
       }
       return yield* build.fromEip7702({
         client: options.client,
-        owner: owner as PrivateKeyAccount,
+        owner: ecdsaOwner as PrivateKeyAccount,
         version,
         sessions: false
       })
