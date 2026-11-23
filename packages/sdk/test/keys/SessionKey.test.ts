@@ -41,6 +41,15 @@ describe("SessionKey", () => {
     })
   }
 
+  it("sorts the signers whatever order they come in", () => {
+    const sorted = vectors[1]!.signers
+    const orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+    for (const order of orders) {
+      const signers = order.map((index) => sorted[index]!)
+      assert.deepStrictEqual(SessionKey.ecdsaThreshold({ threshold: 2, signers }).signers, sorted)
+    }
+  })
+
   it("makes one key a one-of-one session key", () => {
     assert.deepStrictEqual(SessionKey.ecdsa(c!.toLowerCase()), { type: "ecdsa", threshold: 1, signers: [c] })
     assert.isTrue(SessionKey.isSessionKey(SessionKey.ecdsa(c!)))

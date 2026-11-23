@@ -19,6 +19,7 @@ export const validatorData = (options: { readonly publicKey: Hex.Hex; readonly i
   const { x, y } = PublicKey.fromHex(options.publicKey)
   return AbiParameters.encode(validatorDataParameters, [
     { x: Hex.toBigInt(x), y: Hex.toBigInt(y) },
+    // Stryker disable next-line StringLiteral: hex is ox's default output
     Hash.keccak256(Base64.toBytes(options.id), { as: "Hex" })
   ])
 }

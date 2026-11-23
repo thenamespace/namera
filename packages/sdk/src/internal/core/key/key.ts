@@ -24,6 +24,9 @@ export const curves: ReadonlyArray<Curve> = ["secp256k1", "ed25519", "p256"]
  * @internal
  */
 export const generate = (curve: Curve): Hex.Hex => {
+  // Every case returns 32 uniformly random bytes, a valid key on all three curves, so falling through to another case
+  // is not observable.
+  // Stryker disable ConditionalExpression: see above
   switch (curve) {
     case "secp256k1":
       return Secp256k1.randomPrivateKey()
@@ -32,6 +35,7 @@ export const generate = (curve: Curve): Hex.Hex => {
     case "ed25519":
       return Ed25519.randomPrivateKey()
   }
+  // Stryker restore ConditionalExpression
 }
 
 /**

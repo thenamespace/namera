@@ -58,6 +58,13 @@ describe("a passkey owner", { concurrent: false }, () => {
     const [factory, referenceFactory] = [await ours.getFactoryArgs(), await reference.getFactoryArgs()]
     assert.strictEqual(factory.factory, referenceFactory.factory)
     assert.isTrue(sameBytes(factory.factoryData, referenceFactory.factoryData))
+    // The same stub signature, but for the precompile flag: permissionless always verifies in Solidity.
+    const stub = parseAbi(["function f(bytes, string, uint256, uint256, uint256, bool)"])[0].inputs
+    const [ourStub, referenceStub] = [
+      decodeAbiParameters(stub, await ours.getStubSignature()),
+      decodeAbiParameters(stub, await reference.getStubSignature())
+    ]
+    assert.deepStrictEqual(ourStub.slice(0, 5), referenceStub.slice(0, 5))
     // The root validator is ZeroDev's WebAuthn validator.
     const [, initData] = decodeFunctionData({
       abi: parseAbi(["function deployWithFactory(address factory, bytes createData, bytes32 salt)"]),

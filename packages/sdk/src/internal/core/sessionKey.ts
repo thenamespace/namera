@@ -45,6 +45,7 @@ export const ecdsa = (
     return { problem: { _tag: "InvalidThreshold", threshold, signers: checksummed.length } }
   }
 
+  // Stryker disable next-line EqualityOperator: signers are distinct, so `<` and `<=` order them the same
   const sorted = [...checksummed].sort((a, b) => (BigInt(a) < BigInt(b) ? -1 : 1))
   return { sessionKey: { type: "ecdsa", threshold, signers: sorted } }
 }
