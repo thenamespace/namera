@@ -89,6 +89,11 @@ export const installSessionsCalls: (account: SmartAccount) => ReadonlyArray<Smar
 /**
  * Sends a user operation that installs Smart Sessions on the bundler client's account, and returns its hash.
  *
+ * **Gotchas**
+ *
+ * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
+ * with `AccountError` (`OperationNotSupported`) before anything is sent.
+ *
  * @stability experimental
  * @category mutations
  * @since 2.0.0

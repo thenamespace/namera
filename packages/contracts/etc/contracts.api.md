@@ -989,6 +989,464 @@ export declare const v1: Contract.Version<typeof abiV1>;
 export {};
 ```
 
+## SessionHook.d.ts
+
+```ts
+import type * as Contract from "./Contract.ts";
+declare const abiV1: readonly [{
+    readonly type: "function";
+    readonly name: "MAX_EXECUTION_POLICIES";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "TAG";
+    readonly inputs: readonly [];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "checkUserOpPolicy";
+    readonly inputs: readonly [{
+        readonly name: "id";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "userOp";
+        readonly type: "tuple";
+        readonly internalType: "struct ERC4337.PackedUserOperation";
+        readonly components: readonly [{
+            readonly name: "sender";
+            readonly type: "address";
+            readonly internalType: "address";
+        }, {
+            readonly name: "nonce";
+            readonly type: "uint256";
+            readonly internalType: "uint256";
+        }, {
+            readonly name: "initCode";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "callData";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "accountGasLimits";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "preVerificationGas";
+            readonly type: "uint256";
+            readonly internalType: "uint256";
+        }, {
+            readonly name: "gasFees";
+            readonly type: "bytes32";
+            readonly internalType: "bytes32";
+        }, {
+            readonly name: "paymasterAndData";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }, {
+            readonly name: "signature";
+            readonly type: "bytes";
+            readonly internalType: "bytes";
+        }];
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "configId";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "getExecutionPolicies";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "policies";
+        readonly type: "address[]";
+        readonly internalType: "address[]";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "getInstall";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "flavour";
+        readonly type: "uint8";
+        readonly internalType: "enum SessionHook.Flavour";
+    }, {
+        readonly name: "smartSession";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "initializeWithMultiplexer";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "sessionConfigId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "initData";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "isInitialized";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "view";
+}, {
+    readonly type: "function";
+    readonly name: "isModuleType";
+    readonly inputs: readonly [{
+        readonly name: "moduleTypeId";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "onInstall";
+    readonly inputs: readonly [{
+        readonly name: "data";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "onUninstall";
+    readonly inputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "policyConfigId";
+    readonly inputs: readonly [{
+        readonly name: "sessionConfigId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "postCheck";
+    readonly inputs: readonly [{
+        readonly name: "context";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "preCheck";
+    readonly inputs: readonly [{
+        readonly name: "";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "msgData";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "context";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly stateMutability: "nonpayable";
+}, {
+    readonly type: "function";
+    readonly name: "supportsInterface";
+    readonly inputs: readonly [{
+        readonly name: "interfaceId";
+        readonly type: "bytes4";
+        readonly internalType: "bytes4";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bool";
+        readonly internalType: "bool";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "tag";
+    readonly inputs: readonly [{
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+    readonly stateMutability: "pure";
+}, {
+    readonly type: "event";
+    readonly name: "ExecutionPoliciesSet";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }, {
+        readonly name: "configId";
+        readonly type: "bytes32";
+        readonly indexed: true;
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "policies";
+        readonly type: "address[]";
+        readonly indexed: false;
+        readonly internalType: "address[]";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "event";
+    readonly name: "PolicySet";
+    readonly inputs: readonly [{
+        readonly name: "id";
+        readonly type: "bytes32";
+        readonly indexed: false;
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly indexed: false;
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: false;
+        readonly internalType: "address";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "event";
+    readonly name: "SessionHookInstalled";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }, {
+        readonly name: "flavour";
+        readonly type: "uint8";
+        readonly indexed: false;
+        readonly internalType: "enum SessionHook.Flavour";
+    }, {
+        readonly name: "smartSession";
+        readonly type: "address";
+        readonly indexed: false;
+        readonly internalType: "address";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "event";
+    readonly name: "SessionHookUninstalled";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly indexed: true;
+        readonly internalType: "address";
+    }];
+    readonly anonymous: false;
+}, {
+    readonly type: "error";
+    readonly name: "ExecutionPolicyViolation";
+    readonly inputs: readonly [{
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "policy";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "reason";
+        readonly type: "bytes";
+        readonly internalType: "bytes";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "InvalidContext";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "InvalidInstall";
+    readonly inputs: readonly [];
+}, {
+    readonly type: "error";
+    readonly name: "NotExecutionPolicy";
+    readonly inputs: readonly [{
+        readonly name: "policy";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "OnlySmartSession";
+    readonly inputs: readonly [{
+        readonly name: "caller";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "PermissionNotEnabled";
+    readonly inputs: readonly [{
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "PolicyNotInitialized";
+    readonly inputs: readonly [{
+        readonly name: "id";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "ReentrantCheck";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "SessionHookNotInstalled";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "TooManyExecutionPolicies";
+    readonly inputs: readonly [{
+        readonly name: "count";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}];
+/**
+ * Version 1 of Namera's `SessionHook` contract (`namera.session-hook.v1`): its ABI, CREATE2 address
+ * and the record of every chain it is deployed on.
+ *
+ * **Details**
+ *
+ * The address commits to the salt `keccak256(label)` and to the initcode built with solc
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
+ * every chain.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 0.1.0
+ */
+export declare const v1: Contract.Version<typeof abiV1>;
+export {};
+```
+
 ## SignaturePolicy.d.ts
 
 ```ts
@@ -2573,6 +3031,14 @@ declare const abiV1: readonly [{
     }];
 }, {
     readonly type: "error";
+    readonly name: "InvalidSessionHookTag";
+    readonly inputs: readonly [{
+        readonly name: "permissionId";
+        readonly type: "bytes32";
+        readonly internalType: "PermissionId";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "InvalidSessionValidity";
     readonly inputs: readonly [{
         readonly name: "validAfter";
@@ -3526,6 +3992,14 @@ export * as ECDSASessionValidator from "./ECDSASessionValidator.ts";
  * @since 0.1.0
  */
 export * as WebAuthnValidator from "./WebAuthnValidator.ts";
+/**
+ * Namera's `SessionHook` contract: ABI, CREATE2 address and deployment records, one export per
+ * version (`SessionHook.v1`, …).
+ *
+ * @stability experimental
+ * @since 0.1.0
+ */
+export * as SessionHook from "./SessionHook.ts";
 /**
  * Namera's `AllowPolicy` contract: ABI, CREATE2 address and deployment records, one export per
  * version (`AllowPolicy.v1`, …).

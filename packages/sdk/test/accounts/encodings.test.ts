@@ -117,4 +117,10 @@ describe("account encodings", () => {
     const answer = AbiFunction.encodeResult(validationConfig, [7, owners[1]])
     assert.strictEqual(SessionHook.decodeValidationHook(answer), owners[1])
   })
+
+  it("reads the global hook of a Nexus or Safe7579 account", () => {
+    assert.strictEqual(SessionHook.encodeGetActiveHook, "0x0a664dba")
+    const answer = AbiParameters.encode(AbiParameters.from(["address"]), [owners[1]])
+    assert.strictEqual(SessionHook.decodeActiveHook(answer), owners[1])
+  })
 })

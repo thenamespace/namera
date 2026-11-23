@@ -41,3 +41,15 @@ export const encodeValidationConfig = (validator: Hex.Hex): Hex.Hex =>
 
 /** The hook bound to a Kernel validator, from `validationConfig`. @internal */
 export const decodeValidationHook = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(validationConfig, result)[1]
+
+const getActiveHook = AbiFunction.from("function getActiveHook() view returns (address)")
+
+/**
+ * Nexus' and Safe7579's `getActiveHook` view: the account's one global hook, or the zero address.
+ *
+ * @internal
+ */
+export const encodeGetActiveHook: Hex.Hex = AbiFunction.encodeData(getActiveHook)
+
+/** The hook `getActiveHook` returned. @internal */
+export const decodeActiveHook = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(getActiveHook, result)

@@ -208,7 +208,8 @@ export class ThresholdUnreachable
 }
 
 /**
- * The account's owners can't make this change, such as adding a second key to a single-key Kernel validator.
+ * The account can't make this change, such as adding a second key to a single-key Kernel validator, or installing
+ * sessions on a Nexus or Safe7579 account that already has a global hook.
  *
  * @stability experimental
  * @category errors
@@ -226,7 +227,9 @@ export class OperationNotSupported
 
   /** What to do about it. */
   get hint(): string {
-    return "A single-key validator (Kernel, Nexus) only rotates its key with `SmartAccount.replaceOwner`; owners of another kind need `SmartAccount.addOwnerValidator`."
+    return this.operation === "install sessions"
+      ? "Nexus and Safe7579 run one global hook: uninstall the account's hook first, or use an account without one."
+      : "A single-key validator (Kernel, Nexus) only rotates its key with `SmartAccount.replaceOwner`; owners of another kind need `SmartAccount.addOwnerValidator`."
   }
 }
 

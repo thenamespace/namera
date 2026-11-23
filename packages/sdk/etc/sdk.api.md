@@ -478,7 +478,8 @@ declare const OperationNotSupported_base: Schema.Class<OperationNotSupported, Sc
     readonly cause: Schema.optional<Schema.Defect>;
 }>, import("effect/Cause").YieldableError>;
 /**
- * The account's owners can't make this change, such as adding a second key to a single-key Kernel validator.
+ * The account can't make this change, such as adding a second key to a single-key Kernel validator, or installing
+ * sessions on a Nexus or Safe7579 account that already has a global hook.
  *
  * @stability experimental
  * @category errors
@@ -704,7 +705,8 @@ export type KernelAccount = SmartAccount.SmartAccount<"kernel">;
  *
  * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
  * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator for
- * `execute`, so an agent's first operation needs no separate owner transaction.
+ * `execute`, with SessionHook bound to it to run sessions' execution policies, so an agent's first operation needs no
+ * separate owner transaction. Kernel then runs every Smart Sessions operation through `executeUserOp`.
  *
  * **Example** (Sending a user operation from a Kernel account)
  *
@@ -847,8 +849,9 @@ export type NexusAccount = SmartAccount.SmartAccount<"nexus">;
  * **Details**
  *
  * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
- * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator,
- * so an agent's first operation needs no separate owner transaction.
+ * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator and
+ * SessionHook as the account's hook, so an agent's first operation needs no separate owner transaction. An account
+ * can have one hook only.
  *
  * **Example** (Sending a user operation from a Nexus account)
  *
@@ -991,7 +994,7 @@ export type Safe7579Account = SmartAccount.SmartAccount<"safe7579">;
  *
  * The Safe proxy factory deploys the account in the first user operation, adding the Safe7579 adapter through its
  * launchpad with no registry attesters. With `sessions` (the default) that deployment also installs Smart Sessions
- * as a validator. User operations and ERC-1271 signatures carry `threshold` owner signatures.
+ * as a validator and SessionHook as the account's hook. User operations and ERC-1271 signatures carry `threshold` owner signatures.
  *
  * **Gotchas**
  *
@@ -1363,7 +1366,8 @@ export declare namespace detect {
     type ErrorType = ChainError.ChainError;
 }
 /**
- * Returns the calls that install Smart Sessions on an account, to batch with other calls in one user operation.
+ * Returns the calls that install Smart Sessions on an account, with SessionHook to run sessions' execution policies,
+ * to batch with other calls in one user operation.
  *
  * @stability experimental
  * @category constructors
@@ -1372,6 +1376,11 @@ export declare namespace detect {
 export declare const installSessionsCalls: (account: SmartAccount) => ReadonlyArray<Call>;
 /**
  * Sends a user operation that installs Smart Sessions on the bundler client's account, and returns its hash.
+ *
+ * **Gotchas**
+ *
+ * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
+ * with `AccountError` (`OperationNotSupported`) before anything is sent.
  *
  * **Example** (Installing Smart Sessions on an existing account)
  *
@@ -1441,7 +1450,9 @@ export declare namespace installSessionsSync {
     type ErrorType = AccountError.AccountError | ChainError.ChainError;
 }
 /**
- * Checks whether Smart Sessions is installed on the account at an address. An undeployed account has none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
+ * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
+ * none.
  *
  * @stability experimental
  * @category getters
@@ -2289,7 +2300,8 @@ export declare const detect: (client: ReadClient, options: {
     readonly address: Hex;
 }) => Effect.Effect<SmartAccount_.detect.ReturnType, ChainError.ChainError>;
 /**
- * Returns the calls that install Smart Sessions on an account, to batch with other calls in one user operation.
+ * Returns the calls that install Smart Sessions on an account, with SessionHook to run sessions' execution policies,
+ * to batch with other calls in one user operation.
  *
  * @stability experimental
  * @category constructors
@@ -2298,6 +2310,11 @@ export declare const detect: (client: ReadClient, options: {
 export declare const installSessionsCalls: (account: SmartAccount) => ReadonlyArray<SmartAccount_.Call>;
 /**
  * Sends a user operation that installs Smart Sessions on the bundler client's account, and returns its hash.
+ *
+ * **Gotchas**
+ *
+ * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
+ * with `AccountError` (`OperationNotSupported`) before anything is sent.
  *
  * @stability experimental
  * @category mutations
@@ -2314,7 +2331,9 @@ export declare const installSessions: (client: BundlerClient) => Effect.Effect<H
  */
 export declare const installSessionsSync: (client: BundlerClient) => Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError>;
 /**
- * Checks whether Smart Sessions is installed on the account at an address. An undeployed account has none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
+ * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
+ * none.
  *
  * @stability experimental
  * @category getters

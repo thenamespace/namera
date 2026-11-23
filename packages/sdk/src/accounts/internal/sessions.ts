@@ -78,6 +78,18 @@ export const installSessions = Effect.fnUntraced(function*(
   client: BundlerClient
 ): Effect.fn.Return<Hex, AccountError.AccountError | ChainError.ChainError> {
   const account = yield* bundlerAccount(client)
+  // Nexus and Safe7579 hold one global hook: installing SessionHook next to another one reverts on chain.
+  if (account.namera.type !== "kernel") {
+    const active = yield* read(account.client as ReadClient, account.address, SessionHook.encodeGetActiveHook)
+    const hook = active === undefined ? undefined : SessionHook.decodeActiveHook(active)
+    if (hook !== undefined && BigInt(hook) !== BigInt(0) && BigInt(hook) !== BigInt(sessionModules.sessionHook)) {
+      return yield* AccountError.operationNotSupported({
+        account: { type: account.namera.type, address: account.address },
+        operation: "install sessions",
+        detail: `it already has the hook ${hook}, and SessionHook must be its only hook`
+      })
+    }
+  }
   return yield* sendUserOperation(client, { account, calls: installSessionsCalls(account) })
 })
 

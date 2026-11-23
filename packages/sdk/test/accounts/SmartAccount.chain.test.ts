@@ -1,10 +1,10 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
-import { External, SmartSession } from "@namera-ai/contracts"
+import { External, SessionHook, SmartSession } from "@namera-ai/contracts"
 import { AccountError, KernelAccount, NexusAccount, Safe7579Account, SmartAccount } from "@namera-ai/sdk"
 import { toKernelSmartAccount } from "permissionless/accounts"
-import { createWalletClient, encodeFunctionData, http, parseAbi, zeroAddress } from "viem"
+import { createWalletClient, encodeAbiParameters, encodeFunctionData, http, parseAbi, zeroAddress } from "viem"
 import { entryPoint07Address } from "viem/account-abstraction"
-import { privateKeyToAccount } from "viem/accounts"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 
@@ -121,5 +121,27 @@ describe("SmartAccount", { concurrent: false }, () => {
     assert.strictEqual(install?.to, account.address)
     assert.include(install?.data ?? "", SmartSession.v1.address.slice(2).toLowerCase())
     assert.strictEqual(rest.length, 0)
+  })
+
+  it("refuses to install sessions next to another global hook on Nexus, before sending", async () => {
+    const account = await NexusAccount.from({ client, owner: newOwner(), sessions: false })
+    await devnet.fund(account.address)
+    await devnet.deploy(account)
+    // Another hook: SessionHook's own bytecode at a different address.
+    const otherHook = privateKeyToAccount(generatePrivateKey()).address
+    const code = await client.getCode({ address: SessionHook.v1.address })
+    await client.request({ method: "anvil_setCode" as never, params: [otherHook, code] as never })
+    const installHook = encodeFunctionData({
+      abi: parseAbi(["function installModule(uint256 moduleTypeId, address module, bytes initData)"]),
+      args: [4n, otherHook, encodeAbiParameters([{ type: "uint8" }, { type: "address" }], [2, SmartSession.v1.address])]
+    })
+    assert.isTrue((await devnet.sendUserOperation(account, [{ to: account.address, data: installHook }])).success)
+
+    const error = await rejection(SmartAccount.installSessions(devnet.bundlerClient(account)))
+    assert.isTrue(AccountError.isAccountError(error))
+    const reason = (error as AccountError.AccountError).reason
+    assert.strictEqual(reason._tag, "OperationNotSupported")
+    assert.include(reason.message, otherHook)
+    assert.isFalse(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
   })
 })
