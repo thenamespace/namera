@@ -17,6 +17,18 @@ export * as ChainError from "./ChainError.ts"
  * @stability experimental
  * @since 2.0.0
  */
+export * as Grant from "./Grant.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as GrantError from "./GrantError.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as NameraError from "./NameraError.ts"
 
 /**

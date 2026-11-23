@@ -189,11 +189,438 @@ export declare const timeout: (options?: Options) => ChainError;
 export {};
 ```
 
+## Grant.d.ts
+
+```ts
+import type * as AccountError from "./accounts/AccountError.ts";
+import type * as SmartAccount from "./accounts/SmartAccount.ts";
+import type * as ChainError from "./ChainError.ts";
+import type * as GrantError from "./GrantError.ts";
+import * as core from "./internal/core/grant/grant.ts";
+import * as internal from "./internal/grant/grant.ts";
+import { type RunOptions } from "./internal/promise.ts";
+import type { ReadClient } from "./internal/viem/client.ts";
+import type { BundlerClient, TransactionReceipt } from "./internal/viem/smartAccount.ts";
+import type * as Session from "./Session.ts";
+import type * as SessionError from "./SessionError.ts";
+/**
+ * A grant, version 1.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Grant = core.Grant;
+/**
+ * One chain of a grant.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type GrantChain = core.GrantChain;
+/**
+ * A grant before the owner signs it, with the typed data to sign.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Prepared = internal.Prepared;
+/**
+ * Checks whether a value is a `Grant` (by shape; `Grant.parse` checks it fully).
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isGrant: (u: unknown) => u is Grant;
+/**
+ * Creates a grant: validates the session (refusing it on problems), reads the enable nonce on each chain, and has the
+ * owner sign through the account.
+ *
+ * **Details**
+ *
+ * Pass one account, or one per chain the grant should cover (the same account on each chain's client). The owner
+ * signs once when that signature verifies on every chain (Safe7579 with key owners), and once per chain otherwise
+ * (Kernel and Nexus bind the chain in their ERC-1271 domain).
+ *
+ * **Gotchas**
+ *
+ * Rejects with `SessionError` (`InvalidSession`) for a session `Session.validate` refuses, `AccountError` for an
+ * account Namera didn't build or an owner that didn't sign, and `ChainError` when a chain can't be read.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function create(options: create.Options): Promise<Grant>;
+/**
+ * Types of `Grant.create`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace create {
+    /**
+     * The account (one per chain to cover) and the session.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly account: SmartAccount.SmartAccount | ReadonlyArray<SmartAccount.SmartAccount>;
+        readonly session: Session.Session;
+    }
+    /**
+     * The errors `Grant.create` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | SessionError.SessionError;
+}
+/**
+ * Prepares a grant for an external signer: everything but the signatures, and `typedData`, the EIP-712 data the
+ * account signs (`account.signTypedData(prepared.typedData)`), the same for every chain.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function prepare(options: create.Options): Promise<Prepared>;
+/**
+ * Types of `Grant.prepare`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace prepare {
+    /**
+     * The errors `Grant.prepare` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | SessionError.SessionError;
+}
+/**
+ * Builds a grant from a prepared one and the owner's signature: `signature` for every chain, or `signatures` by
+ * chain id where each chain needs its own.
+ *
+ * **Gotchas**
+ *
+ * Throws `GrantError` (`InvalidSignature`) for a chain without a signature. The signature itself is checked by
+ * `Grant.verify` and on chain.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function from(options: from.Options): Grant;
+/**
+ * Types of `Grant.from`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace from {
+    /**
+     * The prepared grant and the owner's signatures.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Options = Prepared & {
+        readonly signature?: `0x${string}` | undefined;
+        readonly signatures?: {
+            readonly [chainId: number]: `0x${string}`;
+        } | undefined;
+    };
+}
+/**
+ * Enables the session on chain now, from the owner's account (the bundler client's), returning the user operation's
+ * hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function install(client: BundlerClient, options: install.Options): Promise<`0x${string}`>;
+/**
+ * Types of `Grant.install`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace install {
+    /**
+     * The session to enable.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly session: Session.Session;
+    }
+    /**
+     * The errors `Grant.install` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | SessionError.SessionError;
+}
+/**
+ * Enables the session on chain now and waits for it, returning the receipt and the grant of the installed session
+ * (its chains carry no signature: the session is already enabled there).
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function installSync(client: BundlerClient, options: install.Options): Promise<{
+    readonly grant: Grant;
+    readonly receipt: TransactionReceipt;
+}>;
+/**
+ * Checks a grant on the client's chain: every chain's session digest against the grant's session, and the owner's
+ * signature through the account (ERC-1271, or ERC-6492 while undeployed); for an installed grant, that the session
+ * is enabled.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError`: `ChainNotCovered`, `DigestMismatch` (the grant was altered) or `InvalidSignature`.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function verify(client: ReadClient, grant: Grant, options?: RunOptions): Promise<void>;
+/**
+ * Types of `Grant.verify`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace verify {
+    /**
+     * The errors `Grant.verify` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = ChainError.ChainError | GrantError.GrantError;
+}
+/**
+ * Writes a grant as canonical JSON (bigints as `{ "$n": "…" }`), or as a compact `nmr1_` token for links and QR
+ * codes.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const serialize: (grant: Grant, options?: {
+    readonly format?: "json" | "token" | undefined;
+}) => string;
+/**
+ * Reads a grant from its JSON or token (or the value), checking its shape, version and session.
+ *
+ * **Gotchas**
+ *
+ * Throws `GrantError`: `VersionUnsupported` for another version, `Malformed` for anything else wrong, including
+ * unknown fields and a session that doesn't match the grant's id.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function parse(input: unknown): Grant;
+/**
+ * Describes a grant in plain language: the account, the chains, and the session's lines, recomputed from its
+ * policies (the stored `summary` is never trusted).
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const describe: (grant: Grant, options?: Session.describe.Options) => ReadonlyArray<string>;
+```
+
+## GrantError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import * as NameraError from "./NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/GrantError";
+declare const Malformed_base: Schema.Class<Malformed, Schema.TaggedStruct<"Malformed", {
+    readonly detail: Schema.String;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The input is not a grant: not JSON or a token, missing fields, or a session that doesn't match its id.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class Malformed extends Malformed_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const VersionUnsupported_base: Schema.Class<VersionUnsupported, Schema.TaggedStruct<"VersionUnsupported", {
+    readonly version: Schema.Unknown;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The grant is of a version this SDK doesn't read.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class VersionUnsupported extends VersionUnsupported_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const InvalidSignature_base: Schema.Class<InvalidSignature, Schema.TaggedStruct<"InvalidSignature", {
+    readonly chain: Schema.TemplateLiteral<readonly ["eip155:", Schema.Number]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The owner's signature on a chain doesn't verify for the account (ERC-1271, or ERC-6492 while undeployed).
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class InvalidSignature extends InvalidSignature_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const ChainNotCovered_base: Schema.Class<ChainNotCovered, Schema.TaggedStruct<"ChainNotCovered", {
+    readonly chain: Schema.TemplateLiteral<readonly ["eip155:", Schema.Number]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The grant doesn't cover the chain.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class ChainNotCovered extends ChainNotCovered_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const DigestMismatch_base: Schema.Class<DigestMismatch, Schema.TaggedStruct<"DigestMismatch", {
+    readonly chain: Schema.TemplateLiteral<readonly ["eip155:", Schema.Number]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A chain's session digest differs from what the grant's session compiles to: the grant was altered.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class DigestMismatch extends DigestMismatch_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+/**
+ * Schema for the reason of a `GrantError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const GrantErrorReason: Schema.Union<[
+    typeof Malformed,
+    typeof VersionUnsupported,
+    typeof InvalidSignature,
+    typeof ChainNotCovered,
+    typeof DigestMismatch
+]>;
+/**
+ * The specific failure behind a `GrantError`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type GrantErrorReason = typeof GrantErrorReason.Type;
+declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"GrantError", {
+    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A grant that can't be read or doesn't check out. `reason` says what is wrong.
+ *
+ * **Example** (Parsing something that isn't a grant)
+ *
+ * ```ts import.meta.vitest
+ * import { Grant, GrantError } from "@namera-ai/sdk"
+ *
+ * const caught = (): unknown => {
+ *   try {
+ *     return Grant.parse("not a grant")
+ *   } catch (error) {
+ *     return error
+ *   }
+ * }
+ * const error = caught() as GrantError.GrantError
+ *
+ * GrantError.isGrantError(error) // => true
+ * error.reason._tag // => "Malformed"
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class GrantError extends GrantError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/GrantError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | VersionUnsupported;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string>;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is a `GrantError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isGrantError: (u: unknown) => u is GrantError;
+/**
+ * A `GrantError` for a reason.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const make: (reason: GrantErrorReason) => GrantError;
+export {};
+```
+
 ## NameraError.d.ts
 
 ```ts
 import type { AccountError } from "./accounts/AccountError.ts";
 import type { ChainError } from "./ChainError.ts";
+import type { GrantError } from "./GrantError.ts";
 import type { KeystoreError } from "./keys/KeystoreError.ts";
 import type { SessionKeyError } from "./keys/SessionKeyError.ts";
 import type { SessionError } from "./SessionError.ts";
@@ -222,7 +649,7 @@ export declare const TypeId: "~@namera-ai/sdk/NameraError";
  * @category models
  * @since 2.0.0
  */
-export type NameraError = AccountError | ChainError | KeystoreError | SessionError | SessionKeyError;
+export type NameraError = AccountError | ChainError | GrantError | KeystoreError | SessionError | SessionKeyError;
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
  * the same way.
@@ -3060,6 +3487,146 @@ export * as Keystore from "./Keystore.ts";
 export * from "../ChainError.ts";
 ```
 
+## effect/Grant.d.ts
+
+```ts
+/**
+ * The Effect form of `Grant`: grants, with failures in the error channel.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import * as Effect from "effect/Effect";
+import type * as AccountError from "../accounts/AccountError.ts";
+import type * as ChainError from "../ChainError.ts";
+import * as Grant_ from "../Grant.ts";
+import type * as GrantError from "../GrantError.ts";
+import type { ReadClient } from "../internal/viem/client.ts";
+import type { BundlerClient, TransactionReceipt } from "../internal/viem/smartAccount.ts";
+import type * as SessionError from "../SessionError.ts";
+/**
+ * A grant, version 1.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Grant = Grant_.Grant;
+/**
+ * One chain of a grant.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type GrantChain = Grant_.GrantChain;
+/**
+ * A grant before the owner signs it.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Prepared = Grant_.Prepared;
+/**
+ * Checks whether a value is a `Grant`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isGrant: (u: unknown) => u is Grant;
+/**
+ * Creates a grant: validates the session, reads the enable nonces, and has the owner sign through the account.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const create: (options: Omit<Grant_.create.Options, "signal">) => Effect.Effect<Grant, AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | SessionError.SessionError>;
+/**
+ * Prepares a grant for an external signer.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const prepare: (options: Omit<Grant_.create.Options, "signal">) => Effect.Effect<Prepared, AccountError.AccountError | ChainError.ChainError | SessionError.SessionError>;
+/**
+ * Builds a grant from a prepared one and the owner's signatures.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const from: (options: Grant_.from.Options) => Effect.Effect<Grant, GrantError.GrantError>;
+/**
+ * Enables the session on chain now, from the owner's account.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const install: (client: BundlerClient, options: Omit<Grant_.install.Options, "signal">) => Effect.Effect<`0x${string}`, AccountError.AccountError | ChainError.ChainError | SessionError.SessionError>;
+/**
+ * Enables the session on chain now and waits for it.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const installSync: (client: BundlerClient, options: Omit<Grant_.install.Options, "signal">) => Effect.Effect<{
+    readonly grant: Grant;
+    readonly receipt: TransactionReceipt;
+}, AccountError.AccountError | ChainError.ChainError | SessionError.SessionError>;
+/**
+ * Checks a grant's digests and the owner's signature on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const verify: (client: ReadClient, grant: Grant) => Effect.Effect<void, ChainError.ChainError | GrantError.GrantError>;
+/**
+ * Writes a grant as canonical JSON or as an `nmr1_` token.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export declare const serialize: (grant: Grant, options?: {
+    readonly format?: "json" | "token" | undefined;
+}) => string;
+/**
+ * Reads a grant from its JSON or token, failing with `GrantError`.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const parse: (input: unknown) => Effect.Effect<Grant, GrantError.GrantError>;
+/**
+ * Describes a grant in plain language.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const describe: (grant: Grant, options?: Parameters<typeof Grant_.describe>[1]) => ReadonlyArray<string>;
+```
+
+## effect/GrantError.d.ts
+
+```ts
+/**
+ * Failures reading or checking a grant, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../GrantError.ts";
+```
+
 ## effect/NameraError.d.ts
 
 ```ts
@@ -3706,6 +4273,16 @@ export * as ChainError from "./ChainError.ts";
  * @stability experimental
  * @since 2.0.0
  */
+export * as Grant from "./Grant.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as GrantError from "./GrantError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as NameraError from "./NameraError.ts";
 /**
  * @stability experimental
@@ -4169,6 +4746,16 @@ export * as Keystore from "./Keystore.ts";
  * @since 2.0.0
  */
 export * as ChainError from "./ChainError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as Grant from "./Grant.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as GrantError from "./GrantError.ts";
 /**
  * @stability experimental
  * @since 2.0.0

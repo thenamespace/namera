@@ -170,6 +170,41 @@ part; `Session.validate` reports errors such as `NO_CALL_POLICY`, `OVERLAPPING_C
 warnings such as `UNRESTRICTED_AMOUNT_ARG`, `ANY_CALL` and `LONG_SESSION`. `Policy.signMessage` is refused: Smart
 Sessions can't check personal messages.
 
+## Grants
+
+A grant lets one agent use one session on one account, on one or more chains. The owner signs; nothing is sent, and
+the agent's first operation on each chain enables the session there (Smart Sessions' ENABLE mode).
+
+```ts
+import { Grant } from "@namera-ai/sdk"
+
+const grant = await Grant.create({ account, session }) // the owner signs through the account
+const token = Grant.serialize(grant, { format: "token" }) // "nmr1_…", for a link or a QR code
+await Grant.verify(client, Grant.parse(token)) // digests and the owner's signature
+
+// The same account on two chains: one grant, signed once where the account allows it
+const multichain = await Grant.create({ account: [accountOnBase, accountOnOptimism], session })
+
+// For an external signer: prepare, sign the typed data, assemble
+const prepared = await Grant.prepare({ account, session })
+const signed = Grant.from({ ...prepared, signature: await account.signTypedData(prepared.typedData) })
+
+// Or enable it on chain now, from the owner
+const { grant: installed } = await Grant.installSync(ownerBundler, { session })
+```
+
+| Account               | Signatures for a multichain grant                           |
+| --------------------- | ----------------------------------------------------------- |
+| Safe7579, key owners  | one: OwnableValidator checks the raw digest                 |
+| Kernel, Nexus         | one per chain: their ERC-1271 domain binds the chain        |
+| Any account, passkeys | one per chain: WebAuthnValidator's ERC-1271 binds the chain |
+
+A grant is plain data and never holds a secret: the session (with the agent's public keys), the account's type and
+deployment, and per chain the contracts, the enable nonce, the session digest and the owner's signature. JSON is
+canonical; the token is the JSON compressed with FastLZ in base64url. `Grant.parse` refuses unknown fields and
+versions (`GrantError`: `Malformed`, `VersionUnsupported`); `Grant.verify` refuses altered sessions (`DigestMismatch`)
+and signatures the account doesn't accept (`InvalidSignature`, checked with ERC-6492 while undeployed).
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or

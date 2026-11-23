@@ -1,0 +1,155 @@
+import { afterEach, assert, beforeEach, describe, inject, it } from "@effect/vitest"
+import { SmartSession } from "@namera-ai/contracts"
+import { Devnet } from "@namera-ai/devnet"
+import { Grant, GrantError, Policy, Session, SessionKey } from "@namera-ai/sdk"
+import { encodeFunctionData, parseAbi } from "viem"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
+
+import { client, devnet, newOwner } from "./accounts/accounts.test-utils.ts"
+import { newPasskey } from "./accounts/passkey.test-utils.ts"
+import { type AccountType, deployedAccount, sessionAgent } from "./session.test-utils.ts"
+
+// Grants on the devnet (safe-mode alto): the owner signs once and sends nothing, and the agent's first operation
+// enables the session (Smart Sessions' ENABLE mode) and uses it. The devnet's second chain (31338) covers multichain
+// grants.
+
+const second = await Devnet.from(inject(Devnet.contextKey), { chain: "second" })
+
+const sessionKey = privateKeyToAccount(generatePrivateKey())
+const token = privateKeyToAccount(generatePrivateKey()).address
+const recipient = privateKeyToAccount(generatePrivateKey()).address
+const transfer = {
+  to: token,
+  data: encodeFunctionData({
+    abi: parseAbi(["function transfer(address to, uint256 amount)"]),
+    functionName: "transfer",
+    args: [recipient, 10n]
+  })
+}
+
+const newSession = () =>
+  Session.from({
+    signer: SessionKey.ecdsa(sessionKey.address),
+    validUntil: Session.now() + 30 * 86400,
+    policies: [Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } })]
+  })
+
+const isEnabled = (on: Devnet.Devnet, session: Session.Session, account: `0x${string}`) =>
+  on.client.readContract({
+    ...SmartSession.v1,
+    functionName: "isPermissionEnabled",
+    args: [Session.getPermissionId(session), account]
+  })
+
+const reasonOf = (promise: Promise<unknown>) =>
+  promise.then(
+    () => assert.fail("expected a GrantError"),
+    (error: unknown) => {
+      assert.isTrue(GrantError.isGrantError(error))
+      return (error as GrantError.GrantError).reason._tag
+    }
+  )
+
+describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account", { concurrent: false }, (
+  type: AccountType
+) => {
+  devnet.isolate({ beforeEach, afterEach })
+
+  it("is enabled by the agent's first operation, with no owner transaction", async () => {
+    const account = await deployedAccount(type)
+    const session = newSession()
+    const grant = await Grant.create({ account, session })
+
+    // The digest the owner signed is the contract's.
+    const onChain = await client.readContract({
+      ...SmartSession.v1,
+      functionName: "getSessionDigest",
+      args: [Session.getPermissionId(session), account.address, Session.toSmartSession(session), 1]
+    })
+    assert.strictEqual(grant.chains[0]!.sessionDigest, onChain)
+    await Grant.verify(client, grant)
+
+    const agent = await sessionAgent({ type, address: account.address, session, sessionKey, enable: grant })
+    assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
+    assert.isTrue(await isEnabled(devnet, session, account.address))
+  })
+
+  it("verifies, and refuses an altered session or another owner's signature", async () => {
+    const account = await deployedAccount(type)
+    const other = await deployedAccount(type)
+    const session = newSession()
+    const grant = await Grant.create({ account, session })
+    const stranger = await Grant.create({ account: other, session })
+
+    // An altered policy no longer matches the digest the owner signed.
+    const altered: Grant.Grant = {
+      ...grant,
+      session: { ...grant.session, policies: [Policy.erc20Transfer({ token, amount: { lte: 1000n } })] }
+    }
+    assert.strictEqual(await reasonOf(Grant.verify(client, altered)), "DigestMismatch")
+    assert.strictEqual(
+      await reasonOf(Grant.verify(client, { ...grant, chains: [{ ...grant.chains[0]!, ...signatureOf(stranger) }] })),
+      "InvalidSignature"
+    )
+    assert.strictEqual(await reasonOf(Grant.verify(second.client, grant)), "ChainNotCovered")
+  })
+
+  it("is enabled by the owner with installSync, without a signature", async () => {
+    const account = await deployedAccount(type)
+    const session = newSession()
+    const { grant, receipt } = await Grant.installSync(devnet.bundlerClient(account, { bundleOnReceipt: true }), {
+      session
+    })
+
+    assert.strictEqual(receipt.status, "success")
+    assert.isTrue(await isEnabled(devnet, session, account.address))
+    assert.strictEqual(grant.chains[0]!.signature, "0x")
+    await Grant.verify(client, grant)
+    const agent = await sessionAgent({ type, address: account.address, session, sessionKey })
+    assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
+  })
+
+  it("is signed by a passkey owner through WebAuthnValidator", async () => {
+    const account = await deployedAccount(type, { owner: newPasskey() })
+    const session = newSession()
+    const grant = await Grant.create({ account, session })
+    await Grant.verify(client, grant)
+
+    const agent = await sessionAgent({ type, address: account.address, session, sessionKey, enable: grant })
+    assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
+    assert.isTrue(await isEnabled(devnet, session, account.address))
+  })
+})
+
+const signatureOf = (grant: Grant.Grant) => ({ signature: grant.chains[0]!.signature })
+
+describe.each(["kernel", "nexus", "safe7579"] as const)("a multichain grant on a %s account", { concurrent: false }, (
+  type: AccountType
+) => {
+  devnet.isolate({ beforeEach, afterEach })
+  second.isolate({ beforeEach, afterEach })
+
+  it("covers both chains, signed once where the account's ERC-1271 allows it, and enables on each", async () => {
+    const owner = newOwner()
+    const first = await deployedAccount(type, { owner })
+    const other = await deployedAccount(type, { owner, on: second })
+    assert.strictEqual(other.address, first.address)
+    const session = newSession()
+
+    const grant = await Grant.create({ account: [first, other], session })
+    assert.deepStrictEqual(grant.chains.map((chain) => chain.chain), [
+      `eip155:${devnet.chain.id}`,
+      `eip155:${second.chain.id}`
+    ])
+    // Safe7579's key owners sign the raw digest; Kernel and Nexus bind the chain in their ERC-1271 domain.
+    const shared = grant.chains[0]!.signature === grant.chains[1]!.signature
+    assert.strictEqual(shared, type === "safe7579")
+    await Grant.verify(client, grant)
+    await Grant.verify(second.client, grant)
+
+    const agent = await sessionAgent({ type, address: first.address, session, sessionKey, enable: grant, on: second })
+    assert.isTrue((await second.sendUserOperation(agent, [transfer])).success)
+    assert.isTrue(await isEnabled(second, session, first.address))
+    assert.isFalse(await isEnabled(devnet, session, first.address))
+  })
+})

@@ -1,10 +1,12 @@
 // A consumer of the SDK's public entries, compiled by `pnpm type-cost` to measure what the SDK costs the type checker.
 import {
   ChainError,
+  Grant,
   KernelAccount,
   Key,
   Keystore,
   NameraError,
+  Policy,
   Session,
   SessionKey,
   SmartAccount
@@ -39,3 +41,24 @@ export const agentKey = async () => {
 }
 
 export const effectKey = EffectKeystore.create(EffectKeystore.memory(), { curve: "secp256k1" })
+
+const swap = [{
+  type: "function",
+  name: "swap",
+  stateMutability: "nonpayable",
+  inputs: [{ name: "recipient", type: "address" }, { name: "amountIn", type: "uint256" }],
+  outputs: []
+}] as const
+
+export const session = (agent: `0x${string}`, router: `0x${string}`) =>
+  Session.from({
+    signer: SessionKey.ecdsa(agent),
+    validUntil: Session.expiresIn({ days: 7 }),
+    policies: [
+      Policy.function({ address: router, abi: swap, functionName: "swap", args: { amountIn: { lte: 50n } } }),
+      Policy.rateLimit({ count: 10, period: "hour" })
+    ]
+  })
+
+export const grant = async (account: SmartAccount.SmartAccount, agent: `0x${string}`, router: `0x${string}`) =>
+  Grant.serialize(await Grant.create({ account, session: session(agent, router) }), { format: "token" })

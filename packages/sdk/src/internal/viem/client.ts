@@ -4,7 +4,7 @@
 import * as Effect from "effect/Effect"
 import * as Predicate from "effect/Predicate"
 import type { Chain, Client, Hex, JsonRpcAccount, LocalAccount, PrivateKeyAccount, Transport } from "viem"
-import { call as viemCall, getCode, getStorageAt } from "viem/actions"
+import { call as viemCall, getCode, getStorageAt, verifyHash as viemVerifyHash } from "viem/actions"
 
 import type * as ChainError from "../../ChainError.ts"
 import { type Context, fromUnknown } from "../chainError.ts"
@@ -102,6 +102,21 @@ export const call = (
 ): Effect.Effect<Hex | undefined, ChainError.ChainError> =>
   Effect.tryPromise({
     try: async () => (await viemCall(client, { to: request.to, data: request.data })).data,
+    catch: (cause) => fromUnknown(cause, context(client, "eth_call"))
+  })
+
+/**
+ * Whether `signature` is the account's signature of `hash`: ERC-1271 when deployed, ERC-6492 for a wrapped
+ * signature of an undeployed account.
+ *
+ * @internal
+ */
+export const verifyHash = (
+  client: ReadClient,
+  request: { readonly address: Hex; readonly hash: Hex; readonly signature: Hex }
+): Effect.Effect<boolean, ChainError.ChainError> =>
+  Effect.tryPromise({
+    try: () => viemVerifyHash(client, { address: request.address, hash: request.hash, signature: request.signature }),
     catch: (cause) => fromUnknown(cause, context(client, "eth_call"))
   })
 

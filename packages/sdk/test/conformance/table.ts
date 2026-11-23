@@ -1,5 +1,6 @@
 import { assert } from "@effect/vitest"
 import {
+  Grant,
   KernelAccount,
   Key,
   Keystore,
@@ -14,6 +15,8 @@ import * as Effect_ from "@namera-ai/sdk/effect"
 import { Effect, Exit } from "effect"
 import { createClient, http, zeroAddress } from "viem"
 import { entryPoint07Abi, entryPoint07Address } from "viem/account-abstraction"
+
+import { contracts } from "@namera-ai/sdk/internal/session/contracts"
 
 import { client, newOwner } from "../accounts/accounts.test-utils.ts"
 
@@ -40,6 +43,27 @@ export type Conformance =
     /** When cheap enough to run twice: both forms succeed with the same value, compared through `project`. */
     readonly success?: Call & { readonly project?: (value: unknown) => unknown }
   }
+
+// A grant on a chain the test client isn't on, with a stand-in signature.
+const grantSession = Session.from({
+  signer: SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+  validUntil: 2_000_000_000,
+  salt: `0x${"11".repeat(32)}`,
+  policies: [Policy.nativeTransfer({ to: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" })]
+})
+const prepared: Grant.Prepared = {
+  account: "eip155:8453:0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+  accountType: { type: "kernel", version: "3.3" },
+  session: grantSession,
+  chains: [{ chain: "eip155:8453", contracts, nonce: 0n, sessionDigest: `0x${"22".repeat(32)}` }],
+  typedData: {
+    domain: { name: "SmartSession", version: "1" },
+    types: {} as never,
+    primaryType: "MultiChainSession",
+    message: { sessionsAndChainIds: [] }
+  }
+}
+const otherChainGrant = Grant.from({ ...prepared, signature: "0x12" })
 
 // A client on the test chain without a chain configured, and one whose node can't be reached.
 const chainless = createClient({ transport: http(client.transport.url) })
@@ -483,6 +507,59 @@ export const table: Record<string, Conformance> = {
     failure: {
       promise: (signal) => SmartAccount.getOwners(unreachable, { address: zeroAddress, signal }),
       effect: () => Effect_.SmartAccount.getOwners(unreachable, { address: zeroAddress })
+    }
+  },
+  "Grant.create": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.create({ account: [], session: grantSession, signal }),
+      effect: () => Effect_.Grant.create({ account: [], session: grantSession })
+    }
+  },
+  "Grant.prepare": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.prepare({ account: [], session: grantSession, signal }),
+      effect: () => Effect_.Grant.prepare({ account: [], session: grantSession })
+    }
+  },
+  "Grant.install": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.install(client, { session: grantSession, signal }),
+      effect: () => Effect_.Grant.install(client, { session: grantSession })
+    }
+  },
+  "Grant.installSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.installSync(client, { session: grantSession, signal }),
+      effect: () => Effect_.Grant.installSync(client, { session: grantSession })
+    }
+  },
+  "Grant.verify": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.verify(client, otherChainGrant, { signal }),
+      effect: () => Effect_.Grant.verify(client, otherChainGrant)
+    }
+  },
+  "Grant.from": {
+    kind: "sync",
+    check: async () => {
+      assert.deepStrictEqual(
+        Grant.from({ ...prepared, signature: "0x12" }),
+        await Effect.runPromise(Effect_.Grant.from({ ...prepared, signature: "0x12" }))
+      )
+    }
+  },
+  "Grant.parse": {
+    kind: "sync",
+    check: async () => {
+      const text = Grant.serialize(otherChainGrant, { format: "token" })
+      assert.deepStrictEqual(Grant.parse(text), await Effect.runPromise(Effect_.Grant.parse(text)))
+      assert.throws(() => Grant.parse("nope"))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.Grant.parse("nope"))))
     }
   },
   "SmartAccount.installSessions": {
