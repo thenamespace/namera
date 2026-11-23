@@ -87,21 +87,11 @@
     },
     {
       "files": [
-        "contracts/script/**"
-      ],
-      "rules": {
-        "landmines-structure/test-file-names": "off"
-      }
-    },
-    {
-      "files": [
         "packages/sdk/src/**"
       ],
       "rules": {
         "namera/no-effect-run": "error",
-        "namera/no-foreign-internal": "error",
-        "effect/no-bigint-literals": "off",
-        "effect/no-unused-internal": "off"
+        "namera/no-foreign-internal": "error"
       }
     },
     {

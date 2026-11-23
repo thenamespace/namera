@@ -66,7 +66,7 @@ export const initializer = (options: {
     AbiFunction.encodeData(addSafe7579, [options.contracts.adapter, modules, [], 0]),
     options.contracts.adapter,
     "0x0000000000000000000000000000000000000000",
-    0n,
+    BigInt("0"),
     "0x0000000000000000000000000000000000000000"
   ])
 }

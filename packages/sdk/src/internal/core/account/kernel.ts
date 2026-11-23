@@ -94,7 +94,7 @@ export const deployment = (options: {
  *
  * @internal
  */
-export const ownerNonceKey = (contracts: Contracts): bigint => Hex.toBigInt(contracts.ecdsaValidator) << 16n
+export const ownerNonceKey = (contracts: Contracts): bigint => Hex.toBigInt(contracts.ecdsaValidator) << BigInt("16")
 
 /**
  * The digest the owner signs for an ERC-1271 check of `hash`: the hash wrapped as EIP-712 `Kernel(bytes32 hash)` in

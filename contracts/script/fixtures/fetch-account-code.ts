@@ -1,7 +1,7 @@
 // Fetches the deployed bytecode of EntryPoint 0.7 and the smart accounts used by test/accounts into
 // test/fixtures/accounts/<name>@<address>.hex, so account tests run locally without an RPC.
 //
-//   node script/fixtures/fetch-account-fixtures.ts
+//   node script/fixtures/fetch-account-code.ts
 //
 // Reads RPC_BASE_SEPOLIA, falling back to the public Base Sepolia RPC. Every contract below is deployed at the
 // same address on all launch chains (checked by the chain scan), so Base Sepolia is representative.

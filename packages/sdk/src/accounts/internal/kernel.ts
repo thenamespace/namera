@@ -109,7 +109,11 @@ export const from = (options: FromOptions): Effect.Effect<NameraSmartAccount<"ke
     owner: options.owner.address,
     smartSession: options.sessions === false ? undefined : SmartSession.v1.address
   })
-  const { address, factory, factoryData } = Kernel.deployment({ contracts, initData, index: options.index ?? 0n })
+  const { address, factory, factoryData } = Kernel.deployment({
+    contracts,
+    initData,
+    index: options.index ?? BigInt("0")
+  })
   return build({
     client: options.client,
     owner: options.owner,

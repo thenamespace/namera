@@ -117,7 +117,7 @@ const build = Effect.fnUntraced(function*(options: {
     factory: options.factory,
     authorization: options.authorization,
     firstCalls: options.firstCalls,
-    nonceKey: 0n,
+    nonceKey: BigInt("0"),
     stubSignature: DUMMY_ECDSA_SIGNATURE,
     encodeCalls,
     signUserOperationHash: (hash) => signer.signMessage({ raw: hash }),
@@ -144,7 +144,7 @@ export const from = Effect.fnUntraced(function*(
     contracts,
     owner: options.owner.address,
     smartSession: options.sessions === false ? undefined : SmartSession.v1.address,
-    index: options.index ?? 0n
+    index: options.index ?? BigInt("0")
   })
   const address = options.address ?? Nexus.decodeAddress(
     (yield* Effect.tryPromise({

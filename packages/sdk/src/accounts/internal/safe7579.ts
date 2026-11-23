@@ -68,7 +68,7 @@ export const from = Effect.fnUntraced(function*(
     threshold: BigInt(threshold),
     smartSession: options.sessions === false ? undefined : SmartSession.v1.address
   })
-  const deployment = Safe7579.deployment({ contracts, initializer, index: options.index ?? 0n })
+  const deployment = Safe7579.deployment({ contracts, initializer, index: options.index ?? BigInt("0") })
   const address = options.address ?? deployment.address
   const ref = { type: "safe7579", address } as const
   const client = yield* requireChain(options.client, ref)

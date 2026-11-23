@@ -49,7 +49,7 @@ const readSlot = (client: ReadClient, address: Hex, slot: Hex): Effect.Effect<He
   Effect.tryPromise({
     try: async () => {
       const word = await getStorageAt(client, { address, slot })
-      return word === undefined || BigInt(word) === 0n ? undefined : (`0x${word.slice(-40)}` as Hex)
+      return word === undefined || BigInt(word) === BigInt("0") ? undefined : (`0x${word.slice(-40)}` as Hex)
     },
     catch: (cause) => fromUnknown(cause, "eth_getStorageAt")
   })

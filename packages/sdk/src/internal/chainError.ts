@@ -71,11 +71,3 @@ export const fromUnknown = (error: unknown, method?: string): ChainError.ChainEr
   )
   return ChainError.transport({ ...base, url })
 }
-
-/**
- * A `ChainError` for a node answer that doesn't have the shape the method promises.
- *
- * @internal
- */
-export const invalidResponse = (method: string, cause: unknown): ChainError.ChainError =>
-  ChainError.transport({ method, detail: `Invalid ${method} response`, cause })

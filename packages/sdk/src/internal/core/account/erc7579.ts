@@ -10,7 +10,7 @@ export interface Call {
 }
 
 /** @internal */
-export const MODULE_TYPE_VALIDATOR = 1n
+export const MODULE_TYPE_VALIDATOR = BigInt("1")
 
 const execute = AbiFunction.from("function execute(bytes32 mode, bytes executionCalldata)")
 const installModule = AbiFunction.from("function installModule(uint256 moduleTypeId, address module, bytes initData)")
@@ -35,7 +35,7 @@ const mode = (callType: "0x00" | "0x01") => Hex.concat(callType, EXEC_TYPE_DEFAU
 export const encodeCalls = (calls: ReadonlyArray<Call>): Hex.Hex => {
   if (calls.length === 1) {
     // Stryker disable next-line StringLiteral: "" and "0x" concatenate to the same bytes
-    const [{ data = "0x", to, value = 0n }] = calls as readonly [Call]
+    const [{ data = "0x", to, value = BigInt("0") }] = calls as readonly [Call]
     return AbiFunction.encodeData(execute, [
       mode("0x00"),
       Hex.concat(to, Hex.fromNumber(value, { size: 32 }), data)
@@ -44,7 +44,7 @@ export const encodeCalls = (calls: ReadonlyArray<Call>): Hex.Hex => {
   return AbiFunction.encodeData(execute, [
     mode("0x01"),
     AbiParameters.encode(executions, [
-      calls.map(({ data = "0x", to, value = 0n }) => ({ target: to, value, callData: data }))
+      calls.map(({ data = "0x", to, value = BigInt("0") }) => ({ target: to, value, callData: data }))
     ])
   ])
 }
