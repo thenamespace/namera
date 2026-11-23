@@ -72,3 +72,15 @@ export * as Keystore from "./keys/Keystore.ts"
  * @since 2.0.0
  */
 export * as KeystoreError from "./keys/KeystoreError.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKey from "./keys/SessionKey.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as SessionKeyError from "./keys/SessionKeyError.ts"

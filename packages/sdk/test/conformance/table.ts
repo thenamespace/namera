@@ -1,5 +1,14 @@
 import { assert } from "@effect/vitest"
-import { KernelAccount, Key, Keystore, NexusAccount, Safe7579Account, Session, SmartAccount } from "@namera-ai/sdk"
+import {
+  KernelAccount,
+  Key,
+  Keystore,
+  NexusAccount,
+  Safe7579Account,
+  Session,
+  SessionKey,
+  SmartAccount
+} from "@namera-ai/sdk"
 import * as Effect_ from "@namera-ai/sdk/effect"
 import { Effect, Exit } from "effect"
 import { createClient, http, zeroAddress } from "viem"
@@ -90,6 +99,29 @@ export const table: Record<string, Conformance> = {
         Key.caip10(devKey, "eip155:1"),
         await Effect.runPromise(Effect_.Key.caip10(devKey, "eip155:1"))
       )
+    }
+  },
+  "SessionKey.ecdsa": {
+    kind: "sync",
+    check: async () => {
+      const agent = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      assert.deepStrictEqual(SessionKey.ecdsa(agent), await Effect.runPromise(Effect_.SessionKey.ecdsa(agent)))
+      assert.throws(() => SessionKey.ecdsa("0x1234"))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.SessionKey.ecdsa("0x1234"))))
+    }
+  },
+  "SessionKey.ecdsaThreshold": {
+    kind: "sync",
+    check: async () => {
+      const options = {
+        threshold: 1,
+        signers: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"]
+      }
+      assert.deepStrictEqual(
+        SessionKey.ecdsaThreshold(options),
+        await Effect.runPromise(Effect_.SessionKey.ecdsaThreshold(options))
+      )
+      assert.throws(() => SessionKey.ecdsaThreshold({ threshold: 0, signers: options.signers }))
     }
   },
   "Keystore.encryptedJson": {

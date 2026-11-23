@@ -9,7 +9,8 @@ export default defineConfig({
       "test/Session.test.ts",
       "test/conformance/**/*.test.ts",
       "test/runtime/Runtime.test.ts",
-      "test/accounts/**/*.test.ts"
+      "test/accounts/**/*.test.ts",
+      "test/keys/**/*.test.ts"
     ],
     globalSetup: ["test/setup/devnet.ts"],
     setupFiles: [path.join(import.meta.dirname, "../../vitest.setup.ts")]
