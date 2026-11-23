@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External } from "@namera-ai/contracts"
-import { NexusAccount, SmartAccount } from "@namera-ai/sdk"
+import { ChainError, NexusAccount, SmartAccount } from "@namera-ai/sdk"
 import { decodeFunctionData, parseAbi, zeroAddress, zeroHash } from "viem"
 
 import { client, devnet, newOwner } from "./accounts.test-utils.ts"
@@ -62,6 +62,16 @@ describe("NexusAccount", { concurrent: false }, () => {
       (error: unknown) => error
     )
     assert.include(String(error), `unstaked factory accessed ${nexus.k1Validator.toLowerCase()}`)
+
+    // Sent through Namera, the error says what to do about it.
+    const fresh = await NexusAccount.from({ client, owner: newOwner(), sessions: false })
+    await devnet.fund(fresh.address)
+    const namera = await SmartAccount.installSessions(devnet.bundlerClient(fresh)).then(
+      () => assert.fail("expected the bundler to reject it"),
+      (error: unknown) => error
+    )
+    assert.isTrue(ChainError.isChainError(namera))
+    assert.include((namera as ChainError.ChainError).reason.hint, "hosted bundler")
   })
 
   it("deploys with Smart Sessions through its factory, then transfers and batches", async () => {

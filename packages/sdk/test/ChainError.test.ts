@@ -23,6 +23,14 @@ describe("ChainError", () => {
     assert.strictEqual(error.reason.cause, cause)
   })
 
+  it("says what to do when a bundler refuses to deploy an account through an unstaked factory", () => {
+    const refused = ChainError.rpc({ code: -32502, detail: "unstaked factory accessed 0x0000b1c0 slot 0x60b8" })
+
+    assert.include(refused.reason.hint, "hosted bundler")
+    assert.include(refused.metaMessages.at(-1) ?? "", "deploy the account first")
+    assert.notInclude(ChainError.rpc({ code: -32502, detail: "invalid params" }).reason.hint, "hosted bundler")
+  })
+
   it("adds the detail to the reason's message", () => {
     assert.strictEqual(
       ChainError.rpc({ code: -32602, detail: "invalid params" }).message,

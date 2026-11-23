@@ -64,6 +64,12 @@ export class Rpc extends Schema.TaggedError<Rpc>("@namera-ai/sdk/ChainError/Rpc"
 
   /** What to do about it. */
   get hint(): string {
+    // Strict bundlers enforce ERC-7562 STO-022: deploying an account in its first user operation may write a module's
+    // storage only through a staked factory, and Nexus's and Safe's factories are unstaked.
+    const text = `${this.detail ?? ""} ${Predicate.isError(this.cause) ? this.cause.message : ""}`
+    if (/unstaked factory/i.test(text)) {
+      return "This bundler refuses to deploy the account in its first user operation through an unstaked factory (ERC-7562). Use a hosted bundler that accepts it, or deploy the account first with a plain transaction to its factory."
+    }
     return "Check the request and that the node supports the method; the node's message is in `details`."
   }
 }
