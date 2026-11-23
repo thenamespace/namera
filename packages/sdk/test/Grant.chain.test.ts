@@ -129,14 +129,17 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a multichain grant on a
   devnet.isolate({ beforeEach, afterEach })
   second.isolate({ beforeEach, afterEach })
 
-  it("covers both chains, signed once where the account's ERC-1271 allows it, and enables on each", async () => {
+  const multichain = async (options: { readonly deployFirst: boolean }) => {
     const owner = newOwner()
-    const first = await deployedAccount(type, { owner })
+    const first = await deployedAccount(type, { owner, deploy: options.deployFirst })
     const other = await deployedAccount(type, { owner, on: second })
     assert.strictEqual(other.address, first.address)
     const session = newSession()
+    return { address: first.address, session, grant: await Grant.create({ account: [first, other], session }) }
+  }
 
-    const grant = await Grant.create({ account: [first, other], session })
+  it("covers both chains, signed once where the account's ERC-1271 allows it, and verifies on each", async () => {
+    const { grant } = await multichain({ deployFirst: true })
     assert.deepStrictEqual(grant.chains.map((chain) => chain.chain), [
       `eip155:${devnet.chain.id}`,
       `eip155:${second.chain.id}`
@@ -146,10 +149,14 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a multichain grant on a
     assert.strictEqual(shared, type === "safe7579")
     await Grant.verify(client, grant)
     await Grant.verify(second.client, grant)
+  })
 
-    const agent = await sessionAgent({ type, address: first.address, session, sessionKey, enable: grant, on: second })
+  it("is enabled on the second chain by the agent's first operation there", async () => {
+    // Only the second chain's account needs to exist: the grant's first-chain entry isn't used here.
+    const { address, grant, session } = await multichain({ deployFirst: false })
+    const agent = await sessionAgent({ type, address, session, sessionKey, enable: grant, on: second })
     assert.isTrue((await second.sendUserOperation(agent, [transfer])).success)
-    assert.isTrue(await isEnabled(second, session, first.address))
-    assert.isFalse(await isEnabled(devnet, session, first.address))
+    assert.isTrue(await isEnabled(second, session, address))
+    assert.isFalse(await isEnabled(devnet, session, address))
   })
 })
