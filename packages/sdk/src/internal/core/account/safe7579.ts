@@ -142,3 +142,56 @@ export const concatSignatures = (signatures: ReadonlyArray<Hex.Hex>): Hex.Hex =>
  * @internal
  */
 export const ownerSignature = (validator: Hex.Hex, signature: Hex.Hex): Hex.Hex => Hex.concat(validator, signature)
+
+const SENTINEL: Hex.Hex = "0x0000000000000000000000000000000000000001"
+
+const ownableAddOwner = AbiFunction.from("function addOwner(address owner)")
+const ownableRemoveOwner = AbiFunction.from("function removeOwner(address prevOwner, address owner)")
+const ownableSetThreshold = AbiFunction.from("function setThreshold(uint256 threshold)")
+const ownableGetOwners = AbiFunction.from("function getOwners(address account) view returns (address[])")
+const ownableThreshold = AbiFunction.from("function threshold(address account) view returns (uint256)")
+const safeAddOwner = AbiFunction.from("function addOwnerWithThreshold(address owner, uint256 threshold)")
+const safeRemoveOwner = AbiFunction.from("function removeOwner(address prevOwner, address owner, uint256 threshold)")
+const safeSwapOwner = AbiFunction.from("function swapOwner(address prevOwner, address oldOwner, address newOwner)")
+const safeChangeThreshold = AbiFunction.from("function changeThreshold(uint256 threshold)")
+const safeGetOwners = AbiFunction.from("function getOwners() view returns (address[])")
+
+/**
+ * The owner before `owner` in a sentinel-linked owner list (OwnableValidator's and the Safe's), as their removal
+ * functions take it: the sentinel for the first owner.
+ *
+ * @internal
+ */
+export const previousOwner = (owners: ReadonlyArray<Hex.Hex>, owner: Hex.Hex): Hex.Hex | undefined => {
+  const index = owners.findIndex((candidate) => Hex.toBigInt(candidate) === Hex.toBigInt(owner))
+  // Stryker disable next-line ConditionalExpression: without it, owners[-2] is undefined too; kept for clarity
+  if (index === -1) return undefined
+  return index === 0 ? SENTINEL : owners[index - 1]
+}
+
+/** OwnableValidator's owner management calls. @internal */
+export const ownable = {
+  addOwner: (owner: Hex.Hex): Hex.Hex => AbiFunction.encodeData(ownableAddOwner, [owner]),
+  removeOwner: (previous: Hex.Hex, owner: Hex.Hex): Hex.Hex =>
+    AbiFunction.encodeData(ownableRemoveOwner, [previous, owner]),
+  setThreshold: (threshold: number): Hex.Hex => AbiFunction.encodeData(ownableSetThreshold, [BigInt(threshold)]),
+  encodeOwners: (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(ownableGetOwners, [account]),
+  decodeOwners: (result: Hex.Hex): ReadonlyArray<Hex.Hex> => AbiFunction.decodeResult(ownableGetOwners, result),
+  encodeThreshold: (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(ownableThreshold, [account]),
+  decodeThreshold: (result: Hex.Hex): number => Number(AbiFunction.decodeResult(ownableThreshold, result)),
+  installData: (owners: ReadonlyArray<Hex.Hex>, threshold: number): Hex.Hex =>
+    AbiParameters.encode(AbiParameters.from(["uint256", "address[]"]), [BigInt(threshold), sortOwners(owners)])
+}
+
+/** The Safe's own owner management calls, which a key-owned Safe7579 keeps in step with OwnableValidator. @internal */
+export const safe = {
+  addOwner: (owner: Hex.Hex, threshold: number): Hex.Hex =>
+    AbiFunction.encodeData(safeAddOwner, [owner, BigInt(threshold)]),
+  removeOwner: (previous: Hex.Hex, owner: Hex.Hex, threshold: number): Hex.Hex =>
+    AbiFunction.encodeData(safeRemoveOwner, [previous, owner, BigInt(threshold)]),
+  swapOwner: (previous: Hex.Hex, oldOwner: Hex.Hex, newOwner: Hex.Hex): Hex.Hex =>
+    AbiFunction.encodeData(safeSwapOwner, [previous, oldOwner, newOwner]),
+  changeThreshold: (threshold: number): Hex.Hex => AbiFunction.encodeData(safeChangeThreshold, [BigInt(threshold)]),
+  encodeOwners: AbiFunction.encodeData(safeGetOwners),
+  decodeOwners: (result: Hex.Hex): ReadonlyArray<Hex.Hex> => AbiFunction.decodeResult(safeGetOwners, result)
+}

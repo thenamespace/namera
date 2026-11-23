@@ -124,3 +124,57 @@ export const wrappedHash = (options: {
  */
 export const ownerSignature = (rootValidator: Hex.Hex, signature: Hex.Hex, eip7702: boolean): Hex.Hex =>
   eip7702 ? Hex.concat("0x00", signature) : Hex.concat(validatorId(rootValidator), signature)
+
+const ecdsaOnInstall = AbiFunction.from("function onInstall(bytes data)")
+const ecdsaOnUninstall = AbiFunction.from("function onUninstall(bytes data)")
+const ecdsaValidatorStorage = AbiFunction.from("function ecdsaValidatorStorage(address account) view returns (address)")
+const rootValidator = AbiFunction.from("function rootValidator() view returns (bytes21)")
+
+/**
+ * The nonce key of a validator installed next to the root: mode 0x00 ‖ type 0x01 (validator) ‖ the validator ‖ a
+ * 2-byte key of 0.
+ *
+ * @internal
+ */
+export const validatorNonceKey = (validator: Hex.Hex): bigint =>
+  (BigInt(1) << BigInt(176)) | (Hex.toBigInt(validator) << BigInt(16))
+
+/**
+ * The calls (to the ECDSA validator, from the account) that replace its owner: the deployed validator refuses
+ * `onInstall` while it holds an owner, and Kernel can't reinstall its root validator, so the account clears the owner
+ * and installs the new one in the same operation.
+ *
+ * @internal
+ */
+export const replaceEcdsaOwnerData = (owner: Hex.Hex): readonly [Hex.Hex, Hex.Hex] => [
+  AbiFunction.encodeData(ecdsaOnUninstall, ["0x"]),
+  AbiFunction.encodeData(ecdsaOnInstall, [owner])
+]
+
+/** The ECDSA validator's owner view. @internal */
+export const encodeEcdsaOwner = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(ecdsaValidatorStorage, [account])
+
+/** Decodes the ECDSA validator's owner. @internal */
+export const decodeEcdsaOwner = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(ecdsaValidatorStorage, result)
+
+/** Kernel's `rootValidator()` view. @internal */
+export const encodeRootValidator: Hex.Hex = AbiFunction.encodeData(rootValidator)
+
+/**
+ * The root validator's address from `rootValidator()`'s validation id (type ‖ address); `undefined` for an EIP-7702
+ * account's own key (type 0x00).
+ *
+ * @internal
+ */
+export const decodeRootValidator = (result: Hex.Hex): Hex.Hex | undefined => {
+  const id = AbiFunction.decodeResult(rootValidator, result)
+  return Hex.slice(id, 0, 1) === "0x01" ? Hex.slice(id, 1) : undefined
+}
+
+/**
+ * The call that installs a validator next to the root, allowed to validate `execute`.
+ *
+ * @internal
+ */
+export const installValidatorData = (validator: Hex.Hex, validatorData: Hex.Hex): Hex.Hex =>
+  encodeInstallModule(MODULE_TYPE_VALIDATOR, validator, validatorInstallData(validatorData))

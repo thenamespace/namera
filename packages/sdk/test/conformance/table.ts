@@ -280,6 +280,154 @@ export const table: Record<string, Conformance> = {
       effect: () => Effect_.SmartAccount.isSessionsInstalled(unreachable, { address: zeroAddress })
     }
   },
+  "SmartAccount.addOwnerCalls": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.addOwnerCalls(await KernelAccount.from({ client, owner }), { owner: zeroAddress, signal }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) => Effect_.SmartAccount.addOwnerCalls(account, { owner: zeroAddress }))
+        )
+    }
+  },
+  "SmartAccount.addOwner": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.addOwner(client, { owner: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.addOwner(client, { owner: zeroAddress })
+    }
+  },
+  "SmartAccount.addOwnerSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.addOwnerSync(client, { owner: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.addOwnerSync(client, { owner: zeroAddress })
+    }
+  },
+  "SmartAccount.removeOwnerCalls": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.removeOwnerCalls(await KernelAccount.from({ client, owner }), {
+          owner: zeroAddress,
+          signal
+        }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) => Effect_.SmartAccount.removeOwnerCalls(account, { owner: zeroAddress }))
+        )
+    }
+  },
+  "SmartAccount.removeOwner": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.removeOwner(client, { owner: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.removeOwner(client, { owner: zeroAddress })
+    }
+  },
+  "SmartAccount.removeOwnerSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.removeOwnerSync(client, { owner: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.removeOwnerSync(client, { owner: zeroAddress })
+    }
+  },
+  "SmartAccount.setThresholdCalls": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.setThresholdCalls(await KernelAccount.from({ client, owner }), { threshold: 1, signal }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) => Effect_.SmartAccount.setThresholdCalls(account, { threshold: 1 }))
+        )
+    }
+  },
+  "SmartAccount.setThreshold": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.setThreshold(client, { threshold: 1, signal }),
+      effect: () => Effect_.SmartAccount.setThreshold(client, { threshold: 1 })
+    }
+  },
+  "SmartAccount.setThresholdSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.setThresholdSync(client, { threshold: 1, signal }),
+      effect: () => Effect_.SmartAccount.setThresholdSync(client, { threshold: 1 })
+    }
+  },
+  "SmartAccount.replaceOwnerCalls": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.replaceOwnerCalls(await KernelAccount.from({ client, owner }), {
+          owner: zeroAddress,
+          with: owner.address,
+          signal
+        }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) =>
+            Effect_.SmartAccount.replaceOwnerCalls(account, { owner: zeroAddress, with: owner.address })
+          )
+        )
+    }
+  },
+  "SmartAccount.replaceOwner": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.replaceOwner(client, { owner: zeroAddress, with: owner.address, signal }),
+      effect: () => Effect_.SmartAccount.replaceOwner(client, { owner: zeroAddress, with: owner.address })
+    }
+  },
+  "SmartAccount.replaceOwnerSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.replaceOwnerSync(client, { owner: zeroAddress, with: owner.address, signal }),
+      effect: () => Effect_.SmartAccount.replaceOwnerSync(client, { owner: zeroAddress, with: owner.address })
+    }
+  },
+  "SmartAccount.addOwnerValidatorCalls": {
+    kind: "async",
+    failure: {
+      promise: async (signal) =>
+        SmartAccount.addOwnerValidatorCalls(await KernelAccount.from({ client, owner }), {
+          owner: owner.address,
+          signal
+        }),
+      effect: () =>
+        Effect.promise(() => KernelAccount.from({ client, owner })).pipe(
+          Effect.flatMap((account) => Effect_.SmartAccount.addOwnerValidatorCalls(account, { owner: owner.address }))
+        )
+    }
+  },
+  "SmartAccount.addOwnerValidator": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.addOwnerValidator(client, { owner: owner.address, signal }),
+      effect: () => Effect_.SmartAccount.addOwnerValidator(client, { owner: owner.address })
+    }
+  },
+  "SmartAccount.addOwnerValidatorSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => SmartAccount.addOwnerValidatorSync(client, { owner: owner.address, signal }),
+      effect: () => Effect_.SmartAccount.addOwnerValidatorSync(client, { owner: owner.address })
+    }
+  },
+  "SmartAccount.getOwners": {
+    kind: "async",
+    success: {
+      promise: (signal) => SmartAccount.getOwners(client, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.getOwners(client, { address: zeroAddress })
+    },
+    failure: {
+      promise: (signal) => SmartAccount.getOwners(unreachable, { address: zeroAddress, signal }),
+      effect: () => Effect_.SmartAccount.getOwners(unreachable, { address: zeroAddress })
+    }
+  },
   "SmartAccount.installSessions": {
     kind: "async",
     failure: {

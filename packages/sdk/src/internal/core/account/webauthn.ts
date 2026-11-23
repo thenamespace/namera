@@ -1,3 +1,4 @@
+import * as AbiFunction from "ox/AbiFunction"
 import * as AbiParameters from "ox/AbiParameters"
 import * as Base64 from "ox/Base64"
 import * as Bytes from "ox/Bytes"
@@ -232,6 +233,7 @@ const stubAssertion = {
   s: BigInt("0x2a7e5b8c1d4f6a9e3b7c0d2f5a8e1b4c7d0a3f6e9b2c5d8a1e4f7b0c3d6e9a2b"),
   challengeIndex: 23,
   typeIndex: 1,
+  // Stryker disable next-line StringLiteral: any rpId hash makes a stub of the same size
   authenticatorData: Hex.concat(Hash.sha256(Hex.fromString("localhost")), "0x1d00000000"),
   clientDataJSON: `{"type":"webauthn.get","challenge":"${
     Base64.fromBytes(Bytes.fromHex(stubWord), { url: true, pad: false })
@@ -281,3 +283,51 @@ export const precompileProbe = {
  */
 export const isPrecompileAnswer = (data: Hex.Hex | undefined): boolean =>
   data !== undefined && data !== "0x" && Hex.toBigInt(data) === BigInt(1)
+
+const addPasskeyFunction = AbiFunction.from(
+  "function addPasskey((bytes32 x, bytes32 y, bool requireUserVerification, bytes32 rpIdHash) passkey)"
+)
+const removePasskeyFunction = AbiFunction.from("function removePasskey(bytes32 id)")
+const setThresholdFunction = AbiFunction.from("function setThreshold(uint256 threshold)")
+const getPasskeysFunction = AbiFunction.from(
+  "function getPasskeys(address account) view returns (uint256 threshold, bytes32[] credentialIds, (bytes32 x, bytes32 y, bool requireUserVerification, bytes32 rpIdHash)[] passkeys)"
+)
+
+/** The validator's passkey management calls, which the account makes. @internal */
+export const management = {
+  addPasskey: (passkey: Passkey): Hex.Hex =>
+    AbiFunction.encodeData(addPasskeyFunction, [{
+      ...coordinates(passkey.publicKey),
+      requireUserVerification: passkey.requireUserVerification,
+      rpIdHash: zeroHash
+    }]),
+  removePasskey: (publicKey: Hex.Hex): Hex.Hex =>
+    AbiFunction.encodeData(removePasskeyFunction, [credentialId(publicKey)]),
+  setThreshold: (threshold: number): Hex.Hex => AbiFunction.encodeData(setThresholdFunction, [BigInt(threshold)])
+}
+
+/**
+ * An account's passkeys and threshold as `getPasskeys` returns them.
+ *
+ * @internal
+ */
+export interface Installed {
+  readonly threshold: number
+  readonly passkeys: ReadonlyArray<{ readonly credentialId: Hex.Hex; readonly publicKey: Hex.Hex } & Passkey>
+}
+
+/** The validator's `getPasskeys(account)` view. @internal */
+export const encodeGetPasskeys = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(getPasskeysFunction, [account])
+
+/** Decodes `getPasskeys`. @internal */
+export const decodeGetPasskeys = (result: Hex.Hex): Installed => {
+  const [threshold, ids, passkeys] = AbiFunction.decodeResult(getPasskeysFunction, result)
+  return {
+    threshold: Number(threshold),
+    passkeys: passkeys.map((passkey, index) => ({
+      credentialId: ids[index]!,
+      publicKey: Hex.concat("0x04", passkey.x, passkey.y),
+      requireUserVerification: passkey.requireUserVerification
+    }))
+  }
+}

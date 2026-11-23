@@ -1,6 +1,7 @@
 /**
  * Smart accounts as viem builds them: build one from an implementation, connect to an existing one, detect what an
- * address holds, install Smart Sessions, and sign user operations on several chains with one passkey prompt.
+ * address holds, install Smart Sessions, read and change its owners, and sign user operations on several chains with
+ * one passkey prompt.
  *
  * **Details**
  *
@@ -32,9 +33,11 @@ import type {
 import type * as AccountError from "./AccountError.ts"
 import * as detect_ from "./internal/detect.ts"
 import * as multichain from "./internal/multichain.ts"
+import * as owners from "./internal/owners.ts"
 import type * as PasskeyOwners from "./internal/passkeys.ts"
 import * as sessions from "./internal/sessions.ts"
 import * as internal from "./internal/smartAccount.ts"
+import type { NameraSmartAccount } from "./internal/smartAccount.ts"
 
 /**
  * What Namera records about an account it built, readable as `account.namera`.
@@ -93,6 +96,25 @@ export type Passkey = WebAuthnAccount
  * @since 2.0.0
  */
 export type Passkeys = Exclude<PasskeyOwners.Owner, WebAuthnAccount>
+
+/**
+ * An owner as the owner functions take it: a key (an account or its address) or a passkey (a `Passkey`, or any
+ * object with its `publicKey`, such as an entry of `getOwners`).
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type OwnerRef = owners.OwnerRef
+
+/**
+ * One owner validator of an account, as `getOwners` reads it: its key owners or passkeys, and how many must sign.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type OwnerSet = owners.OwnerSet
 
 /**
  * A prepared user operation to sign, as viem's `prepareUserOperation` returns it.
@@ -562,4 +584,408 @@ export declare namespace getMultichainStubSignature {
    * @since 2.0.0
    */
   export type ErrorType = AccountError.AccountError
+}
+
+/**
+ * Reads who controls the account at an address: each owner validator with its key owners or passkeys and its
+ * threshold. An undeployed account has none on chain yet.
+ *
+ * **Example** (Listing an account's owners)
+ *
+ * ```ts
+ * import { SmartAccount } from "@namera-ai/sdk"
+ * import { createPublicClient, http } from "viem"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const sets = await SmartAccount.getOwners(client, { address: "0x0000000000000000000000000000000000000001" })
+ * for (const set of sets) {
+ *   console.log(set.type, set.type === "key" ? set.owners : set.passkeys, set.threshold)
+ * }
+ * ```
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export function getOwners(client: ReadClient, options: getOwners.Options): Promise<ReadonlyArray<OwnerSet>> {
+  return run(owners.getOwners(client, options.address), options)
+}
+
+/**
+ * Types of `SmartAccount.getOwners`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getOwners {
+  /**
+   * The account's address.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly address: Hex
+  }
+  /**
+   * The errors `SmartAccount.getOwners` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Returns the calls that adds a key or a passkey to the account's owner validator of that kind, to batch with other calls in one user operation.
+ *
+ * **Details**
+ *
+ * A Safe7579 account's key owners change on OwnableValidator and on the Safe itself, whose own owners can execute directly. Kernel and Nexus hold one key: change it with `replaceOwner`. Fails with `OwnerExists`, or `OperationNotSupported` when the account has no owners of that kind (`addOwnerValidator` adds them).
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function addOwnerCalls(account: SmartAccount, options: addOwnerCalls.Options): Promise<ReadonlyArray<Call>> {
+  return run(owners.addOwnerCalls(account as NameraSmartAccount, options.owner), options)
+}
+
+/**
+ * Types of `SmartAccount.addOwnerCalls`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace addOwnerCalls {
+  /**
+   * The owner to add: a key (an account or its address) or a passkey.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Options = { readonly owner: OwnerRef } & RunOptions
+  /**
+   * The errors `SmartAccount.addOwnerCalls` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Sends a user operation that adds a key or a passkey to the account's owner validator of that kind, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function addOwner(client: BundlerClient, options: addOwnerCalls.Options): Promise<Hex> {
+  return run(owners.send(client, (account) => owners.addOwnerCalls(account, options.owner)), options)
+}
+
+/**
+ * Sends a user operation that adds a key or a passkey to the account's owner validator of that kind, and waits for it, returning its transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function addOwnerSync(client: BundlerClient, options: addOwnerCalls.Options): Promise<TransactionReceipt> {
+  return run(owners.sendSync(client, (account) => owners.addOwnerCalls(account, options.owner)), options)
+}
+
+/**
+ * Returns the calls that removes a key or a passkey from the account, to batch with other calls in one user operation.
+ *
+ * **Details**
+ *
+ * Refuses with `ThresholdUnreachable` when fewer owners than the threshold would remain, and with `OwnerNotFound` for an owner the account doesn't have. A Safe7579 account's key is removed from the Safe's own owners too.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function removeOwnerCalls(
+  account: SmartAccount,
+  options: removeOwnerCalls.Options
+): Promise<ReadonlyArray<Call>> {
+  return run(owners.removeOwnerCalls(account as NameraSmartAccount, options.owner), options)
+}
+
+/**
+ * Types of `SmartAccount.removeOwnerCalls`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace removeOwnerCalls {
+  /**
+   * The owner to remove: a key (an account or its address) or a passkey.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Options = { readonly owner: OwnerRef } & RunOptions
+  /**
+   * The errors `SmartAccount.removeOwnerCalls` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Sends a user operation that removes a key or a passkey from the account, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function removeOwner(client: BundlerClient, options: removeOwnerCalls.Options): Promise<Hex> {
+  return run(owners.send(client, (account) => owners.removeOwnerCalls(account, options.owner)), options)
+}
+
+/**
+ * Sends a user operation that removes a key or a passkey from the account, and waits for it, returning its transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function removeOwnerSync(client: BundlerClient, options: removeOwnerCalls.Options): Promise<TransactionReceipt> {
+  return run(owners.sendSync(client, (account) => owners.removeOwnerCalls(account, options.owner)), options)
+}
+
+/**
+ * Returns the calls that sets how many of the account's keys or passkeys must sign, to batch with other calls in one user operation.
+ *
+ * **Details**
+ *
+ * Works for passkeys on every account and for a Safe7579 account's keys; Kernel's and Nexus's key validators hold one key. Fails with `ThresholdUnreachable` for a threshold outside 1 to the number of owners.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function setThresholdCalls(
+  account: SmartAccount,
+  options: setThresholdCalls.Options
+): Promise<ReadonlyArray<Call>> {
+  return run(owners.setThresholdCalls(account as NameraSmartAccount, options), options)
+}
+
+/**
+ * Types of `SmartAccount.setThresholdCalls`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace setThresholdCalls {
+  /**
+   * The new threshold, and which owners it is for when the account has both keys and passkeys.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Options = { readonly threshold: number; readonly owners?: "key" | "passkey" | undefined } & RunOptions
+  /**
+   * The errors `SmartAccount.setThresholdCalls` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Sends a user operation that sets how many of the account's keys or passkeys must sign, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function setThreshold(client: BundlerClient, options: setThresholdCalls.Options): Promise<Hex> {
+  return run(owners.send(client, (account) => owners.setThresholdCalls(account, options)), options)
+}
+
+/**
+ * Sends a user operation that sets how many of the account's keys or passkeys must sign, and waits for it, returning its transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function setThresholdSync(
+  client: BundlerClient,
+  options: setThresholdCalls.Options
+): Promise<TransactionReceipt> {
+  return run(owners.sendSync(client, (account) => owners.setThresholdCalls(account, options)), options)
+}
+
+/**
+ * Returns the calls that replaces an owner with another of the same kind, in one operation, to batch with other calls in one user operation.
+ *
+ * **Details**
+ *
+ * This is how a Kernel or Nexus account rotates its key. On Safe7579 it swaps the key on OwnableValidator and the Safe; for passkeys it adds the new one before removing the old.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function replaceOwnerCalls(
+  account: SmartAccount,
+  options: replaceOwnerCalls.Options
+): Promise<ReadonlyArray<Call>> {
+  return run(owners.replaceOwnerCalls(account as NameraSmartAccount, options), options)
+}
+
+/**
+ * Types of `SmartAccount.replaceOwnerCalls`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace replaceOwnerCalls {
+  /**
+   * The owner to replace and its replacement, both keys or both passkeys.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Options = { readonly owner: OwnerRef; readonly with: OwnerRef } & RunOptions
+  /**
+   * The errors `SmartAccount.replaceOwnerCalls` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Sends a user operation that replaces an owner with another of the same kind, in one operation, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function replaceOwner(client: BundlerClient, options: replaceOwnerCalls.Options): Promise<Hex> {
+  return run(owners.send(client, (account) => owners.replaceOwnerCalls(account, options)), options)
+}
+
+/**
+ * Sends a user operation that replaces an owner with another of the same kind, in one operation, and waits for it, returning its transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function replaceOwnerSync(
+  client: BundlerClient,
+  options: replaceOwnerCalls.Options
+): Promise<TransactionReceipt> {
+  return run(owners.sendSync(client, (account) => owners.replaceOwnerCalls(account, options)), options)
+}
+
+/**
+ * Returns the calls that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, to batch with other calls in one user operation.
+ *
+ * **Details**
+ *
+ * Either kind can then sign: build the account with `SmartAccount.fromAddress` and the owner that signs. On Kernel the new validator is installed next to the root, allowed to validate `execute`.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function addOwnerValidatorCalls(
+  account: SmartAccount,
+  options: addOwnerValidatorCalls.Options
+): Promise<ReadonlyArray<Call>> {
+  return run(owners.addOwnerValidatorCalls(account as NameraSmartAccount, options.owner), options)
+}
+
+/**
+ * Types of `SmartAccount.addOwnerValidatorCalls`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace addOwnerValidatorCalls {
+  /**
+   * The owner of the new kind: a key for an account owned by passkeys, or passkeys for one owned by a key.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Options = { readonly owner: Hex | Owner | Passkey | Passkeys } & RunOptions
+  /**
+   * The errors `SmartAccount.addOwnerValidatorCalls` can fail with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError
+}
+
+/**
+ * Sends a user operation that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function addOwnerValidator(client: BundlerClient, options: addOwnerValidatorCalls.Options): Promise<Hex> {
+  return run(owners.send(client, (account) => owners.addOwnerValidatorCalls(account, options.owner)), options)
+}
+
+/**
+ * Sends a user operation that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, and waits for it, returning its transaction receipt.
+ *
+ * **Gotchas**
+ *
+ * Fails with `ChainError` (`Reverted`) when the operation is included but reverts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function addOwnerValidatorSync(
+  client: BundlerClient,
+  options: addOwnerValidatorCalls.Options
+): Promise<TransactionReceipt> {
+  return run(owners.sendSync(client, (account) => owners.addOwnerValidatorCalls(account, options.owner)), options)
 }

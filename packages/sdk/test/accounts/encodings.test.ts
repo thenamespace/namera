@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { External } from "@namera-ai/contracts"
+import * as Kernel from "@namera-ai/sdk/internal/core/account/kernel"
 import * as Nexus from "@namera-ai/sdk/internal/core/account/nexus"
 import * as Safe7579 from "@namera-ai/sdk/internal/core/account/safe7579"
 import * as AbiFunction from "ox/AbiFunction"
@@ -13,6 +14,20 @@ const setup = AbiFunction.from(
 const owners = ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"] as const
 
 describe("account encodings", () => {
+  it("reads Kernel's root validator, and none for an EIP-7702 account's own key", () => {
+    const validator = owners[0]
+    const encoded = (type: Hex.Hex) => Hex.padRight(Hex.concat(type, validator), 32)
+
+    assert.strictEqual(Kernel.decodeRootValidator(encoded("0x01")), validator)
+    assert.isUndefined(Kernel.decodeRootValidator(encoded("0x00")))
+  })
+
+  it("finds the owner before another in a sentinel list", () => {
+    assert.strictEqual(Safe7579.previousOwner(owners, owners[0]), "0x0000000000000000000000000000000000000001")
+    assert.strictEqual(Safe7579.previousOwner(owners, owners[1]), owners[0])
+    assert.isUndefined(Safe7579.previousOwner(owners, "0x3333333333333333333333333333333333333333"))
+  })
+
   it("initialises a key-owned Nexus without sessions on its default validator alone", () => {
     const call = Nexus.bootstrapCall({ owner: { type: "default", address: owners[0] } })
 

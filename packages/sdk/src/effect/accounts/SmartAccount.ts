@@ -1,6 +1,7 @@
 /**
  * The Effect form of `SmartAccount`: build an account from an implementation, connect to an existing one, detect what
- * an address holds, install Smart Sessions, and sign user operations on several chains with one passkey prompt.
+ * an address holds, install Smart Sessions, read and change its owners, and sign user operations on several chains
+ * with one passkey prompt.
  *
  * @stability experimental
  * @since 2.0.0
@@ -10,6 +11,7 @@ import type * as Effect from "effect/Effect"
 import type * as AccountError from "../../accounts/AccountError.ts"
 import * as detect_ from "../../accounts/internal/detect.ts"
 import * as multichain from "../../accounts/internal/multichain.ts"
+import * as owners from "../../accounts/internal/owners.ts"
 import * as sessions from "../../accounts/internal/sessions.ts"
 import * as internal from "../../accounts/internal/smartAccount.ts"
 import type * as SmartAccount_ from "../../accounts/SmartAccount.ts"
@@ -142,3 +144,212 @@ export const getMultichainStubSignature = (
   account: SmartAccount,
   options: { readonly count: number }
 ): Effect.Effect<Hex, AccountError.AccountError> => multichain.stubSignature(account, options.count)
+
+/**
+ * Reads who controls the account at an address: each owner validator with its key owners or passkeys and its
+ * threshold. An undeployed account has none on chain yet.
+ *
+ * @stability experimental
+ * @category getters
+ * @since 2.0.0
+ */
+export const getOwners = (
+  client: ReadClient,
+  options: { readonly address: Hex }
+): Effect.Effect<ReadonlyArray<SmartAccount_.OwnerSet>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.getOwners(client, options.address)
+
+/**
+ * Returns the calls that adds a key or a passkey to the account's owner validator of that kind, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const addOwnerCalls = (
+  account: SmartAccount,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<ReadonlyArray<SmartAccount_.Call>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.addOwnerCalls(account, options.owner)
+
+/**
+ * Sends a user operation that adds a key or a passkey to the account's owner validator of that kind, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const addOwner = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  owners.send(client, (account) => owners.addOwnerCalls(account, options.owner))
+
+/**
+ * Sends a user operation that adds a key or a passkey to the account's owner validator of that kind, and waits for it, returning its transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const addOwnerSync = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  owners.sendSync(client, (account) => owners.addOwnerCalls(account, options.owner))
+
+/**
+ * Returns the calls that removes a key or a passkey from the account, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const removeOwnerCalls = (
+  account: SmartAccount,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<ReadonlyArray<SmartAccount_.Call>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.removeOwnerCalls(account, options.owner)
+
+/**
+ * Sends a user operation that removes a key or a passkey from the account, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const removeOwner = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  owners.send(client, (account) => owners.removeOwnerCalls(account, options.owner))
+
+/**
+ * Sends a user operation that removes a key or a passkey from the account, and waits for it, returning its transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const removeOwnerSync = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef }
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  owners.sendSync(client, (account) => owners.removeOwnerCalls(account, options.owner))
+
+/**
+ * Returns the calls that sets how many of the account's keys or passkeys must sign, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const setThresholdCalls = (
+  account: SmartAccount,
+  options: { readonly threshold: number; readonly owners?: "key" | "passkey" | undefined }
+): Effect.Effect<ReadonlyArray<SmartAccount_.Call>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.setThresholdCalls(account, options)
+
+/**
+ * Sends a user operation that sets how many of the account's keys or passkeys must sign, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const setThreshold = (
+  client: BundlerClient,
+  options: { readonly threshold: number; readonly owners?: "key" | "passkey" | undefined }
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  owners.send(client, (account) => owners.setThresholdCalls(account, options))
+
+/**
+ * Sends a user operation that sets how many of the account's keys or passkeys must sign, and waits for it, returning its transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const setThresholdSync = (
+  client: BundlerClient,
+  options: { readonly threshold: number; readonly owners?: "key" | "passkey" | undefined }
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  owners.sendSync(client, (account) => owners.setThresholdCalls(account, options))
+
+/**
+ * Returns the calls that replaces an owner with another of the same kind, in one operation, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const replaceOwnerCalls = (
+  account: SmartAccount,
+  options: { readonly owner: SmartAccount_.OwnerRef; readonly with: SmartAccount_.OwnerRef }
+): Effect.Effect<ReadonlyArray<SmartAccount_.Call>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.replaceOwnerCalls(account, options)
+
+/**
+ * Sends a user operation that replaces an owner with another of the same kind, in one operation, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const replaceOwner = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef; readonly with: SmartAccount_.OwnerRef }
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  owners.send(client, (account) => owners.replaceOwnerCalls(account, options))
+
+/**
+ * Sends a user operation that replaces an owner with another of the same kind, in one operation, and waits for it, returning its transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const replaceOwnerSync = (
+  client: BundlerClient,
+  options: { readonly owner: SmartAccount_.OwnerRef; readonly with: SmartAccount_.OwnerRef }
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  owners.sendSync(client, (account) => owners.replaceOwnerCalls(account, options))
+
+/**
+ * Returns the calls that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, to batch with other calls in one user operation.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const addOwnerValidatorCalls = (
+  account: SmartAccount,
+  options: { readonly owner: Hex | SmartAccount_.Owner | SmartAccount_.Passkey | SmartAccount_.Passkeys }
+): Effect.Effect<ReadonlyArray<SmartAccount_.Call>, AccountError.AccountError | ChainError.ChainError> =>
+  owners.addOwnerValidatorCalls(account, options.owner)
+
+/**
+ * Sends a user operation that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, from the bundler client's account, and returns its hash.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const addOwnerValidator = (
+  client: BundlerClient,
+  options: { readonly owner: Hex | SmartAccount_.Owner | SmartAccount_.Passkey | SmartAccount_.Passkeys }
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  owners.send(client, (account) => owners.addOwnerValidatorCalls(account, options.owner))
+
+/**
+ * Sends a user operation that gives the account a second kind of owner: passkeys on an account owned by a key, or a key on one owned by passkeys, and waits for it, returning its transaction receipt.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const addOwnerValidatorSync = (
+  client: BundlerClient,
+  options: { readonly owner: Hex | SmartAccount_.Owner | SmartAccount_.Passkey | SmartAccount_.Passkeys }
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  owners.sendSync(client, (account) => owners.addOwnerValidatorCalls(account, options.owner))

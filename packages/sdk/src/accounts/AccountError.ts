@@ -1,6 +1,6 @@
 /**
  * Failures building or using a smart account: an unsupported account, Smart Sessions missing, an owner that could
- * not sign, invalid options, or a chain the account doesn't match.
+ * not sign, invalid options, a chain the account doesn't match, or an owner change the account can't make.
  *
  * @stability experimental
  * @since 2.0.0
@@ -137,6 +137,100 @@ export class ChainMismatch
 }
 
 /**
+ * The owner to remove or replace is not an owner of the account.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class OwnerNotFound
+  extends Schema.TaggedError<OwnerNotFound>("@namera-ai/sdk/accounts/AccountError/OwnerNotFound")(
+    "OwnerNotFound",
+    { owner: Address, detail, cause }
+  )
+{
+  override get message(): string {
+    return withDetail(`${this.owner} is not an owner of the account`, this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "List the account's owners with `SmartAccount.getOwners`."
+  }
+}
+
+/**
+ * The owner to add already owns the account.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class OwnerExists extends Schema.TaggedError<OwnerExists>("@namera-ai/sdk/accounts/AccountError/OwnerExists")(
+  "OwnerExists",
+  { owner: Address, detail, cause }
+) {
+  override get message(): string {
+    return withDetail(`${this.owner} already owns the account`, this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Nothing to add; list the account's owners with `SmartAccount.getOwners`."
+  }
+}
+
+/**
+ * The change would leave fewer owners than must sign, such as removing the last owner or a threshold above the
+ * number of owners.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class ThresholdUnreachable
+  extends Schema.TaggedError<ThresholdUnreachable>("@namera-ai/sdk/accounts/AccountError/ThresholdUnreachable")(
+    "ThresholdUnreachable",
+    { threshold: Schema.Int, owners: Schema.Int, detail, cause }
+  )
+{
+  override get message(): string {
+    return withDetail(
+      `A threshold of ${this.threshold} with ${this.owners} owner${this.owners === 1 ? "" : "s"} can never sign`,
+      this.detail
+    )
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Lower the threshold with `SmartAccount.setThreshold` first, or add an owner before removing one."
+  }
+}
+
+/**
+ * The account's owners can't make this change, such as adding a second key to a single-key Kernel validator.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class OperationNotSupported
+  extends Schema.TaggedError<OperationNotSupported>("@namera-ai/sdk/accounts/AccountError/OperationNotSupported")(
+    "OperationNotSupported",
+    { operation: Schema.String, detail, cause }
+  )
+{
+  override get message(): string {
+    return withDetail(`The account can't ${this.operation}`, this.detail)
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "A single-key validator (Kernel, Nexus) only rotates its key with `SmartAccount.replaceOwner`; owners of another kind need `SmartAccount.addOwnerValidator`."
+  }
+}
+
+/**
  * Schema for the reason of an `AccountError`.
  *
  * @stability experimental
@@ -144,8 +238,28 @@ export class ChainMismatch
  * @since 2.0.0
  */
 export const AccountErrorReason: Schema.Union<
-  [typeof NotSupported, typeof SessionsNotInstalled, typeof SigningFailed, typeof InvalidOptions, typeof ChainMismatch]
-> = Schema.Union([NotSupported, SessionsNotInstalled, SigningFailed, InvalidOptions, ChainMismatch])
+  [
+    typeof NotSupported,
+    typeof SessionsNotInstalled,
+    typeof SigningFailed,
+    typeof InvalidOptions,
+    typeof ChainMismatch,
+    typeof OwnerNotFound,
+    typeof OwnerExists,
+    typeof ThresholdUnreachable,
+    typeof OperationNotSupported
+  ]
+> = Schema.Union([
+  NotSupported,
+  SessionsNotInstalled,
+  SigningFailed,
+  InvalidOptions,
+  ChainMismatch,
+  OwnerNotFound,
+  OwnerExists,
+  ThresholdUnreachable,
+  OperationNotSupported
+])
 
 /**
  * The specific failure behind an `AccountError`.
@@ -322,4 +436,62 @@ export const chainMismatch = (
   new AccountError({
     account: options.account,
     reason: new ChainMismatch({ ...reasonFields(options), expected: options.expected, actual: options.actual })
+  })
+
+/**
+ * Creates an `AccountError` for an owner the account doesn't have.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const ownerNotFound = (options: Options & { readonly owner: `0x${string}` }): AccountError =>
+  new AccountError({
+    account: options.account,
+    reason: new OwnerNotFound({ ...reasonFields(options), owner: options.owner })
+  })
+
+/**
+ * Creates an `AccountError` for an owner the account already has.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const ownerExists = (options: Options & { readonly owner: `0x${string}` }): AccountError =>
+  new AccountError({
+    account: options.account,
+    reason: new OwnerExists({ ...reasonFields(options), owner: options.owner })
+  })
+
+/**
+ * Creates an `AccountError` for a change that would leave fewer owners than the threshold.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const thresholdUnreachable = (
+  options: Options & { readonly threshold: number; readonly owners: number }
+): AccountError =>
+  new AccountError({
+    account: options.account,
+    reason: new ThresholdUnreachable({
+      ...reasonFields(options),
+      threshold: options.threshold,
+      owners: options.owners
+    })
+  })
+
+/**
+ * Creates an `AccountError` for an owner change the account can't make.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const operationNotSupported = (options: Options & { readonly operation: string }): AccountError =>
+  new AccountError({
+    account: options.account,
+    reason: new OperationNotSupported({ ...reasonFields(options), operation: options.operation })
   })

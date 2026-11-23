@@ -75,6 +75,27 @@ One prompt can sign user operations on several chains: prepare each with `SmartA
 as its `signature`, then sign them together with `SmartAccount.signUserOperations`. EIP-7702 accounts take local keys
 only.
 
+### Owners after creation
+
+`SmartAccount.getOwners` reads who controls an account. The owner functions change it, each as calls to batch
+(`addOwnerCalls`), a sent user operation (`addOwner`) or one waited for (`addOwnerSync`):
+
+```ts
+const sets = await SmartAccount.getOwners(client, { address: account.address })
+
+await SmartAccount.addOwnerSync(bundler, { owner: phonePasskey })
+await SmartAccount.setThresholdSync(bundler, { threshold: 2 })
+await SmartAccount.removeOwnerSync(bundler, { owner: lostPasskey })
+await SmartAccount.replaceOwnerSync(bundler, { owner: oldKey, with: newKey })
+await SmartAccount.addOwnerValidatorSync(bundler, { owner: passkey }) // a passkey on a key-owned account
+```
+
+Kernel and Nexus hold one key, which `replaceOwner` rotates; a Safe7579 account's keys change on OwnableValidator and on
+the Safe itself together. Changes that would leave fewer owners than the threshold are refused before sending.
+
+Nexus and Safe7579 accounts deploy through unstaked factories, so bundlers that enforce ERC-7562 refuse to deploy
+them in their first user operation; hosted bundlers accept it, and the error's hint says so.
+
 ## Keys
 
 A `Keystore` holds an agent's keys by curve (secp256k1, ed25519, p256) and signs inside the store; private keys never

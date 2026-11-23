@@ -66,3 +66,15 @@ export const encodeAccountId: Hex.Hex = AbiFunction.encodeData(accountId)
 
 /** @internal */
 export const decodeAccountId = (result: Hex.Hex): string => AbiFunction.decodeResult(accountId, result)
+
+const isInitialized = AbiFunction.from("function isInitialized(address account) view returns (bool)")
+
+/**
+ * A module's `isInitialized(account)` view: whether it holds state for the account.
+ *
+ * @internal
+ */
+export const encodeIsInitialized = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(isInitialized, [account])
+
+/** Decodes `isInitialized`'s answer. @internal */
+export const decodeIsInitialized = (result: Hex.Hex): boolean => AbiFunction.decodeResult(isInitialized, result)

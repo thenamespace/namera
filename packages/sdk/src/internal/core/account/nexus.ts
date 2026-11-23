@@ -104,3 +104,20 @@ export const validatorNonceKey = (validator: Hex.Hex): bigint => Hex.toBigInt(va
  * @internal
  */
 export const ownerSignature = (validator: Hex.Hex, signature: Hex.Hex): Hex.Hex => Hex.concat(validator, signature)
+
+const transferOwnership = AbiFunction.from("function transferOwnership(address newOwner)")
+const getOwner = AbiFunction.from("function getOwner(address account) view returns (address)")
+
+/**
+ * The call that makes `owner` the default (K1) validator's owner for the calling account. It also sets the owner of
+ * a passkey account whose K1 validator has none.
+ *
+ * @internal
+ */
+export const transferOwnershipData = (owner: Hex.Hex): Hex.Hex => AbiFunction.encodeData(transferOwnership, [owner])
+
+/** The K1 validator's owner view. @internal */
+export const encodeOwner = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(getOwner, [account])
+
+/** Decodes the K1 validator's owner. @internal */
+export const decodeOwner = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(getOwner, result)

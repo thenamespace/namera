@@ -114,6 +114,8 @@ const build = Effect.fnUntraced(function*(options: {
   readonly version: Version
   readonly address: Hex
   readonly eip7702: boolean
+  /** Whether the owner's validator is the root, or one installed next to it (a second owner validator). */
+  readonly root: boolean
   readonly factory?: { readonly address: Hex; readonly data: Hex } | undefined
   readonly authorization?: { readonly account: PrivateKeyAccount; readonly address: Hex } | undefined
   readonly firstCalls?: ReadonlyArray<{ readonly to: Hex; readonly data: Hex }> | undefined
@@ -135,7 +137,9 @@ const build = Effect.fnUntraced(function*(options: {
     factory: options.factory,
     authorization: options.authorization,
     firstCalls: options.firstCalls,
-    nonceKey: Kernel.ownerNonceKey(signing.rootValidator),
+    nonceKey: options.root
+      ? Kernel.ownerNonceKey(signing.rootValidator)
+      : Kernel.validatorNonceKey(signing.rootValidator),
     stubSignature: signing.stubSignature,
     encodeCalls,
     signUserOperationHash: signing.signUserOperationHash,
@@ -145,9 +149,15 @@ const build = Effect.fnUntraced(function*(options: {
   return signing.passkeys === undefined ? account : Passkeys.register(account, signing.passkeys)
 })
 
-/** @internal */
-export const from = Effect.fnUntraced(function*(
-  options: FromOptions
+/**
+ * Builds a Kernel account whose owner's validator is the root, or (`root` false) an existing account whose owner's
+ * validator was installed next to the root (`SmartAccount.addOwnerValidator`), which signs on its own nonce lane.
+ *
+ * @internal
+ */
+export const fromValidator = Effect.fnUntraced(function*(
+  options: FromOptions,
+  root: boolean
 ): Effect.fn.Return<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> {
   const version = options.version ?? "3.3"
   const contracts = External.kernel[version]
@@ -174,9 +184,16 @@ export const from = Effect.fnUntraced(function*(
     version,
     address: options.address ?? address,
     eip7702: false,
+    root,
     factory: { address: factory, data: factoryData }
   })
 })
+
+/** @internal */
+export const from = (
+  options: FromOptions
+): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> =>
+  fromValidator(options, true)
 
 /** @internal */
 export const fromEip7702 = (
@@ -198,6 +215,7 @@ export const fromEip7702 = (
     version,
     address: options.owner.address,
     eip7702: true,
+    root: true,
     authorization: { account: options.owner, address: contracts.implementation },
     firstCalls: options.sessions === false ? undefined : [installSessionsCall(options.owner.address)]
   })

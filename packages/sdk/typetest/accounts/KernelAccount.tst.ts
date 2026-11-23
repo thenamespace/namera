@@ -79,3 +79,32 @@ describe("SmartAccount.from", () => {
     >()
   })
 })
+
+describe("SmartAccount owners", () => {
+  it("reads owner sets narrowed by their kind", () => {
+    const set = {} as SmartAccount.OwnerSet
+    if (set.type === "key") expect(set.owners).type.toBe<ReadonlyArray<`0x${string}`>>()
+    if (set.type === "passkey") {
+      expect(set.passkeys[0]!).type.toBe<{
+        readonly credentialId: `0x${string}`
+        readonly publicKey: `0x${string}`
+        readonly requireUserVerification: boolean
+      }>()
+    }
+    expect<ReturnType<typeof SmartAccount.getOwners>>().type.toBe<Promise<ReadonlyArray<SmartAccount.OwnerSet>>>()
+  })
+
+  it("takes keys, addresses and passkeys as owners, and returns calls, a hash or a receipt", () => {
+    expect<LocalAccount>().type.toBeAssignableTo<SmartAccount.OwnerRef>()
+    expect<`0x${string}`>().type.toBeAssignableTo<SmartAccount.OwnerRef>()
+    expect<WebAuthnAccount>().type.toBeAssignableTo<SmartAccount.OwnerRef>()
+    expect<ReturnType<typeof SmartAccount.addOwnerCalls>>().type.toBe<Promise<ReadonlyArray<SmartAccount.Call>>>()
+    expect<ReturnType<typeof SmartAccount.removeOwner>>().type.toBe<Promise<`0x${string}`>>()
+    expect<ReturnType<typeof EffectSmartAccount.setThresholdSync>>().type.toBe<
+      Effect.Effect<
+        Awaited<ReturnType<typeof SmartAccount.setThresholdSync>>,
+        AccountError.AccountError | ChainError.ChainError
+      >
+    >()
+  })
+})

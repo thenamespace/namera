@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 
 import type * as ChainError from "../../ChainError.ts"
 import { decodeAccountId, encodeAccountId } from "../../internal/core/account/erc7579.ts"
+import { decodeRootValidator, encodeRootValidator } from "../../internal/core/account/kernel.ts"
 import {
   type AccountClient,
   call,
@@ -100,6 +101,15 @@ export const detect = Effect.fnUntraced(function*(
   return { type: "unsupported", implementation }
 })
 
+// Whether `validator` is a Kernel account's root validator, rather than one installed next to it.
+const isKernelRoot = (client: AccountClient, address: Hex, validator: Hex) =>
+  call(client, { to: address, data: encodeRootValidator }).pipe(
+    Effect.map((result) => {
+      const root = result === undefined || result === "0x" ? undefined : decodeRootValidator(result)
+      return root === undefined || sameAddress(root, validator)
+    })
+  )
+
 /** The options of `fromAddress`. */
 export interface FromAddressOptions {
   readonly client: AccountClient
@@ -146,7 +156,10 @@ export const fromAddress = Effect.fnUntraced(function*(
     const common = { client: options.client, address: options.address, sessions: false } as const
     switch (detected.type) {
       case "kernel":
-        return yield* Kernel.from({ ...common, owner: passkeys, version: detected.version as never })
+        return yield* Kernel.fromValidator(
+          { ...common, owner: passkeys, version: detected.version as never },
+          yield* isKernelRoot(options.client, options.address, Passkeys.validator)
+        )
       case "nexus":
         return yield* Nexus.from({ ...common, owner: passkeys, version: detected.version as never })
       case "safe7579": {
@@ -171,13 +184,23 @@ export const fromAddress = Effect.fnUntraced(function*(
       const version = detected.version as never
       const [ecdsaOwner] = ecdsaOwners as [Owner]
       if (!detected.eip7702) {
-        return yield* build.from({
+        const keyOptions = {
           client: options.client,
           owner: ecdsaOwner,
           version,
           address: options.address,
           sessions: false
-        })
+        }
+        return detected.type === "kernel"
+          ? yield* Kernel.fromValidator(
+            keyOptions,
+            yield* isKernelRoot(
+              options.client,
+              options.address,
+              External.kernel[version as keyof typeof External.kernel].ecdsaValidator
+            )
+          )
+          : yield* Nexus.from(keyOptions)
       }
       if (ecdsaOwner.type !== "local" || !sameAddress(ecdsaOwner.address, options.address)) {
         return yield* AccountError.invalidOptions({
