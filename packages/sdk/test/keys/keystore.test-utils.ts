@@ -73,13 +73,13 @@ export const conformance = (
     it("fails with NotFound for an unknown id, on every operation", async () => {
       const store = await open()
       for (
-        const promise of [
-          Keystore.get(store, { id: "missing" }),
-          Keystore.remove(store, { id: "missing" }),
-          Keystore.sign(store, { id: "missing", digest })
+        const attempt of [
+          () => Keystore.get(store, { id: "missing" }),
+          () => Keystore.remove(store, { id: "missing" }),
+          () => Keystore.sign(store, { id: "missing", digest })
         ]
       ) {
-        const reason = reasonOf(await rejection(promise))
+        const reason = reasonOf(await rejection(attempt()))
         assert.strictEqual(reason._tag, "NotFound")
       }
     })
