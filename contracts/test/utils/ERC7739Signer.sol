@@ -61,16 +61,9 @@ library ERC7739Signer {
         return keccak256(abi.encodePacked(hex"1901", app.appDomainSeparator, app.contents));
     }
 
-    /// @dev The digest the session key signs: the app data wrapped in `TypedDataSign` for `account`'s domain.
+    /// @dev The digest the session key signs: the app data wrapped in `TypedDataSign` for `account`'s domain, or
+    /// for `("", "", chainid, account, 0)` when the account has no `eip712Domain()`.
     function nestedHash(AppData memory app, address account) internal view returns (bytes32) {
-        (
-            ,
-            string memory name,
-            string memory version,
-            uint256 chainId,
-            address verifyingContract,
-            bytes32 salt,
-        ) = IERC5267(account).eip712Domain();
         bytes32 typedDataSignTypehash = keccak256(
             abi.encodePacked(
                 "TypedDataSign(",
@@ -79,18 +72,29 @@ library ERC7739Signer {
                 app.contentsType
             )
         );
-        bytes32 structHash = keccak256(
-            abi.encode(
-                typedDataSignTypehash,
-                app.contents,
-                keccak256(bytes(name)),
-                keccak256(bytes(version)),
-                chainId,
-                verifyingContract,
-                salt
-            )
-        );
+        bytes32 structHash =
+            keccak256(abi.encodePacked(typedDataSignTypehash, app.contents, domainFields(account)));
         return keccak256(abi.encodePacked(hex"1901", app.appDomainSeparator, structHash));
+    }
+
+    /// @dev `account`'s EIP-712 domain fields as `TypedDataSign` encodes them (strings hashed), or those of
+    /// `("", "", chainid, account, 0)` when it has no `eip712Domain()`.
+    function domainFields(address account) internal view returns (bytes memory) {
+        try IERC5267(account).eip712Domain() returns (
+            bytes1,
+            string memory name,
+            string memory version,
+            uint256 chainId,
+            address verifyingContract,
+            bytes32 salt,
+            uint256[] memory
+        ) {
+            return abi.encode(
+                keccak256(bytes(name)), keccak256(bytes(version)), chainId, verifyingContract, salt
+            );
+        } catch {
+            return abi.encode(keccak256(""), keccak256(""), block.chainid, account, bytes32(0));
+        }
     }
 
     /// @dev Signature for `SmartSession.isValidSignatureWithSender`: permission ID, the ECDSA session key

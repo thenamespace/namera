@@ -107,6 +107,7 @@ contract MockAccount is EIP712 {
     function isValidSignature(bytes32 hash, bytes calldata signature)
         external
         view
+        virtual
         returns (bytes4)
     {
         if (signature.length == 65) {
@@ -116,8 +117,13 @@ contract MockAccount is EIP712 {
         }
         address validator = address(bytes20(signature[:20]));
         if (!isValidatorInstalled[validator]) return 0xffffffff;
-        return
-            IValidatorModule(validator).isValidSignatureWithSender(msg.sender, hash, signature[20:]);
+        return IValidatorModule(validator)
+            .isValidSignatureWithSender(msg.sender, _validatorHash(hash), signature[20:]);
+    }
+
+    /// @dev The hash a validator is asked about for an ERC-1271 check of `hash`.
+    function _validatorHash(bytes32 hash) internal view virtual returns (bytes32) {
+        return hash;
     }
 
     function _call(address target, uint256 value, bytes calldata data) internal {
@@ -132,9 +138,45 @@ contract MockAccount is EIP712 {
     function _domainNameAndVersion()
         internal
         pure
+        virtual
         override
         returns (string memory name, string memory version)
     {
         return ("MockAccount", "1");
+    }
+}
+
+/// @notice Kernel's ERC-1271: a validator is asked about `_toWrappedHash(hash)`, the EIP-712 hash of
+/// `Kernel(bytes32 hash)` in the account's domain, named "Kernel".
+contract MockKernelAccount is MockAccount {
+    constructor(address owner_) MockAccount(owner_) {}
+
+    function _validatorHash(bytes32 hash) internal view override returns (bytes32) {
+        return _hashTypedData(keccak256(abi.encode(keccak256("Kernel(bytes32 hash)"), hash)));
+    }
+
+    function _domainNameAndVersion()
+        internal
+        pure
+        override
+        returns (string memory name, string memory version)
+    {
+        return ("Kernel", "0.3.3");
+    }
+}
+
+/// @notice An account without ERC-5267's `eip712Domain()`, like Safe7579.
+contract MockDomainlessAccount is MockAccount {
+    error NoDomain();
+
+    constructor(address owner_) MockAccount(owner_) {}
+
+    function eip712Domain()
+        public
+        pure
+        override
+        returns (bytes1, string memory, string memory, uint256, address, bytes32, uint256[] memory)
+    {
+        revert NoDomain();
     }
 }

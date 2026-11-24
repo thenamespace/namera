@@ -7,7 +7,11 @@ import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 import {ERC7739Signer} from "../../utils/ERC7739Signer.sol";
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
-import {MockAccount} from "../../utils/mocks/MockAccount.sol";
+import {
+    MockAccount,
+    MockDomainlessAccount,
+    MockKernelAccount
+} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 import {MockTypedDataPolicy} from "../../utils/mocks/MockTypedDataPolicy.sol";
 
@@ -287,6 +291,87 @@ contract ERC1271Test is SmartSessionTestBase {
         );
         assertEq(
             salted.isValidSignature(hash, abi.encodePacked(address(smartSession), unsalted)),
+            INVALID
+        );
+    }
+
+    function test_kernelWrappedHash_isAccepted() public {
+        MockKernelAccount kernel = new MockKernelAccount(owner);
+        installSmartSession(address(kernel), "");
+        PermissionId kernelId = enableSession(address(kernel), _signingSession());
+        bytes memory signature = abi.encodePacked(
+            address(smartSession), ERC7739Signer.sign(mail, address(kernel), kernelId, sessionKey)
+        );
+        ERC7739Signer.AppData memory otherMail = ERC7739Signer.mail(APP_DOMAIN, address(1));
+
+        assertEq(kernel.isValidSignature(ERC7739Signer.appHash(mail), signature), EIP1271_MAGIC);
+        assertEq(kernel.isValidSignature(ERC7739Signer.appHash(otherMail), signature), INVALID);
+    }
+
+    function testFuzz_kernelWrappedHash_isAcceptedForAnyMail(address to) public {
+        MockKernelAccount kernel = new MockKernelAccount(owner);
+        installSmartSession(address(kernel), "");
+        PermissionId kernelId = enableSession(address(kernel), _signingSession());
+        ERC7739Signer.AppData memory anyMail = ERC7739Signer.mail(APP_DOMAIN, to);
+        bytes memory signature = abi.encodePacked(
+            address(smartSession),
+            ERC7739Signer.sign(anyMail, address(kernel), kernelId, sessionKey)
+        );
+
+        assertEq(kernel.isValidSignature(ERC7739Signer.appHash(anyMail), signature), EIP1271_MAGIC);
+    }
+
+    /// @dev Only an account named "Kernel" may ask about the Kernel wrapping of the app's hash.
+    function test_kernelWrapping_isRefusedForOtherAccounts() public {
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256("MockAccount"),
+                keccak256("1"),
+                block.chainid,
+                address(account)
+            )
+        );
+        bytes32 wrapped = keccak256(
+            abi.encodePacked(
+                hex"1901",
+                domainSeparator,
+                keccak256(
+                    abi.encode(keccak256("Kernel(bytes32 hash)"), ERC7739Signer.appHash(mail))
+                )
+            )
+        );
+
+        vm.prank(address(account));
+        assertEq(
+            smartSession.isValidSignatureWithSender(
+                address(this), wrapped, _sign(mail, sessionKey)
+            ),
+            INVALID
+        );
+    }
+
+    function test_accountWithoutDomain_isBoundToItsChainAndAddress() public {
+        MockDomainlessAccount domainless = new MockDomainlessAccount(owner);
+        installSmartSession(address(domainless), "");
+        PermissionId domainlessId = enableSession(address(domainless), _signingSession());
+        bytes32 hash = ERC7739Signer.appHash(mail);
+        bytes memory signature =
+            ERC7739Signer.sign(mail, address(domainless), domainlessId, sessionKey);
+        uint256 chainId = block.chainid;
+        vm.chainId(chainId + 1);
+        bytes memory otherChain =
+            ERC7739Signer.sign(mail, address(domainless), domainlessId, sessionKey);
+        vm.chainId(chainId);
+
+        assertEq(
+            domainless.isValidSignature(hash, abi.encodePacked(address(smartSession), signature)),
+            EIP1271_MAGIC
+        );
+        assertEq(
+            domainless.isValidSignature(hash, abi.encodePacked(address(smartSession), otherChain)),
             INVALID
         );
     }

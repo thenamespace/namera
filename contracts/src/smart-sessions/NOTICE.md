@@ -108,6 +108,10 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   conditions on single fields of what the session key signed (a permit's spender and value). Other
   policies are called as before, with the session key's signature. The session validator gets only the
   session key's signature. `PolicyLib.checkERC1271` takes an `ERC1271Request` (`DataTypes.sol`).
+- **ERC-7739 on Kernel and Safe7579.** Kernel 3.3 asks its validators about `_toWrappedHash(hash)`, the
+  EIP-712 hash of `Kernel(bytes32 hash)` in its own domain, so for an account whose EIP-712 name is
+  "Kernel" that wrapping of the app's hash binds the signature too. Safe7579 has no `eip712Domain()`, so
+  an account without one is bound by the domain `("", "", block.chainid, account, 0)` (upstream reverted).
 - The ERC-7739 support probe returns `0x77390003`: upstream returns `0x77390001`, `0x77390002` marked
   the hash binding fix, and `0x77390003` the signature layout above.
 

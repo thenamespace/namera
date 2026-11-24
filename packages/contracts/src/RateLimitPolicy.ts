@@ -38,6 +38,19 @@ const abiV1 = [{
   "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
   "stateMutability": "pure"
 }, {
+  "type": "function",
+  "name": "usage",
+  "inputs": [
+    { "name": "configId", "type": "bytes32", "internalType": "bytes32" },
+    { "name": "multiplexer", "type": "address", "internalType": "address" },
+    { "name": "account", "type": "address", "internalType": "address" },
+    { "name": "tag", "type": "bytes32", "internalType": "bytes32" },
+    { "name": "period", "type": "uint256", "internalType": "uint256" },
+    { "name": "time", "type": "uint256", "internalType": "uint256" }
+  ],
+  "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+  "stateMutability": "view"
+}, {
   "type": "event",
   "name": "PolicySet",
   "inputs": [{ "name": "id", "type": "bytes32", "indexed": false, "internalType": "bytes32" }, {
@@ -73,10 +86,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.rate-limit-policy.v1",
-  "address": "0x732E4397Ff29FE533432F8163eb2EE900Ac98a67",
+  "address": "0x2628AB6C05cE738E7545398a982A68Ebe0aC7bB6",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xdbd0569b0e7e44b8c6b608bf1feed56dfd06157b869d84a31f4c4a93a30fffa4",
-  "initcodeHash": "0x82dab35d60cb98f79a06bbaefaaf067235f3032a0bec8164ceb9533b7f0e5b93",
+  "initcodeHash": "0x4d3a6db978ac8e3b516cc9cbb0d5a3b435339010e72074e23eab5a39f12cd30c",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
   "abi": abiV1,
   "deployments": {}

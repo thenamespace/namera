@@ -38,6 +38,19 @@ const abiV1 = [{
   "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
   "stateMutability": "pure"
 }, {
+  "type": "function",
+  "name": "usage",
+  "inputs": [
+    { "name": "configId", "type": "bytes32", "internalType": "bytes32" },
+    { "name": "multiplexer", "type": "address", "internalType": "address" },
+    { "name": "account", "type": "address", "internalType": "address" },
+    { "name": "tag", "type": "bytes32", "internalType": "bytes32" },
+    { "name": "period", "type": "uint256", "internalType": "uint256" },
+    { "name": "time", "type": "uint256", "internalType": "uint256" }
+  ],
+  "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+  "stateMutability": "view"
+}, {
   "type": "event",
   "name": "PolicySet",
   "inputs": [{ "name": "id", "type": "bytes32", "indexed": false, "internalType": "bytes32" }, {
@@ -81,10 +94,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.spend-policy.v1",
-  "address": "0xdFeD449dbd6f46CdCD0d6b3b0b14AfeD3DF5b64f",
+  "address": "0x5fD9f97C5558568E58708bD84E928096721C12Dd",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0x28b0cb2517c65f50fd17c1326d07d9b52a972500e7da985e66b6b75fed311154",
-  "initcodeHash": "0xaef6eb8dd8c9fd7440afa64a1048ea5208ae32caa718b4c3a8e0a0bf755cf199",
+  "initcodeHash": "0x7dc749117f90efa83bd148054e94fe5f36dad2a9093be59350eb846c7612d882",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
   "abi": abiV1,
   "deployments": {}

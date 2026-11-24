@@ -140,6 +140,20 @@ contract SpendPolicyTest is LimitPolicyTest {
         assertEq(policy.checkUserOpPolicy(ID, _transferAt(60, nextDay)), 1);
     }
 
+    function test_usageReportsWhatEachPeriodCharged() public {
+        _configure(_limit(100, DAY, true));
+        bytes32 tag = bytes32(uint256(uint160(token)));
+        policy.checkUserOpPolicy(ID, _transferAt(60, T));
+        policy.checkUserOpPolicy(ID, _transferAt(1, T + DAY));
+
+        assertEq(policy.usage(ID, address(this), account, tag, DAY, T), 60);
+        assertEq(policy.usage(ID, address(this), account, tag, DAY, T + DAY), 1);
+        assertEq(policy.usage(ID, address(this), account, tag, DAY, T + 2 * DAY), 0);
+        // Another multiplexer's or another account's counters are separate.
+        assertEq(policy.usage(ID, makeAddr("other"), account, tag, DAY, T), 0);
+        assertEq(policy.usage(ID, address(this), recipient, tag, DAY, T), 0);
+    }
+
     function test_aTruncatedTransferCountsAsUnlimited() public {
         _configure(_limit(type(uint256).max - 1, 0, true));
         bytes memory truncated = abi.encodeWithSelector(0xa9059cbb, recipient);
@@ -193,6 +207,17 @@ contract RateLimitPolicyTest is LimitPolicyTest {
         assertEq(policy.checkUserOpPolicy(ID, op), 1);
         op = _op(PolicyCalls.withTime(PolicyCalls.single(recipient, 0, ""), T + 1 hours));
         assertEq(policy.checkUserOpPolicy(ID, op), _bounds(1 hours, T + 1 hours));
+    }
+
+    function test_usageCountsOperationsUnderThePolicysTag() public {
+        policy.initializeWithMultiplexer(account, ID, abi.encode(uint256(2), uint256(1 hours)));
+        policy.checkUserOpPolicy(
+            ID, _op(PolicyCalls.withTime(PolicyCalls.single(recipient, 0, ""), T))
+        );
+
+        assertEq(
+            policy.usage(ID, address(this), account, keccak256("namera.rate-limit"), 1 hours, T), 1
+        );
     }
 
     function test_periodicCountingNeedsTheStatedTime() public {
