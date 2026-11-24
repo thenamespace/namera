@@ -438,6 +438,10 @@ export declare namespace verify {
  * the account accepts once the session is enabled, when the typed data's verifying contract asks (viem's
  * `verifyTypedData` asks from its own validator contract, which no signing policy names).
  *
+ * The session key signs each user operation hash, and each ERC-7739 nested digest, bound to the grant's permission id:
+ * `keccak256(abi.encode(hash, permissionId))`, as Smart Sessions verifies it, so a signature can't be replayed under
+ * another session of the same key.
+ *
  * With `check` (the default), every operation and signature is checked against the session's policies first, with
  * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
  * signs. The check is advisory: the contracts still decide.
@@ -6344,8 +6348,8 @@ export declare namespace ecdsa {
  *
  * **Gotchas**
  *
- * Throws `SessionKeyError`: `NoSigners`, `InvalidAddress`, `DuplicateSigner`, or `InvalidThreshold` for a threshold
- * outside 1 to the number of signers.
+ * Throws `SessionKeyError`: `NoSigners`, `TooManySigners` over 69 signers (what a validator's config holds),
+ * `InvalidAddress`, `DuplicateSigner`, or `InvalidThreshold` for a threshold outside 1 to the number of signers.
  *
  * **Example** (Two of three agent keys)
  *
@@ -6459,8 +6463,8 @@ export declare namespace passkey {
  *
  * **Gotchas**
  *
- * Throws `SessionKeyError`: `NoSigners`, `InvalidPublicKey`, `DuplicateSigner`, or `InvalidThreshold` for a
- * threshold outside 1 to the number of passkeys.
+ * Throws `SessionKeyError`: `NoSigners`, `TooManySigners` over 16 passkeys, `InvalidPublicKey`, `DuplicateSigner`,
+ * or `InvalidThreshold` for a threshold outside 1 to the number of passkeys.
  *
  * @stability experimental
  * @category constructors
@@ -6545,6 +6549,23 @@ export declare class NoSigners extends NoSigners_base {
     /** What to do about it. */
     get hint(): string;
 }
+declare const TooManySigners_base: Schema.Class<TooManySigners, Schema.TaggedStruct<"TooManySigners", {
+    readonly signers: Schema.Int;
+    readonly max: Schema.Int;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * More signers than Smart Sessions keeps in a session validator's config (2,304 bytes): 69 ECDSA signers or 16
+ * passkeys.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class TooManySigners extends TooManySigners_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
 declare const DuplicateSigner_base: Schema.Class<DuplicateSigner, Schema.TaggedStruct<"DuplicateSigner", {
     readonly signer: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
 }>, import("effect/Cause").YieldableError>;
@@ -6587,6 +6608,7 @@ export declare const SessionKeyErrorReason: Schema.Union<[
     typeof InvalidAddress,
     typeof InvalidPublicKey,
     typeof NoSigners,
+    typeof TooManySigners,
     typeof DuplicateSigner,
     typeof InvalidThreshold
 ]>;
@@ -6599,7 +6621,7 @@ export declare const SessionKeyErrorReason: Schema.Union<[
  */
 export type SessionKeyErrorReason = typeof SessionKeyErrorReason.Type;
 declare const SessionKeyError_base: Schema.Class<SessionKeyError, Schema.TaggedStruct<"SessionKeyError", {
-    readonly reason: Schema.Union<[typeof InvalidAddress, typeof InvalidPublicKey, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]>;
+    readonly reason: Schema.Union<[typeof InvalidAddress, typeof InvalidPublicKey, typeof NoSigners, typeof TooManySigners, typeof DuplicateSigner, typeof InvalidThreshold]>;
 }>, import("effect/Cause").YieldableError>;
 /**
  * An invalid session key description. `reason` says what is wrong.
@@ -6630,7 +6652,7 @@ declare const SessionKeyError_base: Schema.Class<SessionKeyError, Schema.TaggedS
 export declare class SessionKeyError extends SessionKeyError_base implements NameraError.Fields {
     readonly [TypeId]: "~@namera-ai/sdk/keys/SessionKeyError";
     readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
-    readonly cause: DuplicateSigner | InvalidAddress | InvalidPublicKey | InvalidThreshold | NoSigners;
+    readonly cause: DuplicateSigner | InvalidAddress | InvalidPublicKey | InvalidThreshold | NoSigners | TooManySigners;
     get shortMessage(): string;
     get details(): string | undefined;
     get docsPath(): string | undefined;

@@ -178,8 +178,10 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         vd = vd.intersect(_checkActions(permissionId, callData, account));
 
         // Reverts if the session has no validator.
+        // Namera: the session key signs the permission id with the user operation hash, so no one can move a signed
+        // operation to another session of the same key.
         bool valid = $sessionValidators.isValidISessionValidator({
-            hash: userOpHash,
+            hash: keccak256(abi.encode(userOpHash, permissionId)),
             account: account,
             permissionId: permissionId,
             signature: sessionKeySignature
@@ -289,8 +291,12 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         });
         if (!policiesPass) return false;
 
+        // Namera: bound to the permission id, as user operations are.
         return $sessionValidators.isValidISessionValidator({
-            hash: hash, account: msg.sender, permissionId: permissionId, signature: signature
+            hash: keccak256(abi.encode(hash, permissionId)),
+            account: msg.sender,
+            permissionId: permissionId,
+            signature: signature
         });
     }
 

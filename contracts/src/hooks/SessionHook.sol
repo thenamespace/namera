@@ -135,6 +135,8 @@ contract SessionHook is IUserOpPolicy {
         bytes32 sessionConfigId,
         bytes calldata initData
     ) external {
+        // Not during one of the account's session operations: the policies it runs must not change under it.
+        _requireIdle(account);
         address smartSession = $smartSessions[account];
         if (smartSession == address(0)) revert SessionHookNotInstalled(account);
         if (msg.sender != smartSession) revert OnlySmartSession(msg.sender);
@@ -150,6 +152,8 @@ contract SessionHook is IUserOpPolicy {
             $policies[sessionConfigId][i][account] = policy;
         }
         $counts[sessionConfigId][account] = count;
+        // The only calls before are the policies' `supportsInterface` views: nothing can re-enter.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit ExecutionPoliciesSet(account, sessionConfigId, policies);
 
         // Initialized after the list is stored (checks-effects-interactions); at most MAX_EXECUTION_POLICIES.
@@ -234,7 +238,8 @@ contract SessionHook is IUserOpPolicy {
         if (context.length == 0) return;
         address account = msg.sender;
         if (_loadContextHash(account) != keccak256(context)) revert InvalidContext(account);
-        _storeContextHash(account, bytes32(0));
+        // Locked while the policies run, as in `preCheck`, so none of them can re-enter a check or reinstall the hook.
+        _storeContextHash(account, bytes32(uint256(1)));
 
         (
             bytes32 permissionId,
@@ -250,6 +255,7 @@ contract SessionHook is IUserOpPolicy {
                 abi.encodeCall(IExecutionPolicy.postCheck, (ids[i], account, contexts[i]))
             );
         }
+        _storeContextHash(account, bytes32(0));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -371,7 +377,10 @@ contract SessionHook is IUserOpPolicy {
         view
         returns (bool)
     {
-        if (target == address(this) || target == account) return false;
+        // Smart Sessions too: a call there could replace the session's execution policies while they measure.
+        if (target == address(this) || target == account || target == $smartSessions[account]) {
+            return false;
+        }
         uint256 count = $counts[id][account];
         for (uint256 i; i < count; ++i) {
             if ($policies[id][i][account] == target) return false;
@@ -429,7 +438,8 @@ contract SessionHook is IUserOpPolicy {
     }
 
     function _contextSlot(address account) internal pure returns (bytes32) {
-        return keccak256(abi.encode(CONTEXT_SLOT, account));
+        // The account first: ERC-7562 associates transient storage with the account the same way as storage.
+        return keccak256(abi.encode(account, CONTEXT_SLOT));
     }
 
     function _loadContextHash(address account) internal view returns (bytes32 value) {

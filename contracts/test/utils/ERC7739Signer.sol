@@ -120,7 +120,7 @@ library ERC7739Signer {
     ) internal view returns (bytes memory) {
         return abi.encodePacked(
             permissionId,
-            sessionKeySignature(app, account, sessionKey),
+            sessionKeySignature(app, account, permissionId, sessionKey),
             contentsData,
             policyData,
             uint16(contentsData.length),
@@ -129,13 +129,17 @@ library ERC7739Signer {
         );
     }
 
-    /// @dev The ECDSA session key signature (EIP-191) of the nested hash.
-    function sessionKeySignature(AppData memory app, address account, uint256 sessionKey)
-        internal
-        view
-        returns (bytes memory)
-    {
-        bytes32 digest = ECDSA.toEthSignedMessageHash(nestedHash(app, account));
+    /// @dev The ECDSA session key signature (EIP-191) of the nested hash bound to `permissionId`, as SmartSession
+    /// checks it.
+    function sessionKeySignature(
+        AppData memory app,
+        address account,
+        PermissionId permissionId,
+        uint256 sessionKey
+    ) internal view returns (bytes memory) {
+        bytes32 digest = ECDSA.toEthSignedMessageHash(
+            keccak256(abi.encode(nestedHash(app, account), permissionId))
+        );
         (uint8 v, bytes32 r, bytes32 s) = VM.sign(sessionKey, digest);
         return abi.encodePacked(r, s, v);
     }

@@ -10,6 +10,8 @@ pragma solidity 0.8.38;
 library Period {
     /// @dev ERC-4337 time bounds are 48 bits.
     uint256 internal constant MAX_TIME = type(uint48).max;
+    /// @dev The latest time an agent may state: EntryPoint v0.9 reads bit 47 of both bounds as a block-number range.
+    uint256 internal constant MAX_STATED_TIME = (1 << 47) - 1;
 
     /// @dev The index of the period of `length` seconds containing `t`; 0 for the lifetime.
     function index(uint256 length, uint256 t) internal pure returns (uint256) {

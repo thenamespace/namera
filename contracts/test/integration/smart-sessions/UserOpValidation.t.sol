@@ -3,7 +3,7 @@ pragma solidity 0.8.38;
 
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
-import {ConfigId, PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
+import {ConfigId, PermissionId, Session, SmartSessionMode} from "src/smart-sessions/DataTypes.sol";
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 
 import {IEntryPoint} from "../../utils/EntryPoint.sol";
@@ -37,10 +37,28 @@ contract UserOpValidationTest is SmartSessionTestBase {
         smartSession.validateUserOp(op, opHash);
     }
 
+    /// @dev Regression (permission id binding): the session key signs the permission id with the operation, so an
+    /// operation signed for one session can't be used with another session of the same key.
+    function test_operationSignedForAnotherSessionOfTheKey_isRejected() public {
+        PermissionId signedFor = enableSession(defaultSession());
+        Session memory other = defaultSession();
+        other.salt = keccak256("other");
+        PermissionId usedWith = enableSession(other);
+        ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
+
+        op.signature = abi.encodePacked(
+            SmartSessionMode.USE, usedWith, signUserOpHash(op, signedFor, sessionKey)
+        );
+        assertEq(validate(op), SIG_FAILED);
+
+        assertEq(validate(signUse(op, usedWith)), VALID);
+    }
+
     function test_RevertWhen_modeIsUnknown() public {
         PermissionId permissionId = enableSession(defaultSession());
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
-        op.signature = abi.encodePacked(uint8(3), permissionId, signUserOpHash(op, sessionKey));
+        op.signature =
+            abi.encodePacked(uint8(3), permissionId, signUserOpHash(op, permissionId, sessionKey));
 
         vm.expectRevert();
         validate(op);
@@ -158,7 +176,8 @@ contract UserOpValidationTest is SmartSessionTestBase {
         PermissionId permissionId = enableSession(defaultSession());
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         (, uint256 otherKey) = makeAddrAndKey("other");
-        op.signature = abi.encodePacked(uint8(0), permissionId, signUserOpHash(op, otherKey));
+        op.signature =
+            abi.encodePacked(uint8(0), permissionId, signUserOpHash(op, permissionId, otherKey));
 
         vm.expectRevert(
             abi.encodeWithSelector(IEntryPoint.FailedOp.selector, 0, "AA24 signature error")

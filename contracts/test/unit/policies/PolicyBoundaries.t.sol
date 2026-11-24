@@ -91,6 +91,18 @@ contract PolicyConfigTest is Test {
         policy.initializeWithMultiplexer(account, "id", abi.encode(limits));
     }
 
+    /// @dev Regression (duplicate limits): two limits on one token and period would share a counter and charge each
+    /// spend twice.
+    function test_rejectsASecondLimitOnTheSameTokenAndPeriod() public {
+        SpendPolicy policy = new SpendPolicy();
+        address token = makeAddr("token");
+        SpendPolicy.Limit[] memory limits = new SpendPolicy.Limit[](2);
+        limits[0] = SpendPolicy.Limit(token, 100, 1 days, true);
+        limits[1] = SpendPolicy.Limit(token, 200, 1 days, false);
+        vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 1));
+        policy.initializeWithMultiplexer(account, "id", abi.encode(limits));
+    }
+
     /// @dev A cap without a token, or a second cap of one token (only the first would hold), is refused.
     function test_approvalRejectsACapWithoutATokenOrADuplicateToken() public {
         ApprovalPolicy policy = new ApprovalPolicy();
@@ -550,12 +562,17 @@ contract UserOpCallsBoundaryTest is Test {
         assertFalse(found);
     }
 
-    function test_theStatedTimeMayBeTheLast48BitSecond() public view {
-        bytes memory callData =
-            PolicyCalls.withTime(PolicyCalls.single(address(7), 0, ""), type(uint48).max);
-        (bool found, uint256 t) = harness.timestamp(callData);
+    /// @dev Regression (stated time): EntryPoint v0.9 reads bit 47 of the time bounds as a block-number range, so the
+    /// latest time an agent may state is `2^47 - 1`.
+    function test_theStatedTimeMustLeaveBit47Clear() public view {
+        bytes memory execute = PolicyCalls.single(address(7), 0, "");
+        (bool found, uint256 t) =
+            harness.timestamp(PolicyCalls.withTime(execute, Period.MAX_STATED_TIME));
         assertTrue(found);
-        assertEq(t, type(uint48).max);
+        assertEq(t, (uint256(1) << 47) - 1);
+
+        (found,) = harness.timestamp(PolicyCalls.withTime(execute, uint256(1) << 47));
+        assertFalse(found);
     }
 
     function test_aBareExecuteSelectorIsNotACallToTheAccount() public {

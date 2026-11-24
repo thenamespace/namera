@@ -1,3 +1,4 @@
+import * as AbiParameters from "ox/AbiParameters"
 import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 
@@ -7,6 +8,18 @@ import type { EcdsaSessionKey, PasskeySessionKey } from "../sessionKey.ts"
 // What the session validators read as the session key's signature: `ECDSASessionValidator`'s `threshold` 65-byte
 // EIP-191 signatures in ascending signer order, or `WebAuthnValidator`'s packed assertions (direct mode, the
 // passkeys from the session's config).
+
+const boundParameters = AbiParameters.from(["bytes32", "bytes32"])
+
+/**
+ * What the session key signs for `hash` (a user operation hash, or ERC-7739's nested digest):
+ * `keccak256(abi.encode(hash, permissionId))`. Smart Sessions verifies the session key over it, so a signature can't
+ * be moved to another session of the same key.
+ *
+ * @internal
+ */
+export const boundHash = (hash: Hex.Hex, permissionId: Hex.Hex): Hex.Hex =>
+  Hash.keccak256(AbiParameters.encode(boundParameters, [hash, permissionId]))
 
 /**
  * Concatenates ECDSA signatures by ascending signer address, as `ECDSASessionValidator` requires.

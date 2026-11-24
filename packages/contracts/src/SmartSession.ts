@@ -808,6 +808,11 @@ const abiV1 = [
   },
   {
     "type": "error",
+    "name": "AssociatedArray_OutOfBounds",
+    "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "error",
     "name": "ChainIdMismatch",
     "inputs": [{ "name": "providedChainId", "type": "uint64", "internalType": "uint64" }]
   },
@@ -947,10 +952,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0xf98e7031970f70E6F910BeFB92EA1490B1cC9F09",
+  "address": "0x26e62071c25F003BA503898e0d716Cd98CEF6e80",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0x59028f76a733b6c897142237204fd1e40fd18f75a6dadad5578592b0561120c4",
+  "initcodeHash": "0xe52ddf284d3e18192453afab9b56626e0005b40b9d384e5a511b9cd5c7ca7ddb",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

@@ -64,6 +64,8 @@ const routerAbi = [
   }
 ] as const
 
+const addresses = (count: number) =>
+  Array.from({ length: count }, (_, i) => `0x${(i + 0x100).toString(16).padStart(40, "0")}` as const)
 const transfer = Policy.erc20Transfer({ token: USDC, to: [merchant], amount: { lte: 50_000000n } })
 
 const build = (overrides: Partial<Session.from.Options> = {}) =>
@@ -281,10 +283,18 @@ describe("Session.validate", () => {
     [
       "CONFIG_TOO_LARGE",
       {
-        signer: SessionKey.ecdsaThreshold({
-          threshold: 1,
-          signers: Array.from({ length: 14 }, (_, i) => `0x${(i + 1).toString(16).padStart(40, "0")}`)
-        })
+        // Built by hand: `SessionKey.ecdsaThreshold` refuses more than 69 signers.
+        signer: { type: "ecdsa", threshold: 1, signers: addresses(70) } as SessionKey.SessionKey
+      }
+    ],
+    ["CONFIG_TOO_LARGE", { policies: [transfer, Policy.nativeTransfer({ to: addresses(127) })] }],
+    [
+      "CONFIG_TOO_LARGE",
+      {
+        policies: [
+          transfer,
+          ...addresses(127).map((address) => Policy.custom({ kind: "limit", address, initData: "0x" }))
+        ]
       }
     ],
     ["SIGN_MESSAGE_UNSUPPORTED", { policies: [transfer, Policy.signMessage({ prefix: "Sign in" })] }],

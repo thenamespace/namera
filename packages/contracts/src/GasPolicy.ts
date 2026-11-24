@@ -111,10 +111,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.gas-policy.v1",
-  "address": "0x34419440bb56b3159DA6E7613c694bB9a4e0599a",
+  "address": "0x103324bc61408d69A01c00986a0058C92e8e6904",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xb4a95aa6e40f2775220b21973b7e748b73066ccafe9cccdeee536d0b653f5902",
-  "initcodeHash": "0x37f97590a7f6e1b86843f5a3e7cdad455a829a059e00137da90a417aa3e7465a",
+  "initcodeHash": "0x538a47b18dcf33e977a940cd347449910ff73f7d3d6998d46fe9b4d6b3fff922",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

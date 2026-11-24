@@ -309,6 +309,10 @@ export declare namespace verify {
  * the account accepts once the session is enabled, when the typed data's verifying contract asks (viem's
  * `verifyTypedData` asks from its own validator contract, which no signing policy names).
  *
+ * The session key signs each user operation hash, and each ERC-7739 nested digest, bound to the grant's permission id:
+ * `keccak256(abi.encode(hash, permissionId))`, as Smart Sessions verifies it, so a signature can't be replayed under
+ * another session of the same key.
+ *
  * With `check` (the default), every operation and signature is checked against the session's policies first, with
  * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
  * signs. The check is advisory: the contracts still decide.

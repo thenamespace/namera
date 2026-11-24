@@ -171,6 +171,10 @@ library EnumerableSet {
         uint256 n;
         assembly ("memory-safe") {
             n := sload(slot)
+        }
+        // Namera: element `n` sits at `slot + 1 + n`, which ERC-7562 associates with the account up to `slot + 128`.
+        if (n >= 127) revert AssociatedArray_OutOfBounds(n);
+        assembly ("memory-safe") {
             sstore(add(slot, add(n, 1)), value)
             sstore(slot, add(n, 1))
         }

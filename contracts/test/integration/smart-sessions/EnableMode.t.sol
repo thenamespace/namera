@@ -182,8 +182,11 @@ contract EnableModeTest is SmartSessionTestBase {
         EnableSession memory data = enableData(address(account), session, SmartSessionMode.ENABLE);
         ERC4337.PackedUserOperation memory op = userOp(callSetValue(1));
         (, uint256 otherKey) = makeAddrAndKey("other");
-        op.signature =
-            encodeEnableSignature(SmartSessionMode.ENABLE, data, signUserOpHash(op, otherKey));
+        op.signature = encodeEnableSignature(
+            SmartSessionMode.ENABLE,
+            data,
+            signUserOpHash(op, smartSession.getPermissionId(session), otherKey)
+        );
 
         assertEq(validate(op), SIG_FAILED);
     }
@@ -203,6 +206,9 @@ contract EnableModeTest is SmartSessionTestBase {
         view
         returns (bytes memory)
     {
-        return encodeEnableSignature(SmartSessionMode.ENABLE, data, signUserOpHash(op, sessionKey));
+        PermissionId permissionId = smartSession.getPermissionId(data.sessionToEnable);
+        return encodeEnableSignature(
+            SmartSessionMode.ENABLE, data, signUserOpHash(op, permissionId, sessionKey)
+        );
     }
 }

@@ -17,7 +17,17 @@ import {
 } from "@namera-ai/contracts"
 import { Devnet } from "@namera-ai/devnet"
 import { toKernelSmartAccount } from "permissionless/accounts"
-import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAbi, parseEther, toHex } from "viem"
+import {
+  concat,
+  encodeAbiParameters,
+  encodeFunctionData,
+  type Hex,
+  keccak256,
+  pad,
+  parseAbi,
+  parseEther,
+  toHex
+} from "viem"
 import {
   entryPoint07Abi,
   entryPoint07Address,
@@ -36,6 +46,10 @@ const token = privateKeyToAccount(generatePrivateKey()).address
 const spender = privateKeyToAccount(generatePrivateKey()).address
 const recipient = privateKeyToAccount(generatePrivateKey()).address
 const sessionKey = privateKeyToAccount(generatePrivateKey())
+
+// What a session key signs for `hash`: Smart Sessions binds it to the permission id.
+const bound = (hash: Hex, permissionId: Hex): Hex =>
+  keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }], [hash, permissionId]))
 
 const erc20 = parseAbi(["function transfer(address to, uint256 amount)", "function approve(address, uint256)"])
 const execute = parseAbi(["function execute(bytes32 mode, bytes executionCalldata)"])
@@ -270,7 +284,11 @@ describe("Namera's policies under ERC-7562", { concurrent: false }, () => {
           entryPointVersion: "0.7",
           chainId
         })
-        return concat(["0x00", permissionId, await sessionKey.signMessage({ message: { raw: hash } })])
+        return concat([
+          "0x00",
+          permissionId,
+          await sessionKey.signMessage({ message: { raw: bound(hash, permissionId) } })
+        ])
       }
     })
 

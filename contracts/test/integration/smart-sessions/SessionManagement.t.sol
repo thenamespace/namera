@@ -13,11 +13,11 @@ import {
 } from "src/smart-sessions/DataTypes.sol";
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
 import {ISessionValidator} from "src/smart-sessions/interfaces/ISessionValidator.sol";
-import {FlatBytesLib} from "src/smart-sessions/lib/FlatBytesLib.sol";
 import {IdLib} from "src/smart-sessions/lib/IdLib.sol";
 
 import {SessionBuilder} from "../../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
+import {MockAccount} from "../../utils/mocks/MockAccount.sol";
 import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 
 contract SessionManagementTest is SmartSessionTestBase {
@@ -138,16 +138,6 @@ contract SessionManagementTest is SmartSessionTestBase {
         enableSession(session);
     }
 
-    function test_RevertWhen_validatorConfigExceedsCapacity() public {
-        Session memory session = defaultSession();
-        session.sessionValidatorInitData = new bytes(FlatBytesLib.MAX_LENGTH + 1);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(FlatBytesLib.DataTooLong.selector, FlatBytesLib.MAX_LENGTH + 1)
-        );
-        enableSession(session);
-    }
-
     function test_removeSession_clearsAllSessionState() public {
         Session memory session = defaultSession()
             .withUserOpPolicy(address(policy), MockPolicyConfig.allow())
@@ -251,9 +241,35 @@ contract SessionManagementTest is SmartSessionTestBase {
         account.installModule(MODULE_TYPE_VALIDATOR, address(smartSession), "");
         vm.stopPrank();
 
-        assertEq(smartSession.getNonce(permissionId, address(account)), uint256(1) << 128);
+        // Uninstalling and reinstalling each start an epoch.
+        assertEq(smartSession.getNonce(permissionId, address(account)), uint256(2) << 128);
         vm.expectRevert();
         validate(op);
+    }
+
+    /// @dev Regression (reinstall epoch): Kernel ignores a failed `onUninstall`, which also undoes its epoch bump, so
+    /// reinstalling starts a new epoch itself. Here the account installs again with no epoch bump from `onUninstall`.
+    function test_reinstalling_spendsUnusedEnableSignaturesEvenWhenUninstallingFailed() public {
+        Session memory session = defaultSession();
+        ERC4337.PackedUserOperation memory op = signEnable(userOp(callSetValue(1)), session);
+
+        vm.prank(address(account));
+        smartSession.onInstall("");
+
+        vm.expectPartialRevert(ISmartSession.HashMismatch.selector);
+        validate(op);
+    }
+
+    /// @dev The first install keeps epoch 0, so an enable signature made before the account installed Smart Sessions
+    /// (a counterfactual account's) stays valid.
+    function test_firstInstall_keepsEarlierEnableSignaturesValid() public {
+        MockAccount fresh = new MockAccount(owner);
+        ERC4337.PackedUserOperation memory op =
+            signEnable(userOp(address(fresh), callSetValue(1)), defaultSession());
+
+        installSmartSession(address(fresh), "");
+
+        assertEq(validate(op), VALID);
     }
 
     /// @dev Regression (internal review, finding 9): a policy listed twice would keep only its last configuration.

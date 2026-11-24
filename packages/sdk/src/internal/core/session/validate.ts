@@ -28,11 +28,19 @@ export interface ValidateOptions {
 }
 
 /**
- * Smart Sessions keeps a session validator's config in at most 512 bytes.
+ * Smart Sessions keeps a session validator's config in at most 2,304 bytes.
  *
  * @internal
  */
-export const MAX_VALIDATOR_DATA = 512
+export const MAX_VALIDATOR_DATA = 2304
+
+/**
+ * Smart Sessions' sets (a session's actions, each list of policies) hold at most 127 entries: the storage ERC-7562
+ * associates with the account.
+ *
+ * @internal
+ */
+export const MAX_SET_ENTRIES = 127
 
 /**
  * SessionHook runs at most 8 execution policies per session.
@@ -207,9 +215,15 @@ export const validate = (session: Session, options: ValidateOptions): Validation
     problems.push(
       problem(
         "CONFIG_TOO_LARGE",
-        `the session key's config is over ${MAX_VALIDATOR_DATA} bytes: use fewer signers (13 keys or 3 passkeys at most)`
+        `the session key's config is over ${MAX_VALIDATOR_DATA} bytes: use fewer signers (69 keys or 16 passkeys at most)`
       )
     )
+  }
+  if (compiled.actions.length > MAX_SET_ENTRIES) {
+    problems.push(problem("CONFIG_TOO_LARGE", `a session holds at most ${MAX_SET_ENTRIES} actions`))
+  }
+  if (lists.some((list) => list.length > MAX_SET_ENTRIES)) {
+    problems.push(problem("CONFIG_TOO_LARGE", `a session holds at most ${MAX_SET_ENTRIES} policies in each list`))
   }
 
   // Warnings.

@@ -118,16 +118,25 @@ every session needs a `GasPolicy` (the SDK refuses one without). `SignaturePolic
 (ERC-1271 is a view), so its caps don't add up across signatures. `ArgPolicy` compares whole words, so the SDK adds a
 range rule to a lower bound on a narrow integer, against contracts that ignore the bits above the type. Budgets
 reset at fixed, epoch-aligned periods, so a session can spend a full budget at the end of one period and again at the
-start of the next. Signed approvals (ERC-2612 `permit`, Permit2 permits, EIP-3009) aren't calls, so `SpendPolicy`
-doesn't count them; `SignaturePolicy` caps each one. `ApprovalPolicy` doesn't limit a Permit2 approval's expiration,
-so the spender keeps the allowance after the session ends.
+start of the next; an approval is charged in the period that grants it, so approvals staged over several periods can
+be pulled in one. Changing a budget's period starts a new counter. A failed execution keeps its charge: budgets are
+charged during validation. Signed approvals (ERC-2612 `permit`, Permit2 permits, EIP-3009) aren't calls, so
+`SpendPolicy` doesn't count them, including a permit to a router the session then calls; `SignaturePolicy` caps each
+ERC-2612 permit's top-level fields, but not a Permit2 amount, which sits in a nested struct the policy sees as a hash.
+`ApprovalPolicy` doesn't limit a Permit2 approval's expiration, so the spender keeps the allowance after the session
+ends. A limit covers one token address: a token that moves the same balance through a second address (a legacy proxy
+pair, or a native coin with an ERC-20 interface such as USDC on Arc) is counted only at the listed one, and on such a
+chain native value and the ERC-20 are separate budgets. Calls to account functions other than `execute` count no
+value or tokens. Execution policies measuring balances don't see the gas fee, which leaves during validation.
 
 **The fallback action** (`Policy.anyCall`) never reaches the account's infrastructure: the account itself, Smart
 Sessions, the EntryPoint, and installed validators and executors. It also refuses any module lifecycle or hook
-function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`), which covers the modules Kernel doesn't report as
-installed (hooks, permission signers and policies), and calldata ending in the account's or an EntryPoint's address,
-which ERC-2771 contracts (the account's fallback handlers) read as the account or the EntryPoint calling. A call whose
-last argument is the account (a vault's `receiver`) therefore needs an explicit action.
+function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`) on any target, which stops it reinstalling the modules
+Kernel doesn't report as installed (hooks, permission signers and policies), and calldata ending in the account's or
+the EntryPoint's address, which ERC-2771 contracts (the account's fallback handlers) read as the account or the
+EntryPoint calling. A call whose last argument is the account (a vault's `receiver`) therefore needs an explicit
+action. Other functions of modules Kernel doesn't report (a hook's setters, a ZeroDev permission policy's check) stay
+reachable: don't give `anyCall` to an account with such modules installed.
 
 **Signatures.** A session key's ERC-1271 signature carries the signed struct's EIP-712 `encodeData`, and Smart Sessions
 checks that it hashes to the signed struct before passing it to policies that implement `I1271TypedDataPolicy`.
@@ -204,10 +213,13 @@ reason)`, but an inner call's revert is lost (`ExecutionReverted()`). Simulate t
 
 Managed contracts (`script/config/contracts.json`, the single list Solidity and the tooling read):
 
-| Label                               | Contract                                         |
-| ----------------------------------- | ------------------------------------------------ |
-| `namera.smart-session.v1`           | `SmartSession` (ERC-7579 validator)              |
-| `namera.ecdsa-session-validator.v1` | `ECDSASessionValidator` (k-of-n session signers) |
+| Label                               | Contract                                                                                                                                           |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `namera.smart-session.v1`           | `SmartSession` (ERC-7579 validator)                                                                                                                |
+| `namera.ecdsa-session-validator.v1` | `ECDSASessionValidator` (k-of-n session signers)                                                                                                   |
+| `namera.webauthn-validator.v1`      | `WebAuthnValidator` (passkey owners and session keys)                                                                                              |
+| `namera.session-hook.v1`            | `SessionHook` (execution policies)                                                                                                                 |
+| `namera.*-policy.v1`                | the eight policies (`AllowPolicy`, `ArgPolicy`, `ApprovalPolicy`, `SpendPolicy`, `ValuePolicy`, `RateLimitPolicy`, `GasPolicy`, `SignaturePolicy`) |
 
 `pnpm contracts:status` prints each contract's address. To simulate a deploy without sending transactions:
 `forge script script/Deploy.s.sol --rpc-url <url>`.

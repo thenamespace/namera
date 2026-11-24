@@ -5,7 +5,6 @@ import {P256} from "@openzeppelin/contracts/utils/cryptography/P256.sol";
 import {Test} from "forge-std/Test.sol";
 import {Base64} from "solady/utils/Base64.sol";
 
-import {WebAuthnValidator} from "src/validators/WebAuthnValidator.sol";
 import {WebAuthnAssertion} from "src/validators/lib/WebAuthnAssertion.sol";
 
 /// @notice Builds passkeys and WebAuthn assertions the way an authenticator does: `clientDataJSON` with the
@@ -221,13 +220,5 @@ abstract contract WebAuthnTestBase is Test {
                 (assertions[j - 1], assertions[j]) = (assertions[j], assertions[j - 1]);
             }
         }
-    }
-
-    function _replaySafeHash(WebAuthnValidator validator, address account, bytes32 hash)
-        internal
-        view
-        returns (bytes32)
-    {
-        return validator.replaySafeHash(account, hash);
     }
 }

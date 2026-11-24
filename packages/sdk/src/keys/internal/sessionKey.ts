@@ -11,6 +11,8 @@ const reason = (problem: core.Problem): SessionKeyError.SessionKeyErrorReason =>
       return new SessionKeyError.InvalidPublicKey({ value: problem.value })
     case "NoSigners":
       return new SessionKeyError.NoSigners({})
+    case "TooManySigners":
+      return new SessionKeyError.TooManySigners({ signers: problem.signers, max: problem.max })
     case "DuplicateSigner":
       return new SessionKeyError.DuplicateSigner({ signer: problem.signer })
     case "InvalidThreshold":

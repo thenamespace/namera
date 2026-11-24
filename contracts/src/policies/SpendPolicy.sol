@@ -71,6 +71,12 @@ contract SpendPolicy is LimitPolicy {
         for (uint256 i; i < length; ++i) {
             Limit memory limit = limits[i];
             if (limit.token == address(0)) revert InvalidLimit(i);
+            // Two limits on one token and period would share a counter and charge each spend twice.
+            for (uint256 j; j < i; ++j) {
+                if (limits[j].token == limit.token && limits[j].period == limit.period) {
+                    revert InvalidLimit(i);
+                }
+            }
             uint256 head = uint256(uint160(limit.token)) | (limit.countApprovals ? 1 << 160 : 0);
             _setWordAt(packed, 2 * i, head);
             _setWordAt(packed, 2 * i + 1, _packBudget(limit.amount, limit.period, i));

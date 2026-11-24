@@ -1,6 +1,6 @@
 /**
- * Failures describing a session key: an invalid signer address or passkey public key, no signers, a repeated signer,
- * or a threshold outside 1 to the number of signers.
+ * Failures describing a session key: an invalid signer address or passkey public key, no signers, more signers than
+ * the validator's config holds, a repeated signer, or a threshold outside 1 to the number of signers.
  *
  * @stability experimental
  * @since 2.0.0
@@ -81,6 +81,30 @@ export class NoSigners
 }
 
 /**
+ * More signers than Smart Sessions keeps in a session validator's config (2,304 bytes): 69 ECDSA signers or 16
+ * passkeys.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class TooManySigners
+  extends Schema.TaggedError<TooManySigners>("@namera-ai/sdk/keys/SessionKeyError/TooManySigners")(
+    "TooManySigners",
+    { signers: Schema.Int, max: Schema.Int }
+  )
+{
+  override get message(): string {
+    return `The session key has ${this.signers} signers, over the ${this.max} its validator's config holds`
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return `Use at most ${this.max} signers.`
+  }
+}
+
+/**
  * A signer appears more than once.
  *
  * @stability experimental
@@ -134,8 +158,15 @@ export class InvalidThreshold
  * @since 2.0.0
  */
 export const SessionKeyErrorReason: Schema.Union<
-  [typeof InvalidAddress, typeof InvalidPublicKey, typeof NoSigners, typeof DuplicateSigner, typeof InvalidThreshold]
-> = Schema.Union([InvalidAddress, InvalidPublicKey, NoSigners, DuplicateSigner, InvalidThreshold])
+  [
+    typeof InvalidAddress,
+    typeof InvalidPublicKey,
+    typeof NoSigners,
+    typeof TooManySigners,
+    typeof DuplicateSigner,
+    typeof InvalidThreshold
+  ]
+> = Schema.Union([InvalidAddress, InvalidPublicKey, NoSigners, TooManySigners, DuplicateSigner, InvalidThreshold])
 
 /**
  * The specific failure behind a `SessionKeyError`.

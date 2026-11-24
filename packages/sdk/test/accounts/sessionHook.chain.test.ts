@@ -5,6 +5,7 @@ import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAb
 import { entryPoint07Abi, entryPoint07Address, getUserOperationHash, toSmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
+import { bound } from "../session.test-utils.ts"
 import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 
 // Session operations through SessionHook on the devnet, whose alto runs in safe mode: it traces each operation's
@@ -104,7 +105,11 @@ describe.each([
               entryPointVersion: "0.7",
               chainId
             })
-            return concat(["0x00", permissionId, await sessionKey.signMessage({ message: { raw: hash } })])
+            return concat([
+              "0x00",
+              permissionId,
+              await sessionKey.signMessage({ message: { raw: bound(hash, permissionId) } })
+            ])
           }
         })
 

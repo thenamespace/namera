@@ -54,7 +54,7 @@ library UserOpCalls {
     /// @dev The time the agent states for an `execute` user operation: one 32-byte word appended after the ABI
     /// encoding of `execute`'s arguments (accounts and Smart Sessions ignore trailing calldata; the session key's
     /// signature covers it), before SessionHook's tag when there is one. `found` is false without exactly that word,
-    /// or for a time past ERC-4337's 48 bits.
+    /// or for a time with bit 47 set (EntryPoint v0.9 reads it as a block number).
     function timestamp(bytes calldata callData) internal pure returns (bool found, uint256 t) {
         callData = _unwrap(callData);
         if (callData.length >= 64 && bytes32(callData[callData.length - 32:]) == SESSION_HOOK_TAG) {
@@ -67,7 +67,7 @@ library UserOpCalls {
         uint256 end = start + ((length + 31) / 32) * 32;
         if (callData.length != end + 32) return (false, 0);
         t = uint256(bytes32(callData[end:end + 32]));
-        return (t <= Period.MAX_TIME, t);
+        return (t <= Period.MAX_STATED_TIME, t);
     }
 
     /// @dev The `execute` calldata an account runs: `callData[4:]` inside `executeUserOp`.

@@ -105,7 +105,8 @@ export const decodeCalls = (callData: Hex.Hex, account: Hex.Hex): ReadonlyArray<
 
 /**
  * The time the agent states in an `execute` operation, as `UserOpCalls.timestamp` reads it: one word right after
- * `execute`'s arguments (and before SessionHook's tag), at most 48 bits.
+ * `execute`'s arguments (and before SessionHook's tag), below 2^47 (EntryPoint v0.9 reads bit 47 of a time bound as a
+ * block number).
  *
  * @internal
  */
@@ -119,7 +120,7 @@ export const statedTime = (callData: Hex.Hex): bigint | undefined => {
     const end = start + Math.ceil(length / 32) * 32
     if (Hex.size(data) !== end + 32) return undefined
     const time = word(data, end)
-    return time <= BigInt(2 ** 48 - 1) ? time : undefined
+    return time < BigInt(2 ** 47) ? time : undefined
   } catch {
     return undefined
   }

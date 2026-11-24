@@ -27,7 +27,6 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
 
     /// @dev Kernel's ECDSA validator, which holds the account's owner and takes the account's calls as configuration.
     address internal constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
-    address internal constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
     address internal constant ECDSA_VALIDATOR = 0x845ADb2C711129d4f3966735eD98a9F09fC4cE57;
 
     address internal smartAccount;
@@ -169,8 +168,8 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
 
     /// @dev Regression (rerun review, findings 1 to 3; 1-pass review, finding 1): the fallback can't call a module
     /// lifecycle or hook function on any contract (Kernel's permission signers and bound hooks aren't reported as
-    /// installed), nor send calldata ending in the account's or an EntryPoint's address, which ERC-2771 contracts (the
-    /// account's fallback handlers) read as the account or the EntryPoint calling.
+    /// installed), nor send calldata ending in the account's or the EntryPoint's (v0.7, Kernel 3.3's) address, which
+    /// ERC-2771 contracts (the account's fallback handlers) read as the account or the EntryPoint calling.
     function test_theFallbackCannotConfigureModulesOrActAsTheAccount() public {
         Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
         session.salt = keccak256("fallback modules");
@@ -179,14 +178,13 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
 
         MockTarget other = new MockTarget();
         bytes memory setValue = abi.encodeCall(MockTarget.setValue, (3));
-        bytes[7] memory calls = [
+        bytes[6] memory calls = [
             abi.encodeWithSignature("onInstall(bytes)", ""),
             abi.encodeWithSignature("onUninstall(bytes)", ""),
             abi.encodeWithSignature("preCheck(address,uint256,bytes)", address(0), 0, ""),
             abi.encodeWithSignature("postCheck(bytes)", ""),
             abi.encodePacked(setValue, smartAccount),
-            abi.encodePacked(setValue, ENTRY_POINT_V07),
-            abi.encodePacked(setValue, ENTRY_POINT_V08)
+            abi.encodePacked(setValue, ENTRY_POINT_V07)
         ];
         for (uint256 i; i < calls.length; ++i) {
             ERC4337.PackedUserOperation memory op = signUse(

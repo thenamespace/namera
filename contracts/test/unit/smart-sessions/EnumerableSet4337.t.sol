@@ -106,6 +106,22 @@ contract EnumerableSet4337Test is Test {
         set.valueAt(alice, 1);
     }
 
+    /// @dev Regression (set cap): the array's last slot, `slot + 127`, is the last ERC-7562 associates with the account,
+    /// so a set holds at most 127 values.
+    function test_RevertWhen_adding128thValue() public {
+        for (uint256 i; i < 127; ++i) {
+            set.add(alice, bytes32(i + 1));
+        }
+        assertEq(set.length(alice), 127);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(EnumerableSet.AssociatedArray_OutOfBounds.selector, 127)
+        );
+        set.add(alice, bytes32(uint256(128)));
+        // A value already held is still no addition.
+        assertFalse(set.add(alice, bytes32(uint256(1))));
+    }
+
     /// @dev ERC-7562 lets validation touch only storage associated with the account: `keccak256(account ‖ x) + n`,
     /// n ≤ 128. Here the array (at `keccak256(account ‖ 0)`) and each value's position (`_positions[value][account]`).
     function test_touchesOnlyStorageAssociatedWithTheAccount() public {

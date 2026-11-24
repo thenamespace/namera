@@ -45,10 +45,22 @@ contract MockHookAccount {
         hook_.postCheck(context);
     }
 
-    /// @dev An operation whose calls make the account call the hook with `call` between the checks.
-    function callDuringCheck(IHook hook_, bytes calldata msgData, bytes calldata call) external {
-        bytes memory context = hook_.preCheck(address(0), 0, msgData);
+    /// @dev The account calling the hook with `call`, as one of its executions would.
+    function callHook(IHook hook_, bytes calldata call) external {
         (bool success, bytes memory result) = address(hook_).call(call);
+        if (!success) {
+            assembly ("memory-safe") {
+                revert(add(result, 0x20), mload(result))
+            }
+        }
+    }
+
+    /// @dev An operation whose calls make the account call `to` with `call` between the checks.
+    function callDuringCheck(IHook hook_, bytes calldata msgData, address to, bytes calldata call)
+        external
+    {
+        bytes memory context = hook_.preCheck(address(0), 0, msgData);
+        (bool success, bytes memory result) = to.call(call);
         if (!success) {
             assembly ("memory-safe") {
                 revert(add(result, 0x20), mload(result))
@@ -66,6 +78,16 @@ contract MockSmartSessionViews {
     function set(bool enabled_, bool hasHook_) external {
         enabled = enabled_;
         hasHook = hasHook_;
+    }
+
+    /// @dev Smart Sessions calling `to`, as when it enables a session.
+    function forward(address to, bytes calldata call) external {
+        (bool success, bytes memory result) = to.call(call);
+        if (!success) {
+            assembly ("memory-safe") {
+                revert(add(result, 0x20), mload(result))
+            }
+        }
     }
 
     function isPermissionEnabled(bytes32, address) external view returns (bool) {

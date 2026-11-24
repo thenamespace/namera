@@ -61,6 +61,12 @@ describe("session operation calldata", () => {
     assert.isUndefined(statedTime(single))
   })
 
+  it("reads a stated time below 2^47 only, as EntryPoint v0.9 reads bit 47 as a block number", () => {
+    const latest = BigInt(2) ** BigInt(47) - BigInt(1)
+    assert.strictEqual(statedTime(encodeCalls({ calls, time: latest })), latest)
+    assert.isUndefined(statedTime(encodeCalls({ calls, time: latest + BigInt(1) })))
+  })
+
   it("reads another function as one call to the account, and refuses other execution modes", () => {
     assert.deepStrictEqual(decodeCalls("0x12345678", account), [{ to: account, value: BigInt(0), data: "0x12345678" }])
     const tryMode = Hex.concat("0xe9ae5c53", "0x00ff", Hex.slice(encodeCalls({ calls: [transfer] }), 10))

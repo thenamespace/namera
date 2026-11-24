@@ -70,7 +70,7 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   as in Solady, that the appended data fits in the signature and is non-empty; otherwise the signature
   is invalid.
 - **FlatBytes.** Upstream wrote `length / 32 + 1` slots, one past its 10-slot struct for a 320-byte
-  value. Slots are now exact, unused tail bytes are zeroed, and capacity is 16 slots (512 bytes) so
+  value. Slots are now exact, unused tail bytes are zeroed, and capacity is 72 slots (2,304 bytes) so
   P-256/WebAuthn session validator configs fit.
 - **Removal revokes enable signatures.** `removeSession` (and so `onUninstall`) increments the enable
   nonce. Upstream left an unused owner ENABLE signature valid, so a removed session could enable itself
@@ -151,6 +151,15 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   `accountId()` is `kernel.advanced.v0.3.3` (`lib/SupportedAccount.sol`): the module's behaviour depends on
   Kernel 3.3's validator-bound hook, ERC-1271 wrapping and module reporting, and was checked against no
   other account. Upstream installs on any ERC-7579 account.
+- **Session-key signatures bind the permission id.** The session validator checks
+  `keccak256(abi.encode(userOpHash, permissionId))` (and `keccak256(abi.encode(hash, permissionId))` for
+  ERC-1271), so no one can move a signed operation or signature to another session of the same key.
+  Upstream signs the bare hash.
+- **A reinstall spends earlier enable signatures.** `onInstall` bumps the enable-nonce epoch when the
+  module was installed before (a first install keeps epoch 0 for enable signatures made before the
+  account was deployed); a failed `onUninstall` can't bump it.
+- **Larger validator configs.** `FlatBytesLib` holds 2,304 bytes (72 slots, inside ERC-7562's 128): 16
+  passkeys or 69 ECDSA signers. Upstream held 320 bytes.
 - **ENABLE mode emits events.** A session enabled in a user operation emits `NonceIterated` and
   `SessionCreated`, as enabling it directly does (upstream emitted neither).
 
@@ -170,12 +179,16 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - **Any installed validator can sign the enable digest.** The owner's ENABLE signature is checked with
   the account's ERC-1271, which routes to whichever validator the signature names; an account with
   another session module installed (one whose sessions sign arbitrary hashes) is only as safe as it.
-- **127 enabled sessions per account.** ERC-7562 associates at most 128 slots past an account-keyed
-  slot, and a session list keeps one slot per session; past 127 sessions, bundlers refuse an ENABLE
-  operation. Remove sessions that are no longer used.
-- **`onUninstall` costs ~180k gas per session.** Accounts ignore a failed `onUninstall`: if it runs out
-  of gas, sessions stay enabled and unused enable signatures stay valid after a reinstall. Remove
-  sessions first, or give the uninstall enough gas.
+- **127 entries per set.** ERC-7562 associates at most 128 slots past an account-keyed slot, so every
+  set (sessions, actions, policies) holds at most 127 values and adding more reverts. Remove sessions
+  that are no longer used.
+- **`onUninstall` costs ~100–200k gas per session.** Accounts ignore a failed `onUninstall`: if it runs
+  out of gas, sessions stay enabled until removed. The next install then spends every unused enable
+  signature anyway (see Additions). Remove sessions first, or give the uninstall enough gas.
+- **Re-enabling adds.** Enabling an already enabled session adds the new configuration's actions,
+  policies and content names to the old ones; remove the session first to replace it.
+- **Another deployment's state.** Calls through the fallback action may reach a second Smart Sessions
+  deployment and enable sessions there, which blocks installing it later until they are removed.
 - **The paymaster isn't constrained.** `permitERC4337Paymaster` is one flag: a sponsored session may name
   any paymaster, including a token paymaster the account approved, whose `postOp` pull no policy counts.
 

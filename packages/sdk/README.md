@@ -120,8 +120,9 @@ const sessionKey = SessionKey.ecdsa(Key.address(key, "eip155")) // what the owne
 | `Keystore.osKeychain({ service })`     | `@namera-ai/sdk/node`    | the OS keychain, with the optional `@napi-rs/keyring` |
 | `Keystore.webCrypto()`                 | `@namera-ai/sdk/browser` | browsers: non-extractable P-256 keys in IndexedDB     |
 
-`SessionKey.ecdsaThreshold({ threshold, signers })` makes a k-of-n session key. `SessionKey.passkey({ publicKey })`
-(and `passkeyThreshold`) makes a passkey session key, checked by `WebAuthnValidator` from the session's own config.
+`SessionKey.ecdsaThreshold({ threshold, signers })` makes a k-of-n session key of up to 69 signers.
+`SessionKey.passkey({ publicKey })` (and `passkeyThreshold`, up to 16 passkeys) makes a passkey session key, checked by
+`WebAuthnValidator` from the session's own config.
 Failures are `KeystoreError` and `SessionKeyError`.
 
 ## Sessions and policies
@@ -246,7 +247,9 @@ await Grant.check(client, { grant, calls }) // { ok, violations, simulation }
 ```
 
 The signer is a viem local account for an ECDSA session key (several for a threshold), or a viem WebAuthn account for
-a passkey session key; any other refuses with `GrantError` (`SignerMismatch`).
+a passkey session key; any other refuses with `GrantError` (`SignerMismatch`). The session key signs each user operation hash, and each
+ERC-7739 nested digest, bound to the grant's permission id (`keccak256(abi.encode(hash, permissionId))`), as Smart
+Sessions verifies it, so a signature can't be replayed under another session of the same key.
 
 Before the session key signs, every operation and signature is checked against the session's policies, with the
 limits' usage read from the chain: a violation rejects with `PolicyViolationError` (`CallNotAllowed`,
@@ -297,6 +300,9 @@ watcher.off()
 
 - **Revoking** removes an enabled session, or revokes an unused grant's enable signature so a leaked grant can never
   be enabled; revoking again sends nothing.
+- **At most 127 enabled sessions** per account: Smart Sessions keeps each set (sessions per account, and per session
+  its actions and each list of policies) within the storage ERC-7562 associates with the account. An expired grant
+  still holds its place until revoked, so revoke expired grants.
 - **Updating** keeps the permission id and what the limits have used, validates the updated session first, and
   spends the old enable signature, so the old grant can't bring the old policies back. The updated grant is
   installed: it carries no enable signature, and its agent uses the session as it is. Removing a call policy while

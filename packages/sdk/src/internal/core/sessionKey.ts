@@ -31,13 +31,19 @@ export interface PasskeySessionKey {
 export type Problem =
   | { readonly _tag: "InvalidAddress"; readonly value: string }
   | { readonly _tag: "NoSigners" }
+  | { readonly _tag: "TooManySigners"; readonly signers: number; readonly max: number }
   | { readonly _tag: "InvalidPublicKey"; readonly value: string }
   | { readonly _tag: "DuplicateSigner"; readonly signer: Hex.Hex }
   | { readonly _tag: "InvalidThreshold"; readonly threshold: number; readonly signers: number }
 
+// Smart Sessions keeps a session validator's config in at most 2,304 bytes: `abi.encode(threshold, signers)` is
+// 96 + 32 bytes per ECDSA signer, and 96 + 128 per passkey (WebAuthnValidator also caps passkeys at 16).
+const MAX_ECDSA_SIGNERS = 69
+const MAX_PASSKEYS = 16
+
 /**
- * Validates and normalises a k-of-n ECDSA session key: checksummed addresses, sorted ascending, no duplicates, and a
- * whole threshold from 1 to the number of signers.
+ * Validates and normalises a k-of-n ECDSA session key: checksummed addresses, sorted ascending, no duplicates, at most
+ * 69 signers, and a whole threshold from 1 to the number of signers.
  *
  * @internal
  */
@@ -46,6 +52,9 @@ export const ecdsa = (
   signers: ReadonlyArray<string>
 ): { readonly sessionKey: EcdsaSessionKey } | { readonly problem: Problem } => {
   if (signers.length === 0) return { problem: { _tag: "NoSigners" } }
+  if (signers.length > MAX_ECDSA_SIGNERS) {
+    return { problem: { _tag: "TooManySigners", signers: signers.length, max: MAX_ECDSA_SIGNERS } }
+  }
 
   const checksummed: Array<Address.Address> = []
   for (const value of signers) {
@@ -73,8 +82,8 @@ const isPublicKey = (value: string): value is Hex.Hex =>
   Hex.validate(value) && (Hex.size(value) === 64 || (Hex.size(value) === 65 && value.slice(0, 4) === "0x04"))
 
 /**
- * Validates and normalises a k-of-n passkey session key: well-formed P-256 public keys, no duplicates, ordered by
- * credential id, and a whole threshold from 1 to the number of passkeys.
+ * Validates and normalises a k-of-n passkey session key: well-formed P-256 public keys, no duplicates, at most 16,
+ * ordered by credential id, and a whole threshold from 1 to the number of passkeys.
  *
  * @internal
  */
@@ -83,6 +92,9 @@ export const passkey = (
   passkeys: ReadonlyArray<{ readonly publicKey: string; readonly requireUserVerification?: boolean | undefined }>
 ): { readonly sessionKey: PasskeySessionKey } | { readonly problem: Problem } => {
   if (passkeys.length === 0) return { problem: { _tag: "NoSigners" } }
+  if (passkeys.length > MAX_PASSKEYS) {
+    return { problem: { _tag: "TooManySigners", signers: passkeys.length, max: MAX_PASSKEYS } }
+  }
 
   const byId = new Map<Hex.Hex, WebAuthn.Passkey>()
   for (const { publicKey, requireUserVerification } of passkeys) {

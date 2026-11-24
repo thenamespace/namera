@@ -177,7 +177,7 @@ abstract contract SmartSessionTestBase is Test {
         returns (ERC4337.PackedUserOperation memory)
     {
         op.signature = abi.encodePacked(
-            SmartSessionMode.USE, permissionId, signUserOpHash(op, sessionKey)
+            SmartSessionMode.USE, permissionId, signUserOpHash(op, permissionId, sessionKey)
         );
         return op;
     }
@@ -197,7 +197,9 @@ abstract contract SmartSessionTestBase is Test {
         SmartSessionMode mode
     ) internal view returns (ERC4337.PackedUserOperation memory) {
         EnableSession memory data = enableData(op.sender, session, mode);
-        op.signature = encodeEnableSignature(mode, data, signUserOpHash(op, sessionKey));
+        op.signature = encodeEnableSignature(
+            mode, data, signUserOpHash(op, smartSession.getPermissionId(session), sessionKey)
+        );
         return op;
     }
 
@@ -296,12 +298,14 @@ abstract contract SmartSessionTestBase is Test {
     // Signatures
     // -----------------------------------------------------------------------------------------------------------------
 
-    function signUserOpHash(ERC4337.PackedUserOperation memory op, uint256 key)
-        internal
-        view
-        returns (bytes memory)
-    {
-        return signEthMessage(key, userOpHash(op));
+    /// @dev The session key's signature of `op` for `permissionId`: SmartSession binds the permission id into the hash
+    /// the session validator checks, so an operation signed for one session can't be used with another.
+    function signUserOpHash(
+        ERC4337.PackedUserOperation memory op,
+        PermissionId permissionId,
+        uint256 key
+    ) internal view returns (bytes memory) {
+        return signEthMessage(key, keccak256(abi.encode(userOpHash(op), permissionId)));
     }
 
     function signEthMessage(uint256 key, bytes32 hash) internal pure returns (bytes memory) {

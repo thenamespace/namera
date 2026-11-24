@@ -1,7 +1,7 @@
 import { SessionHook, SmartSession } from "@namera-ai/contracts"
 import type { Devnet } from "@namera-ai/devnet"
 import { KernelAccount, Session } from "@namera-ai/sdk"
-import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAbi, toHex } from "viem"
+import { concat, encodeAbiParameters, encodeFunctionData, type Hex, keccak256, pad, parseAbi, toHex } from "viem"
 import {
   entryPoint07Abi,
   entryPoint07Address,
@@ -65,6 +65,10 @@ export const enable = async (
   if (!success) throw new Error("enabling the session reverted")
 }
 
+/** What a session key signs for `hash`: Smart Sessions binds it to the permission id. */
+export const bound = (hash: Hex, permissionId: Hex): Hex =>
+  keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }], [hash, permissionId]))
+
 // The nonce lane that routes an operation to Smart Sessions on Kernel.
 const nonceKey = BigInt(concat(["0x0001", SmartSession.v1.address, "0x0000"]))
 
@@ -125,7 +129,7 @@ export const sessionAgent = (options: {
         entryPointVersion: "0.7",
         chainId
       })
-      return sign(await options.sessionKey.signMessage({ message: { raw: hash } }))
+      return sign(await options.sessionKey.signMessage({ message: { raw: bound(hash, permissionId) } }))
     }
   })
 }

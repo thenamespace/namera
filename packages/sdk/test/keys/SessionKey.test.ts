@@ -77,6 +77,17 @@ describe("SessionKey", () => {
     }
   })
 
+  it("takes up to 69 signers, what a validator's config holds (2,304 bytes)", () => {
+    const signers = Array.from({ length: 70 }, (_, i) => `0x${(i + 1).toString(16).padStart(40, "0")}`)
+    const largest = SessionKey.ecdsaThreshold({ threshold: 1, signers: signers.slice(0, 69) })
+    assert.strictEqual((SessionKey.toValidatorData(largest).length - 2) / 2, 2304)
+    assert.deepInclude(reasonOf(() => SessionKey.ecdsaThreshold({ threshold: 1, signers })), {
+      _tag: "TooManySigners",
+      signers: 70,
+      max: 69
+    })
+  })
+
   describe("passkeys", () => {
     // Three P-256 public keys, uncompressed (`0x04 ‖ x ‖ y`).
     const keys = ["0x01", "0x02", "0x03"].map((privateKey) =>
@@ -119,7 +130,7 @@ describe("SessionKey", () => {
       assert.strictEqual(SessionKey.toValidatorData(prefixed), SessionKey.toValidatorData(bare))
     })
 
-    it("rejects malformed and repeated keys and bad thresholds", () => {
+    it("rejects malformed and repeated keys, more than 16, and bad thresholds", () => {
       assert.deepInclude(reasonOf(() => SessionKey.passkey({ publicKey: "0x1234" })), {
         _tag: "InvalidPublicKey",
         value: "0x1234"
@@ -142,6 +153,14 @@ describe("SessionKey", () => {
         reasonOf(() => SessionKey.passkeyThreshold({ threshold: 2, passkeys: [{ publicKey: keys[0]! }] })),
         { _tag: "InvalidThreshold", signers: 1 }
       )
+      const seventeen = Array.from({ length: 17 }, (_, i) => ({
+        publicKey: PublicKey.toHex(P256.getPublicKey({ privateKey: `0x${(i + 1).toString(16).padStart(64, "0")}` }))
+      }))
+      assert.deepInclude(reasonOf(() => SessionKey.passkeyThreshold({ threshold: 1, passkeys: seventeen })), {
+        _tag: "TooManySigners",
+        signers: 17,
+        max: 16
+      })
     })
   })
 })

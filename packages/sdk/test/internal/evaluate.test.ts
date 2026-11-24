@@ -146,25 +146,30 @@ describe("calls", () => {
     )
   })
 
-  // Internal review, finding 1 and the value-selector lead: the fallback never reaches the EntryPoint, and only empty
-  // calldata is a plain value transfer.
+  // Internal review, finding 1 and the value-selector lead: the fallback never reaches the EntryPoint (v0.7, Kernel
+  // 3.3's; v0.8 is another contract to it), and only empty calldata is a plain value transfer.
   it("refuse the EntryPoint through the fallback, and calldata that isn't empty under the value selector", () => {
     const compiled = compiledOf([Policy.anyCall({ unsafe: true }), Policy.nativeTransfer({ to: [router] })])
     assert.deepStrictEqual(tags(compiled, [call("0x0000000071727De22E5E9d8BAf0edAc6f37da032", "0x205c2878")]), [
       "CallNotAllowed"
     ])
+    assert.deepStrictEqual(tags(compiled, [call("0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108", "0x205c2878")]), [])
     assert.deepStrictEqual(tags(compiled, [call(router, "0x", BigInt(1))]), [])
     assert.deepStrictEqual(tags(compiled, [call(router, "0x01", BigInt(1))]), ["CallNotAllowed"])
     assert.deepStrictEqual(tags(compiled, [call(router, "0xffffffff00", BigInt(1))]), ["CallNotAllowed"])
   })
 
   // Rerun review, findings 1 to 3, as PolicyLib decides them.
-  it("refuse module lifecycle and hook functions, and calldata ending in the account, through the fallback", () => {
+  it("refuse module lifecycle and hook functions, and calldata ending in the account or EntryPoint, through the fallback", () => {
     const compiled = compiledOf([Policy.anyCall({ unsafe: true })])
     for (const selector of ["0x6d61fe70", "0x8a91b0e3", "0xd68f6025", "0x173bf7da"] as const) {
       assert.deepStrictEqual(tags(compiled, [call(router, selector)]), ["CallNotAllowed"])
     }
     assert.deepStrictEqual(tags(compiled, [call(router, Hex.concat("0x12345678", account))]), ["CallNotAllowed"])
+    assert.deepStrictEqual(
+      tags(compiled, [call(router, Hex.concat("0x12345678", "0x0000000071727De22E5E9d8BAf0edAc6f37da032"))]),
+      ["CallNotAllowed"]
+    )
     assert.deepStrictEqual(tags(compiled, [call(router, Hex.concat("0x12345678", recipient))]), [])
   })
 })

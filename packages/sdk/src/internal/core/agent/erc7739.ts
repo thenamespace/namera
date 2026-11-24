@@ -5,8 +5,9 @@ import * as Hex from "ox/Hex"
 import * as TypedData from "ox/TypedData"
 
 // Session-key ERC-1271 signatures (contracts/src/smart-sessions/core/SmartSessionERC7739.sol): the session key signs
-// the app's typed data nested in ERC-7739's `TypedDataSign` under the account's EIP-712 domain, and the signature
-// carries the struct's `encodeData` so signing policies can check its fields.
+// the app's typed data nested in ERC-7739's `TypedDataSign` under the account's EIP-712 domain, bound to the
+// permission id (`boundHash`), and the signature carries the struct's `encodeData` so signing policies can check its
+// fields.
 
 /**
  * An account's EIP-712 domain, as ERC-5267's `eip712Domain()` returns it.
@@ -49,8 +50,8 @@ export interface AppTypedData {
 const domainFields = AbiParameters.from(["bytes32", "bytes32", "bytes32", "bytes32", "uint256", "address", "bytes32"])
 
 /**
- * The app's typed data nested for the account: the digest the session key signs, and the parts Smart Sessions reads
- * back from the signature.
+ * The app's typed data nested for the account: the digest the session key signs (bound to the permission id), and the
+ * parts Smart Sessions reads back from the signature.
  *
  * @internal
  */
@@ -75,7 +76,7 @@ export const nest = (typedData: AppTypedData, domain: AccountDomain) => {
     domain.salt
   ]))
   return {
-    /** The digest the session key signs. */
+    /** The nested digest: the session key signs it bound to the permission id. */
     digest: Hash.keccak256(Hex.concat("0x1901", appDomainSeparator, structHash)),
     /** What the app asks the account about: the typed data's own hash. */
     hash: Hash.keccak256(Hex.concat("0x1901", appDomainSeparator, contents)),

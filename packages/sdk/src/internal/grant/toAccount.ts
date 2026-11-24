@@ -11,7 +11,7 @@ import * as WebAuthn from "../core/account/webauthn.ts"
 import { decodeCalls, type DecodedCall, encodeCalls, statedTime } from "../core/agent/calls.ts"
 import * as Erc7739 from "../core/agent/erc7739.ts"
 import { isLane, LANES, nonceKey } from "../core/agent/nonce.ts"
-import { ecdsaSignature, stubSignature } from "../core/agent/sessionSignature.ts"
+import { boundHash, ecdsaSignature, stubSignature } from "../core/agent/sessionSignature.ts"
 import { evaluateOperation, gasCost } from "../core/evaluate/evaluate.ts"
 import { evaluateSignature } from "../core/evaluate/signature.ts"
 import { counters } from "../core/evaluate/usage.ts"
@@ -38,7 +38,8 @@ import { isEnabled, readState } from "./state.ts"
 // The agent's account: a viem smart account at the owner's address that sends and signs through Smart Sessions under
 // a grant. viem drives it through its hooks; the session lives in them (nonce lane, ENABLE then USE signatures, the
 // stated time and SessionHook's tag in the calldata, ERC-7739 session signatures), and with `check` each operation and
-// signature is evaluated against the session's policies before the session key signs.
+// signature is evaluated against the session's policies before the session key signs. The session key signs each
+// user operation hash and ERC-7739 digest bound to the permission id (`boundHash`), as Smart Sessions verifies it.
 
 /**
  * A session key signer: a viem local account for an ECDSA session key, a viem WebAuthn account for a passkey.
@@ -98,12 +99,20 @@ const selectSigners = (
   return Result.succeed(selected.slice(0, sessionKey.threshold))
 }
 
-/** The session key's signature of `hash`: ECDSA signatures in signer order, or passkey assertions. */
+/**
+ * The session key's signature of `hash` bound to the grant's permission id: ECDSA signatures in signer order, or
+ * passkey assertions.
+ */
 const signHash = (
   signers: ReadonlyArray<Signer>,
-  options: { readonly precompile: boolean; readonly account: AccountError.Options["account"] }
+  options: {
+    readonly permissionId: Hex.Hex
+    readonly precompile: boolean
+    readonly account: AccountError.Options["account"]
+  }
 ) =>
-(hash: Hex.Hex): Effect.Effect<Hex.Hex, AccountError.AccountError> => {
+(unbound: Hex.Hex): Effect.Effect<Hex.Hex, AccountError.AccountError> => {
+  const hash = boundHash(unbound, options.permissionId)
   const passkeys = signers.filter(isWebAuthn)
   if (passkeys.length > 0) {
     return Effect.forEach(passkeys, (passkey) => passkeySigner(passkey, options.account).sign(hash)).pipe(
@@ -153,7 +162,7 @@ export const toAccount = Effect.fnUntraced(function*(
     selectSigners(sessionKey, Array.isArray(options.signer) ? options.signer : [options.signer as Signer])
   )
   const precompile = sessionKey.type === "passkey" ? yield* hasP256Precompile(client) : false
-  const sign = signHash(signers, { precompile, account })
+  const sign = signHash(signers, { permissionId: grant.id, precompile, account })
   const stub = stubSignature(sessionKey, { precompile })
 
   const address = core.accountAddress(grant)

@@ -383,11 +383,14 @@ contract SessionHookTest is Test {
         );
     }
 
-    function test_check_rejectsCallsToTheHookTheAccountOrAPolicy() public {
+    /// @dev Regression (Smart Sessions target): a call to the Smart Sessions module could replace the session's
+    /// execution policies while they measure the operation.
+    function test_check_rejectsCallsToTheHookTheAccountSmartSessionsOrAPolicy() public {
         install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
 
-        address[3] memory forbidden = [address(hook), address(account), address(policy)];
+        address[4] memory forbidden =
+            [address(hook), address(account), address(smartSession), address(policy)];
         for (uint256 i; i < forbidden.length; ++i) {
             assertEq(check(tagged(executeSingle(forbidden[i]))), 1);
             Execution[] memory batch = new Execution[](2);
@@ -472,10 +475,67 @@ contract SessionHookTest is Test {
                 vm.expectRevert(
                     abi.encodeWithSelector(SessionHook.ReentrantCheck.selector, address(account))
                 );
-                account.callDuringCheck(asHook, operations[i], calls[j]);
+                account.callDuringCheck(asHook, operations[i], address(hook), calls[j]);
             }
         }
         assertEq(hook.getSmartSession(address(account)), address(smartSession));
+    }
+
+    /// @dev Regression (postCheck lock): the lock holds while the execution policies' `postCheck`s run, so none of
+    /// them can uninstall the hook or start another check through the account.
+    function test_execution_holdsTheLockThroughThePolicyPostChecks() public {
+        install();
+        initialize(policies(1, MockExecutionPolicy.Mode.Pass));
+        IHook asHook = IHook(address(hook));
+        bytes memory execData = tagged(executeSingle(address(target)));
+        bytes[2] memory reentries = [
+            abi.encodeCall(SessionHook.onUninstall, ("")),
+            abi.encodeCall(IHook.preCheck, (address(0), 0, executeSingle(address(target))))
+        ];
+        for (uint256 i; i < reentries.length; ++i) {
+            policy.setPostCheckCall(
+                abi.encodeCall(MockHookAccount.callHook, (asHook, reentries[i]))
+            );
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    SessionHook.ExecutionPolicyViolation.selector,
+                    PERMISSION,
+                    address(policy),
+                    abi.encodeWithSelector(SessionHook.ReentrantCheck.selector, address(account))
+                )
+            );
+            account.runChecks(asHook, execData, "");
+        }
+
+        // Released once the policies are done: the next operation runs.
+        policy.setPostCheckCall("");
+        account.runChecks(asHook, execData, "");
+        assertEq(hook.getSmartSession(address(account)), address(smartSession));
+    }
+
+    /// @dev Regression (initialization lock): Smart Sessions can't reinitialize a session's execution policies while
+    /// one of the account's operations runs between them.
+    function test_initialize_isRefusedDuringAnOperation() public {
+        install();
+        initialize(policies(1, MockExecutionPolicy.Mode.Pass));
+        bytes32 id = configId();
+        bytes memory data = abi.encode(policies(2, MockExecutionPolicy.Mode.Pass));
+
+        bytes memory initialization =
+            abi.encodeCall(SessionHook.initializeWithMultiplexer, (address(account), id, data));
+        bytes memory forward =
+            abi.encodeCall(MockSmartSessionViews.forward, (address(hook), initialization));
+        bytes memory execData = tagged(executeSingle(address(target)));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SessionHook.ReentrantCheck.selector, address(account))
+        );
+        account.callDuringCheck(IHook(address(hook)), execData, address(smartSession), forward);
+        assertEq(hook.getExecutionPolicies(address(account), PERMISSION).length, 1);
+
+        // Between operations, Smart Sessions may reinitialize them.
+        smartSession.forward(address(hook), initialization);
+        assertEq(hook.getExecutionPolicies(address(account), PERMISSION).length, 2);
     }
 
     function test_execution_requiresTheSessionToStillUseTheHook() public {

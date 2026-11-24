@@ -74,6 +74,28 @@ contract ERC1271Test is SmartSessionTestBase {
         assertNotEq(_isValidSignature(otherHash, signature), EIP1271_MAGIC);
     }
 
+    /// @dev Regression (permission id binding): the session key signs the permission id with the nested hash, so a
+    /// signature for one session can't be presented as another session of the same key.
+    function test_signatureForAnotherSessionOfTheKey_isRejected() public {
+        Session memory other = _signingSession().withValidity(0, uint48(block.timestamp + 1 days));
+        other.salt = keccak256("other");
+        PermissionId otherId = enableSession(other);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        bytes memory moved = abi.encodePacked(
+            otherId,
+            ERC7739Signer.sessionKeySignature(mail, address(account), permissionId, sessionKey),
+            mail.contentsData,
+            uint16(mail.contentsData.length),
+            uint16(0),
+            ERC7739Signer.appendix(mail)
+        );
+        assertEq(_isValidSignature(hash, moved), INVALID);
+
+        bytes memory signed = ERC7739Signer.sign(mail, address(account), otherId, sessionKey);
+        assertEq(_isValidSignature(hash, signed), EIP1271_MAGIC);
+    }
+
     /// @dev Regression (internal review, leads): the account asking about itself (an account's own digests, such as
     /// module-enable ones) is refused; a session signs for apps.
     function test_theAccountAsSender_isRejected() public {
@@ -412,7 +434,7 @@ contract ERC1271Test is SmartSessionTestBase {
 
     function test_typedDataLengthsPastTheSignature_areRejectedWithoutReverting() public view {
         bytes memory sessionKeySignature =
-            ERC7739Signer.sessionKeySignature(mail, address(account), sessionKey);
+            ERC7739Signer.sessionKeySignature(mail, address(account), permissionId, sessionKey);
         bytes32 hash = ERC7739Signer.appHash(mail);
 
         bytes memory overrun = abi.encodePacked(
@@ -441,7 +463,7 @@ contract ERC1271Test is SmartSessionTestBase {
         vm.assume(contentsLength != 0 || policyLength != length);
         bytes memory signature = abi.encodePacked(
             permissionId,
-            ERC7739Signer.sessionKeySignature(mail, address(account), sessionKey),
+            ERC7739Signer.sessionKeySignature(mail, address(account), permissionId, sessionKey),
             mail.contentsData,
             contentsLength,
             policyLength,

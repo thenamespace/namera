@@ -2999,6 +2999,14 @@ declare const abiV1: readonly [{
     }];
 }, {
     readonly type: "error";
+    readonly name: "AssociatedArray_OutOfBounds";
+    readonly inputs: readonly [{
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "ChainIdMismatch";
     readonly inputs: readonly [{
         readonly name: "providedChainId";

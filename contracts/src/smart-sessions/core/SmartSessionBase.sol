@@ -61,6 +61,8 @@ abstract contract SmartSessionBase is ISmartSession {
     /// @dev Namera: bumped when the module is uninstalled, invalidating the unused enable data of every session,
     /// including those never enabled (which uninstalling can't enumerate). The high 128 bits of the enable nonce.
     mapping(address account => uint256 epoch) internal $nonceEpoch;
+    /// @dev Namera: whether the module was ever installed on the account (see `onInstall`).
+    mapping(address account => bool) internal $installedBefore;
 
     /// @dev Requires the session to be enabled before and after the call, so policy initialization cannot remove
     /// it in between.
@@ -228,6 +230,11 @@ abstract contract SmartSessionBase is ISmartSession {
         if ($enabledSessions.length(msg.sender) != 0) {
             revert SmartSessionModuleAlreadyInstalled(msg.sender);
         }
+        // Namera: Kernel ignores a failed `onUninstall`, whose revert also undoes its epoch bump, so a reinstall spends
+        // every enable signature of the earlier installation. A first install keeps epoch 0, so enable signatures made
+        // before the account was deployed stay valid.
+        if ($installedBefore[msg.sender]) ++$nonceEpoch[msg.sender];
+        else $installedBefore[msg.sender] = true;
         if (data.length == 0) return;
 
         SmartSessionMode mode = SmartSessionMode(uint8(bytes1(data[:1])));

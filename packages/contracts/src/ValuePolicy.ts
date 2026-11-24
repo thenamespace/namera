@@ -94,10 +94,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.value-policy.v1",
-  "address": "0x98286E6568D03dC8EeFF9664E2F8B9e632e5CFF2",
+  "address": "0xF0299d1010bCbCd619dBAD92a6A46fDE06ab29dc",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0x9bad4ebaeb715215ff6a7c2a57fde4acfe56bac9f9e8b6b227eeab6130ca3f40",
-  "initcodeHash": "0x7b45bc6a8193c63e23dac1440f7fbdbc5f75992dff0eca8984932ef96df95edf",
+  "initcodeHash": "0xb392c5b3796caa113f2298987554c09f7296bb1a49bdfb8e55906d806e34befc",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

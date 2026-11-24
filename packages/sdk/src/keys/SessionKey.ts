@@ -5,7 +5,7 @@
  * **Details**
  *
  * A session key is checked on chain by `ECDSASessionValidator`: one key (`ecdsa`) or `threshold` of several
- * (`ecdsaThreshold`) sign each user operation. The key itself is any viem account the agent controls, such as a
+ * (`ecdsaThreshold`) sign each user operation, bound to the session's permission id. The key itself is any viem account the agent controls, such as a
  * `Keystore` key through `Keystore.toAccount`. A passkey session key (`passkey`, `passkeyThreshold`) is checked by
  * `WebAuthnValidator` from the session's own config, so the passkey needs no installation on the account.
  *
@@ -126,8 +126,8 @@ export declare namespace ecdsa {
  *
  * **Gotchas**
  *
- * Throws `SessionKeyError`: `NoSigners`, `InvalidAddress`, `DuplicateSigner`, or `InvalidThreshold` for a threshold
- * outside 1 to the number of signers.
+ * Throws `SessionKeyError`: `NoSigners`, `TooManySigners` over 69 signers (what a validator's config holds),
+ * `InvalidAddress`, `DuplicateSigner`, or `InvalidThreshold` for a threshold outside 1 to the number of signers.
  *
  * **Example** (Two of three agent keys)
  *
@@ -249,8 +249,8 @@ export declare namespace passkey {
  *
  * **Gotchas**
  *
- * Throws `SessionKeyError`: `NoSigners`, `InvalidPublicKey`, `DuplicateSigner`, or `InvalidThreshold` for a
- * threshold outside 1 to the number of passkeys.
+ * Throws `SessionKeyError`: `NoSigners`, `TooManySigners` over 16 passkeys, `InvalidPublicKey`, `DuplicateSigner`,
+ * or `InvalidThreshold` for a threshold outside 1 to the number of passkeys.
  *
  * @stability experimental
  * @category constructors

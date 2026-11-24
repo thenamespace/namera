@@ -16,7 +16,8 @@ import type { Violation } from "./violation.ts"
 const EXECUTE = "0xe9ae5c53"
 const MAX = BigInt(2) ** BigInt(256) - BigInt(1)
 const UINT160 = (BigInt(1) << BigInt(160)) - BigInt(1)
-const ENTRY_POINTS = ["0x0000000071727De22E5E9d8BAf0edAc6f37da032", "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"]
+/** EntryPoint v0.7, Kernel 3.3's. */
+const ENTRY_POINT = "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
@@ -147,7 +148,7 @@ const actionViolations = (
 /**
  * `PolicyLib.checkSingle7579Exec` for each call: the call's own action (target and selector), else the fallback
  * action, never the fallback for a call on the account itself or the EntryPoint, a module lifecycle or hook function, or
- * calldata ending in the account's address (`PolicyLib._reachesAccount`; the account's installed modules are refused
+ * calldata ending in the account's or the EntryPoint's address (`PolicyLib._reachesAccount`; the account's installed modules are refused
  * on chain too, which an offline check can't see); no nested `execute` on the account, no call to Smart Sessions or
  * the fallback's marker target, and no calldata of 1 to 3 bytes or starting with the value selector.
  */
@@ -175,12 +176,10 @@ const callViolations = (
     )
     if (action !== undefined) return actionViolations(action.actionPolicies, contracts, call, where)
     // The fallback never reaches the EntryPoint, a module's lifecycle or hook functions, or an ERC-2771 contract with
-    // the account as the sender; the account's installed modules are refused on chain too.
-    const actsAsAccount = Hex.size(call.data) >= 20 && same(Hex.slice(call.data, -20), account)
-    if (
-      self || ENTRY_POINTS.some((entryPoint) => same(call.to, entryPoint)) || MODULE_FUNCTIONS.includes(selector)
-      || actsAsAccount
-    ) {
+    // the account or the EntryPoint as the sender; the account's installed modules are refused on chain too.
+    const sender = Hex.size(call.data) >= 20 ? Hex.slice(call.data, -20) : undefined
+    const actsAsAccount = sender !== undefined && (same(sender, account) || same(sender, ENTRY_POINT))
+    if (self || same(call.to, ENTRY_POINT) || MODULE_FUNCTIONS.includes(selector) || actsAsAccount) {
       return refused
     }
     const fallback = compiled.actions.find((entry) =>

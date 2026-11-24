@@ -39,7 +39,6 @@ library PolicyLib {
     uint256 private constant AGGREGATOR_MASK = type(uint160).max;
     /// @dev EntryPoint v0.7 and v0.8: a call there moves the account's deposit (`withdrawTo`).
     address private constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
-    address private constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
     /// @dev Gas for each account probe: `isModuleInstalled` costs ~4k on Kernel (running out counts as installed,
     /// failing closed).
     uint256 private constant PROBE_GAS = 100_000;
@@ -288,7 +287,8 @@ library PolicyLib {
     /// - a module lifecycle or hook function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`) on any target.
     ///   Modules key their state on the calling account, and some an account doesn't report as installed (Kernel's
     ///   permission signers and policies, hooks Kernel binds to a validator);
-    /// - calldata ending in the account's or an EntryPoint's address. ERC-2771 contracts (the account's fallback
+    /// - calldata ending in the account's or the EntryPoint's (v0.7, Kernel 3.3's) address. ERC-2771 contracts (the
+    ///   account's fallback
     ///   handlers) read the last 20 bytes as the original sender, and those senders pass their "the account or the
     ///   EntryPoint called" checks. A legitimate call whose last argument is the account (a `receiver`) is refused
     ///   too: give it an explicit action;
@@ -304,7 +304,7 @@ library PolicyLib {
         ) return true;
         if (callData.length >= 20) {
             address sender = address(bytes20(callData[callData.length - 20:]));
-            if (sender == msg.sender || sender == ENTRY_POINT_V07 || sender == ENTRY_POINT_V08) {
+            if (sender == msg.sender || sender == ENTRY_POINT_V07) {
                 return true;
             }
         }
@@ -318,7 +318,7 @@ library PolicyLib {
     /// and fallback handlers need a selector to ask about: the selector and ERC-2771 rules of `_reachesAccount` cover
     /// those.
     function _isInfrastructure(address target) private view returns (bool) {
-        if (target == ENTRY_POINT_V07 || target == ENTRY_POINT_V08) return true;
+        if (target == ENTRY_POINT_V07) return true;
         // Validators (1) and executors (2). Copies at most one word back: the answer is one.
         for (uint256 moduleType = 1; moduleType <= 2; ++moduleType) {
             (bool success, bool exceeded, bytes memory result) = LibCall.tryStaticCall({

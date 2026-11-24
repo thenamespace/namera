@@ -4,11 +4,12 @@ pragma solidity 0.8.38;
 
 /// @notice Stores `bytes` in consecutive storage slots after a length slot, so validation-time reads stay
 /// within ERC-7562 associated storage (Solidity's and Solady's bytes storage use `keccak256(slot)`).
-/// @dev Holds up to 512 bytes (room for P-256/WebAuthn session validator configs). `store` expects cleared
+/// @dev Holds up to 2,304 bytes: 16 passkeys (96 + 128 × n bytes) or 69 ECDSA signers (96 + 32 × n). The data ends
+/// 74 slots past the struct's base, inside ERC-7562's 128. `store` expects cleared
 /// storage: SmartSession only stores a validator config when none is set, and `clear`s it on removal.
 library FlatBytesLib {
     // Declared before `Bytes`, whose array length it sets: the compiler requires that order.
-    uint256 internal constant MAX_SLOTS = 16;
+    uint256 internal constant MAX_SLOTS = 72;
     uint256 internal constant MAX_LENGTH = MAX_SLOTS * 32;
 
     struct Bytes {

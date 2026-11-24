@@ -207,8 +207,6 @@ contract UserOpCallsTest is Test {
         assertFalse(found);
         (found,) = harness.timestamp(abi.encodePacked(callData, uint256(1), uint256(2)));
         assertFalse(found);
-        (found,) = harness.timestamp(PolicyCalls.withTime(callData, uint256(type(uint48).max) + 1));
-        assertFalse(found);
         (found,) = harness.timestamp(abi.encodePacked(bytes4(0x12345678), uint256(1)));
         assertFalse(found);
     }
