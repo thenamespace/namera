@@ -385,12 +385,19 @@ contract SessionHookTest is Test {
 
     /// @dev Regression (Smart Sessions target): a call to the Smart Sessions module could replace the session's
     /// execution policies while they measure the operation.
-    function test_check_rejectsCallsToTheHookTheAccountSmartSessionsOrAPolicy() public {
+    function test_check_rejectsCallsToTheHookTheAccountSmartSessionsTheEntryPointOrAPolicy()
+        public
+    {
         install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
 
-        address[4] memory forbidden =
-            [address(hook), address(account), address(smartSession), address(policy)];
+        address[5] memory forbidden = [
+            address(hook),
+            address(account),
+            address(smartSession),
+            0x0000000071727De22E5E9d8BAf0edAc6f37da032,
+            address(policy)
+        ];
         for (uint256 i; i < forbidden.length; ++i) {
             assertEq(check(tagged(executeSingle(forbidden[i]))), 1);
             Execution[] memory batch = new Execution[](2);

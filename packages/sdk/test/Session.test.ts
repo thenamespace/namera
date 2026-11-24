@@ -141,6 +141,11 @@ describe("Session.from", () => {
     ["INVALID_ADDRESS", () => build({ policies: [Policy.nativeTransfer({ to: ["0xnope"] })] })],
     ["INVALID_AMOUNT", () => build({ policies: [transfer, Policy.rateLimit({ count: 0, period: "day" })] })],
     ["INVALID_PERIOD", () => build({ policies: [transfer, Policy.value({ amount: 1n, period: { seconds: 0 } })] })],
+    // A period's bounds must leave bit 47 clear (EntryPoint v0.9 reads it as a block-number range).
+    [
+      "INVALID_PERIOD",
+      () => build({ policies: [transfer, Policy.value({ amount: 1n, period: { seconds: 2 ** 47 } })] })
+    ],
     [
       "INVALID_PERIOD",
       () => build({ policies: [transfer, Policy.gas({ maxCost: 1n, period: "fortnight" as never })] })

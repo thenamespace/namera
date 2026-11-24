@@ -120,7 +120,8 @@ export interface Resolved {
 }
 
 const MAX_UINT256 = BigInt(2) ** BigInt(256) - BigInt(1)
-const MAX_TIME = 2 ** 48 - 1
+/** The longest period a limit takes: below bit 47, which EntryPoint v0.9 reads as a block-number range. */
+const MAX_PERIOD = 2 ** 47 - 1
 
 const uint256: Word = { type: "uint", bits: 256 }
 const address: Word = { type: "address" }
@@ -155,7 +156,7 @@ const seconds = (period: unknown): number | undefined => {
   if (typeof period === "string") return NAMED_PERIODS.includes(period) ? periodSeconds(period as Period) : undefined
   if (typeof period !== "object" || period === null) return undefined
   const length = (period as { readonly seconds?: unknown }).seconds
-  return typeof length === "number" && Number.isSafeInteger(length) && length > 0 && length <= MAX_TIME
+  return typeof length === "number" && Number.isSafeInteger(length) && length > 0 && length <= MAX_PERIOD
     ? length
     : undefined
 }

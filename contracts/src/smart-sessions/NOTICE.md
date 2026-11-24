@@ -187,6 +187,14 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   signature anyway (see Additions). Remove sessions first, or give the uninstall enough gas.
 - **Re-enabling adds.** Enabling an already enabled session adds the new configuration's actions,
   policies and content names to the old ones; remove the session first to replace it.
+- **The ENABLE payload isn't in the session-key signature.** A relayer can resend an ENABLE operation of
+  an already enabled session as USE mode, dropping the owner's new configuration; the operation then
+  runs under the old one, which the owner already approved.
+- **Kernel's replayable ERC-1271 signatures fail.** Kernel wraps a replayable hash in a domain with chain
+  id 0; Smart Sessions rebuilds it with `block.chainid`, so such signatures are refused (fails closed).
+- **EntryPoint v0.9 time bounds.** Validation data without an upper bound intersects to a `validUntil`
+  with bit 47 set, which v0.9 reads as a block number; Kernel 3.3 uses v0.7. Policies keep stated times and
+  periods below 2^47.
 - **Another deployment's state.** Calls through the fallback action may reach a second Smart Sessions
   deployment and enable sessions there, which blocks installing it later until they are removed.
 - **The paymaster isn't constrained.** `permitERC4337Paymaster` is one flag: a sponsored session may name

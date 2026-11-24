@@ -121,7 +121,9 @@ reset at fixed, epoch-aligned periods, so a session can spend a full budget at t
 start of the next; an approval is charged in the period that grants it, so approvals staged over several periods can
 be pulled in one. Changing a budget's period starts a new counter. A failed execution keeps its charge: budgets are
 charged during validation. Signed approvals (ERC-2612 `permit`, Permit2 permits, EIP-3009) aren't calls, so
-`SpendPolicy` doesn't count them, including a permit to a router the session then calls; `SignaturePolicy` caps each
+`SpendPolicy` doesn't count them, including a permit to a router the session then calls. A `SignaturePolicy` rule
+with verifiers but no typed-data types accepts any struct those verifiers check (USDC checks ERC-2612 permits and
+EIP-3009 transfers alike); the SDK always sets the types; `SignaturePolicy` caps each
 ERC-2612 permit's top-level fields, but not a Permit2 amount, which sits in a nested struct the policy sees as a hash.
 `ApprovalPolicy` doesn't limit a Permit2 approval's expiration, so the spender keeps the allowance after the session
 ends. A limit covers one token address: a token that moves the same balance through a second address (a legacy proxy

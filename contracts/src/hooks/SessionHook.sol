@@ -51,6 +51,8 @@ contract SessionHook is IUserOpPolicy {
 
     bytes4 internal constant EXECUTE_SELECTOR = 0xe9ae5c53;
     bytes4 internal constant EXECUTE_USER_OP_SELECTOR = 0x8dd7712f;
+    /// @dev EntryPoint v0.7, Kernel 3.3's.
+    address internal constant ENTRY_POINT = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
     /// @dev Transient slot base of each account's running check: `keccak256(context)` while one runs.
     bytes32 internal constant CONTEXT_SLOT = keccak256("namera.session-hook.context");
 
@@ -377,10 +379,12 @@ contract SessionHook is IUserOpPolicy {
         view
         returns (bool)
     {
-        // Smart Sessions too: a call there could replace the session's execution policies while they measure.
-        if (target == address(this) || target == account || target == $smartSessions[account]) {
-            return false;
-        }
+        // Smart Sessions too: a call there could replace the session's execution policies while they measure. And
+        // the EntryPoint: `withdrawTo` moves the account's deposit, which balance checks don't see.
+        if (
+            target == address(this) || target == account || target == $smartSessions[account]
+                || target == ENTRY_POINT
+        ) return false;
         uint256 count = $counts[id][account];
         for (uint256 i; i < count; ++i) {
             if ($policies[id][i][account] == target) return false;

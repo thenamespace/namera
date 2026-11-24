@@ -117,7 +117,8 @@ abstract contract LimitPolicy is PolicyBase, IUserOpPolicy {
         pure
         returns (uint256)
     {
-        if (period > Period.MAX_TIME) revert InvalidLimit(index);
+        // Below bit 47: a period's `validUntil` with bit 47 set reads as a block number on EntryPoint v0.9.
+        if (period > Period.MAX_STATED_TIME) revert InvalidLimit(index);
         return (period << AMOUNT_BITS) | (amount > MAX_AMOUNT ? MAX_AMOUNT : amount);
     }
 

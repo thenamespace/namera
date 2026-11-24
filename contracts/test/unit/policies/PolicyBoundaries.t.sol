@@ -123,17 +123,18 @@ contract PolicyConfigTest is Test {
     }
 
     /// @dev Stored budgets hold the period in ERC-4337's 48 bits of time.
-    function test_rejectsAPeriodPast48Bits() public {
+    /// @dev A period's bounds must leave bit 47 clear, which EntryPoint v0.9 reads as a block-number range.
+    function test_rejectsAPeriodWithBit47Set() public {
         SpendPolicy spend = new SpendPolicy();
         SpendPolicy.Limit[] memory limits = new SpendPolicy.Limit[](1);
-        limits[0] = SpendPolicy.Limit(makeAddr("token"), 1, uint256(type(uint48).max) + 1, true);
+        limits[0] = SpendPolicy.Limit(makeAddr("token"), 1, 1 << 47, true);
         vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 0));
         spend.initializeWithMultiplexer(account, "id", abi.encode(limits));
 
         ValuePolicy value = new ValuePolicy();
         vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 0));
-        value.initializeWithMultiplexer(account, "id", abi.encode(1, uint256(type(uint48).max) + 1));
-        value.initializeWithMultiplexer(account, "id", abi.encode(1, type(uint48).max));
+        value.initializeWithMultiplexer(account, "id", abi.encode(1, 1 << 47));
+        value.initializeWithMultiplexer(account, "id", abi.encode(1, (1 << 47) - 1));
     }
 
     function test_allowPolicyChecksItsConfigurationForUserOperations() public {
