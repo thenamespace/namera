@@ -40,10 +40,9 @@ library PolicyLib {
     /// @dev EntryPoint v0.7 and v0.8: a call there moves the account's deposit (`withdrawTo`).
     address private constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
     address private constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
-    /// @dev Gas for each account probe: `isModuleInstalled` costs ~4k on Kernel, Nexus and Safe7579 (running out
-    /// counts as installed, failing closed); `getDefaultValidator` far less where it exists.
+    /// @dev Gas for each account probe: `isModuleInstalled` costs ~4k on Kernel (running out counts as installed,
+    /// failing closed).
     uint256 private constant PROBE_GAS = 100_000;
-    uint256 private constant DEFAULT_VALIDATOR_PROBE_GAS = 30_000;
     /// @dev ERC-7579 module lifecycle and hook functions: `onInstall(bytes)`, `onUninstall(bytes)`,
     /// `preCheck(address,uint256,bytes)` and `postCheck(bytes)`.
     bytes4 private constant ON_INSTALL = 0x6d61fe70;
@@ -289,10 +288,10 @@ library PolicyLib {
     /// - a module lifecycle or hook function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`) on any target.
     ///   Modules key their state on the calling account, and some an account doesn't report as installed (Kernel's
     ///   permission signers and policies, hooks Kernel binds to a validator);
-    /// - calldata ending in the account's address. ERC-2771 contracts (Safe7579's adapter, ERC-7579 fallback
-    ///   handlers) read the last 20 bytes as the original sender, and the account named there passes their
-    ///   "account calls itself" checks. A legitimate call whose last argument is the account (a `receiver`) is
-    ///   refused too: give it an explicit action;
+    /// - calldata ending in the account's or an EntryPoint's address. ERC-2771 contracts (the account's fallback
+    ///   handlers) read the last 20 bytes as the original sender, and those senders pass their "the account or the
+    ///   EntryPoint called" checks. A legitimate call whose last argument is the account (a `receiver`) is refused
+    ///   too: give it an explicit action;
     /// - the account's infrastructure (`_isInfrastructure`).
     function _reachesAccount(address target, bytes4 selector, bytes calldata callData)
         private
@@ -303,23 +302,25 @@ library PolicyLib {
             selector == ON_INSTALL || selector == ON_UNINSTALL || selector == PRE_CHECK
                 || selector == POST_CHECK
         ) return true;
-        if (
-            callData.length >= 20 && address(bytes20(callData[callData.length - 20:])) == msg.sender
-        ) return true;
+        if (callData.length >= 20) {
+            address sender = address(bytes20(callData[callData.length - 20:]));
+            if (sender == msg.sender || sender == ENTRY_POINT_V07 || sender == ENTRY_POINT_V08) {
+                return true;
+            }
+        }
         return _isInfrastructure(target);
     }
 
-    /// @dev Whether `target` is part of the calling account's own infrastructure: the EntryPoint, a validator, executor
-    /// or hook the account has installed, or its default validator (Nexus). Modules take the account's calls as its
-    /// own configuration (owners, passkeys, hook installs), so a fallback call there could take the account over.
-    /// Calls to them need an explicit action. A failed module probe counts as installed, failing closed. Fallback
-    /// handlers (type 3) are installed per selector, which a probe without one can't ask about (Kernel and Safe7579
-    /// revert), so they aren't covered.
+    /// @dev Whether `target` is part of the calling account's own infrastructure: the EntryPoint, or a validator or
+    /// executor the account has installed. Validators take the account's calls as its configuration (owners,
+    /// passkeys), so a fallback call there could take the account over; calls to them need an explicit action. A failed
+    /// probe counts as installed, failing closed. Kernel 3.3 doesn't report hooks, signers or policies as installed,
+    /// and fallback handlers need a selector to ask about: the selector and ERC-2771 rules of `_reachesAccount` cover
+    /// those.
     function _isInfrastructure(address target) private view returns (bool) {
         if (target == ENTRY_POINT_V07 || target == ENTRY_POINT_V08) return true;
-        // Validators (1), executors (2) and hooks (4). Copies at most one word back: the answer is one.
-        for (uint256 moduleType = 1; moduleType <= 4; ++moduleType) {
-            if (moduleType == 3) continue;
+        // Validators (1) and executors (2). Copies at most one word back: the answer is one.
+        for (uint256 moduleType = 1; moduleType <= 2; ++moduleType) {
             (bool success, bool exceeded, bytes memory result) = LibCall.tryStaticCall({
                 target: msg.sender,
                 gasStipend: PROBE_GAS,
@@ -332,15 +333,6 @@ library PolicyLib {
                 return true;
             }
         }
-        // Nexus keeps its owner in a default validator it doesn't report as installed. A bounded probe: on an account
-        // without it (Safe7579), the call falls into a fallback that burns its gas.
-        (bool found, bool longer, bytes memory defaultValidator) = LibCall.tryStaticCall({
-            target: msg.sender,
-            gasStipend: DEFAULT_VALIDATOR_PROBE_GAS,
-            maxCopy: 32,
-            data: abi.encodeWithSignature("getDefaultValidator()")
-        });
-        return found && !longer && defaultValidator.length == 32
-            && abi.decode(defaultValidator, (address)) == target;
+        return false;
     }
 }

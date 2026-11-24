@@ -28,6 +28,7 @@ import {FlatBytesLib} from "../lib/FlatBytesLib.sol";
 import {HashLib} from "../lib/HashLib.sol";
 import {IdLib} from "../lib/IdLib.sol";
 import {PolicyLib} from "../lib/PolicyLib.sol";
+import {SupportedAccount} from "../lib/SupportedAccount.sol";
 import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
 
 /// @notice Session storage, session management, module lifecycle and views.
@@ -220,6 +221,8 @@ abstract contract SmartSessionBase is ISmartSession {
 
     /// @inheritdoc ISmartSession
     function onInstall(bytes calldata data) external override {
+        // Namera: only Kernel 3.3, the account these modules are built and tested for (`SupportedAccount`).
+        SupportedAccount.check(msg.sender);
         // Sessions left over from an earlier installation must be removed explicitly first; reinstalling must not
         // silently reactivate them.
         if ($enabledSessions.length(msg.sender) != 0) {

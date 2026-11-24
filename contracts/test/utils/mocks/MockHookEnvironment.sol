@@ -8,31 +8,22 @@ interface IHook {
     function postCheck(bytes calldata hookData) external;
 }
 
-/// @notice What SessionHook asks an account: whether it is the account's hook (Nexus, Safe7579), or bound to a
-/// validator (Kernel's `validationConfig`). It also calls the hook as an account does, within one transaction, since
-/// the hook keeps its running check in transient storage.
+/// @notice What SessionHook asks a Kernel 3.3 account: its `accountId()`, and which hook it binds to a validator
+/// (`validationConfig`). It also calls the hook as Kernel does, within one call, since the hook keeps its running check
+/// in transient storage.
 contract MockHookAccount {
-    address public hook;
-    address public kernelHook;
+    address public boundHook;
 
-    function setHook(address hook_) external {
-        hook = hook_;
+    function accountId() external pure returns (string memory) {
+        return "kernel.advanced.v0.3.3";
     }
 
-    function setKernelHook(address hook_) external {
-        kernelHook = hook_;
-    }
-
-    function isModuleInstalled(uint256 moduleType, address module, bytes calldata)
-        external
-        view
-        returns (bool)
-    {
-        return moduleType == 4 && module == hook && module != address(0);
+    function bind(address hook_) external {
+        boundHook = hook_;
     }
 
     function validationConfig(bytes21) external view returns (uint32, address) {
-        return (1, kernelHook);
+        return (1, boundHook);
     }
 
     /// @dev `preCheck` then `postCheck` with `context`, or with what `preCheck` returned when `context` is empty.
@@ -51,6 +42,18 @@ contract MockHookAccount {
     function replayContext(IHook hook_, bytes calldata msgData) external {
         bytes memory context = hook_.preCheck(address(0), 0, msgData);
         hook_.postCheck(context);
+        hook_.postCheck(context);
+    }
+
+    /// @dev An operation whose calls make the account call the hook with `call` between the checks.
+    function callDuringCheck(IHook hook_, bytes calldata msgData, bytes calldata call) external {
+        bytes memory context = hook_.preCheck(address(0), 0, msgData);
+        (bool success, bytes memory result) = address(hook_).call(call);
+        if (!success) {
+            assembly ("memory-safe") {
+                revert(add(result, 0x20), mload(result))
+            }
+        }
         hook_.postCheck(context);
     }
 }

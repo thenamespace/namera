@@ -19,11 +19,16 @@ import {SmartSessionTestBase} from "../utils/SmartSessionTestBase.sol";
 import {MockERC20} from "../utils/mocks/MockERC20.sol";
 import {MockTarget} from "../utils/mocks/MockTarget.sol";
 
-/// @notice SmartSession on a real deployed account implementation (loaded from fixtures). Each account test
-/// supplies how to deploy the account with SmartSession installed, its nonce key layout and its owner ERC-1271
-/// signature format; the session flows below run unchanged on every account.
+/// @notice SmartSession on a real Kernel 3.3 account (loaded from fixtures). `KernelTest` supplies how to deploy the
+/// account with SmartSession installed, its nonce key layout and its owner ERC-1271 signature format; the session
+/// flows below run with and without SessionHook (`KernelSessionHookTest`).
 abstract contract RealAccountTestBase is SmartSessionTestBase {
     using SessionBuilder for Session;
+
+    /// @dev Kernel's ECDSA validator, which holds the account's owner and takes the account's calls as configuration.
+    address internal constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
+    address internal constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
+    address internal constant ECDSA_VALIDATOR = 0x845ADb2C711129d4f3966735eD98a9F09fC4cE57;
 
     address internal smartAccount;
     SessionHook internal sessionHook;
@@ -128,9 +133,6 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         assertEq(token.balanceOf(recipient), 60);
     }
 
-    /// @dev The module that holds the account's owner, which takes the account's calls as configuration.
-    function ownerValidator() internal view virtual returns (address);
-
     /// @dev Regression (internal review, findings 1 and 7): the fallback action can't call the account's owner
     /// validator (replacing the owner) or the EntryPoint (moving the deposit out); both need an explicit action.
     function test_theFallbackCannotReachTheOwnersValidatorOrTheEntryPoint() public {
@@ -139,7 +141,7 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         PermissionId permissionId = smartSession.getPermissionId(session);
         handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
 
-        address[2] memory targets = [ownerValidator(), address(entryPoint)];
+        address[2] memory targets = [ECDSA_VALIDATOR, address(entryPoint)];
         bytes[2] memory calls = [
             abi.encodeWithSignature("onUninstall(bytes)", ""),
             abi.encodeWithSignature("withdrawTo(address,uint256)", makeAddr("thief"), 1)
@@ -165,10 +167,10 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         assertEq(other.value(), 2);
     }
 
-    /// @dev Regression (rerun review, findings 1 to 3): the fallback can't call a module lifecycle or hook function
-    /// on any contract (Kernel's permission signers and bound hooks aren't reported as installed), nor send calldata
-    /// ending in the account's address, which ERC-2771 contracts (Safe7579's adapter, fallback handlers) read as the
-    /// account calling itself.
+    /// @dev Regression (rerun review, findings 1 to 3; 1-pass review, finding 1): the fallback can't call a module
+    /// lifecycle or hook function on any contract (Kernel's permission signers and bound hooks aren't reported as
+    /// installed), nor send calldata ending in the account's or an EntryPoint's address, which ERC-2771 contracts (the
+    /// account's fallback handlers) read as the account or the EntryPoint calling.
     function test_theFallbackCannotConfigureModulesOrActAsTheAccount() public {
         Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
         session.salt = keccak256("fallback modules");
@@ -176,12 +178,15 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
 
         MockTarget other = new MockTarget();
-        bytes[5] memory calls = [
+        bytes memory setValue = abi.encodeCall(MockTarget.setValue, (3));
+        bytes[7] memory calls = [
             abi.encodeWithSignature("onInstall(bytes)", ""),
             abi.encodeWithSignature("onUninstall(bytes)", ""),
             abi.encodeWithSignature("preCheck(address,uint256,bytes)", address(0), 0, ""),
             abi.encodeWithSignature("postCheck(bytes)", ""),
-            abi.encodePacked(abi.encodeCall(MockTarget.setValue, (3)), smartAccount)
+            abi.encodePacked(setValue, smartAccount),
+            abi.encodePacked(setValue, ENTRY_POINT_V07),
+            abi.encodePacked(setValue, ENTRY_POINT_V08)
         ];
         for (uint256 i; i < calls.length; ++i) {
             ERC4337.PackedUserOperation memory op = signUse(
@@ -191,5 +196,17 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
             handleOp(op);
         }
         assertEq(other.value(), 0);
+
+        // Calldata ending in another address still goes through.
+        handleOp(
+            signUse(
+                userOp(
+                    smartAccount,
+                    executeSingle(address(other), 0, abi.encodePacked(setValue, address(other)))
+                ),
+                permissionId
+            )
+        );
+        assertEq(other.value(), 3);
     }
 }

@@ -36,14 +36,9 @@ interface IKernel {
 /// @notice Kernel 3.3 with the ECDSA validator as root; SmartSession installed for `execute`.
 contract KernelTest is RealAccountTestBase {
     address internal constant FACTORY = 0x2577507b78c2008Ff367261CB6285d44ba5eF2E9;
-    address internal constant ECDSA_VALIDATOR = 0x845ADb2C711129d4f3966735eD98a9F09fC4cE57;
     bytes4 internal constant EXECUTE = 0xe9ae5c53;
 
     bytes4 internal constant EXECUTE_USER_OP = 0x8dd7712f;
-
-    function ownerValidator() internal pure override returns (address) {
-        return ECDSA_VALIDATOR;
-    }
 
     function deployAccount() internal virtual override returns (address) {
         // Kernel validator install data: hook (1 = none) ‖ abi.encode(validatorData, hookData, selectorData). With
@@ -53,7 +48,7 @@ contract KernelTest is RealAccountTestBase {
                 address(sessionHook),
                 abi.encode(
                     bytes(""),
-                    abi.encodePacked(bytes1(0xff), abi.encode(uint8(1), address(smartSession))),
+                    abi.encodePacked(bytes1(0xff), abi.encode(address(smartSession))),
                     abi.encodePacked(EXECUTE)
                 )
             )

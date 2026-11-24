@@ -74,8 +74,8 @@ contract ERC1271Test is SmartSessionTestBase {
         assertNotEq(_isValidSignature(otherHash, signature), EIP1271_MAGIC);
     }
 
-    /// @dev Regression (internal review, leads): the account asking about itself (Nexus's module-enable digests) is
-    /// refused; a session signs for apps.
+    /// @dev Regression (internal review, leads): the account asking about itself (an account's own digests, such as
+    /// module-enable ones) is refused; a session signs for apps.
     function test_theAccountAsSender_isRejected() public {
         bytes memory signature = _sign(mail, sessionKey);
         bytes32 hash = ERC7739Signer.appHash(mail);

@@ -91,6 +91,25 @@ contract PolicyConfigTest is Test {
         policy.initializeWithMultiplexer(account, "id", abi.encode(limits));
     }
 
+    /// @dev A cap without a token, or a second cap of one token (only the first would hold), is refused.
+    function test_approvalRejectsACapWithoutATokenOrADuplicateToken() public {
+        ApprovalPolicy policy = new ApprovalPolicy();
+        address token = makeAddr("token");
+        ApprovalPolicy.Cap[] memory caps = new ApprovalPolicy.Cap[](3);
+        caps[0] = ApprovalPolicy.Cap(token, 1);
+        caps[1] = ApprovalPolicy.Cap(makeAddr("other token"), 1);
+
+        address[2] memory invalid = [address(0), token];
+        for (uint256 i; i < invalid.length; ++i) {
+            caps[2] = ApprovalPolicy.Cap(invalid[i], 2);
+            vm.expectRevert(abi.encodeWithSelector(ApprovalPolicy.InvalidCap.selector, 2));
+            policy.initializeWithMultiplexer(account, "id", abi.encode(new address[](0), caps));
+        }
+
+        caps[2] = ApprovalPolicy.Cap(makeAddr("third token"), 2);
+        policy.initializeWithMultiplexer(account, "id", abi.encode(new address[](0), caps));
+    }
+
     /// @dev Stored budgets hold the period in ERC-4337's 48 bits of time.
     function test_rejectsAPeriodPast48Bits() public {
         SpendPolicy spend = new SpendPolicy();

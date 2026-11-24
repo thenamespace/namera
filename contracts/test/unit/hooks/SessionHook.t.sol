@@ -10,6 +10,7 @@ import {IExecutionPolicy} from "src/hooks/interfaces/IExecutionPolicy.sol";
 import {IPolicy, IUserOpPolicy} from "src/policies/interfaces/IPolicy.sol";
 import {UserOpCalls} from "src/policies/lib/UserOpCalls.sol";
 import {Execution} from "src/smart-sessions/lib/ExecutionLib.sol";
+import {SupportedAccount} from "src/smart-sessions/lib/SupportedAccount.sol";
 
 import {MockExecutionPolicy} from "../../utils/mocks/MockExecutionPolicy.sol";
 import {
@@ -22,9 +23,6 @@ import {MockTarget} from "../../utils/mocks/MockTarget.sol";
 
 contract SessionHookTest is Test {
     bytes32 internal constant PERMISSION = keccak256("permission");
-    uint8 internal constant KERNEL = 1;
-    uint8 internal constant NEXUS = 2;
-    uint8 internal constant SAFE7579 = 3;
 
     SessionHook internal hook;
     MockHookAccount internal account;
@@ -38,6 +36,7 @@ contract SessionHookTest is Test {
         smartSession = new MockSmartSessionViews();
         policy = new MockExecutionPolicy();
         target = new MockTarget();
+        account.bind(address(hook));
     }
 
     // --------------------------------------------------------------------------------------------
@@ -56,41 +55,70 @@ contract SessionHookTest is Test {
         assertFalse(hook.supportsInterface(0xffffffff));
     }
 
-    function test_install_recordsFlavourAndSmartSession() public {
-        install(NEXUS);
-        (SessionHook.Flavour flavour, address installed) = hook.getInstall(address(account));
-        assertEq(uint8(flavour), NEXUS);
-        assertEq(installed, address(smartSession));
+    function test_install_recordsTheSmartSession() public {
+        vm.expectEmit(address(hook));
+        emit SessionHook.SessionHookInstalled(address(account), address(smartSession));
+        install();
+        assertEq(hook.getSmartSession(address(account)), address(smartSession));
         assertTrue(hook.isInitialized(address(account)));
 
         vm.prank(address(account));
         hook.onUninstall("");
+        assertEq(hook.getSmartSession(address(account)), address(0));
         assertFalse(hook.isInitialized(address(account)));
     }
 
-    function test_install_rejectsBadData() public {
-        uint8[2] memory flavours = [0, 4];
-        for (uint256 i; i < flavours.length; ++i) {
-            vm.prank(address(account));
-            vm.expectRevert(SessionHook.InvalidInstall.selector);
-            hook.onInstall(abi.encode(flavours[i], address(smartSession)));
-        }
+    function test_install_rejectsAZeroSmartSession() public {
         vm.prank(address(account));
         vm.expectRevert(SessionHook.InvalidInstall.selector);
-        hook.onInstall(abi.encode(NEXUS, address(0)));
+        hook.onInstall(abi.encode(address(0)));
     }
 
-    /// @dev Regression (internal review, findings 2 and 3): an installed hook can't be switched to another flavour or
-    /// Smart Sessions module without an uninstall; reinstalling the same configuration (Kernel rebinding) is fine.
+    /// @dev Regression (internal review, findings 2 and 3): an installed hook can't be switched to another Smart
+    /// Sessions module without an uninstall; reinstalling the same module (Kernel rebinding) is fine.
     function test_install_aDifferentReinstallIsRefused() public {
-        install(NEXUS);
+        install();
         vm.startPrank(address(account));
-        hook.onInstall(abi.encode(NEXUS, address(smartSession)));
+        hook.onInstall(abi.encode(address(smartSession)));
         vm.expectRevert(SessionHook.InvalidInstall.selector);
-        hook.onInstall(abi.encode(SAFE7579, address(smartSession)));
-        vm.expectRevert(SessionHook.InvalidInstall.selector);
-        hook.onInstall(abi.encode(NEXUS, makeAddr("other smart sessions")));
+        hook.onInstall(abi.encode(makeAddr("other smart sessions")));
         vm.stopPrank();
+        assertEq(hook.getSmartSession(address(account)), address(smartSession));
+    }
+
+    /// @dev Only Kernel 3.3 installs the hook: another `accountId()`, none, or a failing one is refused.
+    function test_install_refusedOnAnAccountThatIsNotKernel3_3() public {
+        MockProbe other = new MockProbe();
+        bytes4 accountId = bytes4(keccak256("accountId()"));
+        bytes memory data = abi.encode(address(smartSession));
+        bytes[5] memory answers = [
+            abi.encode("kernel.advanced.v0.3.2"),
+            abi.encode("example.account.1.0.0"),
+            abi.encode(""),
+            bytes(""),
+            abi.encode("kernel.advanced.v0.3.3")
+        ];
+        bool[5] memory reverts = [false, false, false, false, true];
+        for (uint256 i; i < answers.length; ++i) {
+            other.respond(accountId, reverts[i], answers[i]);
+            vm.prank(address(other));
+            vm.expectRevert(
+                abi.encodeWithSelector(SupportedAccount.UnsupportedAccount.selector, address(other))
+            );
+            hook.onInstall(data);
+        }
+
+        address noCode = makeAddr("no code");
+        vm.prank(noCode);
+        vm.expectRevert(
+            abi.encodeWithSelector(SupportedAccount.UnsupportedAccount.selector, noCode)
+        );
+        hook.onInstall(data);
+
+        other.respond(accountId, false, abi.encode("kernel.advanced.v0.3.3"));
+        vm.prank(address(other));
+        hook.onInstall(data);
+        assertEq(hook.getSmartSession(address(other)), address(smartSession));
     }
 
     // --------------------------------------------------------------------------------------------
@@ -98,7 +126,7 @@ contract SessionHookTest is Test {
     // --------------------------------------------------------------------------------------------
 
     function test_initialize_storesAndInitializesThePolicies() public {
-        install(NEXUS);
+        install();
         initialize(policies(2, MockExecutionPolicy.Mode.RevertPost));
 
         address[] memory stored = hook.getExecutionPolicies(address(account), PERMISSION);
@@ -120,7 +148,7 @@ contract SessionHookTest is Test {
         );
         hook.initializeWithMultiplexer(address(account), id, data);
 
-        install(NEXUS);
+        install();
         vm.prank(makeAddr("another multiplexer"));
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -140,7 +168,7 @@ contract SessionHookTest is Test {
     }
 
     function test_initialize_rejectsWhatIsNotAnExecutionPolicy() public {
-        install(NEXUS);
+        install();
         bytes32 id = configId();
         address[2] memory notPolicies = [address(target), makeAddr("no code")];
         for (uint256 i; i < notPolicies.length; ++i) {
@@ -156,7 +184,7 @@ contract SessionHookTest is Test {
 
     /// @dev A contract answering the interface probe with anything but one ABI-encoded `true` is no policy.
     function test_initialize_readsAMalformedInterfaceAnswerAsNo() public {
-        install(NEXUS);
+        install();
         bytes32 id = configId();
         bytes4 probe = IPolicy.supportsInterface.selector;
         MockProbe answers = new MockProbe();
@@ -175,7 +203,7 @@ contract SessionHookTest is Test {
     }
 
     function test_initialize_capsThePolicies() public {
-        install(NEXUS);
+        install();
         bytes32 id = configId();
         bytes memory data = abi.encode(policies(9, MockExecutionPolicy.Mode.Pass));
         vm.prank(address(smartSession));
@@ -187,41 +215,27 @@ contract SessionHookTest is Test {
     }
 
     /// @dev Initialization runs during validation in enable mode, so it may write only storage associated with the
-    /// account (ERC-7562): every slot is keyed by the account as the innermost mapping key.
+    /// account (ERC-7562): every slot it writes is a mapping entry keyed by the account.
     function test_initialize_writesOnlyAccountAssociatedSlots() public {
-        install(NEXUS);
+        install();
         bytes32 id = configId();
         bytes memory data = abi.encode(policies(2, MockExecutionPolicy.Mode.Pass));
 
         vm.record();
+        vm.startMappingRecording();
         vm.prank(address(smartSession));
         hook.initializeWithMultiplexer(address(account), id, data);
         (, bytes32[] memory writes) = vm.accesses(address(hook));
 
-        // `$counts` is slot 1, `$policies` slot 2 (after `$installs`).
-        bytes32 countSlot =
-            keccak256(abi.encode(address(account), keccak256(abi.encode(id, uint256(1)))));
-        bytes32[3] memory expected = [
-            countSlot,
-            keccak256(
-                abi.encode(
-                    address(account),
-                    keccak256(abi.encode(uint256(0), keccak256(abi.encode(id, uint256(2)))))
-                )
-            ),
-            keccak256(
-                abi.encode(
-                    address(account),
-                    keccak256(abi.encode(uint256(1), keccak256(abi.encode(id, uint256(2)))))
-                )
-            )
-        ];
         assertGt(writes.length, 0);
         for (uint256 i; i < writes.length; ++i) {
-            bool known =
-                writes[i] == expected[0] || writes[i] == expected[1] || writes[i] == expected[2];
-            assertTrue(known, "a write outside the account's slots");
+            (bool found, bytes32 key,) = vm.getMappingKeyAndParentOf(address(hook), writes[i]);
+            assertTrue(found, "a write outside a mapping");
+            assertEq(
+                key, bytes32(uint256(uint160(address(account)))), "a write not keyed by the account"
+            );
         }
+        vm.stopMappingRecording();
     }
 
     // --------------------------------------------------------------------------------------------
@@ -229,53 +243,58 @@ contract SessionHookTest is Test {
     // --------------------------------------------------------------------------------------------
 
     function test_check_acceptsATaggedExecuteOnABoundAccount() public {
-        install(NEXUS);
-        account.setHook(address(hook));
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
 
         assertEq(check(tagged(executeSingle(address(target)))), 0);
-        // Kernel's `executeUserOp(execute(…))`, bound through `validationConfig`.
-        install(KERNEL);
-        account.setKernelHook(address(hook));
+        // Kernel's `executeUserOp(execute(…))`, which runs the hook.
         assertEq(
             check(abi.encodePacked(bytes4(0x8dd7712f), tagged(executeSingle(address(target))))), 0
         );
     }
 
     function test_check_rejectsUnboundAccountsAndOtherCallers() public {
-        install(NEXUS);
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
         bytes memory callData = tagged(executeSingle(address(target)));
-        assertEq(check(callData), 1);
 
-        account.setHook(address(hook));
-        install(KERNEL);
+        // Kernel binds no hook, or another one, to Smart Sessions' validation.
+        account.bind(address(0));
         assertEq(check(callData), 1);
+        account.bind(makeAddr("another hook"));
+        assertEq(check(callData), 1);
+        account.bind(address(hook));
 
-        install(NEXUS);
         ERC4337.PackedUserOperation memory op;
         op.sender = address(account);
         op.callData = callData;
         // Not from the installed Smart Sessions module.
         assertEq(hook.checkUserOpPolicy(configId(), op), 1);
-        account.setHook(address(hook));
         assertEq(checkFrom(address(1), configId(), callData), 1);
         assertEq(checkFrom(address(type(uint160).max), configId(), callData), 1);
         assertEq(checkFrom(address(smartSession), configId(), callData), 0);
         // Another session's configuration.
         assertEq(checkFrom(address(smartSession), bytes32(0), callData), 1);
         assertEq(checkFrom(address(smartSession), bytes32(type(uint256).max), callData), 1);
+
+        // Bound but uninstalled.
+        vm.prank(address(account));
+        hook.onUninstall("");
+        assertEq(check(callData), 1);
     }
 
     /// @dev An account answering the binding probe with anything but its exact ABI encoding is not bound.
     function test_check_readsAMalformedBindingAnswerAsUnbound() public {
         MockProbe probed = new MockProbe();
+        probed.respond(
+            bytes4(keccak256("accountId()")), false, abi.encode("kernel.advanced.v0.3.3")
+        );
         vm.prank(address(probed));
-        hook.onInstall(abi.encode(KERNEL, address(smartSession)));
-        bytes4 kernelProbe = bytes4(keccak256("validationConfig(bytes21)"));
+        hook.onInstall(abi.encode(address(smartSession)));
+        bytes4 bindingProbe = bytes4(keccak256("validationConfig(bytes21)"));
         bytes memory callData = tagged(executeSingle(address(target)));
 
-        probed.respond(kernelProbe, false, abi.encode(uint32(1), address(hook)));
+        probed.respond(bindingProbe, false, abi.encode(uint32(1), address(hook)));
         assertEq(checkAccount(address(probed), callData), 0);
         bytes[5] memory data = [
             abi.encode(address(hook)),
@@ -286,28 +305,13 @@ contract SessionHookTest is Test {
         ];
         bool[5] memory reverts = [false, false, true, false, false];
         for (uint256 i; i < data.length; ++i) {
-            probed.respond(kernelProbe, reverts[i], data[i]);
-            assertEq(checkAccount(address(probed), callData), 1);
-        }
-
-        vm.startPrank(address(probed));
-        hook.onUninstall("");
-        hook.onInstall(abi.encode(NEXUS, address(smartSession)));
-        vm.stopPrank();
-        bytes4 hookProbe = bytes4(keccak256("isModuleInstalled(uint256,address,bytes)"));
-        probed.respond(hookProbe, false, abi.encode(true));
-        assertEq(checkAccount(address(probed), callData), 0);
-        bytes[3] memory answers = [bytes(""), abi.encode(true, uint256(0)), abi.encode(true)];
-        bool[3] memory failed = [false, false, true];
-        for (uint256 i; i < answers.length; ++i) {
-            probed.respond(hookProbe, failed[i], answers[i]);
+            probed.respond(bindingProbe, reverts[i], data[i]);
             assertEq(checkAccount(address(probed), callData), 1);
         }
     }
 
     function test_check_rejectsMissingOrForeignTags() public {
-        install(SAFE7579);
-        account.setHook(address(hook));
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
         bytes memory execute = executeSingle(address(target));
 
@@ -318,8 +322,7 @@ contract SessionHookTest is Test {
     }
 
     function test_check_requiresAPlainExecute() public {
-        install(NEXUS);
-        account.setHook(address(hook));
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
 
         // Another account function, an `executeUserOp` wrapping one, a delegatecall, and `executeUserOp` alone.
@@ -381,8 +384,7 @@ contract SessionHookTest is Test {
     }
 
     function test_check_rejectsCallsToTheHookTheAccountOrAPolicy() public {
-        install(NEXUS);
-        account.setHook(address(hook));
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
 
         address[3] memory forbidden = [address(hook), address(account), address(policy)];
@@ -407,7 +409,7 @@ contract SessionHookTest is Test {
     // --------------------------------------------------------------------------------------------
 
     function test_execution_runsThePoliciesAroundTheCalls() public {
-        install(NEXUS);
+        install();
         initialize(policies(2, MockExecutionPolicy.Mode.Pass));
         bytes memory execData = tagged(executeSingle(address(target)));
 
@@ -417,25 +419,13 @@ contract SessionHookTest is Test {
         assertEq(policy.lastExecData(), execData);
     }
 
-    function test_execution_dropsSafe7579sAppendedSender() public {
-        install(SAFE7579);
-        initialize(policies(1, MockExecutionPolicy.Mode.Pass));
-        bytes memory execData = tagged(executeSingle(address(target)));
-
-        vm.prank(address(account));
-        hook.preCheck(address(0), 0, abi.encodePacked(execData, makeAddr("entry point")));
-        assertEq(policy.lastExecData(), execData);
-
-        vm.prank(address(account));
-        assertEq(hook.preCheck(address(0), 0, hex"0102"), "");
-    }
-
     function test_execution_passesThroughWhatIsNotATaggedExecute() public {
-        install(NEXUS);
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.RevertPre));
+        IHook asHook = IHook(address(hook));
 
+        // Not `execute`: no context.
         vm.startPrank(address(account));
-        assertEq(hook.preCheck(address(0), 0, executeSingle(address(target))), "");
         assertEq(
             hook.preCheck(
                 address(0),
@@ -445,7 +435,6 @@ contract SessionHookTest is Test {
             ""
         );
         assertEq(hook.preCheck(address(0), 0, hex"e9ae"), "");
-        assertEq(hook.preCheck(address(0), 0, hex"e9ae5c53"), "");
         assertEq(
             hook.preCheck(
                 address(0), 0, abi.encodePacked(bytes4(0xe9ae5c54), hook.tag(PERMISSION))
@@ -455,13 +444,42 @@ contract SessionHookTest is Test {
         hook.postCheck("");
         vm.stopPrank();
 
+        // An untagged `execute` runs no policy (this one would revert).
+        account.runChecks(asHook, executeSingle(address(target)), "");
+        account.runChecks(asHook, hex"e9ae5c53", "");
+        assertEq(policy.preChecks(address(account)), 0);
+
         // Not installed: nothing runs.
         vm.prank(makeAddr("other account"));
         assertEq(hook.preCheck(address(0), 0, tagged(executeSingle(address(target)))), "");
     }
 
+    /// @dev Regression (internal review, findings 1 to 3): Kernel doesn't report a validator's hook as installed, so
+    /// Smart Sessions can't refuse a session's calls to it. The hook holds its lock through every operation it runs
+    /// around, untagged ones too, so their calls can't uninstall or reinstall it.
+    function test_execution_holdsTheLockThroughTheCalls() public {
+        install();
+        initialize(policies(1, MockExecutionPolicy.Mode.Pass));
+        IHook asHook = IHook(address(hook));
+        bytes[2] memory operations =
+            [executeSingle(address(target)), tagged(executeSingle(address(target)))];
+        bytes[2] memory calls = [
+            abi.encodeCall(SessionHook.onUninstall, ("")),
+            abi.encodeCall(SessionHook.onInstall, (abi.encode(address(smartSession))))
+        ];
+        for (uint256 i; i < operations.length; ++i) {
+            for (uint256 j; j < calls.length; ++j) {
+                vm.expectRevert(
+                    abi.encodeWithSelector(SessionHook.ReentrantCheck.selector, address(account))
+                );
+                account.callDuringCheck(asHook, operations[i], calls[j]);
+            }
+        }
+        assertEq(hook.getSmartSession(address(account)), address(smartSession));
+    }
+
     function test_execution_requiresTheSessionToStillUseTheHook() public {
-        install(NEXUS);
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
         bytes memory execData = tagged(executeSingle(address(target)));
 
@@ -489,7 +507,7 @@ contract SessionHookTest is Test {
     function test_execution_readsAMalformedSessionAnswerAsDisabled() public {
         MockProbe probe = new MockProbe();
         vm.prank(address(account));
-        hook.onInstall(abi.encode(NEXUS, address(probe)));
+        hook.onInstall(abi.encode(address(probe)));
         bytes memory execData = tagged(executeSingle(address(target)));
         bytes4[2] memory views = [
             bytes4(keccak256("isPermissionEnabled(bytes32,address)")),
@@ -513,7 +531,7 @@ contract SessionHookTest is Test {
     }
 
     function test_execution_wrapsAPolicyFailure() public {
-        install(NEXUS);
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.RevertPre));
         bytes32 id = hook.policyConfigId(configId(), 0);
         bytes memory execData = tagged(executeSingle(address(target)));
@@ -531,7 +549,7 @@ contract SessionHookTest is Test {
     }
 
     function test_execution_locksAndChecksTheContext() public {
-        install(NEXUS);
+        install();
         initialize(policies(1, MockExecutionPolicy.Mode.Pass));
         bytes memory execData = tagged(executeSingle(address(target)));
         IHook asHook = IHook(address(hook));
@@ -627,12 +645,9 @@ contract SessionHookTest is Test {
     // Helpers
     // --------------------------------------------------------------------------------------------
 
-    /// @dev Installs the hook with `flavour`, uninstalling it first: a different reinstall is refused.
-    function install(uint8 flavour) internal {
-        vm.startPrank(address(account));
-        hook.onUninstall("");
-        hook.onInstall(abi.encode(flavour, address(smartSession)));
-        vm.stopPrank();
+    function install() internal {
+        vm.prank(address(account));
+        hook.onInstall(abi.encode(address(smartSession)));
     }
 
     function configId() internal view returns (bytes32) {

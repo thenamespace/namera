@@ -91,7 +91,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             return bytes4(0x77390003);
         }
         // A session may not authorize another session.
-        // Namera: nor an account asking about itself (module-enable digests on Nexus): a session signs for apps.
+        // Namera: nor an account asking about itself (the account checking its own digests): a session signs for apps.
         if (sender == address(this) || sender == msg.sender) return EIP1271_FAILED;
 
         bool success = _erc1271IsValidSignatureViaNestedEIP712(
@@ -123,6 +123,12 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             )) {
             revert InvalidEnableSignature(account, hash);
         }
+        // Namera: the same events as enabling directly, so indexers see sessions enabled in a user operation. The
+        // only call before is the account's ERC-1271 view, and the nonce was spent before it.
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit NonceIterated(permissionId, account, $signerNonce[permissionId][account]);
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit SessionCreated(permissionId, account);
         _enableSession(permissionId, enableData.sessionToEnable);
     }
 

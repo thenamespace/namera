@@ -23,8 +23,7 @@ import {ISmartSession} from "../ISmartSession.sol";
 /// Namera: two accounts don't fit ERC-7739 as written, and both are bound as tightly by these rules:
 /// - Kernel passes its validators `_toWrappedHash(hash)`, the EIP-712 hash of `Kernel(bytes32 hash)` in its own
 ///   domain. For an account whose EIP-712 name is "Kernel", that wrapping of the app's hash is accepted too.
-/// - Safe7579 has no `eip712Domain()`. An account without one is bound by the domain `("", "", block.chainid,
-///   account, 0)`.
+/// - An account without `eip712Domain()` is bound by the domain `("", "", block.chainid, account, 0)`.
 abstract contract SmartSessionERC7739 is ISmartSession {
     /// @dev `keccak256("Kernel")`, as a literal for assembly.
     bytes32 private constant KERNEL_NAME_HASH =

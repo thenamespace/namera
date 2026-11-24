@@ -15,14 +15,12 @@ import {MockExecutionPolicy} from "../utils/mocks/MockExecutionPolicy.sol";
 import {MockTarget} from "../utils/mocks/MockTarget.sol";
 import {RealAccountTestBase} from "./RealAccountTestBase.sol";
 
-/// @notice Execution policies through SessionHook on a real account: every account test with SessionHook runs these,
-/// on top of the session flows of `RealAccountTestBase`, which run untagged and pass through the hook.
+/// @notice Execution policies through SessionHook on a real Kernel 3.3 account, on top of the session flows of
+/// `RealAccountTestBase`, which run untagged and pass through the hook.
 abstract contract SessionHookFlows is RealAccountTestBase {
     using SessionBuilder for Session;
 
     MockExecutionPolicy internal executionPolicy;
-
-    bytes4 private constant EXECUTE_USER_OP = 0x8dd7712f;
 
     function setUp() public virtual override {
         super.setUp();
@@ -188,54 +186,36 @@ abstract contract SessionHookFlows is RealAccountTestBase {
         assertEq(executionPolicy.postChecks(smartAccount), passes ? 1 : 0);
     }
 
-    /// @dev Smart Sessions and the hook accept `executeUserOp(execute(…))` on every account (upstream refuses it, as
-    /// an account may run something else). On these accounts a wrapped operation either runs the execution policies
-    /// (Kernel, Nexus) or doesn't execute (Safe7579): never the calls without the policies.
-    function test_hook_aWrappedOperationNeverRunsWithoutThePolicies() public {
-        Session memory session = hookedSession("wrap", MockExecutionPolicy.Mode.Pass);
-        PermissionId permissionId = smartSession.getPermissionId(session);
-        handleOp(signEnable(userOp(smartAccount, tagged(callSetValue(1), permissionId)), session));
-
-        ERC4337.PackedUserOperation memory op =
-            userOp(smartAccount, tagged(callSetValue(2), permissionId));
-        if (bytes4(op.callData) != EXECUTE_USER_OP) {
-            op.callData = abi.encodePacked(EXECUTE_USER_OP, op.callData);
-        }
-        handleOp(signUse(op, permissionId));
-
-        bool executed = target.value() == 2;
-        assertEq(executionPolicy.preChecks(smartAccount), executed ? 2 : 1);
-    }
-
     /// @dev Regression (internal review, findings 1 to 3): a session with the fallback action can't make the account
-    /// uninstall or reinstall the hook, which would switch off every session's execution policies. Nexus and Safe7579
-    /// report the hook as installed, so Smart Sessions refuses the call in validation; Kernel doesn't report a
-    /// validator's hook, so the hook refuses it during the operation (it holds the lock around Smart Sessions'
-    /// operations there) and the operation fails.
+    /// uninstall the hook, or swap it to another Smart Sessions module, which would switch off every session's
+    /// execution policies. Kernel doesn't report a validator's hook as installed: Smart Sessions refuses module
+    /// lifecycle calls in validation, and the hook holds its lock around Smart Sessions' operations.
     function test_hook_theFallbackCannotReachTheHook() public {
         Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
         session.salt = keccak256("fallback");
         PermissionId permissionId = smartSession.getPermissionId(session);
         handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
-        (SessionHook.Flavour flavour, address installed) = sessionHook.getInstall(smartAccount);
 
+        Execution[] memory swap = new Execution[](2);
+        swap[0] = Execution(address(sessionHook), 0, abi.encodeCall(SessionHook.onUninstall, ("")));
+        swap[1] = Execution(
+            address(sessionHook),
+            0,
+            abi.encodeCall(SessionHook.onInstall, (abi.encode(makeAddr("attacker's module"))))
+        );
         bytes[2] memory calls = [
-            abi.encodeCall(SessionHook.onUninstall, ("")),
-            abi.encodeCall(SessionHook.onInstall, (abi.encode(uint8(3), address(smartSession))))
+            executeSingle(address(sessionHook), 0, abi.encodeCall(SessionHook.onUninstall, (""))),
+            executeBatch(swap)
         ];
         for (uint256 i; i < calls.length; ++i) {
             ERC4337.PackedUserOperation[] memory ops = new ERC4337.PackedUserOperation[](1);
-            ops[0] = signUse(
-                userOp(smartAccount, executeSingle(address(sessionHook), 0, calls[i])), permissionId
-            );
+            ops[0] = signUse(userOp(smartAccount, calls[i]), permissionId);
             try entryPoint.handleOps(ops, payable(makeAddr("beneficiary"))) {} catch {}
         }
 
-        (SessionHook.Flavour after_, address installedAfter) = sessionHook.getInstall(smartAccount);
-        assertEq(uint8(after_), uint8(flavour));
-        assertEq(installedAfter, installed);
+        assertEq(sessionHook.getSmartSession(smartAccount), address(smartSession));
     }
 
-    /// @dev Removes SessionHook from SmartSession's operations the way the account allows.
+    /// @dev Removes SessionHook from SmartSession's operations the way Kernel allows.
     function unbindSessionHook() internal virtual;
 }

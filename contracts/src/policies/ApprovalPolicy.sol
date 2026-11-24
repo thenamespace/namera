@@ -25,6 +25,9 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
     /// @dev Uniswap's Permit2, the same address on every chain.
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
 
+    /// @notice A cap names no token, or a token already capped (only the first cap of a token would hold).
+    error InvalidCap(uint256 index);
+
     /// @inheritdoc IActionPolicy
     function checkAction(
         bytes32 id,
@@ -75,7 +78,12 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
         uint256 base = 1 + spenderCount;
         uint256 capCount = caps.length;
         for (uint256 i; i < capCount; ++i) {
-            _setWordAt(packed, base + 2 * i, uint256(uint160(caps[i].token)));
+            address token = caps[i].token;
+            if (token == address(0)) revert InvalidCap(i);
+            for (uint256 j; j < i; ++j) {
+                if (caps[j].token == token) revert InvalidCap(i);
+            }
+            _setWordAt(packed, base + 2 * i, uint256(uint160(token)));
             _setWordAt(packed, base + 2 * i + 1, caps[i].maxAmount);
         }
     }

@@ -40,6 +40,11 @@ contract MockAccount is EIP712 {
 
     receive() external payable {}
 
+    /// @dev Kernel 3.3's ERC-7579 `accountId()`: Smart Sessions installs only on accounts reporting it.
+    function accountId() external pure virtual returns (string memory) {
+        return "kernel.advanced.v0.3.3";
+    }
+
     modifier onlyEntryPointOrSelf() {
         if (msg.sender != address(EntryPointFixture.ENTRY_POINT) && msg.sender != address(this)) {
             revert Unauthorized();
@@ -174,7 +179,7 @@ contract MockKernelAccount is MockAccount {
     }
 }
 
-/// @notice An account without ERC-5267's `eip712Domain()`, like Safe7579.
+/// @notice An account without ERC-5267's `eip712Domain()`.
 contract MockDomainlessAccount is MockAccount {
     error NoDomain();
 

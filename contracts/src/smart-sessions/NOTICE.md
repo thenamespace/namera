@@ -88,8 +88,8 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - **Internal review (2026-11-24).**
   - _The fallback stays off the account's infrastructure._ Beyond the account itself, the fallback
     action no longer reaches the EntryPoint (`withdrawTo` would move the account's deposit) or a
-    validator, executor or hook the account has installed (`isModuleInstalled`), nor Nexus's default
-    validator (`getDefaultValidator()`): those modules take the account's calls as configuration, so a
+    validator or executor the account has installed (`isModuleInstalled`): those modules take the
+    account's calls as configuration, so a
     fallback session could replace the owner. The probes have fixed gas and fail closed. Fallback
     handlers (type 3) are installed per selector, which a probe can't ask about, so they aren't covered.
   - _Every reconfiguration spends the enable nonce._ `enableSessions` and every `enable*`/`disable*`
@@ -103,16 +103,17 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   - _Only empty calldata is a plain value transfer._ Calldata of 1 to 3 bytes, or starting with the value
     selector, is refused (`InvalidTarget`) instead of reaching the target's code under the value action.
   - _A policy answer longer than one word fails_, rather than being read as its first word.
-  - _An account asking about itself_ (`sender == msg.sender`, as Nexus does for module-enable digests)
+  - _An account asking about itself_ (`sender == msg.sender`, as an account checks module-enable digests)
     gets no session ERC-1271 signature: a session signs for apps.
 - **Rerun review (2026-11-24).**
   - _The fallback can't act as the account's configuration._ It refuses a module lifecycle or hook
     function on any target (`onInstall`, `onUninstall`, `preCheck`, `postCheck`): Kernel doesn't report
     its permission signers and policies, nor the hook it binds to a validator, as installed. It also
-    refuses calldata ending in the account's address: ERC-2771 contracts (Safe7579's adapter, ERC-7579
-    fallback handlers) read the last 20 bytes as the original sender, so the account named there passed
-    their "account calls itself" checks and a fallback session could install a validator on a Safe. A
-    legitimate fallback call whose last argument is the account (a `receiver`) needs an explicit action.
+    refuses calldata ending in the account's or an EntryPoint's address: ERC-2771 contracts (Safe7579's
+    adapter, the account's fallback handlers) read the last 20 bytes as the original sender, so the sender
+    named there passed their "the account or the EntryPoint called" checks and a fallback session could
+    install a validator on a Safe. A legitimate fallback call whose last argument is the account (a
+    `receiver`) needs an explicit action.
   - _An action listed twice in one session is refused_ (`InvalidActionId`): only its last entry's policy
     configurations would have been kept.
 
@@ -139,12 +140,19 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   conditions on single fields of what the session key signed (a permit's spender and value). Other
   policies are called as before, with the session key's signature. The session validator gets only the
   session key's signature. `PolicyLib.checkERC1271` takes an `ERC1271Request` (`DataTypes.sol`).
-- **ERC-7739 on Kernel and Safe7579.** Kernel 3.3 asks its validators about `_toWrappedHash(hash)`, the
-  EIP-712 hash of `Kernel(bytes32 hash)` in its own domain, so for an account whose EIP-712 name is
-  "Kernel" that wrapping of the app's hash binds the signature too. Safe7579 has no `eip712Domain()`, so
-  an account without one is bound by the domain `("", "", block.chainid, account, 0)` (upstream reverted).
+- **ERC-7739 on Kernel.** Kernel 3.3 asks its validators about `_toWrappedHash(hash)`, the EIP-712 hash of
+  `Kernel(bytes32 hash)` in its own domain, so for an account whose EIP-712 name is "Kernel" that wrapping of
+  the app's hash binds the signature too. An account without `eip712Domain()` is bound by the domain
+  `("", "", block.chainid, account, 0)` (upstream reverted).
 - The ERC-7739 support probe returns `0x77390003`: upstream returns `0x77390001`, `0x77390002` marked
   the hash binding fix, and `0x77390003` the signature layout above.
+
+- **Kernel 3.3 only.** `onInstall` reverts (`UnsupportedAccount`) unless the account's ERC-7579
+  `accountId()` is `kernel.advanced.v0.3.3` (`lib/SupportedAccount.sol`): the module's behaviour depends on
+  Kernel 3.3's validator-bound hook, ERC-1271 wrapping and module reporting, and was checked against no
+  other account. Upstream installs on any ERC-7579 account.
+- **ENABLE mode emits events.** A session enabled in a user operation emits `NonceIterated` and
+  `SessionCreated`, as enabling it directly does (upstream emitted neither).
 
 ## Known limitations
 
@@ -157,9 +165,8 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   upstream.
 - **`executeUserOp` is trusted to execute `callData[4:]`.** Upstream refuses `executeUserOp`
   (erc7579/smartsessions#17) because an account may run something else inside it. Namera accepts it,
-  checking the wrapped `execute`, since Kernel runs a validator's hook only through it; Kernel and Nexus
-  were tested to execute exactly `callData[4:]` (with the hook), and Safe7579 doesn't execute it. An
-  account with another `executeUserOp` must not install this module.
+  checking the wrapped `execute`, since Kernel runs a validator's hook only through it; Kernel 3.3 was tested
+  to execute exactly `callData[4:]` (with the hook). The module installs only on Kernel 3.3.
 - **Any installed validator can sign the enable digest.** The owner's ENABLE signature is checked with
   the account's ERC-1271, which routes to whichever validator the signature names; an account with
   another session module installed (one whose sessions sign arbitrary hashes) is only as safe as it.

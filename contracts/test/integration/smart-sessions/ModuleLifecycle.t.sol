@@ -3,9 +3,28 @@ pragma solidity 0.8.38;
 
 import {PermissionId, Session, SmartSessionMode} from "src/smart-sessions/DataTypes.sol";
 import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
+import {SupportedAccount} from "src/smart-sessions/lib/SupportedAccount.sol";
 
 import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
 import {MockAccount} from "../../utils/mocks/MockAccount.sol";
+
+/// @dev An account reporting another `accountId()`.
+contract MockOtherAccount is MockAccount {
+    constructor(address owner_) MockAccount(owner_) {}
+
+    function accountId() external pure override returns (string memory) {
+        return "kernel.advanced.v0.3.2";
+    }
+}
+
+/// @dev An account whose `accountId()` reverts, as one without the function does.
+contract MockAccountWithoutId is MockAccount {
+    constructor(address owner_) MockAccount(owner_) {}
+
+    function accountId() external pure override returns (string memory) {
+        revert();
+    }
+}
 
 contract ModuleLifecycleTest is SmartSessionTestBase {
     MockAccount internal freshAccount;
@@ -43,6 +62,21 @@ contract ModuleLifecycleTest is SmartSessionTestBase {
         vm.prank(address(freshAccount));
         vm.expectRevert(ISmartSession.InvalidMode.selector);
         freshAccount.installModule(MODULE_TYPE_VALIDATOR, address(smartSession), data);
+    }
+
+    /// @dev Only Kernel 3.3 installs Smart Sessions: an account with another `accountId()`, or none, is refused.
+    function test_RevertWhen_installedOnAnAccountThatIsNotKernel3_3() public {
+        MockAccount[2] memory others =
+            [MockAccount(new MockOtherAccount(owner)), new MockAccountWithoutId(owner)];
+        for (uint256 i; i < others.length; ++i) {
+            vm.prank(address(others[i]));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    SupportedAccount.UnsupportedAccount.selector, address(others[i])
+                )
+            );
+            others[i].installModule(MODULE_TYPE_VALIDATOR, address(smartSession), "");
+        }
     }
 
     function test_RevertWhen_reinstallingWithLeftoverSessions() public {

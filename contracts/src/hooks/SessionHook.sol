@@ -6,15 +6,18 @@ import {LibERC7579} from "solady/accounts/LibERC7579.sol";
 
 import {IPolicy, IUserOpPolicy} from "../policies/interfaces/IPolicy.sol";
 import {Execution, ExecutionLib} from "../smart-sessions/lib/ExecutionLib.sol";
+import {SupportedAccount} from "../smart-sessions/lib/SupportedAccount.sol";
 import {IExecutionPolicy} from "./interfaces/IExecutionPolicy.sol";
 
 /// @title SessionHook
-/// @notice Runs a session's execution policies around its operations on Kernel, Nexus and Safe7579. It is two things:
+/// @notice Runs a session's execution policies around its operations on Kernel 3.3. It is two things:
 /// - **a user operation policy of the session** (validation): its init data lists the session's execution policies,
 ///   so the owner's session signature covers them; its check requires the operation to name the session in a tag
 ///   appended to the calldata, to be a plain `execute`, not to call the hook, the account or the session's execution
 ///   policies, and the hook to be installed on the account;
-/// - **the account's ERC-7579 hook** (execution): it reads the tag and runs that session's execution policies,
+/// - **the hook Kernel binds to Smart Sessions' validation** (execution): Kernel runs every Smart Sessions operation
+///   through `executeUserOp` and calls the hook around it; the hook reads the tag and runs that session's execution
+///   policies,
 ///   `preCheck` before the calls and `postCheck` after. An operation without a tag (the owner's, another validator's,
 ///   a session's without execution policies) passes through.
 /// @dev Tag: `userOp.callData = <execute(…) | executeUserOp ‖ execute(…)> ‖ … ‖ permissionId ‖ TAG`. Every byte of
@@ -22,26 +25,14 @@ import {IExecutionPolicy} from "./interfaces/IExecutionPolicy.sol";
 /// a tag can't be stripped or swapped, and an added tag only adds checks. Calldata, not state, carries the session
 /// from validation to execution, so operations with identical calldata in one bundle each run their policies.
 ///
-/// Install data `abi.encode(uint8 flavour, address smartSession)`: the account type (how it calls the hook) and the
-/// Smart Sessions module whose sessions it serves; only that module can set policy lists. On Kernel the hook is bound
-/// to Smart Sessions' validation (Kernel passes `hookData[1:]`); on Nexus and Safe7579 it is the account's hook.
+/// Install data `abi.encode(address smartSession)`, the Smart Sessions module whose sessions it serves (Kernel passes
+/// the validation's `hookData[1:]`); only that module can set policy lists. It installs only on Kernel 3.3
+/// (`SupportedAccount`).
 ///
-/// Storage is associated with the account (ERC-7562): `account → install`, `configId → account → count`,
+/// Storage is associated with the account (ERC-7562): `account → smartSession`, `configId → account → count`,
 /// `configId → index → account → policy`.
 // slither-disable-next-line missing-inheritance
 contract SessionHook is IUserOpPolicy {
-    enum Flavour {
-        None,
-        Kernel,
-        Nexus,
-        Safe7579
-    }
-
-    struct Install {
-        Flavour flavour;
-        address smartSession;
-    }
-
     /// @dev One execution policy and its configuration, as a session's init data lists them.
     struct ExecutionPolicyData {
         address policy;
@@ -60,17 +51,15 @@ contract SessionHook is IUserOpPolicy {
 
     bytes4 internal constant EXECUTE_SELECTOR = 0xe9ae5c53;
     bytes4 internal constant EXECUTE_USER_OP_SELECTOR = 0x8dd7712f;
-    /// @dev Safe7579 appends the 20-byte caller to the data it passes the hook.
-    uint256 internal constant SAFE7579_SUFFIX_LENGTH = 20;
     /// @dev Transient slot base of each account's running check: `keccak256(context)` while one runs.
     bytes32 internal constant CONTEXT_SLOT = keccak256("namera.session-hook.context");
 
-    mapping(address account => Install) internal $installs;
+    mapping(address account => address smartSession) internal $smartSessions;
     mapping(bytes32 configId => mapping(address account => uint256)) internal $counts;
     mapping(bytes32 configId => mapping(uint256 index => mapping(address account => address)))
         internal $policies;
 
-    event SessionHookInstalled(address indexed account, Flavour flavour, address smartSession);
+    event SessionHookInstalled(address indexed account, address smartSession);
     event SessionHookUninstalled(address indexed account);
     event ExecutionPoliciesSet(
         address indexed account, bytes32 indexed configId, address[] policies
@@ -90,25 +79,21 @@ contract SessionHook is IUserOpPolicy {
     // ERC-7579 module
     // ---------------------------------------------------------------------------------------------
 
-    /// @notice Installs the hook on the calling account for the sessions of one Smart Sessions module.
-    /// @param data `abi.encode(uint8 flavour, address smartSession)`.
+    /// @notice Installs the hook on the calling Kernel 3.3 account for the sessions of one Smart Sessions module.
+    /// @param data `abi.encode(address smartSession)`.
     function onInstall(bytes calldata data) external {
         _requireIdle(msg.sender);
-        (uint8 flavour, address smartSession) = abi.decode(data, (uint8, address));
-        if (flavour == 0 || flavour > uint8(Flavour.Safe7579) || smartSession == address(0)) {
-            revert InvalidInstall();
-        }
-        // Reinstalling with the same configuration is allowed (Kernel rebinding runs `onInstall` again); changing the
-        // flavour or Smart Sessions needs an uninstall first, so no call can quietly switch the policies off.
-        Install memory installed = $installs[msg.sender];
-        if (
-            installed.flavour != Flavour.None
-                && (uint8(installed.flavour) != flavour || installed.smartSession != smartSession)
-        ) revert InvalidInstall();
-        $installs[msg.sender] = Install(Flavour(flavour), smartSession);
-        // Only a transient-storage read (`_requireIdle`) comes before: no external call.
+        SupportedAccount.check(msg.sender);
+        address smartSession = abi.decode(data, (address));
+        if (smartSession == address(0)) revert InvalidInstall();
+        // Reinstalling with the same module is allowed (Kernel rebinding runs `onInstall` again); another module needs
+        // an uninstall first, so no call can quietly switch the policies off.
+        address installed = $smartSessions[msg.sender];
+        if (installed != address(0) && installed != smartSession) revert InvalidInstall();
+        $smartSessions[msg.sender] = smartSession;
+        // Only views of the account come before (`_requireIdle`, `accountId()`): nothing can re-enter.
         // forge-lint: disable-next-line(reentrancy-events)
-        emit SessionHookInstalled(msg.sender, Flavour(flavour), smartSession);
+        emit SessionHookInstalled(msg.sender, smartSession);
     }
 
     /// @notice Uninstalls the hook from the calling account.
@@ -116,7 +101,7 @@ contract SessionHook is IUserOpPolicy {
     /// and re-enabling a session sets its list again.
     function onUninstall(bytes calldata) external {
         _requireIdle(msg.sender);
-        delete $installs[msg.sender];
+        delete $smartSessions[msg.sender];
         // Only a transient-storage read (`_requireIdle`) comes before: no external call.
         // forge-lint: disable-next-line(reentrancy-events)
         emit SessionHookUninstalled(msg.sender);
@@ -124,7 +109,7 @@ contract SessionHook is IUserOpPolicy {
 
     /// @notice Whether the hook is installed on `account`.
     function isInitialized(address account) external view returns (bool) {
-        return $installs[account].flavour != Flavour.None;
+        return $smartSessions[account] != address(0);
     }
 
     /// @notice Whether the hook is of ERC-7579 module type `moduleTypeId` (only hooks, type 4).
@@ -150,9 +135,9 @@ contract SessionHook is IUserOpPolicy {
         bytes32 sessionConfigId,
         bytes calldata initData
     ) external {
-        Install memory install = $installs[account];
-        if (install.flavour == Flavour.None) revert SessionHookNotInstalled(account);
-        if (msg.sender != install.smartSession) revert OnlySmartSession(msg.sender);
+        address smartSession = $smartSessions[account];
+        if (smartSession == address(0)) revert SessionHookNotInstalled(account);
+        if (msg.sender != smartSession) revert OnlySmartSession(msg.sender);
 
         ExecutionPolicyData[] memory list = abi.decode(initData, (ExecutionPolicyData[]));
         uint256 count = list.length;
@@ -186,8 +171,11 @@ contract SessionHook is IUserOpPolicy {
         returns (uint256)
     {
         address account = userOp.sender;
-        Install memory install = $installs[account];
-        if (msg.sender != install.smartSession || !_isBound(account, install)) {
+        address smartSession = $smartSessions[account];
+        if (
+            smartSession == address(0) || msg.sender != smartSession
+                || !_isBound(account, smartSession)
+        ) {
             return VALIDATION_FAILED;
         }
 
@@ -216,27 +204,21 @@ contract SessionHook is IUserOpPolicy {
         returns (bytes memory context)
     {
         address account = msg.sender;
-        Install memory install = $installs[account];
-        if (install.flavour == Flavour.None) return "";
-        if (install.flavour == Flavour.Safe7579) {
-            if (msgData.length < SAFE7579_SUFFIX_LENGTH) return "";
-            msgData = msgData[:msgData.length - SAFE7579_SUFFIX_LENGTH];
-        }
+        address smartSession = $smartSessions[account];
+        if (smartSession == address(0)) return "";
         if (msgData.length < 4 || bytes4(msgData[:4]) != EXECUTE_SELECTOR) return "";
         (bool tagged, bytes32 permissionId) = _readTag(msgData);
         if (_loadContextHash(account) != bytes32(0)) revert ReentrantCheck(account);
         if (!tagged) {
-            // On Kernel the hook runs only around Smart Sessions' operations, so it holds the lock through untagged
-            // ones too: their calls then can't reinstall or uninstall the hook (Kernel doesn't report a validator's
-            // hook as installed, so Smart Sessions' fallback can't tell it is one). Elsewhere the hook runs for every
-            // operation, the owner's included, which must be able to uninstall it.
-            if (install.flavour != Flavour.Kernel) return "";
+            // Kernel runs the hook only around Smart Sessions' operations, so it holds the lock through untagged ones
+            // too: their calls then can't reinstall or uninstall the hook (Kernel doesn't report a validator's hook as
+            // installed, so Smart Sessions' fallback can't tell it is one). The owner's operations don't run it.
             context = abi.encode(bytes32(0), new address[](0), new bytes32[](0), new bytes[](0));
             _storeContextHash(account, keccak256(context));
             return context;
         }
 
-        if (!_isPermissionEnabled(install.smartSession, account, permissionId)) {
+        if (!_isPermissionEnabled(smartSession, account, permissionId)) {
             revert PermissionNotEnabled(permissionId);
         }
 
@@ -279,14 +261,9 @@ contract SessionHook is IUserOpPolicy {
         return abi.encodePacked(permissionId, TAG);
     }
 
-    /// @notice How the hook is installed on `account`: the account type and the Smart Sessions module it serves.
-    function getInstall(address account)
-        external
-        view
-        returns (Flavour flavour, address smartSession)
-    {
-        Install memory install = $installs[account];
-        return (install.flavour, install.smartSession);
+    /// @notice The Smart Sessions module whose sessions the hook serves on `account`, or zero if not installed.
+    function getSmartSession(address account) external view returns (address) {
+        return $smartSessions[account];
     }
 
     /// @notice The execution policies of `account`'s session `permissionId`.
@@ -347,32 +324,23 @@ contract SessionHook is IUserOpPolicy {
         return abi.encode(permissionId, policies, ids, contexts);
     }
 
-    /// @dev Whether the account runs this hook for Smart Sessions operations, read from the account: Kernel binds it
-    /// to Smart Sessions' validation (rebinding never uninstalls the old hook), Nexus and Safe7579 hold one hook.
-    // Probes that must not revert: a missing view reads as "not bound", failing validation instead of reverting it.
+    /// @dev Whether Kernel binds this hook to `smartSession`'s validation on `account` (rebinding never uninstalls the
+    /// old hook, so the account is asked). A missing view reads as "not bound", failing validation instead of
+    /// reverting it.
     // slither-disable-next-line low-level-calls
-    function _isBound(address account, Install memory install) internal view returns (bool) {
-        if (install.flavour == Flavour.Kernel) {
-            // Kernel's `validationConfig(validationId)` returns `(uint32 nonce, address hook)`.
-            (bool success, bytes memory result) = account.staticcall(
-                abi.encodeWithSignature(
-                    "validationConfig(bytes21)",
-                    // Exactly 21 bytes: validation type 0x01 (validator) ‖ address.
-                    // forge-lint: disable-next-line(unsafe-typecast)
-                    bytes21(abi.encodePacked(bytes1(0x01), install.smartSession))
-                )
-            );
-            if (!success || result.length != 64) return false;
-            (, address hook) = abi.decode(result, (uint32, address));
-            return hook == address(this);
-        }
-        if (install.flavour == Flavour.None) return false;
-        (bool ok, bytes memory installed) = account.staticcall(
+    function _isBound(address account, address smartSession) internal view returns (bool) {
+        // Kernel's `validationConfig(validationId)` returns `(uint32 nonce, address hook)`.
+        (bool success, bytes memory result) = account.staticcall(
             abi.encodeWithSignature(
-                "isModuleInstalled(uint256,address,bytes)", MODULE_TYPE_HOOK, address(this), ""
+                "validationConfig(bytes21)",
+                // Exactly 21 bytes: validation type 0x01 (validator) ‖ address.
+                // forge-lint: disable-next-line(unsafe-typecast)
+                bytes21(abi.encodePacked(bytes1(0x01), smartSession))
             )
         );
-        return ok && installed.length == 32 && abi.decode(installed, (bool));
+        if (!success || result.length != 64) return false;
+        (, address hook) = abi.decode(result, (uint32, address));
+        return hook == address(this);
     }
 
     /// @dev Whether every call of `execute` calldata avoids the hook, the account and the session's execution

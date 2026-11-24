@@ -8,7 +8,7 @@ import {MerkleProofLib} from "solady/utils/MerkleProofLib.sol";
 import {WebAuthnAssertion} from "./lib/WebAuthnAssertion.sol";
 
 /// @title WebAuthnValidator
-/// @notice ERC-7579 validator for passkey owners (module type 1) on Kernel, Nexus and Safe7579, and stateless passkey
+/// @notice ERC-7579 validator for passkey owners (module type 1) on Kernel 3.3, and stateless passkey
 /// verifier for Smart Sessions session keys (module type 7). An account holds up to 16 passkeys and a threshold.
 /// @dev Implements the ERC-7579 and ISessionValidator ABIs without inheriting their interfaces, so the contract stays
 /// Apache-2.0.
@@ -28,7 +28,7 @@ import {WebAuthnAssertion} from "./lib/WebAuthnAssertion.sol";
 ///
 /// ERC-1271 digests are bound to the account and chain: the passkey signs `replaySafeHash(account, hash)`, an EIP-712
 /// digest in this validator's domain. The bare hash is accepted only when the account asks for itself
-/// (`sender == account`), which Kernel's and Nexus's enable flows do with digests already bound to the account.
+/// (`sender == account`), which Kernel's enable flows do with digests already bound to the account.
 ///
 /// Storage is keyed so every slot is associated with the account (ERC-7562): `credentialId => account => passkey`,
 /// `index => account => credentialId` and `account => (count, threshold)`.
@@ -193,7 +193,7 @@ contract WebAuthnValidator is EIP712 {
     }
 
     /// @notice ERC-7579 ERC-1271 forwarding: whether the calling account's passkeys signed `hash`.
-    /// @dev An empty signature (Nexus's ERC-7739 support probe) is invalid, never a revert.
+    /// @dev An empty signature (an account's ERC-7739 support probe) is invalid, never a revert.
     function isValidSignatureWithSender(address sender, bytes32 hash, bytes calldata signature)
         external
         view

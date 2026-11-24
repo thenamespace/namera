@@ -21,12 +21,25 @@ contract EnableModeTest is SmartSessionTestBase {
 
     function test_enablesSessionAndExecutesInOneUserOp() public {
         Session memory session = defaultSession();
+        PermissionId permissionId = smartSession.getPermissionId(session);
 
         handleOp(signEnable(userOp(callSetValue(5)), session));
 
-        PermissionId permissionId = smartSession.getPermissionId(session);
         assertTrue(smartSession.isPermissionEnabled(permissionId, address(account)));
         assertEq(target.value(), 5);
+    }
+
+    /// @dev Enabling in a user operation emits what enabling directly does, so indexers see every session.
+    function test_enableMode_emitsTheEnablingEvents() public {
+        Session memory session = defaultSession();
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        ERC4337.PackedUserOperation memory op = signEnable(userOp(callSetValue(5)), session);
+
+        vm.expectEmit(address(smartSession));
+        emit ISmartSession.NonceIterated(permissionId, address(account), 1);
+        vm.expectEmit(address(smartSession));
+        emit ISmartSession.SessionCreated(permissionId, address(account));
+        handleOp(op);
     }
 
     function test_unsafeEnableMode_isAccepted() public {
