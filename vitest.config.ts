@@ -29,6 +29,8 @@ const shared: ViteUserConfig = {
   test: {
     exclude,
     passWithNoTests: true,
+    // Chain tests send user operations that the bundler simulates and traces (an ENABLE operation takes seconds).
+    testTimeout: 10_000,
     setupFiles: [path.join(import.meta.dirname, "vitest.setup.ts")],
     sequence: {
       concurrent: true

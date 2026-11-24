@@ -149,8 +149,9 @@ Tests live in each package's `test/` folder, mirroring `src/`, import the packag
 the documented contract, its failure cases and regressions; leave what the type checker proves to
 `typetest/`. The landmines rules are enforced: no test doubles (use real implementations, test
 layers, MSW for the network), no fixed sleeps (`TestClock`, or await a signal), no polling races, no
-retries or raised timeouts, and test file names (`*.test.ts`, fixtures `*.fixture.ts`, helpers
-`*.test-utils.ts`).
+retries, and test file names (`*.test.ts`, fixtures `*.fixture.ts`, helpers
+`*.test-utils.ts`). Every test has 10 s (`testTimeout` in `vitest.config.ts`): chain tests wait on the bundler's
+simulation, and a test that needs longer belongs in smaller tests or a hook.
 
 - Internal modules are reached through `tsconfig.tests.json` path aliases (`@namera-ai/sdk/internal/promise`), as in
   Effect, and only when no public function carries the behaviour yet.
