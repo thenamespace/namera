@@ -7,8 +7,9 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { version } from "../internal/version.ts"
-import * as NameraError from "../NameraError.ts"
+import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/keys/KeystoreError" as const
 
@@ -225,7 +226,7 @@ export class KeystoreError extends Schema.TaggedError<KeystoreError>("@namera-ai
   { store: Schema.optionalKey(StoreRef), reason: KeystoreErrorReason }
 ) implements NameraError.Fields {
   readonly [TypeId] = TypeId
-  readonly [NameraError.TypeId] = NameraError.TypeId
+  readonly [NameraErrorTypeId] = NameraErrorTypeId
 
   override readonly cause = this.reason
 

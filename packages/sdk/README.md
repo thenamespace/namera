@@ -14,7 +14,7 @@ pnpm add @namera-ai/sdk viem effect
 
 | Entry                   | What it exports                                                               |
 | ----------------------- | ----------------------------------------------------------------------------- |
-| `@namera-ai/sdk`        | The Promise API: `Session`, `NameraError`, `ChainError`, …                    |
+| `@namera-ai/sdk`        | The Promise API: `Session`, `Grant`, `Bundler`, `Paymaster`, `Compat`, …      |
 | `@namera-ai/sdk/effect` | The same modules and names, with asynchronous functions returning an `Effect` |
 
 Every module is also importable on its own (`@namera-ai/sdk/Session`).
@@ -312,6 +312,81 @@ watcher.off()
   on a long chain. Smart Sessions stores permission ids, not sessions, so `Grant.list` matches ids to the grants you
   pass and marks the rest `foreign`.
 
+## Bundlers and paymasters
+
+`Bundler.*` and `Paymaster.*` return viem configuration, spread into viem's own `createBundlerClient`. There is no
+Namera client.
+
+```ts
+import { Bundler, Paymaster } from "@namera-ai/sdk"
+import { createBundlerClient } from "viem/account-abstraction"
+
+const bundler = createBundlerClient({
+  account, // an owner's account, or an agent's from Grant.toAccount
+  client,
+  ...Bundler.pimlico({ apiKey }), // → { transport, userOperation: { estimateFeesPerGas } }
+  paymaster: Paymaster.circle({ token: "USDC" }) // → a viem paymaster
+})
+```
+
+Recommended setups:
+
+- **Bundler:** Pimlico (`Bundler.pimlico`) or Alchemy (`Bundler.alchemy`).
+- **Sponsorship:** Circle (`Paymaster.circle`, gas paid in USDC) or Alchemy's Gas Manager (`Paymaster.alchemy`). Both
+  work with any bundler.
+- **Pimlico's paymaster only through Pimlico's or ZeroDev's bundler:** its contract refuses other bundlers
+  (`BundlerNotAllowed`), and so do ZeroDev's sponsorship and Pimlico's ERC-20 paymaster, which use the same contract.
+
+| Bundlers                                       | Paymasters                                        |
+| ---------------------------------------------- | ------------------------------------------------- |
+| `Bundler.pimlico({ apiKey })`                  | `Paymaster.pimlico({ apiKey, policyId? })`        |
+| `Bundler.alchemy({ apiKey, sponsorship? })`    | `Paymaster.pimlicoErc20({ apiKey, token })`       |
+| `Bundler.candide({ apiKey? })`                 | `Paymaster.alchemy({ apiKey, policyId })`         |
+| `Bundler.zerodev({ projectId, sponsorship? })` | `Paymaster.candide({ apiKey?, policyId })`        |
+| `Bundler.etherspot({ apiKey })`                | `Paymaster.zerodev({ projectId })`                |
+| `Bundler.from({ url })`                        | `Paymaster.etherspot({ apiKey, policyId? })`      |
+|                                                | `Paymaster.circle({ token: "USDC", maxAmount? })` |
+|                                                | `Paymaster.erc7677({ url, context })`             |
+
+What the helpers handle:
+
+- **Endpoints** for the client's chain, and **fees** from the bundler that submits, through its own method
+  (`pimlico_getUserOperationGasPrice`, `zd_getUserOperationGasPrice`, Alchemy's `rundler_maxPriorityFeePerGas`,
+  Candide's `voltaire_feesPerGas`, Etherspot's `skandha_getGasPrice`; the node's fees for `Bundler.from`).
+- **Vendor quirks:** paymaster gas Candide's bundler doesn't estimate is filled in (150k verification), Candide's
+  paymaster gets at least 30k call gas, and Alchemy's bundler sponsorship (`sponsorship: { policyId }`) and ZeroDev's
+  UltraRelay (`sponsorship: "ultra-relay"`) send zero fees and no paymaster.
+- **Paymaster fields are never changed after the paymaster signs them**, and stub requests send zeroed gas.
+- **Circle** builds its USDC permit itself: the owner's account signs it for owner operations, and the session key for
+  an agent's, which needs the session to allow it (`Policy.signTypedData` of USDC's `Permit` with Circle's paymaster
+  as spender). Its EntryPoint 0.7 paymaster is on Base, Base Sepolia, Sepolia and Arbitrum Sepolia.
+- **API keys never appear in errors**: bundler and paymaster failures become `BundlerError`, `PaymasterError` or
+  `CompatError` without the endpoint's credentials.
+
+### Combinations
+
+`Compat.check` knows which combinations work, from Namera's live tests; `Compat.matrix()` is the whole table, with a
+source and date per rule. The bundler helpers run it when viem prepares each operation (their fee hook is where the
+account, the bundler and the paymaster meet), and refuse a combination with problems with `CompatError` before
+anything is signed. Pass `strict: false` to a bundler helper to send anyway.
+
+```ts
+Compat.check({ account, bundler: "candide", paymaster: "pimlico", chainId: base.id })
+// → { ok: false, problems: [{ code: "PAYMASTER_BUNDLER_BOUND", message: "…" }], warnings: [] }
+```
+
+| Rule                                                                                                           | Code                        |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Pimlico's and ZeroDev's sponsorship and Pimlico's ERC-20 paymaster only through Pimlico's or ZeroDev's bundler | `PAYMASTER_BUNDLER_BOUND`   |
+| Alchemy's bundler sponsorship only through Alchemy, UltraRelay only through ZeroDev, neither with a paymaster  | `SPONSORSHIP_BUNDLER_BOUND` |
+| Etherspot's EntryPoint 0.7 endpoint rejects EIP-7702 authorizations (until the account is delegated)           | `EIP7702_UNSUPPORTED`       |
+| Etherspot includes operations in about 95 s: raise `waitForUserOperationReceipt`'s timeout                     | warning `SLOW_INCLUSION`    |
+| Circle's paymaster for an agent needs a session that allows its permit                                         | `SESSION_PERMIT_REQUIRED`   |
+| The bundler, paymaster or Namera's session contracts are not on the chain                                      | `NOT_ON_CHAIN`              |
+
+`Session.validate(session, { paymaster, chainId })` warns `SESSION_PERMIT_REQUIRED` too, before the owner signs the
+grant.
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or
@@ -320,6 +395,11 @@ Each failure family is one error class with a tagged `reason` (`ChainError` with
 `metaMessages`, `version`); `metaMessages` names where it happened (method, chain, endpoint) and ends with a hint.
 Raw viem and ox errors are translated into a Namera error with the original kept as the cause. Endpoints never show
 credentials: user info, the query and key-like path segments are removed.
+
+`NameraError.decode(error)` turns a failed viem call into the Namera error it stands for: Smart Sessions' reverts into
+`PolicyViolationError` where the revert says enough, the paymaster allowlist's `BundlerNotAllowed` into
+`PaymasterError` (`BundlerBound`), vendors' JSON-RPC errors (an inactive policy, too little balance) into
+`PaymasterError`, and EntryPoint codes into `BundlerError` (`Rejected` with `aa` and the decoded revert).
 
 ```ts
 import { ChainError, NameraError } from "@namera-ai/sdk"

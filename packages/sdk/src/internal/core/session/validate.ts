@@ -1,5 +1,6 @@
 import * as Hex from "ox/Hex"
 
+import { allowsCirclePermit } from "../circle.ts"
 import { validatorData } from "../sessionKey.ts"
 import { compile, type Contracts, FALLBACK } from "./compile.ts"
 import { type Problem, problem } from "./problem.ts"
@@ -25,6 +26,10 @@ export interface ValidateOptions {
   readonly now: number
   /** The account the session is for, when known: signing for its own domain is refused. */
   readonly account?: Hex.Hex | undefined
+  /** The vendor of the paymaster the agent will use (`Paymaster.*`'s `vendor`), when known. */
+  readonly paymaster?: string | undefined
+  /** The chain the agent will act on, when known. */
+  readonly chainId?: number | undefined
 }
 
 /**
@@ -241,6 +246,14 @@ export const validate = (session: Session, options: ValidateOptions): Validation
   }
   for (const source of resolved.anyCall) {
     warnings.push(problem("ANY_CALL", "Policy.anyCall allows any call on any contract", source))
+  }
+  if (options.paymaster === "circle" && !allowsCirclePermit(session, options.chainId)) {
+    warnings.push(
+      problem(
+        "SESSION_PERMIT_REQUIRED",
+        "Circle's paymaster needs the session key to sign a USDC permit to it: add a Policy.signTypedData for USDC's Permit with Circle's paymaster as spender"
+      )
+    )
   }
 
   return { ok: problems.length === 0, problems, warnings }

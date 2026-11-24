@@ -8,8 +8,6 @@ import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
 
 import { secondsFromMillis } from "../internal/core/session.ts"
-import { validate as validateCore } from "../internal/core/session/validate.ts"
-import { contracts } from "../internal/session/contracts.ts"
 import * as internal from "../internal/session/session.ts"
 import * as Session_ from "../Session.ts"
 import type * as SessionError from "../SessionError.ts"
@@ -53,9 +51,9 @@ export const from = (options: Session_.from.Options): Effect.Effect<Session, Ses
  */
 export const validate = (
   session: Session,
-  options?: { readonly account?: `0x${string}` | undefined }
+  options?: Omit<Session_.validate.Options, "now">
 ): Effect.Effect<Session_.validate.ReturnType> =>
-  Effect.map(now(), (seconds) => validateCore(session, { contracts, now: seconds, account: options?.account }))
+  Effect.map(now(), (seconds) => Session_.validate(session, { ...options, now: seconds }))
 
 /**
  * Describes a session in plain language.

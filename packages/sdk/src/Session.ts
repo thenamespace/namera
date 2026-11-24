@@ -14,6 +14,7 @@
 import * as Predicate from "effect/Predicate"
 import * as Result from "effect/Result"
 
+import type * as Paymaster from "./infra/Paymaster.ts"
 import { secondsFromMillis } from "./internal/core/session.ts"
 import type * as compile from "./internal/core/session/compile.ts"
 import type * as DescribeCore from "./internal/core/session/describe.ts"
@@ -137,7 +138,8 @@ export declare namespace from {
  * call, forbidden targets, oversized signer configs, personal-message signing, and execution policies without rate
  * and gas limits. With `account`, a session signing for the account's own domain is refused too. Warnings include
  * unconditioned address and amount arguments, `Policy.call`, `Policy.anyCall`, sessions over 90 days or without an
- * end, and sponsored sessions without `Policy.gas`.
+ * end, and, given Circle's paymaster (`paymaster`), a session that can't sign its USDC permit
+ * (`SESSION_PERMIT_REQUIRED`).
  *
  * @stability experimental
  * @category utils
@@ -147,9 +149,14 @@ export function validate(session: Session, options?: validate.Options): validate
   return validateCore(session, {
     contracts,
     now: options?.now ?? now(),
-    account: options?.account
+    account: options?.account,
+    paymaster: paymasterVendor(options?.paymaster),
+    chainId: options?.chainId
   })
 }
+
+const paymasterVendor = (paymaster: validate.Options["paymaster"]): string | undefined =>
+  typeof paymaster === "string" ? paymaster : paymaster?.vendor
 
 /**
  * Types of `Session.validate`.
@@ -159,7 +166,8 @@ export function validate(session: Session, options?: validate.Options): validate
  */
 export declare namespace validate {
   /**
-   * The account the session is for, when known, and the time to check against (default: now).
+   * The account the session is for, when known, the time to check against (default: now), and the paymaster and
+   * chain the agent will use.
    *
    * @stability experimental
    * @category utility types
@@ -168,6 +176,10 @@ export declare namespace validate {
   export interface Options {
     readonly account?: `0x${string}` | undefined
     readonly now?: number | undefined
+    /** The paymaster the agent will use: with Circle's, a session that can't sign its permit gets a warning. */
+    readonly paymaster?: Paymaster.Paymaster | Paymaster.Vendor | undefined
+    /** The chain the agent will act on, for chain-specific checks such as Circle's USDC. */
+    readonly chainId?: number | undefined
   }
   /**
    * Whether the session is usable, its problems and its warnings.

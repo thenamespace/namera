@@ -8,9 +8,10 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { redactUrls } from "../internal/redact.ts"
 import { version } from "../internal/version.ts"
-import * as NameraError from "../NameraError.ts"
+import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/accounts/AccountError" as const
 
@@ -310,7 +311,7 @@ export class AccountError extends Schema.TaggedError<AccountError>("@namera-ai/s
   { account: AccountRef, reason: AccountErrorReason }
 ) implements NameraError.Fields {
   readonly [TypeId] = TypeId
-  readonly [NameraError.TypeId] = NameraError.TypeId
+  readonly [NameraErrorTypeId] = NameraErrorTypeId
 
   override readonly cause = this.reason
 

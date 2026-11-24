@@ -6,8 +6,8 @@ import * as OxKeystore from "ox/Keystore"
 
 import type { Key } from "../keys/Key.ts"
 import * as KeystoreError from "../keys/KeystoreError.ts"
-import { isNameraError } from "../NameraError.ts"
 import * as core from "./core/key/key.ts"
+import { isNameraError } from "./nameraError.ts"
 import { run } from "./promise.ts"
 import { type LocalAccount, localAccount } from "./viem/account.ts"
 

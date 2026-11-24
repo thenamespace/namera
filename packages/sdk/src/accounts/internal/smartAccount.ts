@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 import type * as ChainError from "../../ChainError.ts"
 import { fromUnknown, isForeign } from "../../internal/chainError.ts"
 import type { Call } from "../../internal/core/account/erc7579.ts"
+import { isNameraError } from "../../internal/nameraError.ts"
 import { run } from "../../internal/promise.ts"
 import {
   type AccountClient,
@@ -23,7 +24,6 @@ import {
   type SmartAccountImplementation,
   userOperationHash
 } from "../../internal/viem/smartAccount.ts"
-import { isNameraError } from "../../NameraError.ts"
 import * as AccountError from "../AccountError.ts"
 
 /**

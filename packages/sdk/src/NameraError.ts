@@ -11,11 +11,14 @@
  * @stability experimental
  * @since 2.0.0
  */
-import * as Predicate from "effect/Predicate"
-
 import type { AccountError } from "./accounts/AccountError.ts"
 import type { ChainError } from "./ChainError.ts"
 import type { GrantError } from "./GrantError.ts"
+import type { BundlerError } from "./infra/BundlerError.ts"
+import type { CompatError } from "./infra/CompatError.ts"
+import type { PaymasterError } from "./infra/PaymasterError.ts"
+import { decode as decodeFailure } from "./internal/decode.ts"
+import * as internal from "./internal/nameraError.ts"
 import type { KeystoreError } from "./keys/KeystoreError.ts"
 import type { SessionKeyError } from "./keys/SessionKeyError.ts"
 import type { PolicyViolationError } from "./PolicyViolationError.ts"
@@ -33,7 +36,7 @@ import type { SessionError } from "./SessionError.ts"
  * @category type IDs
  * @since 2.0.0
  */
-export const TypeId = "~@namera-ai/sdk/NameraError" as const
+export const TypeId: "~@namera-ai/sdk/NameraError" = internal.TypeId
 
 /**
  * Any error Namera raises.
@@ -49,9 +52,12 @@ export const TypeId = "~@namera-ai/sdk/NameraError" as const
  */
 export type NameraError =
   | AccountError
+  | BundlerError
   | ChainError
+  | CompatError
   | GrantError
   | KeystoreError
+  | PaymasterError
   | PolicyViolationError
   | SessionError
   | SessionKeyError
@@ -97,23 +103,49 @@ export interface Fields {
  * @category guards
  * @since 2.0.0
  */
-export const isNameraError = (u: unknown): u is NameraError => Predicate.hasProperty(u, TypeId)
+export const isNameraError: (u: unknown) => u is NameraError = internal.isNameraError
 
 /**
  * Returns the Namera error a failure stands for, or the failure itself when it isn't one.
  *
  * **When to use**
  *
- * Use when catching a failed viem call, such as sending a user operation from a Namera session account, to get a
- * typed error to narrow on.
+ * Use when catching a failed viem call, such as sending a user operation, to get a typed error to narrow on.
  *
  * **Details**
  *
- * Namera errors are returned as they are. Bundler and viem failures that carry a Namera cause are decoded into it as
- * the corresponding families arrive; anything else is returned unchanged.
+ * A Namera error, or one in the failure's causes (viem wraps the errors Namera's accounts, bundlers and paymasters
+ * throw), is returned as it is. Otherwise the bundler's or paymaster's answer is read from viem's error chain:
+ *
+ * - revert data (as hex, JSON or Candide's Python bytes): Smart Sessions' refusals become `PolicyViolationError`
+ *   where the revert says enough (`PaymasterNotAllowed`, `SessionRevoked`, `RateLimited`, `SignatureNotAllowed`),
+ *   and the paymaster allowlist's `BundlerNotAllowed` (`0x55d3ab46`) becomes `PaymasterError` (`BundlerBound`);
+ * - vendors' JSON-RPC errors: an inactive sponsorship policy (`PolicyInactive`), too little balance
+ *   (`InsufficientBalance`), any other paymaster refusal (`Rejected`), and EIP-7702 refused on EntryPoint 0.7
+ *   (`CompatError`);
+ * - EntryPoint codes: `BundlerError` (`Rejected`, with `aa` and the decoded `revert`, such as
+ *   `PolicyViolation(SpendPolicy)` for limits the revert has no amounts for), `Unsupported` for a missing method,
+ *   and `Dropped` for a receipt that never came.
+ *
+ * Messages are kept with URLs redacted. Anything else is returned unchanged.
+ *
+ * **Example** (A paymaster that only accepts its own bundlers)
+ *
+ * ```ts import.meta.vitest
+ * import { NameraError, PaymasterError } from "@namera-ai/sdk"
+ *
+ * // What Etherspot's bundler answered for Pimlico's paymaster (Base Sepolia, 2026-11-15)
+ * const failure = Object.assign(new Error("RPC Request failed."), {
+ *   code: -32500,
+ *   details: `FailedOpWithRevert(0,"AA33 reverted",0x55d3ab46${"0".repeat(64)})`
+ * })
+ *
+ * const error = NameraError.decode(failure)
+ * PaymasterError.isPaymasterError(error) && error.reason._tag // => "BundlerBound"
+ * ```
  *
  * @stability experimental
  * @category decoding
  * @since 2.0.0
  */
-export const decode = <E>(error: E): NameraError | E => error
+export const decode: <E>(error: E) => NameraError | E = decodeFailure

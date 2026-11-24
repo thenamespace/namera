@@ -246,6 +246,9 @@ export const toAccount = Effect.fnUntraced(function*(
   const implementation = {
     client: chainClient,
     entryPoint,
+    // The grant it acts under, which `Compat.check` reads (the session's permits). Not `namera`: that marks an owner's
+    // account, which owner-only functions require.
+    extend: { grant },
     getAddress: () => Promise.resolve(address),
     getFactoryArgs: () =>
       Promise.resolve(

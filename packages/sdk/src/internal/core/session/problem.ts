@@ -36,7 +36,8 @@ export const problemCodes = [
   "RAW_CALL_POLICY",
   "ANY_CALL",
   "LONG_SESSION",
-  "NO_EXPIRY"
+  "NO_EXPIRY",
+  "SESSION_PERMIT_REQUIRED"
 ] as const
 
 /** One of `problemCodes`. */

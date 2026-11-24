@@ -8,8 +8,9 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { version } from "../internal/version.ts"
-import * as NameraError from "../NameraError.ts"
+import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/keys/SessionKeyError" as const
 
@@ -208,7 +209,7 @@ export class SessionKeyError extends Schema.TaggedError<SessionKeyError>("@namer
   { reason: SessionKeyErrorReason }
 ) implements NameraError.Fields {
   readonly [TypeId] = TypeId
-  readonly [NameraError.TypeId] = NameraError.TypeId
+  readonly [NameraErrorTypeId] = NameraErrorTypeId
 
   override readonly cause = this.reason
 

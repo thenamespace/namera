@@ -9,8 +9,9 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
 import { version } from "./internal/version.ts"
-import * as NameraError from "./NameraError.ts"
+import type * as NameraError from "./NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/GrantError" as const
 
@@ -260,7 +261,7 @@ export class GrantError extends Schema.TaggedError<GrantError>("@namera-ai/sdk/G
   reason: GrantErrorReason
 }) implements NameraError.Fields {
   readonly [TypeId] = TypeId
-  readonly [NameraError.TypeId] = NameraError.TypeId
+  readonly [NameraErrorTypeId] = NameraErrorTypeId
 
   override readonly cause = this.reason
 

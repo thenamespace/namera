@@ -2,8 +2,8 @@ import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 
-import { isNameraError } from "../NameraError.ts"
 import { fromUnknown, isForeign } from "./chainError.ts"
+import { isNameraError } from "./nameraError.ts"
 
 /**
  * The options every Promise function accepts besides its own.

@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Policy, Session, SessionError, SessionKey } from "@namera-ai/sdk"
+import { Paymaster, Policy, Session, SessionError, SessionKey } from "@namera-ai/sdk"
 import { Session as EffectSession } from "@namera-ai/sdk/effect"
 import { Effect } from "effect"
 import { TestClock } from "effect/testing"
@@ -383,6 +383,32 @@ describe("Session.validate", () => {
       "params.amountIn may be any amount",
       "params.amountOutMinimum may be any amount"
     ])
+  })
+
+  it("warns when Circle's paymaster needs a permit the session can't sign", () => {
+    const permit = Policy.signTypedData({
+      domain: { name: "USD Coin", version: "2", chainId: 8453, verifyingContract: USDC },
+      types: {
+        Permit: [
+          { name: "owner", type: "address" },
+          { name: "spender", type: "address" },
+          { name: "value", type: "uint256" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" }
+        ]
+      },
+      primaryType: "Permit",
+      message: { spender: "0x6C973eBe80dCD8660841D4356bf15c32460271C9", value: { lte: 5_000000n } }
+    })
+    const codes = (session: Session.Session, paymaster: Session.validate.Options["paymaster"]) =>
+      Session.validate(session, { now: NOW, paymaster, chainId: 8453 }).warnings.map((warning) => warning.code)
+
+    assert.include(
+      codes(build({ policies: [transfer, gasLimit] }), Paymaster.circle({ token: "USDC" })),
+      "SESSION_PERMIT_REQUIRED"
+    )
+    assert.notInclude(codes(build({ policies: [transfer, gasLimit, permit] }), "circle"), "SESSION_PERMIT_REQUIRED")
+    assert.notInclude(codes(build({ policies: [transfer, gasLimit] }), "alchemy"), "SESSION_PERMIT_REQUIRED")
   })
 
   it.effect("checks against the Clock's time in the Effect API", () =>

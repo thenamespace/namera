@@ -13,9 +13,10 @@
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 
+import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
 import { redactUrl, redactUrls } from "./internal/redact.ts"
 import { version } from "./internal/version.ts"
-import * as NameraError from "./NameraError.ts"
+import type * as NameraError from "./NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/ChainError" as const
 
@@ -157,7 +158,7 @@ export class ChainError extends Schema.TaggedError<ChainError>("@namera-ai/sdk/C
   reason: ChainErrorReason
 }) implements NameraError.Fields {
   readonly [TypeId] = TypeId
-  readonly [NameraError.TypeId] = NameraError.TypeId
+  readonly [NameraErrorTypeId] = NameraErrorTypeId
 
   override readonly cause = this.reason
 
