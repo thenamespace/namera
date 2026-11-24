@@ -45,3 +45,20 @@ export const nonceKey = (type: AccountType, smartSession: Hex.Hex, lane: number)
       return Safe7579.validatorNonceKey(smartSession) | BigInt(lane)
   }
 }
+
+const laneMasks: Record<AccountType, bigint> = {
+  kernel: BigInt(0xffff),
+  nexus: BigInt(0xffffff) << BigInt(168),
+  safe7579: BigInt(0xffffffff)
+}
+
+/**
+ * The lane of a nonce key that sends through Smart Sessions, or `undefined` for a key that doesn't.
+ *
+ * @internal
+ */
+export const laneOf = (type: AccountType, smartSession: Hex.Hex, key: bigint): number | undefined => {
+  const mask = laneMasks[type]
+  if ((key & ~mask) !== nonceKey(type, smartSession, 0)) return undefined
+  return Number(type === "nexus" ? (key & mask) >> BigInt(168) : key & mask)
+}

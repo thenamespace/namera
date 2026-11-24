@@ -4,7 +4,16 @@
 import * as Effect from "effect/Effect"
 import * as Predicate from "effect/Predicate"
 import type { Chain, Client, Hex, JsonRpcAccount, LocalAccount, PrivateKeyAccount, Transport } from "viem"
-import { call as viemCall, getBlock, getCode, getStorageAt, verifyHash as viemVerifyHash } from "viem/actions"
+import {
+  call as viemCall,
+  getBlock,
+  getBlockNumber,
+  getCode,
+  getStorageAt,
+  getTransaction,
+  verifyHash as viemVerifyHash,
+  watchBlockNumber
+} from "viem/actions"
 
 import type * as ChainError from "../../ChainError.ts"
 import { type Context, fromUnknown } from "../chainError.ts"
@@ -119,6 +128,99 @@ export const latestTimestamp = (client: ReadClient): Effect.Effect<bigint, Chain
   Effect.tryPromise({
     try: async () => (await getBlock(client, { blockTag: "latest" })).timestamp,
     catch: (cause) => fromUnknown(cause, context(client, "eth_getBlockByNumber"))
+  })
+
+/**
+ * The latest block's number.
+ *
+ * @internal
+ */
+export const blockNumber = (client: ReadClient): Effect.Effect<bigint, ChainError.ChainError> =>
+  Effect.tryPromise({
+    try: () => getBlockNumber(client, { cacheTime: 0 }),
+    catch: (cause) => fromUnknown(cause, context(client, "eth_blockNumber"))
+  })
+
+/**
+ * A contract's raw logs with `topics` in a block range (inclusive).
+ *
+ * @internal
+ */
+export const logs = (
+  client: ReadClient,
+  request: {
+    readonly address: Hex
+    readonly topics: ReadonlyArray<Hex | null>
+    readonly fromBlock: bigint
+    readonly toBlock: bigint
+  }
+): Effect.Effect<
+  ReadonlyArray<{
+    readonly data: Hex
+    readonly topics: ReadonlyArray<Hex>
+    readonly blockNumber: bigint
+    readonly transactionHash: Hex
+  }>,
+  ChainError.ChainError
+> =>
+  Effect.tryPromise({
+    // viem's `getLogs` takes an event and its arguments; the node takes raw topics.
+    try: async () => {
+      const entries = await client.request({
+        method: "eth_getLogs",
+        params: [{
+          address: request.address,
+          topics: [...request.topics],
+          fromBlock: `0x${request.fromBlock.toString(16)}`,
+          toBlock: `0x${request.toBlock.toString(16)}`
+        }]
+      } as never) as ReadonlyArray<
+        {
+          readonly data: Hex
+          readonly topics: ReadonlyArray<Hex>
+          readonly blockNumber: Hex
+          readonly transactionHash: Hex
+        }
+      >
+      return entries.map((entry) => ({
+        data: entry.data,
+        topics: entry.topics,
+        blockNumber: BigInt(entry.blockNumber),
+        transactionHash: entry.transactionHash
+      }))
+    },
+    catch: (cause) => fromUnknown(cause, context(client, "eth_getLogs"))
+  })
+
+/**
+ * A transaction's input data.
+ *
+ * @internal
+ */
+export const transactionInput = (client: ReadClient, hash: Hex): Effect.Effect<Hex, ChainError.ChainError> =>
+  Effect.tryPromise({
+    try: async () => (await getTransaction(client, { hash })).input,
+    catch: (cause) => fromUnknown(cause, context(client, "eth_getTransactionByHash"))
+  })
+
+/**
+ * Calls `onBlock` for the latest block now and for every new one, until the returned function is called.
+ *
+ * @internal
+ */
+export const watchBlocks = (
+  client: ReadClient,
+  options: {
+    readonly onBlock: (blockNumber: bigint) => void
+    readonly onError?: ((error: ChainError.ChainError) => void) | undefined
+    readonly pollingInterval?: number | undefined
+  }
+): () => void =>
+  watchBlockNumber(client, {
+    emitOnBegin: true,
+    onBlockNumber: options.onBlock,
+    onError: (cause) => options.onError?.(fromUnknown(cause, context(client, "eth_blockNumber"))),
+    ...(options.pollingInterval === undefined ? {} : { pollingInterval: options.pollingInterval })
   })
 
 /**

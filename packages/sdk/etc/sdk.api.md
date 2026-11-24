@@ -200,7 +200,10 @@ import type { Call } from "./internal/core/account/erc7579.ts";
 import * as core from "./internal/core/grant/grant.ts";
 import * as checkInternal from "./internal/grant/check.ts";
 import * as internal from "./internal/grant/grant.ts";
+import * as history from "./internal/grant/history.ts";
+import * as status from "./internal/grant/status.ts";
 import * as agent from "./internal/grant/toAccount.ts";
+import * as watch from "./internal/grant/watch.ts";
 import { type RunOptions } from "./internal/promise.ts";
 import type { ReadClient } from "./internal/viem/client.ts";
 import type { BundlerClient, SmartAccount as ViemSmartAccount, TransactionReceipt } from "./internal/viem/smartAccount.ts";
@@ -549,6 +552,369 @@ export declare namespace check {
     type ErrorType = ChainError.ChainError | GrantError.GrantError;
 }
 /**
+ * Revokes a grant with an owner operation through the owner's bundler client, or one per chain: an enabled session is
+ * removed, an unused grant's enable signature is revoked (so a leaked grant can never be enabled), and nothing is sent
+ * where the grant is already revoked. Returns the operation's hash, `undefined` when nothing was sent.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `AccountError` when the bundler client's account isn't the grant's, and `GrantError`
+ * (`ChainNotCovered`) for a chain the grant doesn't cover.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function revoke(client: BundlerClient, options: revoke.Options): Promise<`0x${string}` | undefined>;
+export declare function revoke(clients: ReadonlyArray<BundlerClient>, options: revoke.Options): Promise<ReadonlyArray<`0x${string}` | undefined>>;
+/**
+ * Types of `Grant.revoke`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace revoke {
+    /**
+     * The grant to revoke.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+    }
+    /**
+     * The errors `Grant.revoke` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError;
+}
+/**
+ * Revokes a grant and waits: the receipt of the operation, or of each chain's, `undefined` where nothing was sent.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function revokeSync(client: BundlerClient, options: revoke.Options): Promise<TransactionReceipt | undefined>;
+export declare function revokeSync(clients: ReadonlyArray<BundlerClient>, options: revoke.Options): Promise<ReadonlyArray<TransactionReceipt | undefined>>;
+/**
+ * The owner's call that revokes a grant, to batch with other calls yourself: Smart Sessions' `removeSession`, which
+ * removes an enabled session and spends the enable nonce, so an unused grant can't enable it either.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const revokeCalls: (grant: Grant) => ReadonlyArray<Call>;
+/**
+ * Updates a grant's session in place with an owner operation through the owner's bundler client (or one per chain):
+ * `remove` takes policies out (each must be one of the session's), `add` puts new ones in. The updated session is
+ * validated before anything is sent, keeps the permission id, and keeps what its limits have used.
+ *
+ * **Details**
+ *
+ * The update disables what is removed, enables the updated session (adding what is new, reconfiguring what stays),
+ * and revokes the old grant's enable signature, so it can't enable the old policies again. The updated grant is
+ * installed on the chains updated: it carries no enable signature, and its agent uses the session as it is.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`PolicyNotFound`, `ChainNotCovered`), `SessionError` for an updated session
+ * `Session.validate` refuses, and `AccountError` when the bundler client's account isn't the grant's.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function update(client: BundlerClient, options: update.Options): Promise<{
+    readonly hash: `0x${string}`;
+    readonly grant: Grant;
+}>;
+export declare function update(clients: ReadonlyArray<BundlerClient>, options: update.Options): Promise<{
+    readonly hashes: ReadonlyArray<`0x${string}`>;
+    readonly grant: Grant;
+}>;
+/**
+ * Types of `Grant.update`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace update {
+    /**
+     * The grant, and the policies to add and to remove.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+        readonly add?: ReadonlyArray<Session.Session["policies"][number]> | undefined;
+        readonly remove?: ReadonlyArray<Session.Session["policies"][number]> | undefined;
+    }
+    /**
+     * The errors `Grant.update` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | SessionError.SessionError;
+}
+/**
+ * Updates a grant and waits: the receipt (or each chain's) and the updated grant.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare function updateSync(client: BundlerClient, options: update.Options): Promise<{
+    readonly receipt: TransactionReceipt;
+    readonly grant: Grant;
+}>;
+export declare function updateSync(clients: ReadonlyArray<BundlerClient>, options: update.Options): Promise<{
+    readonly receipts: ReadonlyArray<TransactionReceipt>;
+    readonly grant: Grant;
+}>;
+/**
+ * The owner's calls that update an enabled grant's session, to batch with other calls yourself, and the updated
+ * session. `Grant.update` also handles a session that isn't enabled yet and returns the updated grant.
+ *
+ * **Gotchas**
+ *
+ * Throws `GrantError` (`PolicyNotFound`) or `SessionError` for an updated session that can't be built.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function updateCalls(grant: Grant, options: Omit<update.Options, "grant" | "signal">): {
+    readonly calls: ReadonlyArray<Call>;
+    readonly session: Session.Session;
+};
+/**
+ * A grant's state: overall, its window, on each chain (`pending-enable`, `active`, `expired`, `not-yet-valid` or
+ * `revoked`), and what each budget has used and has left on the first chain. Pass one client, or one per chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function getStatus(client: ReadClient | ReadonlyArray<ReadClient>, options: getStatus.Options): Promise<getStatus.Status>;
+/**
+ * Types of `Grant.getStatus`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getStatus {
+    /**
+     * The grant to read.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+    }
+    /**
+     * A grant's status.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Status = status.Status;
+    /**
+     * A grant's state on a chain.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type State = status.State;
+    /**
+     * One budget's usage in the current period.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type LimitStatus = status.LimitStatus;
+    /**
+     * The errors `Grant.getStatus` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = ChainError.ChainError | GrantError.GrantError;
+}
+/**
+ * What is left of a grant's budget on the client's chain for a token, or for native value without one: the tightest
+ * of its limits, with when it resets. `undefined` when nothing limits it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function getRemainingLimit(client: ReadClient, options: getRemainingLimit.Options): Promise<{
+    readonly remaining: bigint;
+    readonly resetsAt?: number | undefined;
+} | undefined>;
+/**
+ * Types of `Grant.getRemainingLimit`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getRemainingLimit {
+    /**
+     * The grant, and the token (native value when absent).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+        readonly token?: `0x${string}` | undefined;
+    }
+}
+/**
+ * Whether a grant's session is enabled on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function isEnabled(client: ReadClient, options: getStatus.Options): Promise<boolean>;
+/**
+ * The operations sent under a grant on the client's chain, oldest first: from the EntryPoint's logs for the account,
+ * kept when the operation's signature names the grant's session. Logs are read `pageSize` blocks at a time.
+ *
+ * **Gotchas**
+ *
+ * Reading from block 0 over a long chain takes many requests: pass `fromBlock` (the block the grant was created in).
+ * An operation bundled through a contract other than the EntryPoint can't be read and is left out.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function getUsage(client: ReadClient, options: getUsage.Options): Promise<ReadonlyArray<getUsage.Operation>>;
+/**
+ * Types of `Grant.getUsage`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getUsage {
+    /**
+     * The grant, the blocks to read (from 0 to the latest by default) and how many blocks a log request covers
+     * (10,000 by default).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+        readonly fromBlock?: bigint | undefined;
+        readonly toBlock?: bigint | undefined;
+        readonly pageSize?: bigint | undefined;
+    }
+    /**
+     * One operation sent under the grant.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Operation = history.Operation;
+}
+/**
+ * The sessions enabled on an account on the client's chain, with their windows, matched to `grants` by permission id.
+ * Smart Sessions stores ids, not sessions, so a session without a grant among those given is `foreign`.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function list(client: ReadClient, options: list.Options): Promise<ReadonlyArray<list.Listed>>;
+/**
+ * Types of `Grant.list`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace list {
+    /**
+     * The account, and the grants to match.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly account: `0x${string}`;
+        readonly grants?: ReadonlyArray<Grant> | undefined;
+    }
+    /**
+     * A session enabled on the account.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Listed = status.Listed;
+}
+/**
+ * Watches a grant: calls `onChange` with its status now and whenever it changes, read on each new block of the
+ * (first) client's chain, and `onError` when a read fails (the watch goes on). `off()` stops it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const watchStatus: (client: ReadClient | ReadonlyArray<ReadClient>, options: watchStatus.Options) => watchStatus.Watcher;
+/**
+ * Types of `Grant.watchStatus`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace watchStatus {
+    /**
+     * The grant, the callbacks, and how often to poll for blocks (the client's interval by default).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options {
+        readonly grant: Grant;
+        readonly onChange: (status: getStatus.Status) => void;
+        readonly onError?: ((error: getStatus.ErrorType) => void) | undefined;
+        readonly pollingInterval?: number | undefined;
+    }
+    /**
+     * A running watch.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Watcher = watch.Watcher;
+}
+/**
  * Writes a grant as canonical JSON (bigints as `{ "$n": "…" }`), or as a compact `nmr1_` token for links and QR
  * codes.
  *
@@ -680,6 +1046,21 @@ export declare class SignerMismatch extends SignerMismatch_base {
     /** What to do about it. */
     get hint(): string;
 }
+declare const PolicyNotFound_base: Schema.Class<PolicyNotFound, Schema.TaggedStruct<"PolicyNotFound", {
+    readonly index: Schema.Number;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A policy to remove from a grant's session isn't one of its policies.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class PolicyNotFound extends PolicyNotFound_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
 /**
  * Schema for the reason of a `GrantError`.
  *
@@ -693,7 +1074,8 @@ export declare const GrantErrorReason: Schema.Union<[
     typeof InvalidSignature,
     typeof ChainNotCovered,
     typeof DigestMismatch,
-    typeof SignerMismatch
+    typeof SignerMismatch,
+    typeof PolicyNotFound
 ]>;
 /**
  * The specific failure behind a `GrantError`.
@@ -704,7 +1086,7 @@ export declare const GrantErrorReason: Schema.Union<[
  */
 export type GrantErrorReason = typeof GrantErrorReason.Type;
 declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"GrantError", {
-    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch, typeof SignerMismatch]>;
+    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch, typeof SignerMismatch, typeof PolicyNotFound]>;
 }>, import("effect/Cause").YieldableError>;
 /**
  * A grant that can't be read or doesn't check out. `reason` says what is wrong.
@@ -734,7 +1116,7 @@ declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"Gra
 export declare class GrantError extends GrantError_base implements NameraError.Fields {
     readonly [TypeId]: "~@namera-ai/sdk/GrantError";
     readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
-    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | SignerMismatch | VersionUnsupported;
+    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | PolicyNotFound | SignerMismatch | VersionUnsupported;
     get shortMessage(): string;
     get details(): string | undefined;
     get docsPath(): string | undefined;
@@ -3933,8 +4315,10 @@ import type * as AccountError from "../accounts/AccountError.ts";
 import type * as ChainError from "../ChainError.ts";
 import * as Grant_ from "../Grant.ts";
 import type * as GrantError from "../GrantError.ts";
+import type { Call } from "../internal/core/account/erc7579.ts";
 import type { ReadClient } from "../internal/viem/client.ts";
 import type { BundlerClient, SmartAccount, TransactionReceipt } from "../internal/viem/smartAccount.ts";
+import type * as Session from "../Session.ts";
 import type * as SessionError from "../SessionError.ts";
 /**
  * A grant, version 1.
@@ -4036,6 +4420,132 @@ export declare const toAccount: (client: ReadClient, options: Omit<Grant_.toAcco
  * @since 2.0.0
  */
 export declare const check: (client: ReadClient, options: Omit<Grant_.check.Options, "signal">) => Effect.Effect<Grant_.check.Result, ChainError.ChainError | GrantError.GrantError>;
+/**
+ * Revokes a grant with an owner operation (one per chain for several clients); `undefined` where nothing was sent.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const revoke: {
+    (client: BundlerClient, options: Omit<Grant_.revoke.Options, "signal">): Effect.Effect<`0x${string}` | undefined, Grant_.revoke.ErrorType>;
+    (clients: ReadonlyArray<BundlerClient>, options: Omit<Grant_.revoke.Options, "signal">): Effect.Effect<ReadonlyArray<`0x${string}` | undefined>, Grant_.revoke.ErrorType>;
+};
+/**
+ * Revokes a grant and waits for the receipts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const revokeSync: {
+    (client: BundlerClient, options: Omit<Grant_.revoke.Options, "signal">): Effect.Effect<TransactionReceipt | undefined, Grant_.revoke.ErrorType>;
+    (clients: ReadonlyArray<BundlerClient>, options: Omit<Grant_.revoke.Options, "signal">): Effect.Effect<ReadonlyArray<TransactionReceipt | undefined>, Grant_.revoke.ErrorType>;
+};
+/**
+ * The owner's call that revokes a grant, to batch yourself.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const revokeCalls: (grant: Grant) => ReadonlyArray<Call>;
+/**
+ * Updates a grant's session in place with an owner operation (one per chain for several clients).
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const update: {
+    (client: BundlerClient, options: Omit<Grant_.update.Options, "signal">): Effect.Effect<{
+        readonly hash: `0x${string}`;
+        readonly grant: Grant;
+    }, Grant_.update.ErrorType>;
+    (clients: ReadonlyArray<BundlerClient>, options: Omit<Grant_.update.Options, "signal">): Effect.Effect<{
+        readonly hashes: ReadonlyArray<`0x${string}`>;
+        readonly grant: Grant;
+    }, Grant_.update.ErrorType>;
+};
+/**
+ * Updates a grant and waits for the receipts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export declare const updateSync: {
+    (client: BundlerClient, options: Omit<Grant_.update.Options, "signal">): Effect.Effect<{
+        readonly receipt: TransactionReceipt;
+        readonly grant: Grant;
+    }, Grant_.update.ErrorType>;
+    (clients: ReadonlyArray<BundlerClient>, options: Omit<Grant_.update.Options, "signal">): Effect.Effect<{
+        readonly receipts: ReadonlyArray<TransactionReceipt>;
+        readonly grant: Grant;
+    }, Grant_.update.ErrorType>;
+};
+/**
+ * The owner's calls that update an enabled grant's session, and the updated session.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const updateCalls: (grant: Grant, options: Omit<Grant_.update.Options, "grant" | "signal">) => Effect.Effect<{
+    readonly calls: ReadonlyArray<Call>;
+    readonly session: Session.Session;
+}, GrantError.GrantError | SessionError.SessionError>;
+/**
+ * A grant's state overall, on each chain, and its first chain's limits.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const getStatus: (client: ReadClient | ReadonlyArray<ReadClient>, options: Omit<Grant_.getStatus.Options, "signal">) => Effect.Effect<Grant_.getStatus.Status, Grant_.getStatus.ErrorType>;
+/**
+ * What is left of a grant's budget for a token, or native value without one.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const getRemainingLimit: (client: ReadClient, options: Omit<Grant_.getRemainingLimit.Options, "signal">) => Effect.Effect<{
+    readonly remaining: bigint;
+    readonly resetsAt?: number | undefined;
+} | undefined, Grant_.getStatus.ErrorType>;
+/**
+ * Whether a grant's session is enabled on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const isEnabled: (client: ReadClient, options: Omit<Grant_.getStatus.Options, "signal">) => Effect.Effect<boolean, Grant_.getStatus.ErrorType>;
+/**
+ * The operations sent under a grant on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const getUsage: (client: ReadClient, options: Omit<Grant_.getUsage.Options, "signal">) => Effect.Effect<ReadonlyArray<Grant_.getUsage.Operation>, Grant_.getStatus.ErrorType>;
+/**
+ * The sessions enabled on an account, matched to the grants given.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const list: (client: ReadClient, options: Omit<Grant_.list.Options, "signal">) => Effect.Effect<ReadonlyArray<Grant_.list.Listed>, ChainError.ChainError>;
+/**
+ * Watches a grant's status, block by block; `off()` stops it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const watchStatus: typeof Grant_.watchStatus;
 /**
  * Writes a grant as canonical JSON or as an `nmr1_` token.
  *

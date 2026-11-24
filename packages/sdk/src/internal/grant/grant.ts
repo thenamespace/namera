@@ -88,12 +88,14 @@ const accountsOf = Effect.fnUntraced(function*(
   return accounts
 })
 
-const requireValid = (session: Session, account: Hex.Hex): Effect.Effect<void, SessionError.SessionError> => {
+/** Refuses a session `Session.validate` reports errors for. @internal */
+export const requireValid = (session: Session, account: Hex.Hex): Effect.Effect<void, SessionError.SessionError> => {
   const validation = validate(session, { contracts, now: secondsFromMillis(Date.now()), account })
   return validation.ok ? Effect.void : Effect.fail(SessionError.invalidSession(validation.problems))
 }
 
-const readNonce = (client: ReadClient, id: Hex.Hex, account: Hex.Hex) =>
+/** Smart Sessions' enable nonce of a session on an account. @internal */
+export const readNonce = (client: ReadClient, id: Hex.Hex, account: Hex.Hex) =>
   call(client, { to: contracts.smartSession, data: core.encodeGetNonce(id, account) }).pipe(
     Effect.map((result) => (result === undefined || result === "0x" ? BigInt(0) : core.decodeGetNonce(result)))
   )
@@ -227,7 +229,8 @@ export const create = Effect.fnUntraced(function*(options: {
 
 const withoutSignature = (chain: Prepared["chains"][number]): core.GrantChain => ({ ...chain, signature: "0x" })
 
-const bundlerAccount = (client: BundlerClient): Effect.Effect<SmartAccount, AccountError.AccountError> =>
+/** The Namera account of a bundler client. @internal */
+export const bundlerAccount = (client: BundlerClient): Effect.Effect<SmartAccount, AccountError.AccountError> =>
   client.account === undefined || !("namera" in client.account)
     ? Effect.fail(
       AccountError.notSupported({ account: { type: "unknown" }, detail: "the bundler client has no Namera account" })

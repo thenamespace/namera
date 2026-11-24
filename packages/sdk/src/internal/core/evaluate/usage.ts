@@ -49,27 +49,54 @@ export const amountAndPeriod = AbiParameters.from(["uint256", "uint256"])
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
 /**
+ * One budget of a session: what it limits (a token's spending, native value, operations or gas), how much per period
+ * (seconds, 0 for the lifetime), and the counter its policy keeps.
+ *
+ * @internal
+ */
+export interface Limit extends Counter {
+  readonly kind: "spend" | "value" | "rateLimit" | "gas"
+  readonly token?: Hex.Hex | undefined
+  readonly budget: bigint
+}
+
+/**
+ * Every budget the session's limit policies keep.
+ *
+ * @internal
+ */
+export const limitsOf = (compiled: Compiled, contracts: Contracts): ReadonlyArray<Limit> =>
+  compiled.userOpPolicies.flatMap(({ initData, policy }): ReadonlyArray<Limit> => {
+    if (same(policy, contracts.spendPolicy)) {
+      const [entries] = AbiParameters.decode(limits, initData)
+      return entries.map((limit) => ({
+        kind: "spend",
+        policy,
+        token: limit.token,
+        tag: tokenTag(limit.token),
+        budget: limit.amount,
+        period: limit.period
+      }))
+    }
+    const kind = same(policy, contracts.valuePolicy)
+      ? "value" as const
+      : same(policy, contracts.rateLimitPolicy)
+      ? "rateLimit" as const
+      : same(policy, contracts.gasPolicy)
+      ? "gas" as const
+      : undefined
+    if (kind === undefined) return []
+    const [budget, period] = AbiParameters.decode(amountAndPeriod, initData)
+    return [{ kind, policy, tag: tags[kind], budget, period }]
+  })
+
+/**
  * Every counter the session's limit policies keep.
  *
  * @internal
  */
 export const counters = (compiled: Compiled, contracts: Contracts): ReadonlyArray<Counter> =>
-  compiled.userOpPolicies.flatMap(({ initData, policy }): ReadonlyArray<Counter> => {
-    if (same(policy, contracts.spendPolicy)) {
-      const [entries] = AbiParameters.decode(limits, initData)
-      return entries.map((limit) => ({ policy, tag: tokenTag(limit.token), period: limit.period }))
-    }
-    const tag = same(policy, contracts.valuePolicy)
-      ? tags.value
-      : same(policy, contracts.rateLimitPolicy)
-      ? tags.rateLimit
-      : same(policy, contracts.gasPolicy)
-      ? tags.gas
-      : undefined
-    if (tag === undefined) return []
-    const [, period] = AbiParameters.decode(amountAndPeriod, initData)
-    return [{ policy, tag, period }]
-  })
+  limitsOf(compiled, contracts).map(({ period, policy, tag }) => ({ policy, tag, period }))
 
 /**
  * Smart Sessions' configuration id of a session's user operation policies on an account:

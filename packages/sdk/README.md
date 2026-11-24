@@ -250,6 +250,47 @@ validation. Custom and execution policies are left to the chain.
   deploy those accounts first.
 - **Lanes**: send the first operation, which enables the session, on one lane before using others.
 
+## After a grant
+
+The owner revokes or updates a grant with owner operations through its bundler client (one per chain for a
+multichain grant); anyone reads its status, limits and history without a key.
+
+```ts
+await Grant.revoke(ownerBundler, { grant }) // → hash, or undefined when it is already revoked
+await Grant.revoke([ownerOnBase, ownerOnOptimism], { grant }) // every chain
+Grant.revokeCalls(grant) // → the call, to batch yourself
+
+const { grant: updated } = await Grant.update(ownerBundler, {
+  grant,
+  remove: [oldLimit],
+  add: [Policy.rateLimit({ count: 5, period: "hour" })]
+})
+
+await Grant.getStatus(client, { grant }) // { state, validAfter, validUntil, chains, limits }
+await Grant.getRemainingLimit(client, { grant, token: USDC }) // { remaining, resetsAt }
+await Grant.getUsage(client, { grant, fromBlock }) // operations sent under it
+await Grant.list(client, { account, grants }) // sessions enabled on the account
+const watcher = Grant.watchStatus(client, { grant, onChange: (status) => console.log(status.state) })
+watcher.off()
+```
+
+| State            | When                                                                      |
+| ---------------- | ------------------------------------------------------------------------- |
+| `pending-enable` | not enabled yet, and the grant can still enable it                        |
+| `active`         | enabled, within its window                                                |
+| `not-yet-valid`  | before its window                                                         |
+| `expired`        | after its window                                                          |
+| `revoked`        | removed, or its enable signature spent (an unused grant that was revoked) |
+
+- **Revoking** removes an enabled session, or revokes an unused grant's enable signature so a leaked grant can never
+  be enabled; revoking again sends nothing.
+- **Updating** keeps the permission id and what the limits have used, validates the updated session first, and
+  revokes the old enable signature, so the old grant can't bring the old policies back. The updated grant is
+  installed: it carries no enable signature, and its agent uses the session as it is.
+- **History** comes from the EntryPoint's logs, read in pages: pass `fromBlock` (the block the grant was created in)
+  on a long chain. Smart Sessions stores permission ids, not sessions, so `Grant.list` matches ids to the grants you
+  pass and marks the rest `foreign`.
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or

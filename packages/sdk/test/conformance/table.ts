@@ -559,6 +559,85 @@ export const table: Record<string, Conformance> = {
       effect: () => Effect_.Grant.check(client, { grant: otherChainGrant, calls: [] })
     }
   },
+  "Grant.revoke": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.revoke(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.revoke(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.revokeSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.revokeSync(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.revokeSync(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.update": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.update(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.update(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.updateSync": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.updateSync(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.updateSync(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.updateCalls": {
+    kind: "sync",
+    check: async () => {
+      assert.deepStrictEqual(
+        Grant.updateCalls(otherChainGrant, {}),
+        await Effect.runPromise(Effect_.Grant.updateCalls(otherChainGrant, {}))
+      )
+      const remove = [{ type: "anyCall", unsafe: true }] as const
+      assert.throws(() => Grant.updateCalls(otherChainGrant, { remove }))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.Grant.updateCalls(otherChainGrant, { remove }))))
+    }
+  },
+  "Grant.getStatus": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.getStatus(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.getStatus(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.getRemainingLimit": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.getRemainingLimit(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.getRemainingLimit(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.isEnabled": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.isEnabled(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.isEnabled(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.getUsage": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.getUsage(client, { grant: otherChainGrant, signal }),
+      effect: () => Effect_.Grant.getUsage(client, { grant: otherChainGrant })
+    }
+  },
+  "Grant.list": {
+    kind: "async",
+    success: {
+      promise: (signal) => Grant.list(client, { account: zeroAddress, signal }),
+      effect: () => Effect_.Grant.list(client, { account: zeroAddress })
+    },
+    failure: {
+      promise: (signal) => Grant.list(unreachable, { account: zeroAddress, signal }),
+      effect: () => Effect_.Grant.list(unreachable, { account: zeroAddress })
+    }
+  },
   "Grant.from": {
     kind: "sync",
     check: async () => {

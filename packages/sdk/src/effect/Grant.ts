@@ -10,12 +10,17 @@ import type * as AccountError from "../accounts/AccountError.ts"
 import type * as ChainError from "../ChainError.ts"
 import * as Grant_ from "../Grant.ts"
 import type * as GrantError from "../GrantError.ts"
+import type { Call } from "../internal/core/account/erc7579.ts"
 import * as checkInternal from "../internal/grant/check.ts"
 import * as internal from "../internal/grant/grant.ts"
+import * as history from "../internal/grant/history.ts"
+import * as lifecycle from "../internal/grant/lifecycle.ts"
 import { parse as parseGrant } from "../internal/grant/parse.ts"
+import * as status from "../internal/grant/status.ts"
 import * as agent from "../internal/grant/toAccount.ts"
 import type { ReadClient } from "../internal/viem/client.ts"
 import type { BundlerClient, SmartAccount, TransactionReceipt } from "../internal/viem/smartAccount.ts"
+import type * as Session from "../Session.ts"
 import type * as SessionError from "../SessionError.ts"
 
 /**
@@ -155,6 +160,199 @@ export const check: (
   client: ReadClient,
   options: Omit<Grant_.check.Options, "signal">
 ) => Effect.Effect<Grant_.check.Result, ChainError.ChainError | GrantError.GrantError> = checkInternal.check
+
+const clientsOf = <Client>(input: Client | ReadonlyArray<Client>): ReadonlyArray<Client> =>
+  Array.isArray(input) ? input : [input as Client]
+
+/**
+ * Revokes a grant with an owner operation (one per chain for several clients); `undefined` where nothing was sent.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const revoke: {
+  (
+    client: BundlerClient,
+    options: Omit<Grant_.revoke.Options, "signal">
+  ): Effect.Effect<`0x${string}` | undefined, Grant_.revoke.ErrorType>
+  (
+    clients: ReadonlyArray<BundlerClient>,
+    options: Omit<Grant_.revoke.Options, "signal">
+  ): Effect.Effect<ReadonlyArray<`0x${string}` | undefined>, Grant_.revoke.ErrorType>
+} =
+  ((client: BundlerClient | ReadonlyArray<BundlerClient>, options: Omit<Grant_.revoke.Options, "signal">) =>
+    lifecycle.revoke(clientsOf(client), options.grant).pipe(
+      Effect.map((hashes) => (Array.isArray(client) ? hashes : hashes[0]))
+    )) as never
+
+/**
+ * Revokes a grant and waits for the receipts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const revokeSync: {
+  (
+    client: BundlerClient,
+    options: Omit<Grant_.revoke.Options, "signal">
+  ): Effect.Effect<TransactionReceipt | undefined, Grant_.revoke.ErrorType>
+  (
+    clients: ReadonlyArray<BundlerClient>,
+    options: Omit<Grant_.revoke.Options, "signal">
+  ): Effect.Effect<ReadonlyArray<TransactionReceipt | undefined>, Grant_.revoke.ErrorType>
+} =
+  ((client: BundlerClient | ReadonlyArray<BundlerClient>, options: Omit<Grant_.revoke.Options, "signal">) =>
+    lifecycle.revokeSync(clientsOf(client), options.grant).pipe(
+      Effect.map((receipts) => (Array.isArray(client) ? receipts : receipts[0]))
+    )) as never
+
+/**
+ * The owner's call that revokes a grant, to batch yourself.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const revokeCalls: (grant: Grant) => ReadonlyArray<Call> = Grant_.revokeCalls
+
+/**
+ * Updates a grant's session in place with an owner operation (one per chain for several clients).
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const update: {
+  (
+    client: BundlerClient,
+    options: Omit<Grant_.update.Options, "signal">
+  ): Effect.Effect<{ readonly hash: `0x${string}`; readonly grant: Grant }, Grant_.update.ErrorType>
+  (
+    clients: ReadonlyArray<BundlerClient>,
+    options: Omit<Grant_.update.Options, "signal">
+  ): Effect.Effect<{ readonly hashes: ReadonlyArray<`0x${string}`>; readonly grant: Grant }, Grant_.update.ErrorType>
+} =
+  ((client: BundlerClient | ReadonlyArray<BundlerClient>, options: Omit<Grant_.update.Options, "signal">) =>
+    lifecycle.update(clientsOf(client), options).pipe(
+      Effect.map(({ grant, hashes }) => (Array.isArray(client) ? { hashes, grant } : { hash: hashes[0]!, grant }))
+    )) as never
+
+/**
+ * Updates a grant and waits for the receipts.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export const updateSync: {
+  (
+    client: BundlerClient,
+    options: Omit<Grant_.update.Options, "signal">
+  ): Effect.Effect<{ readonly receipt: TransactionReceipt; readonly grant: Grant }, Grant_.update.ErrorType>
+  (
+    clients: ReadonlyArray<BundlerClient>,
+    options: Omit<Grant_.update.Options, "signal">
+  ): Effect.Effect<
+    { readonly receipts: ReadonlyArray<TransactionReceipt>; readonly grant: Grant },
+    Grant_.update.ErrorType
+  >
+} =
+  ((client: BundlerClient | ReadonlyArray<BundlerClient>, options: Omit<Grant_.update.Options, "signal">) =>
+    lifecycle.updateSync(clientsOf(client), options).pipe(
+      Effect.map(({ grant, receipts }) =>
+        Array.isArray(client) ? { receipts, grant } : { receipt: receipts[0]!, grant }
+      )
+    )) as never
+
+/**
+ * The owner's calls that update an enabled grant's session, and the updated session.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const updateCalls = (
+  grant: Grant,
+  options: Omit<Grant_.update.Options, "grant" | "signal">
+): Effect.Effect<
+  { readonly calls: ReadonlyArray<Call>; readonly session: Session.Session },
+  GrantError.GrantError | SessionError.SessionError
+> => Effect.fromResult(lifecycle.updateCalls(grant, options))
+
+/**
+ * A grant's state overall, on each chain, and its first chain's limits.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const getStatus = (
+  client: ReadClient | ReadonlyArray<ReadClient>,
+  options: Omit<Grant_.getStatus.Options, "signal">
+): Effect.Effect<Grant_.getStatus.Status, Grant_.getStatus.ErrorType> =>
+  status.getStatus(clientsOf(client), options.grant)
+
+/**
+ * What is left of a grant's budget for a token, or native value without one.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const getRemainingLimit: (
+  client: ReadClient,
+  options: Omit<Grant_.getRemainingLimit.Options, "signal">
+) => Effect.Effect<
+  { readonly remaining: bigint; readonly resetsAt?: number | undefined } | undefined,
+  Grant_.getStatus.ErrorType
+> = status.getRemainingLimit
+
+/**
+ * Whether a grant's session is enabled on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const isEnabled = (
+  client: ReadClient,
+  options: Omit<Grant_.getStatus.Options, "signal">
+): Effect.Effect<boolean, Grant_.getStatus.ErrorType> => status.isEnabled(client, options.grant)
+
+/**
+ * The operations sent under a grant on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const getUsage: (
+  client: ReadClient,
+  options: Omit<Grant_.getUsage.Options, "signal">
+) => Effect.Effect<ReadonlyArray<Grant_.getUsage.Operation>, Grant_.getStatus.ErrorType> = history.getUsage
+
+/**
+ * The sessions enabled on an account, matched to the grants given.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const list: (
+  client: ReadClient,
+  options: Omit<Grant_.list.Options, "signal">
+) => Effect.Effect<ReadonlyArray<Grant_.list.Listed>, ChainError.ChainError> = status.list
+
+/**
+ * Watches a grant's status, block by block; `off()` stops it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const watchStatus: typeof Grant_.watchStatus = Grant_.watchStatus
 
 /**
  * Writes a grant as canonical JSON or as an `nmr1_` token.

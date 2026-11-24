@@ -1,7 +1,7 @@
 /**
  * Failures reading or checking a grant: input that isn't a grant, a version this SDK doesn't read, an owner signature
- * that doesn't verify, a chain the grant doesn't cover, digests that don't match its session, or an agent signer that
- * isn't its session key.
+ * that doesn't verify, a chain the grant doesn't cover, digests that don't match its session, an agent signer that
+ * isn't its session key, or a policy to remove that the session doesn't have.
  *
  * @stability experimental
  * @since 2.0.0
@@ -149,6 +149,28 @@ export class SignerMismatch
 }
 
 /**
+ * A policy to remove from a grant's session isn't one of its policies.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class PolicyNotFound
+  extends Schema.TaggedError<PolicyNotFound>("@namera-ai/sdk/GrantError/PolicyNotFound")("PolicyNotFound", {
+    index: Schema.Number
+  })
+{
+  override get message(): string {
+    return `Policy ${this.index} to remove is not one of the session's policies`
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Pass the policy as the session has it: one of `grant.session.policies`."
+  }
+}
+
+/**
  * Schema for the reason of a `GrantError`.
  *
  * @stability experimental
@@ -162,9 +184,18 @@ export const GrantErrorReason: Schema.Union<
     typeof InvalidSignature,
     typeof ChainNotCovered,
     typeof DigestMismatch,
-    typeof SignerMismatch
+    typeof SignerMismatch,
+    typeof PolicyNotFound
   ]
-> = Schema.Union([Malformed, VersionUnsupported, InvalidSignature, ChainNotCovered, DigestMismatch, SignerMismatch])
+> = Schema.Union([
+  Malformed,
+  VersionUnsupported,
+  InvalidSignature,
+  ChainNotCovered,
+  DigestMismatch,
+  SignerMismatch,
+  PolicyNotFound
+])
 
 /**
  * The specific failure behind a `GrantError`.

@@ -13,6 +13,10 @@
  * the session key, checking each operation against the session's policies first. `Grant.check` runs the same check
  * without a key.
  *
+ * The owner revokes (`Grant.revoke`) and updates (`Grant.update`) a grant with owner operations; anyone reads its
+ * status, limits and history without a key (`Grant.getStatus`, `Grant.getRemainingLimit`, `Grant.getUsage`,
+ * `Grant.list`, `Grant.watchStatus`).
+ *
  * @stability experimental
  * @since 2.0.0
  */
@@ -28,8 +32,12 @@ import * as core from "./internal/core/grant/grant.ts"
 import { describe as describeSession } from "./internal/core/session/describe.ts"
 import * as checkInternal from "./internal/grant/check.ts"
 import * as internal from "./internal/grant/grant.ts"
+import * as history from "./internal/grant/history.ts"
+import * as lifecycle from "./internal/grant/lifecycle.ts"
 import { parse as parseGrant } from "./internal/grant/parse.ts"
+import * as status from "./internal/grant/status.ts"
 import * as agent from "./internal/grant/toAccount.ts"
+import * as watch from "./internal/grant/watch.ts"
 import { run, type RunOptions } from "./internal/promise.ts"
 import type { ReadClient } from "./internal/viem/client.ts"
 import type {
@@ -424,6 +432,460 @@ export declare namespace check {
    * @since 2.0.0
    */
   export type ErrorType = ChainError.ChainError | GrantError.GrantError
+}
+
+const clientsOf = <Client>(input: Client | ReadonlyArray<Client>): ReadonlyArray<Client> =>
+  Array.isArray(input) ? input : [input as Client]
+
+/**
+ * Revokes a grant with an owner operation through the owner's bundler client, or one per chain: an enabled session is
+ * removed, an unused grant's enable signature is revoked (so a leaked grant can never be enabled), and nothing is sent
+ * where the grant is already revoked. Returns the operation's hash, `undefined` when nothing was sent.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `AccountError` when the bundler client's account isn't the grant's, and `GrantError`
+ * (`ChainNotCovered`) for a chain the grant doesn't cover.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function revoke(client: BundlerClient, options: revoke.Options): Promise<`0x${string}` | undefined>
+export function revoke(
+  clients: ReadonlyArray<BundlerClient>,
+  options: revoke.Options
+): Promise<ReadonlyArray<`0x${string}` | undefined>>
+export function revoke(
+  client: BundlerClient | ReadonlyArray<BundlerClient>,
+  options: revoke.Options
+): Promise<`0x${string}` | undefined | ReadonlyArray<`0x${string}` | undefined>> {
+  return run(lifecycle.revoke(clientsOf(client), options.grant), options).then((hashes) =>
+    Array.isArray(client) ? hashes : hashes[0]
+  )
+}
+
+/**
+ * Types of `Grant.revoke`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace revoke {
+  /**
+   * The grant to revoke.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+  }
+  /**
+   * The errors `Grant.revoke` can reject with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError
+}
+
+/**
+ * Revokes a grant and waits: the receipt of the operation, or of each chain's, `undefined` where nothing was sent.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function revokeSync(client: BundlerClient, options: revoke.Options): Promise<TransactionReceipt | undefined>
+export function revokeSync(
+  clients: ReadonlyArray<BundlerClient>,
+  options: revoke.Options
+): Promise<ReadonlyArray<TransactionReceipt | undefined>>
+export function revokeSync(
+  client: BundlerClient | ReadonlyArray<BundlerClient>,
+  options: revoke.Options
+): Promise<TransactionReceipt | undefined | ReadonlyArray<TransactionReceipt | undefined>> {
+  return run(lifecycle.revokeSync(clientsOf(client), options.grant), options).then((receipts) =>
+    Array.isArray(client) ? receipts : receipts[0]
+  )
+}
+
+/**
+ * The owner's call that revokes a grant, to batch with other calls yourself: Smart Sessions' `removeSession`, which
+ * removes an enabled session and spends the enable nonce, so an unused grant can't enable it either.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const revokeCalls: (grant: Grant) => ReadonlyArray<Call> = lifecycle.revokeCalls
+
+/**
+ * Updates a grant's session in place with an owner operation through the owner's bundler client (or one per chain):
+ * `remove` takes policies out (each must be one of the session's), `add` puts new ones in. The updated session is
+ * validated before anything is sent, keeps the permission id, and keeps what its limits have used.
+ *
+ * **Details**
+ *
+ * The update disables what is removed, enables the updated session (adding what is new, reconfiguring what stays),
+ * and revokes the old grant's enable signature, so it can't enable the old policies again. The updated grant is
+ * installed on the chains updated: it carries no enable signature, and its agent uses the session as it is.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`PolicyNotFound`, `ChainNotCovered`), `SessionError` for an updated session
+ * `Session.validate` refuses, and `AccountError` when the bundler client's account isn't the grant's.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function update(
+  client: BundlerClient,
+  options: update.Options
+): Promise<{ readonly hash: `0x${string}`; readonly grant: Grant }>
+export function update(
+  clients: ReadonlyArray<BundlerClient>,
+  options: update.Options
+): Promise<{ readonly hashes: ReadonlyArray<`0x${string}`>; readonly grant: Grant }>
+export function update(
+  client: BundlerClient | ReadonlyArray<BundlerClient>,
+  options: update.Options
+): Promise<
+  | { readonly hash: `0x${string}`; readonly grant: Grant }
+  | { readonly hashes: ReadonlyArray<`0x${string}`>; readonly grant: Grant }
+> {
+  return run(lifecycle.update(clientsOf(client), options), options).then(({ grant, hashes }) =>
+    Array.isArray(client) ? { hashes, grant } : { hash: hashes[0]!, grant }
+  )
+}
+
+/**
+ * Types of `Grant.update`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace update {
+  /**
+   * The grant, and the policies to add and to remove.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly add?: ReadonlyArray<Session.Session["policies"][number]> | undefined
+    readonly remove?: ReadonlyArray<Session.Session["policies"][number]> | undefined
+  }
+  /**
+   * The errors `Grant.update` can reject with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType =
+    | AccountError.AccountError
+    | ChainError.ChainError
+    | GrantError.GrantError
+    | SessionError.SessionError
+}
+
+/**
+ * Updates a grant and waits: the receipt (or each chain's) and the updated grant.
+ *
+ * @stability experimental
+ * @category mutations
+ * @since 2.0.0
+ */
+export function updateSync(
+  client: BundlerClient,
+  options: update.Options
+): Promise<{ readonly receipt: TransactionReceipt; readonly grant: Grant }>
+export function updateSync(
+  clients: ReadonlyArray<BundlerClient>,
+  options: update.Options
+): Promise<{ readonly receipts: ReadonlyArray<TransactionReceipt>; readonly grant: Grant }>
+export function updateSync(
+  client: BundlerClient | ReadonlyArray<BundlerClient>,
+  options: update.Options
+): Promise<
+  | { readonly receipt: TransactionReceipt; readonly grant: Grant }
+  | { readonly receipts: ReadonlyArray<TransactionReceipt>; readonly grant: Grant }
+> {
+  return run(lifecycle.updateSync(clientsOf(client), options), options).then(({ grant, receipts }) =>
+    Array.isArray(client) ? { receipts, grant } : { receipt: receipts[0]!, grant }
+  )
+}
+
+/**
+ * The owner's calls that update an enabled grant's session, to batch with other calls yourself, and the updated
+ * session. `Grant.update` also handles a session that isn't enabled yet and returns the updated grant.
+ *
+ * **Gotchas**
+ *
+ * Throws `GrantError` (`PolicyNotFound`) or `SessionError` for an updated session that can't be built.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function updateCalls(
+  grant: Grant,
+  options: Omit<update.Options, "grant" | "signal">
+): { readonly calls: ReadonlyArray<Call>; readonly session: Session.Session } {
+  return Result.getOrThrow(lifecycle.updateCalls(grant, options))
+}
+
+/**
+ * A grant's state: overall, its window, on each chain (`pending-enable`, `active`, `expired`, `not-yet-valid` or
+ * `revoked`), and what each budget has used and has left on the first chain. Pass one client, or one per chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function getStatus(
+  client: ReadClient | ReadonlyArray<ReadClient>,
+  options: getStatus.Options
+): Promise<getStatus.Status> {
+  return run(status.getStatus(clientsOf(client), options.grant), options)
+}
+
+/**
+ * Types of `Grant.getStatus`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getStatus {
+  /**
+   * The grant to read.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+  }
+  /**
+   * A grant's status.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Status = status.Status
+  /**
+   * A grant's state on a chain.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type State = status.State
+  /**
+   * One budget's usage in the current period.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type LimitStatus = status.LimitStatus
+  /**
+   * The errors `Grant.getStatus` can reject with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = ChainError.ChainError | GrantError.GrantError
+}
+
+/**
+ * What is left of a grant's budget on the client's chain for a token, or for native value without one: the tightest
+ * of its limits, with when it resets. `undefined` when nothing limits it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function getRemainingLimit(
+  client: ReadClient,
+  options: getRemainingLimit.Options
+): Promise<{ readonly remaining: bigint; readonly resetsAt?: number | undefined } | undefined> {
+  return run(status.getRemainingLimit(client, options), options)
+}
+
+/**
+ * Types of `Grant.getRemainingLimit`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getRemainingLimit {
+  /**
+   * The grant, and the token (native value when absent).
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly token?: `0x${string}` | undefined
+  }
+}
+
+/**
+ * Whether a grant's session is enabled on the client's chain.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function isEnabled(client: ReadClient, options: getStatus.Options): Promise<boolean> {
+  return run(status.isEnabled(client, options.grant), options)
+}
+
+/**
+ * The operations sent under a grant on the client's chain, oldest first: from the EntryPoint's logs for the account,
+ * kept when the operation's signature names the grant's session. Logs are read `pageSize` blocks at a time.
+ *
+ * **Gotchas**
+ *
+ * Reading from block 0 over a long chain takes many requests: pass `fromBlock` (the block the grant was created in).
+ * An operation bundled through a contract other than the EntryPoint can't be read and is left out.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function getUsage(
+  client: ReadClient,
+  options: getUsage.Options
+): Promise<ReadonlyArray<getUsage.Operation>> {
+  return run(history.getUsage(client, options), options)
+}
+
+/**
+ * Types of `Grant.getUsage`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace getUsage {
+  /**
+   * The grant, the blocks to read (from 0 to the latest by default) and how many blocks a log request covers
+   * (10,000 by default).
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly fromBlock?: bigint | undefined
+    readonly toBlock?: bigint | undefined
+    readonly pageSize?: bigint | undefined
+  }
+  /**
+   * One operation sent under the grant.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Operation = history.Operation
+}
+
+/**
+ * The sessions enabled on an account on the client's chain, with their windows, matched to `grants` by permission id.
+ * Smart Sessions stores ids, not sessions, so a session without a grant among those given is `foreign`.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function list(client: ReadClient, options: list.Options): Promise<ReadonlyArray<list.Listed>> {
+  return run(status.list(client, options), options)
+}
+
+/**
+ * Types of `Grant.list`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace list {
+  /**
+   * The account, and the grants to match.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly account: `0x${string}`
+    readonly grants?: ReadonlyArray<Grant> | undefined
+  }
+  /**
+   * A session enabled on the account.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Listed = status.Listed
+}
+
+/**
+ * Watches a grant: calls `onChange` with its status now and whenever it changes, read on each new block of the
+ * (first) client's chain, and `onError` when a read fails (the watch goes on). `off()` stops it.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const watchStatus = (
+  client: ReadClient | ReadonlyArray<ReadClient>,
+  options: watchStatus.Options
+): watchStatus.Watcher => watch.watchStatus(clientsOf(client), options)
+
+/**
+ * Types of `Grant.watchStatus`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace watchStatus {
+  /**
+   * The grant, the callbacks, and how often to poll for blocks (the client's interval by default).
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options {
+    readonly grant: Grant
+    readonly onChange: (status: getStatus.Status) => void
+    readonly onError?: ((error: getStatus.ErrorType) => void) | undefined
+    readonly pollingInterval?: number | undefined
+  }
+  /**
+   * A running watch.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Watcher = watch.Watcher
 }
 
 /**
