@@ -60,7 +60,7 @@ describe("packageSources", () => {
 
     const module = sources.get("Example.ts") ?? ""
     assert.include(module, `84532: {"runtimeCodeHash": "0x${Str.repeat(32)("ef")}"`)
-    assert.include(module, `"blockNumber": ${transaction.blockNumber}n`)
+    assert.include(module, `"blockNumber": BigInt("${transaction.blockNumber}")`)
   })
 
   it("wraps doc comments within 100 columns", () => {
