@@ -1,0 +1,269 @@
+{
+  "chainId": 84532,
+  "contracts": {
+    "namera.smart-session.v1": {
+      "contract": "SmartSession",
+      "artifact": "SmartSession.sol:SmartSession",
+      "address": "0x703483f2b8527eAD041a9D54E021485Ed90c1AEf",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
+      "initcodeHash": "0x1f958c84442fdde4f7d39e9f308455ee975b788c8d487f4200dcd100cb1190c9",
+      "runtimeCodeHash": "0x51b960585fdc1ae24bc3e0a26c16292067c4539127e66610073b1a380d6f9272",
+      "transaction": {
+        "transactionHash": "0xa15167cb15cc78742b723323d24df1eed10cf2d7d95895dc6b4e6f61ec8e7dbc",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.ecdsa-session-validator.v1": {
+      "contract": "ECDSASessionValidator",
+      "artifact": "ECDSASessionValidator.sol:ECDSASessionValidator",
+      "address": "0xee0a318cE5B01D2867a90fc216890Ab96cA6490F",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x317181fa593b3ec3fd5cba008d6b64516fa33ab19626ca9e69977b90381a8172",
+      "initcodeHash": "0x7e5aec007bb7a84b6a46b71ed3866ef9d28056d598bcd10b7e6a14f12d0c7911",
+      "runtimeCodeHash": "0x385d0b8465d39b75616f6d984e62ae0890cde95cfc914a88cea9d6bb485d0dcd",
+      "transaction": {
+        "transactionHash": "0x3bfae6ae98bea5199f138fae79b4c82329447d1c649469e16ae2889d4bedd9ec",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.webauthn-validator.v1": {
+      "contract": "WebAuthnValidator",
+      "artifact": "WebAuthnValidator.sol:WebAuthnValidator",
+      "address": "0x2E041Cf8D0374D339EBaa86774baEEA36Af241a0",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xd3862f8da90336198b92a577df9783ac4b76197d2d8012e294e9305ac2dc45bf",
+      "initcodeHash": "0xd8941403e412e1270fd7d52da1cf861834973cd35d7150ffdd0d50ce27a73a9f",
+      "runtimeCodeHash": "0x958c5e20e85c961dff12912f7d2f0cfb514c9bd7966b0f63477dc89832a1f580",
+      "transaction": {
+        "transactionHash": "0xf99d54f2b3ec934ed5a13170f5269f1b98c31519f8d08cb7217bba226d010128",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 10000,
+        "viaIR": true
+      }
+    },
+    "namera.session-hook.v1": {
+      "contract": "SessionHook",
+      "artifact": "SessionHook.sol:SessionHook",
+      "address": "0xdF523DbB7AcB129f58655B0738211295fe0f827C",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xecc31949170d266f6a92e1bddbb52b24cfe72376b7ad77cf3a90f87480d3af24",
+      "initcodeHash": "0x1892b60e03dd89610143fbeadfbda0d1b35ab8a7cd8c4bc6a59eb868856385e2",
+      "runtimeCodeHash": "0x13731cda23cd3bf2817f59813008e0f465aae6af4c2ef3846b5c9f889bbd0d2d",
+      "transaction": {
+        "transactionHash": "0x778e2378d67faa5bae29ddf3d95a878c2f0911370f6e798267db3847a45505a9",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.allow-policy.v1": {
+      "contract": "AllowPolicy",
+      "artifact": "AllowPolicy.sol:AllowPolicy",
+      "address": "0xD7FFA7B9537E8E566E0BD261A6E55F36e09D51B4",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xded22ee30042e008d828d95d2b702a5269dae61fb517f237917f9d16256da5b6",
+      "initcodeHash": "0xd2e9a656f93889c2a20ede8708ef64339a050c2c63182a51a711fa8d9088e111",
+      "runtimeCodeHash": "0x85afaff9140173f4f0cd8153cbe617c0d7055a6eb9f3a47ab40ffc3155e6e456",
+      "transaction": {
+        "transactionHash": "0x784096e8ca21bda722f2b0c0fcc434cb1e234ef60b830bb2c69c019f9373efd0",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.arg-policy.v1": {
+      "contract": "ArgPolicy",
+      "artifact": "ArgPolicy.sol:ArgPolicy",
+      "address": "0x8E3607918B495D93727196a6B2ab9517656169f3",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x86cb2fca3452e08063e76eb7505a593ec49ba9782e895c8844f3628349e4fbf4",
+      "initcodeHash": "0x08f0787d4f476dab27f0f342aec954c3e721f5defc90a9b0f0677043ae1da1cf",
+      "runtimeCodeHash": "0x5d46c2f0fb3f95a120dc9e4d1eb2bcd654b420696bbbd37672f255367f37919b",
+      "transaction": {
+        "transactionHash": "0x97f33b12dde78a99097fd047e2b29a9a0179aca77d0f1e222ae632154e106cb7",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.spend-policy.v1": {
+      "contract": "SpendPolicy",
+      "artifact": "SpendPolicy.sol:SpendPolicy",
+      "address": "0x45b08000232314C38e3cF0a86A939B6ABcE50658",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x28b0cb2517c65f50fd17c1326d07d9b52a972500e7da985e66b6b75fed311154",
+      "initcodeHash": "0x3237135f6c77699f72dbdc7eaa8db0406429960e6e52fd07dbee3f36cfd57fbd",
+      "runtimeCodeHash": "0xc27f5d3ae79c66e3bdc475d22d569b2b7d1fc3ed988caf589c630e369e8c5c8b",
+      "transaction": {
+        "transactionHash": "0xb0bcceb571d96806b03d2f535462923f43d805612948291601f1c9a0de4322ec",
+        "blockNumber": 63034690,
+        "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.value-policy.v1": {
+      "contract": "ValuePolicy",
+      "artifact": "ValuePolicy.sol:ValuePolicy",
+      "address": "0x98286E6568D03dC8EeFF9664E2F8B9e632e5CFF2",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x9bad4ebaeb715215ff6a7c2a57fde4acfe56bac9f9e8b6b227eeab6130ca3f40",
+      "initcodeHash": "0x7b45bc6a8193c63e23dac1440f7fbdbc5f75992dff0eca8984932ef96df95edf",
+      "runtimeCodeHash": "0xe0f02c9f058ec4c61e51677317e9c8a24ac9275035d7c45b953273152f416cb4",
+      "transaction": {
+        "transactionHash": "0xae8f959e008c6a2680a9daf474f6d6f9ced55ec2c0856557ffaf78378443070f",
+        "blockNumber": 63034691,
+        "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.rate-limit-policy.v1": {
+      "contract": "RateLimitPolicy",
+      "artifact": "RateLimitPolicy.sol:RateLimitPolicy",
+      "address": "0x957FA30B9757C94E206F6A5a569fF7AEC74e62b5",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xdbd0569b0e7e44b8c6b608bf1feed56dfd06157b869d84a31f4c4a93a30fffa4",
+      "initcodeHash": "0x263e291a6d1c76b125787850ba587ab1914ed2d40e29d4d9117468b658dad80e",
+      "runtimeCodeHash": "0xc58334a1587bfab4f702725ec89f00bdb7b1e03088ce9c4bb1a499e7d3b895c5",
+      "transaction": {
+        "transactionHash": "0x9d212df20a822588527ccc9cd33f5036a676255f44683a6522d3d6319d8439ad",
+        "blockNumber": 63034691,
+        "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.gas-policy.v1": {
+      "contract": "GasPolicy",
+      "artifact": "GasPolicy.sol:GasPolicy",
+      "address": "0x34419440bb56b3159DA6E7613c694bB9a4e0599a",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xb4a95aa6e40f2775220b21973b7e748b73066ccafe9cccdeee536d0b653f5902",
+      "initcodeHash": "0x37f97590a7f6e1b86843f5a3e7cdad455a829a059e00137da90a417aa3e7465a",
+      "runtimeCodeHash": "0xe4c8348ff2db13e962f90f5e8af2ab32bd5d6a88fa287fd9691360c03d72e46b",
+      "transaction": {
+        "transactionHash": "0x982f228295894b3ed3ec9d7dbf7f88c94e20d813fbfc6b472c0866546c002f5b",
+        "blockNumber": 63034691,
+        "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.approval-policy.v1": {
+      "contract": "ApprovalPolicy",
+      "artifact": "ApprovalPolicy.sol:ApprovalPolicy",
+      "address": "0xcA7Df46A121a612747C2114D4A9A1163a7317c0c",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x2db51a453faf429ee58c1081555990b0dec71ca173a8a25f8e167959ede95a14",
+      "initcodeHash": "0xc9364b145c5b211903da35615b9249a294591d187d7a2eab853f8bf30ed05f27",
+      "runtimeCodeHash": "0xad81e07618d6ebabcc54ad2606bc5a34203d857f864552377250a08275bd2328",
+      "transaction": {
+        "transactionHash": "0xe118a99d14b74eaa35e19be4950908328c0e3a696557f23aab55dce698317b24",
+        "blockNumber": 63034691,
+        "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    "namera.signature-policy.v1": {
+      "contract": "SignaturePolicy",
+      "artifact": "SignaturePolicy.sol:SignaturePolicy",
+      "address": "0x25DAEFfbe1e99Ed50098C5228ecA59961f62d519",
+      "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0xce8fc58e444ee82a57b0a35d3bc9e5ee2a6a356cfbf0270a0e9c48a86cf7e6de",
+      "initcodeHash": "0xda1dc8a0517b4ff614950f6e88da84c2268eb32c547f6b8cb5e5531dc80a6a44",
+      "runtimeCodeHash": "0x51ff49cc1e093b3a65034813c68a7d2ac1432136c270ae4b05cf8b880d19ab87",
+      "transaction": {
+        "transactionHash": "0xb2662c37c9eecb20718c52769f13c697b95206f24cf2398e2546dcb332dc51fc",
+        "blockNumber": 63034691,
+        "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
+        "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6"
+      },
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    }
+  }
+}

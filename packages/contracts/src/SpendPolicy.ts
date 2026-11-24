@@ -100,5 +100,20 @@ export const v1: Contract.Version<typeof abiV1> = {
   "initcodeHash": "0x3237135f6c77699f72dbdc7eaa8db0406429960e6e52fd07dbee3f36cfd57fbd",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {}
+  "deployments": {
+    84532: {
+      "runtimeCodeHash": "0xc27f5d3ae79c66e3bdc475d22d569b2b7d1fc3ed988caf589c630e369e8c5c8b",
+      "transactionHash": "0xb0bcceb571d96806b03d2f535462923f43d805612948291601f1c9a0de4322ec",
+      "blockNumber": BigInt("63034690"),
+      "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    }
+  }
 }
