@@ -1,16 +1,5 @@
 import { assert } from "@effect/vitest"
-import {
-  Grant,
-  KernelAccount,
-  Key,
-  Keystore,
-  NexusAccount,
-  Policy,
-  Safe7579Account,
-  Session,
-  SessionKey,
-  SmartAccount
-} from "@namera-ai/sdk"
+import { Grant, KernelAccount, Key, Keystore, Policy, Session, SessionKey, SmartAccount } from "@namera-ai/sdk"
 import * as Effect_ from "@namera-ai/sdk/effect"
 import { Effect, Exit } from "effect"
 import { createClient, http, zeroAddress } from "viem"
@@ -698,42 +687,6 @@ export const table: Record<string, Conformance> = {
     failure: {
       promise: (signal) => KernelAccount.fromEip7702({ client: chainless, owner, signal }),
       effect: () => Effect_.KernelAccount.fromEip7702({ client: chainless, owner })
-    }
-  },
-  "NexusAccount.from": {
-    kind: "async",
-    success: {
-      promise: (signal) => NexusAccount.from({ client, owner, signal }),
-      effect: () => Effect_.NexusAccount.from({ client, owner }),
-      project: account
-    },
-    failure: {
-      promise: (signal) => NexusAccount.from({ client: chainless, owner, signal }),
-      effect: () => Effect_.NexusAccount.from({ client: chainless, owner })
-    }
-  },
-  "NexusAccount.fromEip7702": {
-    kind: "async",
-    success: {
-      promise: (signal) => NexusAccount.fromEip7702({ client, owner, signal }),
-      effect: () => Effect_.NexusAccount.fromEip7702({ client, owner }),
-      project: account
-    },
-    failure: {
-      promise: (signal) => NexusAccount.fromEip7702({ client: chainless, owner, signal }),
-      effect: () => Effect_.NexusAccount.fromEip7702({ client: chainless, owner })
-    }
-  },
-  "Safe7579Account.from": {
-    kind: "async",
-    success: {
-      promise: (signal) => Safe7579Account.from({ client, owners: [owner], signal }),
-      effect: () => Effect_.Safe7579Account.from({ client, owners: [owner] }),
-      project: account
-    },
-    failure: {
-      promise: (signal) => Safe7579Account.from({ client, owners: [owner], threshold: 2, signal }),
-      effect: () => Effect_.Safe7579Account.from({ client, owners: [owner], threshold: 2 })
     }
   }
 }

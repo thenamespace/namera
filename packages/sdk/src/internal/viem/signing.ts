@@ -3,10 +3,9 @@
 import * as Effect from "effect/Effect"
 import * as Signature from "ox/Signature"
 import type { SignableMessage, TypedDataDefinition } from "viem"
-import { getAddress, hashMessage, hashTypedData, toPrefixedMessage } from "viem"
+import { hashMessage, hashTypedData } from "viem"
 import type { WebAuthnAccount } from "viem/account-abstraction"
 import { signMessage, signTypedData } from "viem/actions"
-import { wrapTypedDataSignature } from "viem/experimental/erc7739"
 
 import * as AccountError from "../../accounts/AccountError.ts"
 import { type Assertion, toAssertion } from "../core/account/webauthn.ts"
@@ -27,11 +26,11 @@ export type { SignableMessage }
 export type { TypedDataDefinition }
 
 /**
- * Hashing and address helpers the accounts use.
+ * Hashing helpers the accounts use.
  *
  * @internal
  */
-export { getAddress, hashMessage, hashTypedData, toPrefixedMessage }
+export { hashMessage, hashTypedData }
 
 /**
  * Signs as the owner. Failures become `AccountError` (`SigningFailed`) with the wallet's or viem's error as cause.
@@ -50,15 +49,6 @@ export const ownerSigner = (client: ChainClient, owner: Owner, account: AccountE
       })
   }
 }
-
-/**
- * Wraps an ERC-7739 `TypedDataSign` signature with the app's domain, contents and type description, as the account
- * expects it.
- *
- * @internal
- */
-export const wrapTypedData = (typedData: TypedDataDefinition, signature: Hex): Hex =>
-  wrapTypedDataSignature({ ...typedData, signature } as Parameters<typeof wrapTypedDataSignature>[0])
 
 /**
  * A passkey owner: viem's WebAuthn account, which signs through the browser's or the device's authenticator.

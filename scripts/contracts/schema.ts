@@ -127,8 +127,8 @@ export const TransactionReceipt = Schema.Struct({
 })
 
 /**
- * `contracts/script/config/external.json`: the contracts Namera builds on but does not deploy (EntryPoint, the
- * supported smart accounts), by group and version. Each group becomes one export of `@namera-ai/contracts/External`.
+ * `contracts/script/config/external.json`: the contracts Namera builds on but does not deploy (EntryPoint, Kernel),
+ * by group and version. Each group becomes one export of `@namera-ai/contracts/External`.
  */
 export const ExternalConfig = Schema.Record(
   Schema.String.check(Schema.isPattern(/^[a-z][A-Za-z0-9]*$/)),

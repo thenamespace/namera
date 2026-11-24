@@ -29,7 +29,7 @@ import * as AccountError from "../AccountError.ts"
 /**
  * What Namera records about an account it built, as the read-only `namera` field.
  */
-export interface Metadata<Type extends "kernel" | "nexus" | "safe7579" = "kernel" | "nexus" | "safe7579"> {
+export interface Metadata<Type extends "kernel" = "kernel"> {
   readonly type: Type
   readonly version: string
   readonly entryPoint: "0.7"
@@ -59,7 +59,7 @@ export const requireChain = (
 const accountOf = (implementation: SmartAccountImplementation): AccountError.Options["account"] => {
   const extend = implementation.extend as { readonly namera?: { readonly type?: unknown } } | undefined
   const type = extend?.namera?.type
-  return { type: type === "kernel" || type === "nexus" || type === "safe7579" ? type : "unknown" }
+  return { type: type === "kernel" ? type : "unknown" }
 }
 
 // The implementation's methods are called by viem (when sending, signing or estimating); their failures come out as
@@ -118,7 +118,8 @@ export const from = <const Implementation extends SmartAccountImplementation>(
   })
 
 /**
- * Everything that differs between the account types; `define` turns it into a viem implementation and builds it.
+ * Everything that differs between the ways to build an account (key or passkey owner, deployed or EIP-7702); `define`
+ * turns it into a viem implementation and builds it.
  *
  * @internal
  */

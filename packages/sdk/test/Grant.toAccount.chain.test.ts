@@ -8,7 +8,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet } from "./accounts/accounts.test-utils.ts"
 import { newPasskey } from "./accounts/passkey.test-utils.ts"
-import { type AccountType, deployedAccount, refusal } from "./session.test-utils.ts"
+import { deployedAccount, refusal } from "./session.test-utils.ts"
 
 // The agent's account on the devnet (safe-mode alto), driven only by viem's bundler client: the first operation
 // enables the session (ENABLE mode) and deploys an undeployed account, later ones use it, lanes send in parallel,
@@ -87,9 +87,7 @@ const sessionWith = (policies: ReadonlyArray<Policy.Policy>, options: {
 
 const transfers = Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } })
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("the agent's account on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   const grantFor = async (
@@ -97,7 +95,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
     options: Parameters<typeof sessionWith>[1] & { readonly deploy?: boolean } = {}
   ) => {
     const { session, sessionKey } = sessionWith(policies, options)
-    const account = await deployedAccount(type, { deploy: options.deploy })
+    const account = await deployedAccount({ deploy: options.deploy })
     return { account, sessionKey, grant: await Grant.create({ account, session }) }
   }
 
@@ -220,11 +218,6 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
   // Internal review, finding 1: the fallback (`Policy.anyCall`) never reaches the account's own modules, which take
   // its calls as configuration; the module probes Smart Sessions makes for that pass the bundler's ERC-7562 rules.
   it("sends any call through Policy.anyCall, but never to the account's owner validator", async () => {
-    const owners = {
-      kernel: External.kernel["3.3"].ecdsaValidator,
-      nexus: External.nexus["1.3.3"].k1Validator,
-      safe7579: External.safe7579[2].ownableValidator
-    } as const
     const { grant, sessionKey } = await grantFor([Policy.anyCall({ unsafe: true })])
     const agent = await Grant.toAccount(client, { grant, signer: sessionKey, check: false })
 
@@ -235,7 +228,10 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
       functionName: "onUninstall",
       args: ["0x"]
     })
-    assert.match(await refusal(send(agent, [{ to: owners[type], data: uninstall }])), /AA2|validateUserOp/)
+    assert.match(
+      await refusal(send(agent, [{ to: External.kernel["3.3"].ecdsaValidator, data: uninstall }])),
+      /AA2|validateUserOp/
+    )
   })
 
   it("sends with a passkey session key", async () => {
@@ -260,11 +256,10 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
       }
     )
 
-  // Kernel deploys through ZeroDev's staked FactoryStaker; Nexus's and Safe7579's factories are unstaked, so a bundler
-  // that enforces ERC-7562 refuses their deployment in a user operation (their own tests show it).
+  // Kernel deploys through ZeroDev's staked FactoryStaker, so a bundler that enforces ERC-7562 accepts it.
   it("deploys an undeployed Kernel account in the agent's first operation", async () => {
     const { session, sessionKey } = sessionWith([transfers])
-    const grant = await Grant.create({ account: await deployedAccount("kernel", { deploy: false }), session })
+    const grant = await Grant.create({ account: await deployedAccount({ deploy: false }), session })
     assert.isDefined(grant.accountType.deployment)
     const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
 
@@ -275,7 +270,7 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
 
   it("refuses a signer that isn't the session key, an uncovered chain and a lane out of range", async () => {
     const { session, sessionKey } = sessionWith([transfers])
-    const grant = await Grant.create({ account: await deployedAccount("nexus"), session })
+    const grant = await Grant.create({ account: await deployedAccount(), session })
     const second = await Devnet.from(inject(Devnet.contextKey), { chain: "second" })
 
     assert.strictEqual(
@@ -284,8 +279,8 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
     )
     assert.strictEqual(await reasonOf(Grant.toAccount(client, { grant, signer: newPasskey() })), "SignerMismatch")
     assert.strictEqual(await reasonOf(Grant.toAccount(second.client, { grant, signer: sessionKey })), "ChainNotCovered")
-    await Grant.toAccount(client, { grant, signer: sessionKey, lane: 2 ** 24 - 1 })
-    await Grant.toAccount(client, { grant, signer: sessionKey, lane: 2 ** 24 }).then(
+    await Grant.toAccount(client, { grant, signer: sessionKey, lane: 2 ** 16 - 1 })
+    await Grant.toAccount(client, { grant, signer: sessionKey, lane: 2 ** 16 }).then(
       () => assert.fail("expected the lane to be refused"),
       (error: unknown) => assert.match(String(error), /lane/)
     )
@@ -296,7 +291,7 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
     const { session } = sessionWith([transfers], {
       signer: SessionKey.ecdsaThreshold({ threshold: 2, signers: [a!.address, b!.address, c!.address] })
     })
-    const grant = await Grant.create({ account: await deployedAccount("safe7579"), session })
+    const grant = await Grant.create({ account: await deployedAccount(), session })
 
     assert.strictEqual(await reasonOf(Grant.toAccount(client, { grant, signer: a! })), "SignerMismatch")
     const agent = await Grant.toAccount(client, { grant, signer: [c!, a!] })
@@ -305,7 +300,7 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
 
   it("checks calls without a key, and simulates them once the account is deployed", async () => {
     const { session, sessionKey } = sessionWith([transfers, Policy.rateLimit({ count: 1, period: "hour" })])
-    const grant = await Grant.create({ account: await deployedAccount("kernel", { deploy: false }), session })
+    const grant = await Grant.create({ account: await deployedAccount({ deploy: false }), session })
 
     assert.deepStrictEqual(await Grant.check(client, { grant, calls: [transfer(5n)] }), {
       ok: true,
@@ -324,7 +319,7 @@ describe("Grant.toAccount and Grant.check", { concurrent: false }, () => {
 
   it("doesn't sign personal messages: Smart Sessions verifies typed data only", async () => {
     const { session, sessionKey } = sessionWith([transfers])
-    const grant = await Grant.create({ account: await deployedAccount("nexus"), session })
+    const grant = await Grant.create({ account: await deployedAccount(), session })
     const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
 
     await agent.signMessage({ message: "hello" }).then(

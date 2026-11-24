@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Policy, Session, SessionKey } from "@namera-ai/sdk"
 import { decodeCalls, encodeCalls, SESSION_HOOK_TAG, statedTime } from "@namera-ai/sdk/internal/core/agent/calls"
-import { domainless, encodeSignature, nest } from "@namera-ai/sdk/internal/core/agent/erc7739"
+import { type AccountDomain, encodeSignature, nest } from "@namera-ai/sdk/internal/core/agent/erc7739"
 import { isLane, nonceKey } from "@namera-ai/sdk/internal/core/agent/nonce"
 import { ecdsaSignature, stubSignature } from "@namera-ai/sdk/internal/core/agent/sessionSignature"
 import { encodeEnableSignature } from "@namera-ai/sdk/internal/core/grant/enable"
@@ -17,29 +17,30 @@ const token: Hex.Hex = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 const recipient: Hex.Hex = "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65"
 const permissionId = `0x${"ab".repeat(32)}` as const
 const transfer = { to: token, data: "0xa9059cbb0000" as Hex.Hex }
+// The account's EIP-712 domain, as Kernel's `eip712Domain()` returns it.
+const kernelDomain = (chainId: number): AccountDomain => ({
+  name: "Kernel",
+  version: "0.3.3",
+  chainId: BigInt(chainId),
+  verifyingContract: account,
+  salt: `0x${"00".repeat(32)}`
+})
 
 describe("nonce lanes", () => {
-  it("put the lane in each account's free bits, keeping Smart Sessions' validator", () => {
+  it("put the lane in Kernel's free bits, keeping Smart Sessions' validator", () => {
     const validator = BigInt(smartSession)
-    assert.strictEqual(nonceKey("kernel", smartSession, 0), (BigInt(1) << BigInt(176)) | (validator << BigInt(16)))
-    assert.strictEqual(nonceKey("kernel", smartSession, 0xffff) - nonceKey("kernel", smartSession, 0), BigInt(0xffff))
-    assert.strictEqual(nonceKey("nexus", smartSession, 5), (BigInt(5) << BigInt(168)) | validator)
-    assert.strictEqual(nonceKey("safe7579", smartSession, 7), (validator << BigInt(32)) | BigInt(7))
+    assert.strictEqual(nonceKey(smartSession, 0), (BigInt(1) << BigInt(176)) | (validator << BigInt(16)))
+    assert.strictEqual(nonceKey(smartSession, 0xffff) - nonceKey(smartSession, 0), BigInt(0xffff))
     // Keys stay within the EntryPoint's 192 bits.
-    for (const type of ["kernel", "nexus", "safe7579"] as const) {
-      assert.isTrue(nonceKey(type, smartSession, 2 ** 16 - 1) < BigInt(1) << BigInt(192))
-    }
+    assert.isTrue(nonceKey(smartSession, 2 ** 16 - 1) < BigInt(1) << BigInt(192))
   })
 
-  it("range from 0 to each account's free bits", () => {
-    assert.isTrue(isLane("kernel", 2 ** 16 - 1))
-    assert.isFalse(isLane("kernel", 2 ** 16))
-    assert.isTrue(isLane("nexus", 2 ** 24 - 1))
-    assert.isFalse(isLane("nexus", 2 ** 24))
-    assert.isTrue(isLane("safe7579", 2 ** 32 - 1))
-    assert.isFalse(isLane("safe7579", 2 ** 32))
-    assert.isFalse(isLane("nexus", -1))
-    assert.isFalse(isLane("nexus", 1.5))
+  it("range from 0 to Kernel's free bits", () => {
+    assert.isTrue(isLane(0))
+    assert.isTrue(isLane(2 ** 16 - 1))
+    assert.isFalse(isLane(2 ** 16))
+    assert.isFalse(isLane(-1))
+    assert.isFalse(isLane(1.5))
   })
 })
 
@@ -47,24 +48,22 @@ describe("session operation calldata", () => {
   const calls = [transfer, { to: recipient, value: BigInt(5) }]
 
   it("decodes what it encodes, with the stated time and tag after `execute`, and Kernel's wrapper", () => {
-    for (const type of ["kernel", "nexus"] as const) {
-      const callData = encodeCalls({ type, calls, time: BigInt(1_800_000_000), tag: permissionId })
-      assert.strictEqual(callData.startsWith("0x8dd7712f"), type === "kernel")
-      assert.isTrue(callData.endsWith(SESSION_HOOK_TAG.slice(2)))
-      assert.deepStrictEqual(decodeCalls(callData, account), [
-        { to: token, value: BigInt(0), data: transfer.data },
-        { to: recipient, value: BigInt(5), data: "0x" }
-      ])
-      assert.strictEqual(statedTime(callData), BigInt(1_800_000_000))
-    }
-    const single = encodeCalls({ type: "safe7579", calls: [transfer] })
+    const callData = encodeCalls({ calls, time: BigInt(1_800_000_000), tag: permissionId })
+    assert.isTrue(callData.startsWith("0x8dd7712f"))
+    assert.isTrue(callData.endsWith(SESSION_HOOK_TAG.slice(2)))
+    assert.deepStrictEqual(decodeCalls(callData, account), [
+      { to: token, value: BigInt(0), data: transfer.data },
+      { to: recipient, value: BigInt(5), data: "0x" }
+    ])
+    assert.strictEqual(statedTime(callData), BigInt(1_800_000_000))
+    const single = encodeCalls({ calls: [transfer] })
     assert.deepStrictEqual(decodeCalls(single, account), [{ to: token, value: BigInt(0), data: transfer.data }])
     assert.isUndefined(statedTime(single))
   })
 
   it("reads another function as one call to the account, and refuses other execution modes", () => {
     assert.deepStrictEqual(decodeCalls("0x12345678", account), [{ to: account, value: BigInt(0), data: "0x12345678" }])
-    const tryMode = Hex.concat("0xe9ae5c53", "0x00ff", Hex.slice(encodeCalls({ type: "nexus", calls: [transfer] }), 6))
+    const tryMode = Hex.concat("0xe9ae5c53", "0x00ff", Hex.slice(encodeCalls({ calls: [transfer] }), 10))
     assert.isUndefined(decodeCalls(tryMode, account))
   })
 })
@@ -121,13 +120,12 @@ describe("session signatures", () => {
       primaryType: "Permit",
       message: { spender: recipient, value: BigInt(5) }
     } as const
-    const nested = nest(typedData, domainless(1, account))
+    const nested = nest(typedData, kernelDomain(1))
     assert.strictEqual(nested.hash, TypedData.getSignPayload(typedData))
     assert.strictEqual(nested.contentsType, "Permit(address spender,uint256 value)")
-    assert.notStrictEqual(nest(typedData, domainless(2, account)).digest, nested.digest)
+    assert.notStrictEqual(nest(typedData, kernelDomain(2)).digest, nested.digest)
 
     const signature = encodeSignature({
-      type: "kernel",
       smartSession,
       permissionId,
       sessionKeySignature: "0x11",

@@ -39,7 +39,7 @@ export class NotSupported extends Schema.TaggedError<NotSupported>("@namera-ai/s
 
   /** What to do about it. */
   get hint(): string {
-    return "Namera supports Kernel 3.3, Nexus 1.3.3 and Safe 1.4.1 with Safe7579 v2, on EntryPoint 0.7."
+    return "Namera supports Kernel 3.3 on EntryPoint 0.7, deployed or through EIP-7702."
   }
 }
 
@@ -208,8 +208,8 @@ export class ThresholdUnreachable
 }
 
 /**
- * The account can't make this change, such as adding a second key to a single-key Kernel validator, or installing
- * sessions on a Nexus or Safe7579 account that already has a global hook.
+ * The account can't make this change, such as adding a second key to Kernel's single-key validator, or changing the
+ * owners of an account that isn't deployed yet.
  *
  * @stability experimental
  * @category errors
@@ -227,9 +227,7 @@ export class OperationNotSupported
 
   /** What to do about it. */
   get hint(): string {
-    return this.operation === "install sessions"
-      ? "Nexus and Safe7579 run one global hook: uninstall the account's hook first, or use an account without one."
-      : "A single-key validator (Kernel, Nexus) only rotates its key with `SmartAccount.replaceOwner`; owners of another kind need `SmartAccount.addOwnerValidator`."
+    return "Kernel's key validator holds one key, which only `SmartAccount.replaceOwner` rotates; owners of another kind need `SmartAccount.addOwnerValidator`."
   }
 }
 
@@ -274,18 +272,17 @@ export const AccountErrorReason: Schema.Union<
 export type AccountErrorReason = typeof AccountErrorReason.Type
 
 /**
- * Schema for the account an `AccountError` is about: its type (`kernel`, `nexus`, `safe7579`, or `unknown` before
- * detection) and address.
+ * Schema for the account an `AccountError` is about: its type (`kernel`, or `unknown` before detection) and address.
  *
  * @stability experimental
  * @category schemas
  * @since 2.0.0
  */
 export const AccountRef: Schema.Struct<{
-  readonly type: Schema.Literals<readonly ["kernel", "nexus", "safe7579", "unknown"]>
+  readonly type: Schema.Literals<readonly ["kernel", "unknown"]>
   readonly address: Schema.optionalKey<typeof Address>
 }> = Schema.Struct({
-  type: Schema.Literals(["kernel", "nexus", "safe7579", "unknown"]),
+  type: Schema.Literals(["kernel", "unknown"]),
   address: Schema.optionalKey(Address)
 })
 
@@ -297,11 +294,11 @@ export const AccountRef: Schema.Struct<{
  * ```ts import.meta.vitest
  * import { AccountError } from "@namera-ai/sdk"
  *
- * const error = AccountError.invalidOptions({ account: { type: "safe7579" }, detail: "threshold 2 with 1 owner" })
+ * const error = AccountError.invalidOptions({ account: { type: "kernel" }, detail: "the client has no chain" })
  *
  * error.reason._tag // => "InvalidOptions"
- * error.shortMessage // => "The account options are invalid: threshold 2 with 1 owner"
- * error.metaMessages // => ["Account: safe7579", "Hint: Fix the option the message names."]
+ * error.shortMessage // => "The account options are invalid: the client has no chain"
+ * error.metaMessages // => ["Account: kernel", "Hint: Fix the option the message names."]
  * ```
  *
  * @stability experimental

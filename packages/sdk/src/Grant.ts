@@ -95,8 +95,7 @@ export const isGrant = (u: unknown): u is Grant =>
  * **Details**
  *
  * Pass one account, or one per chain the grant should cover (the same account on each chain's client). The owner
- * signs once when that signature verifies on every chain (Safe7579 with key owners), and once per chain otherwise
- * (Kernel and Nexus bind the chain in their ERC-1271 domain).
+ * signs once per chain: Kernel binds the chain in its ERC-1271 domain.
  *
  * **Gotchas**
  *
@@ -314,7 +313,7 @@ export declare namespace verify {
  * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
  * signs. The check is advisory: the contracts still decide.
  *
- * Each `lane` (Kernel 2^16, Nexus 2^24, Safe7579 2^32) is its own nonce sequence, so lanes send in parallel. Send the
+ * Each `lane` (0 to 2^16 - 1) is its own nonce sequence, so lanes send in parallel. Send the
  * first operation, which enables the session, on one lane before using others.
  *
  * **Gotchas**

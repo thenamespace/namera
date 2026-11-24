@@ -390,10 +390,19 @@ const resolveOne = (policy: Policy, index: number, builder: Builder, out: Array<
       if (spenders.length === 0 || spenders.some((spender) => spender === undefined)) {
         return void invalidAddress("spenders")
       }
+      // ApprovalPolicy refuses a zero token and a token capped twice; tokens are listed once, whatever their case.
+      if (tokens.some((token) => BigInt(token!) === BigInt(0))) {
+        return void out.push(problem("INVALID_ADDRESS", "tokens can't include the zero address", index))
+      }
       const listed = [...new Set(tokens as Array<Address.Address>)]
-      const perToken = policy.maxAmount !== null && typeof policy.maxAmount === "object"
-        ? Object.fromEntries(Object.entries(policy.maxAmount).map(([token, cap]) => [checksum(token), cap]))
+      const capEntries = policy.maxAmount !== null && typeof policy.maxAmount === "object"
+        ? Object.entries(policy.maxAmount).map(([token, cap]) => [checksum(token), cap] as const)
         : undefined
+      const capped = capEntries?.flatMap(([token]) => token === undefined ? [] : [token]) ?? []
+      if (new Set(capped).size < capped.length) {
+        return void out.push(problem("INVALID_AMOUNT", "maxAmount caps a token twice", index))
+      }
+      const perToken = capEntries === undefined ? undefined : Object.fromEntries(capEntries)
       const caps = listed.map((token) => (perToken === undefined ? policy.maxAmount : perToken[token]))
       if (!caps.every(isAmount)) return void invalidAmount("maxAmount (a cap for every token)")
       builder.approvals.push({

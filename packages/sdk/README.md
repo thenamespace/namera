@@ -1,6 +1,6 @@
 # @namera-ai/sdk
 
-Scoped, revocable session keys for agents on ERC-7579 smart accounts, built on viem.
+Scoped, revocable session keys for agents on Kernel 3.3 smart accounts (ERC-7579, EntryPoint 0.7), built on viem.
 
 > Version 2 is a rewrite and is in development. It is not compatible with 1.x, and nothing in it is released yet.
 
@@ -21,10 +21,12 @@ Every module is also importable on its own (`@namera-ai/sdk/Session`).
 
 ## Accounts
 
+Namera supports one account: ZeroDev's Kernel 3.3 on EntryPoint 0.7, deployed through its factory or on an EOA through
+EIP-7702. Smart Sessions and SessionHook refuse to install on any other account.
+
 Every account is viem's `SmartAccount`, so viem's bundler client, paymasters and wagmi use it unchanged.
-`KernelAccount.from` (Kernel 3.3), `NexusAccount.from` (Nexus 1.3.3) and `Safe7579Account.from` (Safe 1.4.1 with
-Safe7579 v2) are built on `SmartAccount.from`, which takes viem's `toSmartAccount` options. New accounts install Smart
-Sessions in their deploying operation unless `sessions: false`.
+`KernelAccount.from` is built on `SmartAccount.from`, which takes viem's `toSmartAccount` options. New accounts install
+Smart Sessions in their deploying operation unless `sessions: false`.
 
 ```ts
 import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
@@ -41,11 +43,11 @@ const bundler = createBundlerClient({ account, client, transport: http(process.e
 await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
 
 await SmartAccount.detect(client, { address: account.address }) // { type: "kernel", version: "3.3", sessionsInstalled: true, … }
-const existing = await SmartAccount.fromAddress({ client, address, owner }) // an account another SDK created
+const existing = await SmartAccount.fromAddress({ client, address, owner }) // a Kernel 3.3 account another SDK created
 ```
 
-`KernelAccount.fromEip7702` and `NexusAccount.fromEip7702` use the owner's own address. As with any viem EIP-7702
-account, the first user operation carries the owner's signed authorization:
+`KernelAccount.fromEip7702` uses the owner's own address. As with any viem EIP-7702 account, the first user operation
+carries the owner's signed authorization, and installs Smart Sessions:
 
 ```ts
 import { signAuthorization } from "viem/actions"
@@ -57,7 +59,7 @@ await bundler.sendUserOperation({ calls, authorization })
 
 ### Passkey owners
 
-A passkey (viem's `WebAuthnAccount`) can own a Kernel, Nexus or Safe7579 account. It verifies through Namera's
+A passkey (viem's `WebAuthnAccount`) can own a Kernel account. It verifies through Namera's
 `WebAuthnValidator`, with the P-256 precompile where the chain has one, and its ERC-1271 signatures are bound to the
 account and chain:
 
@@ -68,7 +70,7 @@ const owner = toWebAuthnAccount({ credential })
 const account = await KernelAccount.from({ client, owner })
 
 // Up to 16 passkeys, two of which sign each operation.
-const shared = await NexusAccount.from({ client, owner: { passkeys: [laptop, phone, key], threshold: 2 } })
+const shared = await KernelAccount.from({ client, owner: { passkeys: [laptop, phone, key], threshold: 2 } })
 ```
 
 One prompt can sign user operations on several chains: prepare each with `SmartAccount.getMultichainStubSignature`
@@ -90,11 +92,8 @@ await SmartAccount.replaceOwnerSync(bundler, { owner: oldKey, with: newKey })
 await SmartAccount.addOwnerValidatorSync(bundler, { owner: passkey }) // a passkey on a key-owned account
 ```
 
-Kernel and Nexus hold one key, which `replaceOwner` rotates; a Safe7579 account's keys change on OwnableValidator and on
-the Safe itself together. Changes that would leave fewer owners than the threshold are refused before sending.
-
-Nexus and Safe7579 accounts deploy through unstaked factories, so bundlers that enforce ERC-7562 refuse to deploy
-them in their first user operation; hosted bundlers accept it, and the error's hint says so.
+Kernel's ECDSA validator holds one key, which `replaceOwner` rotates; an EIP-7702 account's owner is its own key.
+Changes that would leave fewer passkeys than the threshold are refused before sending.
 
 ## Keys
 
@@ -200,7 +199,7 @@ const grant = await Grant.create({ account, session }) // the owner signs throug
 const token = Grant.serialize(grant, { format: "token" }) // "nmr1_…", for a link or a QR code
 await Grant.verify(client, Grant.parse(token)) // digests and the owner's signature
 
-// The same account on two chains: one grant, signed once where the account allows it
+// The same account on two chains: one grant, signed once per chain
 const multichain = await Grant.create({ account: [accountOnBase, accountOnOptimism], session })
 
 // For an external signer: prepare, sign the typed data, assemble
@@ -211,11 +210,8 @@ const signed = Grant.from({ ...prepared, signature: await account.signTypedData(
 const { grant: installed } = await Grant.installSync(ownerBundler, { session })
 ```
 
-| Account               | Signatures for a multichain grant                           |
-| --------------------- | ----------------------------------------------------------- |
-| Safe7579, key owners  | one: OwnableValidator checks the raw digest                 |
-| Kernel, Nexus         | one per chain: their ERC-1271 domain binds the chain        |
-| Any account, passkeys | one per chain: WebAuthnValidator's ERC-1271 binds the chain |
+A multichain grant takes one owner signature per chain: Kernel's ERC-1271 domain binds the chain, and so does
+WebAuthnValidator's for passkey owners.
 
 A grant is plain data and never holds a secret: the session (with the agent's public keys), the account's type and
 deployment, and per chain the contracts, the enable nonce, the session digest and the owner's signature. JSON is
@@ -240,7 +236,7 @@ await bundler.waitForUserOperationReceipt({ hash })
 
 const signature = await agent.signTypedData(permit) // an ERC-7739 session signature, where a signing policy allows it
 
-// Lanes send in parallel, each with its own nonce (Kernel 2^16 lanes, Nexus 2^24, Safe7579 2^32)
+// Lanes send in parallel, each with its own nonce (2^16 lanes)
 const lanes = await Promise.all(
   [0, 1, 2, 3].map((lane) => Grant.toAccount(client, { grant, signer: sessionKey, lane }))
 )
@@ -263,9 +259,8 @@ validation. Custom and execution policies are left to the chain.
   account accepts one when the typed data's verifying contract asks it, as a token's `permit` does. viem's
   `verifyTypedData` asks from its own validator contract, which a signing policy doesn't name, so it returns `false`.
   `signMessage` isn't supported: Smart Sessions verifies typed data only.
-- **Deploying in the first operation** works where the account's factory is staked (Kernel, through ZeroDev's
-  FactoryStaker). Nexus's and Safe7579's factories are unstaked, so a bundler that enforces ERC-7562 refuses it there:
-  deploy those accounts first.
+- **Deploying in the first operation** works on bundlers that enforce ERC-7562: Kernel deploys through ZeroDev's
+  staked FactoryStaker.
 - **Lanes**: send the first operation, which enables the session, on one lane before using others.
 
 ## After a grant

@@ -40,6 +40,10 @@ const abiV1 = [{
   "anonymous": false
 }, {
   "type": "error",
+  "name": "InvalidCap",
+  "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+}, {
+  "type": "error",
   "name": "PolicyNotInitialized",
   "inputs": [{ "name": "id", "type": "bytes32", "internalType": "bytes32" }, {
     "name": "multiplexer",
@@ -64,26 +68,11 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.approval-policy.v1",
-  "address": "0xcA7Df46A121a612747C2114D4A9A1163a7317c0c",
+  "address": "0x010f61564Ebf3622d7790793853e39a3BE60816b",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0x2db51a453faf429ee58c1081555990b0dec71ca173a8a25f8e167959ede95a14",
-  "initcodeHash": "0xc9364b145c5b211903da35615b9249a294591d187d7a2eab853f8bf30ed05f27",
+  "initcodeHash": "0x341b1667173fccf82edd7fcb61eb52b3265f00bce8294aec44dec6876d511432",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {
-    84532: {
-      "runtimeCodeHash": "0xad81e07618d6ebabcc54ad2606bc5a34203d857f864552377250a08275bd2328",
-      "transactionHash": "0xe118a99d14b74eaa35e19be4950908328c0e3a696557f23aab55dce698317b24",
-      "blockNumber": BigInt("63034691"),
-      "blockHash": "0x8ff4164a3c0da272e326ab5cac4f06b6cb1c3660cc6a315fce3057ffe86f379d",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    }
-  }
+  "deployments": {}
 }

@@ -5,7 +5,7 @@ import { encodeFunctionData, type Hex, parseAbi } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet } from "./accounts/accounts.test-utils.ts"
-import { type AccountType, deployedAccount } from "./session.test-utils.ts"
+import { deployedAccount } from "./session.test-utils.ts"
 
 // The evaluator against the contracts: for generated batches of calls (around each condition's and budget's
 // boundaries), `Grant.check`'s verdict is the chain's: an operation it passes is included, one it refuses is refused
@@ -43,9 +43,7 @@ const candidates = [
 const allowed = Schema.Literals([0, 1, 2, 3, 4, 5, 6])
 const any = Schema.Literals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("the evaluator on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("the evaluator on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   // The session's first operation (ENABLE mode, the slowest for the bundler to simulate) runs before each property.
@@ -64,7 +62,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the evaluator on a %s a
         Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
       ]
     })
-    grant = await Grant.create({ account: await deployedAccount(type), session })
+    grant = await Grant.create({ account: await deployedAccount(), session })
     agent = await Grant.toAccount(client, { grant, signer: sessionKey, check: false })
     const { success } = await devnet.sendUserOperation(agent, [transfer(recipient, 1n)])
     assert.isTrue(success)

@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Policy, Session, SessionKey } from "@namera-ai/sdk"
-import { domainless, nest } from "@namera-ai/sdk/internal/core/agent/erc7739"
+import { type AccountDomain, nest } from "@namera-ai/sdk/internal/core/agent/erc7739"
 import { evaluateOperation, gasCost, type State } from "@namera-ai/sdk/internal/core/evaluate/evaluate"
 import { evaluateSignature } from "@namera-ai/sdk/internal/core/evaluate/signature"
 import { counterKey, counters } from "@namera-ai/sdk/internal/core/evaluate/usage"
@@ -16,6 +16,14 @@ const token: Hex.Hex = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 const recipient: Hex.Hex = "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65"
 const router: Hex.Hex = "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad"
 const NOW = BigInt(1_800_000_000)
+// The account's EIP-712 domain, as Kernel's `eip712Domain()` returns it.
+const accountDomain: AccountDomain = {
+  name: "Kernel",
+  version: "0.3.3",
+  chainId: BigInt(1),
+  verifyingContract: account,
+  salt: `0x${"00".repeat(32)}`
+}
 
 const erc20 = {
   transfer: AbiFunction.from("function transfer(address to, uint256 amount)"),
@@ -272,7 +280,7 @@ describe("signatures", () => {
   const domain = { name: "Token", version: "1", chainId: 1, verifyingContract: token } as const
   const types = { Permit: [{ name: "spender", type: "address" }, { name: "value", type: "uint256" }] } as const
   const permit = (value: bigint, primaryType = "Permit") =>
-    nest({ domain, types, primaryType, message: { spender: router, value } }, domainless(1, account))
+    nest({ domain, types, primaryType, message: { spender: router, value } }, accountDomain)
   const compiled = compiledOf([
     Policy.anyCall({ unsafe: true }),
     Policy.signTypedData({ domain, types, primaryType: "Permit", message: { value: { lte: BigInt(10) } } })
@@ -295,7 +303,7 @@ describe("signatures", () => {
       types,
       primaryType: "Permit",
       message: { spender: router, value: BigInt(1) }
-    }, domainless(1, account))
+    }, accountDomain)
     assert.deepStrictEqual(tagsOf(otherApp), ["SignatureNotAllowed"])
   })
 

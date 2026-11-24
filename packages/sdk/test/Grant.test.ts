@@ -106,6 +106,11 @@ describe("Grant.serialize and Grant.parse", () => {
       "Malformed"
     )
     assert.strictEqual(reasonOf(() => Grant.parse(JSON.stringify({ ...grant, chains: [] })))._tag, "Malformed")
+    // Namera supports Kernel only: a grant for another account type is malformed.
+    assert.strictEqual(
+      reasonOf(() => Grant.parse(JSON.stringify({ ...grant, accountType: { type: "nexus", version: "1.3.3" } })))._tag,
+      "Malformed"
+    )
     assert.strictEqual(reasonOf(() => Grant.parse("not a grant"))._tag, "Malformed")
     assert.strictEqual(reasonOf(() => Grant.parse("nmr1_***"))._tag, "Malformed")
   })

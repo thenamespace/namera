@@ -7,7 +7,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet, newOwner } from "./accounts/accounts.test-utils.ts"
 import { newPasskey } from "./accounts/passkey.test-utils.ts"
-import { type AccountType, deployedAccount } from "./session.test-utils.ts"
+import { deployedAccount } from "./session.test-utils.ts"
 
 // Grants on the devnet (safe-mode alto): the owner signs once and sends nothing, and the agent's first operation
 // (through `Grant.toAccount`) enables the session (Smart Sessions' ENABLE mode) and uses it. The devnet's second chain (31338) covers multichain
@@ -54,13 +54,11 @@ const reasonOf = (promise: Promise<unknown>) =>
     }
   )
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("a grant on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   it("signs the contract's session digest, and verifies", async () => {
-    const account = await deployedAccount(type)
+    const account = await deployedAccount()
     const session = newSession()
     const grant = await Grant.create({ account, session })
 
@@ -75,8 +73,8 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
   })
 
   it("verifies, and refuses an altered session or another owner's signature", async () => {
-    const account = await deployedAccount(type)
-    const other = await deployedAccount(type)
+    const account = await deployedAccount()
+    const other = await deployedAccount()
     const session = newSession()
     const grant = await Grant.create({ account, session })
     const stranger = await Grant.create({ account: other, session })
@@ -95,7 +93,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
   })
 
   it("is enabled by the owner with installSync, without a signature", async () => {
-    const account = await deployedAccount(type)
+    const account = await deployedAccount()
     const session = newSession()
     const { grant, receipt } = await Grant.installSync(devnet.bundlerClient(account, { bundleOnReceipt: true }), {
       session
@@ -110,7 +108,19 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
   })
 
   it("is signed by a passkey owner through WebAuthnValidator", async () => {
-    const account = await deployedAccount(type, { owner: newPasskey() })
+    const account = await deployedAccount({ owner: newPasskey() })
+    const session = newSession()
+    const grant = await Grant.create({ account, session })
+    await Grant.verify(client, grant)
+
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
+    assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
+    assert.isTrue(await isEnabled(devnet, session, account.address))
+  })
+
+  // An EIP-7702 account checks the owner's raw EIP-712 signature against its own address, not through a validator.
+  it("is signed by an EIP-7702 account's own key, and enabled by the agent's first operation", async () => {
+    const account = await deployedAccount({ eip7702: true })
     const session = newSession()
     const grant = await Grant.create({ account, session })
     await Grant.verify(client, grant)
@@ -123,30 +133,27 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
 
 const signatureOf = (grant: Grant.Grant) => ({ signature: grant.chains[0]!.signature })
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("a multichain grant on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("a multichain grant on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
   second.isolate({ beforeEach, afterEach })
 
   const multichain = async (options: { readonly deployFirst: boolean }) => {
     const owner = newOwner()
-    const first = await deployedAccount(type, { owner, deploy: options.deployFirst })
-    const other = await deployedAccount(type, { owner, on: second })
+    const first = await deployedAccount({ owner, deploy: options.deployFirst })
+    const other = await deployedAccount({ owner, on: second })
     assert.strictEqual(other.address, first.address)
     const session = newSession()
     return { address: first.address, session, grant: await Grant.create({ account: [first, other], session }) }
   }
 
-  it("covers both chains, signed once where the account's ERC-1271 allows it, and verifies on each", async () => {
+  it("covers both chains, signed once per chain, and verifies on each", async () => {
     const { grant } = await multichain({ deployFirst: true })
     assert.deepStrictEqual(grant.chains.map((chain) => chain.chain), [
       `eip155:${devnet.chain.id}`,
       `eip155:${second.chain.id}`
     ])
-    // Safe7579's key owners sign the raw digest; Kernel and Nexus bind the chain in their ERC-1271 domain.
-    const shared = grant.chains[0]!.signature === grant.chains[1]!.signature
-    assert.strictEqual(shared, type === "safe7579")
+    // Kernel binds the chain in its ERC-1271 domain.
+    assert.notStrictEqual(grant.chains[0]!.signature, grant.chains[1]!.signature)
     await Grant.verify(client, grant)
     await Grant.verify(second.client, grant)
   })

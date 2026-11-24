@@ -67,7 +67,7 @@ export const getUsage = Effect.fnUntraced(function*(
     })
     for (const log of page) {
       const event = decodeUserOperationEvent(log)
-      const lane = laneOf(grant.accountType.type, smartSession, event.nonce >> BigInt(64))
+      const lane = laneOf(smartSession, event.nonce >> BigInt(64))
       if (lane === undefined) continue
       let input = inputs.get(log.transactionHash)
       if (input === undefined) {

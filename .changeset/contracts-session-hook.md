@@ -4,7 +4,8 @@
 
 `SessionHook`: execution policies for sessions. A session lists its execution policies (contracts implementing
 `IExecutionPolicy`) in `SessionHook`'s user operation policy data, so the owner's signature covers them; the hook runs
-their `preCheck` before the session operation's calls and `postCheck` after, on Kernel, Nexus and Safe7579. A session
+their `preCheck` before the session operation's calls and `postCheck` after, bound to Smart Sessions' validation on
+Kernel. A session
 operation names its session in a tag at the end of its calldata. `ExecutionPolicyBase` (source) is a starting point for
 applications writing policies.
 

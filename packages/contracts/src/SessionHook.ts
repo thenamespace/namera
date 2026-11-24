@@ -61,13 +61,9 @@ const abiV1 = [
   },
   {
     "type": "function",
-    "name": "getInstall",
+    "name": "getSmartSession",
     "inputs": [{ "name": "account", "type": "address", "internalType": "address" }],
-    "outputs": [{ "name": "flavour", "type": "uint8", "internalType": "enum SessionHook.Flavour" }, {
-      "name": "smartSession",
-      "type": "address",
-      "internalType": "address"
-    }],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
     "stateMutability": "view"
   },
   {
@@ -178,11 +174,11 @@ const abiV1 = [
     "type": "event",
     "name": "SessionHookInstalled",
     "inputs": [{ "name": "account", "type": "address", "indexed": true, "internalType": "address" }, {
-      "name": "flavour",
-      "type": "uint8",
+      "name": "smartSession",
+      "type": "address",
       "indexed": false,
-      "internalType": "enum SessionHook.Flavour"
-    }, { "name": "smartSession", "type": "address", "indexed": false, "internalType": "address" }],
+      "internalType": "address"
+    }],
     "anonymous": false
   },
   {
@@ -244,6 +240,11 @@ const abiV1 = [
     "type": "error",
     "name": "TooManyExecutionPolicies",
     "inputs": [{ "name": "count", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAccount",
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }]
   }
 ] as const
 
@@ -263,26 +264,11 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.session-hook.v1",
-  "address": "0xdF523DbB7AcB129f58655B0738211295fe0f827C",
+  "address": "0x3367e433495e2647ceC24f284131d0d73C4a0EE1",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xecc31949170d266f6a92e1bddbb52b24cfe72376b7ad77cf3a90f87480d3af24",
-  "initcodeHash": "0x1892b60e03dd89610143fbeadfbda0d1b35ab8a7cd8c4bc6a59eb868856385e2",
+  "initcodeHash": "0xe76461b36618395bb168efc68edd859b365c516227673aab9ff8f10fd854cd0c",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {
-    84532: {
-      "runtimeCodeHash": "0x13731cda23cd3bf2817f59813008e0f465aae6af4c2ef3846b5c9f889bbd0d2d",
-      "transactionHash": "0x778e2378d67faa5bae29ddf3d95a878c2f0911370f6e798267db3847a45505a9",
-      "blockNumber": BigInt("63034690"),
-      "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    }
-  }
+  "deployments": {}
 }

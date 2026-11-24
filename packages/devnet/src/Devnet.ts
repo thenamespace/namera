@@ -1,6 +1,7 @@
 /**
- * A local devnet for tests: anvil and the alto bundler, one pair per Vitest worker, with EntryPoint 0.7, the supported
- * smart accounts and Namera's contracts at their production addresses, and the controls tests need.
+ * A local devnet for tests: anvil and the alto bundler, one pair per Vitest worker, with EntryPoint 0.7, Kernel 3.3
+ * (factory, implementation, staked FactoryStaker and ECDSA validator) and Namera's contracts at their production
+ * addresses, and the controls tests need.
  *
  * alto runs in safe mode only: it traces every user operation's validation and rejects what breaks ERC-7562, as the
  * shared mempool does, so a test that passes here does not rely on a lenient bundler. EntryPoint stakes match
@@ -186,9 +187,8 @@ export interface Devnet {
   /** Makes alto bundle and submit every pending user operation now. */
   readonly sendBundleNow: () => Promise<void>
   /**
-   * Deploys an account by sending its factory call as a plain transaction, as a relayer would. Use it for accounts
-   * whose factory has no EntryPoint stake (Nexus, Safe7579): ERC-7562 forbids their first user operation from
-   * deploying them, because initialising their validator writes storage outside the account.
+   * Deploys an account by sending its factory call as a plain transaction, as a relayer would, for tests that need
+   * the account deployed before their first user operation.
    */
   readonly deploy: (account: SmartAccount) => Promise<void>
   /**
@@ -271,8 +271,8 @@ export const globalSetup = (): GlobalSetup => {
 }
 
 /**
- * Connects to the current worker's devnet, installing EntryPoint 0.7, the account fixtures and Namera's contracts on
- * first use. `chain: "second"` connects to the worker's second chain (chain id 31338), with the same contracts, for
+ * Connects to the current worker's devnet, installing EntryPoint 0.7, Kernel 3.3 and Namera's contracts on first
+ * use. `chain: "second"` connects to the worker's second chain (chain id 31338), with the same contracts, for
  * multichain tests.
  *
  * **Example** (Isolating each test)

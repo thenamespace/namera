@@ -25,8 +25,8 @@ Native Preview).
 ```text
 contracts/          @namera-ai/contracts-sol: Solidity contracts (Foundry, private)
 packages/contracts/ @namera-ai/contracts: ABIs and deployment addresses of Namera's Smart Sessions contracts
-packages/sdk/       @namera-ai/sdk: session keys, policies and grants for agents on ERC-7579 smart accounts
-packages/devnet/    @namera-ai/devnet (private): the local devnet tests run on (anvil, alto, accounts, contracts)
+packages/sdk/       @namera-ai/sdk: session keys, policies and grants for agents on Kernel 3.3 smart accounts
+packages/devnet/    @namera-ai/devnet (private): the local devnet tests run on (anvil, alto, Kernel, contracts)
 packages/           Publishable packages
 apps/               Runnable applications (private)
 scripts/            Repository tooling: checks, code generation, contract deployments, releases, lint rules

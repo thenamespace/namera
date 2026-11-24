@@ -10,7 +10,7 @@ import * as PolicyViolationError from "../../PolicyViolationError.ts"
 import * as WebAuthn from "../core/account/webauthn.ts"
 import { decodeCalls, type DecodedCall, encodeCalls, statedTime } from "../core/agent/calls.ts"
 import * as Erc7739 from "../core/agent/erc7739.ts"
-import { isLane, lanes, nonceKey } from "../core/agent/nonce.ts"
+import { isLane, LANES, nonceKey } from "../core/agent/nonce.ts"
 import { ecdsaSignature, stubSignature } from "../core/agent/sessionSignature.ts"
 import { evaluateOperation, gasCost } from "../core/evaluate/evaluate.ts"
 import { evaluateSignature } from "../core/evaluate/signature.ts"
@@ -141,12 +141,11 @@ export const toAccount = Effect.fnUntraced(function*(
   const chain = grant.chains.find((entry) => core.chainId(entry.chain) === chainId)
   if (chain === undefined) return yield* GrantError.make(new GrantError.ChainNotCovered({ chain: core.caip2(chainId) }))
 
-  const type = grant.accountType.type
   const lane = options.lane ?? 0
-  if (!isLane(type, lane)) {
+  if (!isLane(lane)) {
     return yield* AccountError.invalidOptions({
       account,
-      detail: `lane must be a whole number from 0 to ${lanes[type] - 1} on ${type}`
+      detail: `lane must be a whole number from 0 to ${LANES - 1}`
     })
   }
   const sessionKey = grant.session.signer
@@ -206,12 +205,8 @@ export const toAccount = Effect.fnUntraced(function*(
     }))
   })
 
-  const accountDomain = Effect.suspend(() =>
-    type === "safe7579"
-      ? Effect.succeed(Erc7739.domainless(chainId, address))
-      : call(client, { to: address, data: Erc7739.encodeEip712Domain }).pipe(
-        Effect.map((result) => result === undefined || result === "0x" ? undefined : Erc7739.decodeEip712Domain(result))
-      )
+  const accountDomain = call(client, { to: address, data: Erc7739.encodeEip712Domain }).pipe(
+    Effect.map((result) => result === undefined || result === "0x" ? undefined : Erc7739.decodeEip712Domain(result))
   )
 
   const signTypedData = Effect.fnUntraced(function*(
@@ -231,7 +226,6 @@ export const toAccount = Effect.fnUntraced(function*(
       yield* refuse(evaluateSignature({ compiled, contracts, nested, verifier, account: address, state }))
     }
     return Erc7739.encodeSignature({
-      type,
       smartSession: contracts.smartSession,
       permissionId: grant.id,
       sessionKeySignature: yield* sign(nested.digest),
@@ -251,14 +245,14 @@ export const toAccount = Effect.fnUntraced(function*(
           : { factory: deployment.factory, factoryData: deployment.factoryData }
       ),
     // Always the lane: viem's per-call nonce keys would leave Smart Sessions.
-    getNonce: () => run(nonce(chainClient, address, nonceKey(type, contracts.smartSession, lane))),
+    getNonce: () => run(nonce(chainClient, address, nonceKey(contracts.smartSession, lane))),
     encodeCalls: (calls: ReadonlyArray<DecodedCall>) =>
       run(
         (statesTime ? latestTimestamp(client) : Effect.succeed(undefined) as Effect.Effect<
           bigint | undefined,
           ChainError.ChainError
         >).pipe(
-          Effect.map((time) => encodeCalls({ type, calls, time, tag: tagged ? grant.id : undefined }))
+          Effect.map((time) => encodeCalls({ calls, time, tag: tagged ? grant.id : undefined }))
         )
       ),
     // viem estimates gas with the stub before it signs, and a bundler refuses a violating operation there, so the

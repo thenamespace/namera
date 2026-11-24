@@ -2,8 +2,8 @@
 "@namera-ai/contracts": minor
 ---
 
-`WebAuthnValidator`: Namera's ERC-7579 validator for passkey owners on Kernel, Nexus and Safe7579, and stateless passkey
-verifier for Smart Sessions session keys (`WebAuthnValidator.v1`).
+`WebAuthnValidator`: Namera's ERC-7579 validator for passkey owners on Kernel, and stateless passkey verifier for Smart
+Sessions session keys (`WebAuthnValidator.v1`).
 
 - Up to 16 passkeys per account with a threshold, managed by the account (`addPasskey`, `removePasskey`,
   `setThreshold`).

@@ -21,10 +21,11 @@ export interface GrantChain {
 }
 
 /**
- * The account a grant is for: its type and version, and the factory call that deploys it while it is undeployed.
+ * The account a grant is for: its type and version (Kernel 3.3), and the factory call that deploys it while it is
+ * undeployed.
  */
 export interface GrantAccountType {
-  readonly type: "kernel" | "nexus" | "safe7579"
+  readonly type: "kernel"
   readonly version: string
   readonly deployment?: { readonly factory: Hex.Hex; readonly factoryData: Hex.Hex } | undefined
 }

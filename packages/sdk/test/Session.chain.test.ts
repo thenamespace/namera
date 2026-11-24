@@ -7,11 +7,10 @@ import { encodeFunctionData, parseAbi } from "viem"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet } from "./accounts/accounts.test-utils.ts"
-import { type AccountType, deployedAccount, enable, refusal, sessionAgent } from "./session.test-utils.ts"
+import { deployedAccount, enable, refusal, sessionAgent } from "./session.test-utils.ts"
 
-// Compiled sessions against the deployed contracts: the permission id Smart Sessions computes, and on Kernel, Nexus
-// and Safe7579 (safe-mode alto) that what a session's policies allow passes validation and what they don't is
-// refused. Tokens and routers are plain addresses: policies run during validation, so calls to them only need to
+// Compiled sessions against the deployed contracts: the permission id Smart Sessions computes, and on Kernel
+// (safe-mode alto) that what a session's policies allow passes validation and what they don't is refused. Tokens and routers are plain addresses: policies run during validation, so calls to them only need to
 // execute.
 
 const sessionKey = privateKeyToAccount(generatePrivateKey())
@@ -75,13 +74,11 @@ describe("Session.getPermissionId", () => {
   })
 })
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("a compiled session on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("a compiled session on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   const setUp = async (session: Session.Session, options?: { readonly statesTime?: boolean }) => {
-    const account = await deployedAccount(type)
+    const account = await deployedAccount()
     await enable(account, session)
     assert.isTrue(
       await client.readContract({
@@ -90,7 +87,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a compiled session on a
         args: [Session.getPermissionId(session), account.address]
       })
     )
-    const agent = await sessionAgent({ type, address: account.address, session, sessionKey, ...options })
+    const agent = await sessionAgent({ address: account.address, session, sessionKey, ...options })
     return { account, agent }
   }
 

@@ -34,7 +34,7 @@ describe("AccountError", () => {
   })
 
   it("is a Namera error, recognised across package copies", () => {
-    const error = AccountError.chainMismatch({ account: { type: "nexus" }, expected: 8453, actual: 1 })
+    const error = AccountError.chainMismatch({ account: { type: "kernel" }, expected: 8453, actual: 1 })
 
     assert.isTrue(AccountError.isAccountError(error))
     assert.isTrue(NameraError.isNameraError(error))

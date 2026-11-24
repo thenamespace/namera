@@ -4,16 +4,11 @@ import * as Effect from "effect/Effect"
 import * as ChainError from "../../ChainError.ts"
 import {
   type Call,
-  decodeIsInitialized,
   decodeIsModuleInstalled,
-  encodeInstallModule,
-  encodeIsInitialized,
   encodeIsModuleInstalled,
   MODULE_TYPE_VALIDATOR
 } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
-import * as Nexus from "../../internal/core/account/nexus.ts"
-import * as Safe7579 from "../../internal/core/account/safe7579.ts"
 import * as WebAuthn from "../../internal/core/account/webauthn.ts"
 import { call, type Hex, type Owner, type ReadClient } from "../../internal/viem/client.ts"
 import {
@@ -77,8 +72,8 @@ const isInstalled = (client: ReadClient, account: Hex, validator: Hex) =>
   )
 
 /**
- * Reads an account's owner validators and their owners: its key owners (one key on Kernel's and Nexus's validators,
- * several with a threshold on Safe7579's) and its passkeys. An undeployed account has none on chain yet.
+ * Reads an account's owner validators and their owners: its key owner (Kernel's ECDSA validator holds one key) and its
+ * passkeys. An undeployed account has none on chain yet.
  *
  * @internal
  */
@@ -96,8 +91,6 @@ export const getOwners = Effect.fnUntraced(function*(
         implementation: detected.implementation
       })
     case "kernel":
-    case "nexus":
-    case "safe7579":
       break
   }
 
@@ -105,7 +98,7 @@ export const getOwners = Effect.fnUntraced(function*(
   if (detected.eip7702) {
     // The account's own key always signs for an EIP-7702 account.
     sets.push({ type: "key", validator: address, owners: [address], threshold: 1 })
-  } else if (detected.type === "kernel") {
+  } else {
     const { ecdsaValidator } = External.kernel[detected.version as keyof typeof External.kernel]
     const owner = (yield* isInstalled(client, address, ecdsaValidator))
       ? yield* read(client, ecdsaValidator, Kernel.encodeEcdsaOwner(address))
@@ -113,30 +106,6 @@ export const getOwners = Effect.fnUntraced(function*(
     const decoded = owner === undefined ? zeroAddress : Kernel.decodeEcdsaOwner(owner)
     if (!same(decoded, zeroAddress)) {
       sets.push({ type: "key", validator: ecdsaValidator, owners: [decoded], threshold: 1 })
-    }
-  } else if (detected.type === "nexus") {
-    const { k1Validator } = External.nexus[detected.version as keyof typeof External.nexus]
-    // K1's `getOwner` falls back to the account itself when it has no owner, so ask whether it has one first.
-    const initialized = yield* read(client, k1Validator, encodeIsInitialized(address))
-    if (initialized !== undefined && decodeIsInitialized(initialized)) {
-      const owner = yield* read(client, k1Validator, Nexus.encodeOwner(address))
-      if (owner !== undefined) {
-        sets.push({ type: "key", validator: k1Validator, owners: [Nexus.decodeOwner(owner)], threshold: 1 })
-      }
-    }
-  } else {
-    const { ownableValidator } = External.safe7579[detected.version as `${keyof typeof External.safe7579}`]
-    if (yield* isInstalled(client, address, ownableValidator)) {
-      const owners = yield* read(client, ownableValidator, Safe7579.ownable.encodeOwners(address))
-      const threshold = yield* read(client, ownableValidator, Safe7579.ownable.encodeThreshold(address))
-      if (owners !== undefined && threshold !== undefined) {
-        sets.push({
-          type: "key",
-          validator: ownableValidator,
-          owners: Safe7579.ownable.decodeOwners(owners),
-          threshold: Safe7579.ownable.decodeThreshold(threshold)
-        })
-      }
     }
   }
 
@@ -177,16 +146,6 @@ const target = Effect.fnUntraced(function*(
 
 const self = (target: Target, data: Hex): Call => ({ to: target.account.address, data })
 
-// A key-owned Safe7579's own owners mirror OwnableValidator's, and they can execute through the Safe directly, so key
-// changes update both. A passkey Safe's own owner is a placeholder no key controls, and stays.
-const safeOwners = Effect.fnUntraced(function*(target: Target) {
-  const result = yield* read(target.account.client as ReadClient, target.account.address, Safe7579.safe.encodeOwners)
-  const owners = result === undefined ? [] : Safe7579.safe.decodeOwners(result)
-  const keys = target.keys?.owners ?? []
-  const mirrors = owners.length === keys.length && owners.every((owner) => keys.some((key) => same(key, owner)))
-  return mirrors ? owners : undefined
-})
-
 const noKeys = (target: Target, operation: string) =>
   AccountError.operationNotSupported({
     account: target.ref,
@@ -205,7 +164,7 @@ const singleKey = (target: Target, operation: string) =>
   AccountError.operationNotSupported({
     account: target.ref,
     operation,
-    detail: `its ${target.account.namera.type === "kernel" ? "Kernel" : "Nexus"} key validator holds one key`
+    detail: "its Kernel key validator holds one key"
   })
 
 /**
@@ -233,15 +192,7 @@ export const addOwnerCalls = Effect.fnUntraced(function*(
   }
 
   if (t.keys === undefined) return yield* noKeys(t, operation)
-  if (account.namera.type !== "safe7579") return yield* singleKey(t, operation)
-  if (t.keys.owners.some((key) => same(key, kind.address))) {
-    return yield* AccountError.ownerExists({ account: t.ref, owner: kind.address })
-  }
-  const mirrored = yield* safeOwners(t)
-  return [
-    { to: t.keys.validator, data: Safe7579.ownable.addOwner(kind.address) },
-    ...(mirrored === undefined ? [] : [self(t, Safe7579.safe.addOwner(kind.address, t.keys.threshold))])
-  ]
+  return yield* singleKey(t, operation)
 })
 
 /**
@@ -270,21 +221,10 @@ export const removeOwnerCalls = Effect.fnUntraced(function*(
   }
 
   if (t.keys === undefined) return yield* noKeys(t, operation)
-  const { owners, threshold, validator } = t.keys
-  const previous = Safe7579.previousOwner(owners, kind.address)
-  if (previous === undefined) return yield* AccountError.ownerNotFound({ account: t.ref, owner: kind.address })
-  if (account.namera.type !== "safe7579") return yield* singleKey(t, operation)
-  if (owners.length - 1 < threshold) {
-    return yield* AccountError.thresholdUnreachable({ account: t.ref, threshold, owners: owners.length - 1 })
+  if (!t.keys.owners.some((key) => same(key, kind.address))) {
+    return yield* AccountError.ownerNotFound({ account: t.ref, owner: kind.address })
   }
-  const mirrored = yield* safeOwners(t)
-  const previousOnSafe = mirrored === undefined ? undefined : Safe7579.previousOwner(mirrored, kind.address)
-  return [
-    { to: validator, data: Safe7579.ownable.removeOwner(previous, kind.address) },
-    ...(previousOnSafe === undefined
-      ? []
-      : [self(t, Safe7579.safe.removeOwner(previousOnSafe, kind.address, threshold))])
-  ]
+  return yield* singleKey(t, operation)
 })
 
 /**
@@ -317,21 +257,12 @@ export const setThresholdCalls = Effect.fnUntraced(function*(
   }
 
   if (t.keys === undefined) return yield* noKeys(t, operation)
-  if (account.namera.type !== "safe7579") return yield* singleKey(t, operation)
-  const count = t.keys.owners.length
-  if (!Number.isInteger(threshold) || threshold < 1 || threshold > count) {
-    return yield* AccountError.thresholdUnreachable({ account: t.ref, threshold, owners: count })
-  }
-  const mirrored = yield* safeOwners(t)
-  return [
-    { to: t.keys.validator, data: Safe7579.ownable.setThreshold(threshold) },
-    ...(mirrored === undefined ? [] : [self(t, Safe7579.safe.changeThreshold(threshold))])
-  ]
+  return yield* singleKey(t, operation)
 })
 
 /**
- * The calls that replace one owner with another of the same kind: the only way to change a single-key validator's
- * key (Kernel, Nexus).
+ * The calls that replace one owner with another of the same kind: the only way to change the key of Kernel's ECDSA
+ * validator, which holds one key.
  *
  * @internal
  */
@@ -373,8 +304,9 @@ export const replaceOwnerCalls = Effect.fnUntraced(function*(
   }
   if (t.keys === undefined) return yield* noKeys(t, operation)
   const { owners, validator } = t.keys
-  const previous = Safe7579.previousOwner(owners, old.address)
-  if (previous === undefined) return yield* AccountError.ownerNotFound({ account: t.ref, owner: old.address })
+  if (!owners.some((key) => same(key, old.address))) {
+    return yield* AccountError.ownerNotFound({ account: t.ref, owner: old.address })
+  }
   if (owners.some((key) => same(key, next.address))) {
     return yield* AccountError.ownerExists({ account: t.ref, owner: next.address })
   }
@@ -386,25 +318,7 @@ export const replaceOwnerCalls = Effect.fnUntraced(function*(
     })
   }
 
-  switch (account.namera.type) {
-    case "kernel":
-      return Kernel.replaceEcdsaOwnerData(next.address).map((data) => ({ to: validator, data }))
-    case "nexus":
-      return [{ to: validator, data: Nexus.transferOwnershipData(next.address) }]
-    case "safe7579": {
-      const mirrored = yield* safeOwners(t)
-      const previousOnSafe = mirrored === undefined ? undefined : Safe7579.previousOwner(mirrored, old.address)
-      // OwnableValidator adds at the head of its list, so after the add the old owner's previous entry is recomputed.
-      const afterAdd = Safe7579.previousOwner([next.address, ...owners], old.address)!
-      return [
-        { to: validator, data: Safe7579.ownable.addOwner(next.address) },
-        { to: validator, data: Safe7579.ownable.removeOwner(afterAdd, old.address) },
-        ...(previousOnSafe === undefined
-          ? []
-          : [self(t, Safe7579.safe.swapOwner(previousOnSafe, old.address, next.address))])
-      ]
-    }
-  }
+  return Kernel.replaceEcdsaOwnerData(next.address).map((data) => ({ to: validator, data }))
 })
 
 /**
@@ -429,14 +343,7 @@ export const addOwnerValidatorCalls = Effect.fnUntraced(function*(
       })
     }
     const data = Passkeys.installData(yield* Passkeys.fromOwner(owner, t.ref))
-    return [
-      self(
-        t,
-        account.namera.type === "kernel"
-          ? Kernel.installValidatorData(Passkeys.validator, data)
-          : encodeInstallModule(MODULE_TYPE_VALIDATOR, Passkeys.validator, data)
-      )
-    ]
+    return [self(t, Kernel.installValidatorData(Passkeys.validator, data))]
   }
 
   const key = kindOf(owner as Hex | Owner) as Extract<Kind, { readonly type: "key" }>
@@ -447,25 +354,8 @@ export const addOwnerValidatorCalls = Effect.fnUntraced(function*(
       detail: "it already has a key owner; use `addOwner` or `replaceOwner`"
     })
   }
-  switch (account.namera.type) {
-    case "kernel": {
-      const { ecdsaValidator } = External.kernel[account.namera.version as keyof typeof External.kernel]
-      return [self(t, Kernel.installValidatorData(ecdsaValidator, key.address))]
-    }
-    case "nexus": {
-      const { k1Validator } = External.nexus[account.namera.version as keyof typeof External.nexus]
-      return [{ to: k1Validator, data: Nexus.transferOwnershipData(key.address) }]
-    }
-    case "safe7579": {
-      const { ownableValidator } = External.safe7579[account.namera.version as `${keyof typeof External.safe7579}`]
-      return [
-        self(
-          t,
-          encodeInstallModule(MODULE_TYPE_VALIDATOR, ownableValidator, Safe7579.ownable.installData([key.address], 1))
-        )
-      ]
-    }
-  }
+  const { ecdsaValidator } = External.kernel[account.namera.version as keyof typeof External.kernel]
+  return [self(t, Kernel.installValidatorData(ecdsaValidator, key.address))]
 })
 
 const bundlerAccount = (client: BundlerClient): Effect.Effect<NameraSmartAccount, AccountError.AccountError> =>

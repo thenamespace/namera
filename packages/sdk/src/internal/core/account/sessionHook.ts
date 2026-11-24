@@ -13,19 +13,12 @@ export interface Sessions {
 }
 
 /**
- * How an account calls `SessionHook`, as its install data names it.
+ * `SessionHook`'s install data: the Smart Sessions module whose sessions it serves.
  *
  * @internal
  */
-export const flavours = { kernel: 1, nexus: 2, safe7579: 3 } as const
-
-/**
- * `SessionHook`'s install data: the account's flavour and the Smart Sessions module whose sessions it serves.
- *
- * @internal
- */
-export const installData = (flavour: keyof typeof flavours, smartSession: Hex.Hex): Hex.Hex =>
-  AbiParameters.encode(AbiParameters.from(["uint8", "address"]), [flavours[flavour], smartSession])
+export const installData = (smartSession: Hex.Hex): Hex.Hex =>
+  AbiParameters.encode(AbiParameters.from(["address"]), [smartSession])
 
 const validationConfig = AbiFunction.from(
   "function validationConfig(bytes21 validationId) view returns (uint32, address)"
@@ -41,15 +34,3 @@ export const encodeValidationConfig = (validator: Hex.Hex): Hex.Hex =>
 
 /** The hook bound to a Kernel validator, from `validationConfig`. @internal */
 export const decodeValidationHook = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(validationConfig, result)[1]
-
-const getActiveHook = AbiFunction.from("function getActiveHook() view returns (address)")
-
-/**
- * Nexus' and Safe7579's `getActiveHook` view: the account's one global hook, or the zero address.
- *
- * @internal
- */
-export const encodeGetActiveHook: Hex.Hex = AbiFunction.encodeData(getActiveHook)
-
-/** The hook `getActiveHook` returned. @internal */
-export const decodeActiveHook = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(getActiveHook, result)

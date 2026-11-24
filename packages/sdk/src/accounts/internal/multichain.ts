@@ -17,8 +17,7 @@ export interface Entry {
 }
 
 const accountOf = (account: SmartAccount): AccountError.Options["account"] => ({
-  type: (account as { readonly namera?: { readonly type: "kernel" | "nexus" | "safe7579" } }).namera?.type ??
-    "unknown",
+  type: (account as { readonly namera?: { readonly type: "kernel" } }).namera?.type ?? "unknown",
   address: account.address
 })
 

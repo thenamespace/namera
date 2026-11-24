@@ -198,8 +198,7 @@ const signTypedData = (account: SmartAccount, typedData: Prepared["typedData"]) 
   })
 
 /**
- * Signs a prepared grant with its accounts: once when the first chain's signature also verifies on the others
- * (accounts whose ERC-1271 doesn't bind the chain, such as Safe7579 with key owners), else once per chain.
+ * Signs a prepared grant with its accounts, once per chain: Kernel binds the chain in its ERC-1271 domain.
  *
  * @internal
  */
@@ -212,17 +211,10 @@ export const create = Effect.fnUntraced(function*(options: {
 > {
   const accounts = yield* accountsOf(options.account)
   const prepared = yield* prepare(options)
-  const hash = multichainDigest(core.entries({ ...prepared, chains: prepared.chains.map(withoutSignature) }))
 
   const signatures: Record<number, Hex.Hex> = {}
-  const first = yield* signTypedData(accounts[0]!, prepared.typedData)
   for (const account of accounts) {
-    const signature = account === accounts[0]
-      ? first
-      : (yield* verifyHash(account.client, { address: account.address, hash, signature: first }))
-      ? first
-      : yield* signTypedData(account, prepared.typedData)
-    signatures[account.client.chain!.id] = signature
+    signatures[account.client.chain!.id] = yield* signTypedData(account, prepared.typedData)
   }
   return yield* Effect.fromResult(from({ ...prepared, signatures }))
 })

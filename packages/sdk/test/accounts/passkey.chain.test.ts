@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { WebAuthnValidator } from "@namera-ai/contracts"
-import { AccountError, KernelAccount, NexusAccount, Safe7579Account, SmartAccount } from "@namera-ai/sdk"
+import { AccountError, KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import * as WebAuthn from "@namera-ai/sdk/internal/core/account/webauthn"
 import { keccak256, toHex, zeroAddress } from "viem"
 import type { WebAuthnAccount } from "viem/account-abstraction"
@@ -28,23 +28,9 @@ const reasonOf = (error: unknown) => {
 
 type Owner = WebAuthnAccount | SmartAccount.Passkeys
 
-// Nexus and Safe7579 deploy through unstaked factories, so the devnet deploys them first (see Devnet.deploy).
-const builders = {
-  kernel: { build: (owner: Owner) => KernelAccount.from({ client, owner }), predeploy: false },
-  nexus: { build: (owner: Owner) => NexusAccount.from({ client, owner }), predeploy: true },
-  safe7579: {
-    build: (owner: Owner) =>
-      "passkeys" in owner
-        ? Safe7579Account.from({ client, owners: owner.passkeys, threshold: owner.threshold })
-        : Safe7579Account.from({ client, owners: [owner] }),
-    predeploy: true
-  }
-} as const
-
-const ready = async (type: keyof typeof builders, owner: Owner) => {
-  const account = await builders[type].build(owner)
+const ready = async (owner: Owner, index?: bigint) => {
+  const account = await KernelAccount.from({ client, owner, index })
   await devnet.fund(account.address)
-  if (builders[type].predeploy) await devnet.deploy(account)
   return account
 }
 
@@ -90,11 +76,11 @@ describe("WebAuthnValidator's encodings", { concurrent: false }, () => {
   })
 })
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("a passkey %s account", { concurrent: false }, (type) => {
+describe("a passkey Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   it("runs user operations verified with the P-256 precompile, with Smart Sessions installed", async () => {
-    const account = await ready(type, newPasskey())
+    const account = await ready(newPasskey())
 
     // The stub's backend byte asks for the precompile, which the devnet (Osaka) has.
     assert.strictEqual((await account.getStubSignature()).slice(4, 6), "00")
@@ -104,11 +90,9 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a passkey %s account", 
   })
 
   it("signs ERC-1271 messages and typed data that viem verifies, before and after deployment", async () => {
-    const account = await builders[type].build(newPasskey())
-    await devnet.fund(account.address)
+    const account = await ready(newPasskey())
 
     await verifies(account)
-    if (builders[type].predeploy) await devnet.deploy(account)
     await devnet.sendUserOperation(account, [{ to: zeroAddress }])
     await verifies(account)
   })
@@ -119,7 +103,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a passkey %s account", 
       prompts += 1
     }
     const passkeys = [newPasskey({ onPrompt }), newPasskey({ onPrompt }), newPasskey({ onPrompt })]
-    const account = await ready(type, { passkeys, threshold: 2 })
+    const account = await ready({ passkeys, threshold: 2 })
     prompts = 0
 
     assert.isTrue((await devnet.sendUserOperation(account, [{ to: zeroAddress, value: 1n }])).success)
@@ -141,10 +125,10 @@ describe("passkey owners", { concurrent: false }, () => {
 
   it("bind ERC-1271 signatures to the account: another account of the same passkey rejects them", async () => {
     const passkey = newPasskey()
-    const first = await ready("nexus", passkey)
-    const second = await NexusAccount.from({ client, owner: passkey, index: 1n })
-    await devnet.fund(second.address)
-    await devnet.deploy(second)
+    const first = await ready(passkey)
+    const second = await ready(passkey, 1n)
+    await devnet.sendUserOperation(first, [{ to: zeroAddress }])
+    await devnet.sendUserOperation(second, [{ to: zeroAddress }])
 
     const signature = await first.signMessage({ message: "hello" })
     assert.isTrue(await client.verifyMessage({ address: first.address, message: "hello", signature }))
@@ -158,7 +142,7 @@ describe("passkey owners", { concurrent: false }, () => {
         prompts += 1
       }
     })
-    const accounts = await Promise.all((["kernel", "nexus", "safe7579"] as const).map((type) => ready(type, passkey)))
+    const accounts = await Promise.all([0n, 1n, 2n].map((index) => ready(passkey, index)))
 
     const prepared = await Promise.all(accounts.map(async (account) => {
       const bundler = devnet.bundlerClient(account, { bundleOnReceipt: true })
@@ -214,11 +198,10 @@ describe("passkey owners", { concurrent: false }, () => {
       rejection(KernelAccount.fromEip7702({ client, owner: passkey as never })),
       rejection(SmartAccount.fromAddress({ client, address: delegated.address, owner: passkey })),
       rejection(KernelAccount.from({ client, owner: { passkeys: [] } })),
-      rejection(NexusAccount.from({ client, owner: { passkeys: [passkey, passkey] } })),
-      rejection(NexusAccount.from({ client, owner: { passkeys: [passkey], threshold: 2 } })),
-      rejection(KernelAccount.from({ client, owner: { passkeys: Array.from({ length: 17 }, () => newPasskey()) } })),
-      rejection(Safe7579Account.from({ client, owners: [passkey, owner] as never })),
-      rejection(Safe7579Account.from({ client, owners: [passkey], threshold: 0 }))
+      rejection(KernelAccount.from({ client, owner: { passkeys: [passkey, passkey] } })),
+      rejection(KernelAccount.from({ client, owner: { passkeys: [passkey], threshold: 2 } })),
+      rejection(KernelAccount.from({ client, owner: { passkeys: [passkey], threshold: 0 } })),
+      rejection(KernelAccount.from({ client, owner: { passkeys: Array.from({ length: 17 }, () => newPasskey()) } }))
     ]
     for (const error of await Promise.all(invalid)) {
       assert.strictEqual(reasonOf(error), "InvalidOptions")

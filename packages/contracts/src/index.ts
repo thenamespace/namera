@@ -116,8 +116,8 @@ export * as ApprovalPolicy from "./ApprovalPolicy.ts"
 export * as SignaturePolicy from "./SignaturePolicy.ts"
 
 /**
- * The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and the supported
- * smart accounts' factories, implementations and validators.
+ * The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and Kernel 3.3's
+ * factory, factory staker, implementation and ECDSA validator.
  *
  * @stability experimental
  * @since 2.0.0

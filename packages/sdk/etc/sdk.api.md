@@ -249,8 +249,7 @@ export declare const isGrant: (u: unknown) => u is Grant;
  * **Details**
  *
  * Pass one account, or one per chain the grant should cover (the same account on each chain's client). The owner
- * signs once when that signature verifies on every chain (Safe7579 with key owners), and once per chain otherwise
- * (Kernel and Nexus bind the chain in their ERC-1271 domain).
+ * signs once per chain: Kernel binds the chain in its ERC-1271 domain.
  *
  * **Gotchas**
  *
@@ -443,7 +442,7 @@ export declare namespace verify {
  * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
  * signs. The check is advisory: the contracts still decide.
  *
- * Each `lane` (Kernel 2^16, Nexus 2^24, Safe7579 2^32) is its own nonce sequence, so lanes send in parallel. Send the
+ * Each `lane` (0 to 2^16 - 1) is its own nonce sequence, so lanes send in parallel. Send the
  * first operation, which enables the session, on one lane before using others.
  *
  * **Gotchas**
@@ -2740,8 +2739,8 @@ declare const OperationNotSupported_base: Schema.Class<OperationNotSupported, Sc
     readonly cause: Schema.optional<Schema.Defect>;
 }>, import("effect/Cause").YieldableError>;
 /**
- * The account can't make this change, such as adding a second key to a single-key Kernel validator, or installing
- * sessions on a Nexus or Safe7579 account that already has a global hook.
+ * The account can't make this change, such as adding a second key to Kernel's single-key validator, or changing the
+ * owners of an account that isn't deployed yet.
  *
  * @stability experimental
  * @category errors
@@ -2779,20 +2778,19 @@ export declare const AccountErrorReason: Schema.Union<[
  */
 export type AccountErrorReason = typeof AccountErrorReason.Type;
 /**
- * Schema for the account an `AccountError` is about: its type (`kernel`, `nexus`, `safe7579`, or `unknown` before
- * detection) and address.
+ * Schema for the account an `AccountError` is about: its type (`kernel`, or `unknown` before detection) and address.
  *
  * @stability experimental
  * @category schemas
  * @since 2.0.0
  */
 export declare const AccountRef: Schema.Struct<{
-    readonly type: Schema.Literals<readonly ["kernel", "nexus", "safe7579", "unknown"]>;
+    readonly type: Schema.Literals<readonly ["kernel", "unknown"]>;
     readonly address: Schema.optionalKey<typeof Address>;
 }>;
 declare const AccountError_base: Schema.Class<AccountError, Schema.TaggedStruct<"AccountError", {
     readonly account: Schema.Struct<{
-        readonly type: Schema.Literals<readonly ["kernel", "nexus", "safe7579", "unknown"]>;
+        readonly type: Schema.Literals<readonly ["kernel", "unknown"]>;
         readonly address: Schema.optionalKey<typeof Address>;
     }>;
     readonly reason: Schema.Union<[typeof NotSupported, typeof SessionsNotInstalled, typeof SigningFailed, typeof InvalidOptions, typeof ChainMismatch, typeof OwnerNotFound, typeof OwnerExists, typeof ThresholdUnreachable, typeof OperationNotSupported]>;
@@ -2805,11 +2803,11 @@ declare const AccountError_base: Schema.Class<AccountError, Schema.TaggedStruct<
  * ```ts import.meta.vitest
  * import { AccountError } from "@namera-ai/sdk"
  *
- * const error = AccountError.invalidOptions({ account: { type: "safe7579" }, detail: "threshold 2 with 1 owner" })
+ * const error = AccountError.invalidOptions({ account: { type: "kernel" }, detail: "the client has no chain" })
  *
  * error.reason._tag // => "InvalidOptions"
- * error.shortMessage // => "The account options are invalid: threshold 2 with 1 owner"
- * error.metaMessages // => ["Account: safe7579", "Hint: Fix the option the message names."]
+ * error.shortMessage // => "The account options are invalid: the client has no chain"
+ * error.metaMessages // => ["Account: kernel", "Hint: Fix the option the message names."]
  * ```
  *
  * @stability experimental
@@ -3082,246 +3080,6 @@ export declare namespace fromEip7702 {
 }
 ```
 
-## accounts/NexusAccount.d.ts
-
-```ts
-/**
- * Biconomy's Nexus 1.3.3 as a viem smart account, owned by one key on its default (K1) validator or by passkeys on
- * Namera's `WebAuthnValidator`, and as an EIP-7702 delegation of the owner's own address.
- *
- * @stability experimental
- * @since 2.0.0
- */
-import type * as ChainError from "../ChainError.ts";
-import { type RunOptions } from "../internal/promise.ts";
-import type * as AccountError from "./AccountError.ts";
-import * as internal from "./internal/nexus.ts";
-import type * as SmartAccount from "./SmartAccount.ts";
-/**
- * A Nexus account built by Namera.
- *
- * @stability experimental
- * @category models
- * @since 2.0.0
- */
-export type NexusAccount = SmartAccount.SmartAccount<"nexus">;
-/**
- * Builds a Nexus account for an owner, at its counterfactual address unless `address` is given.
- *
- * **Details**
- *
- * The address is computed offline from the owner, `index` and `sessions`; the factory deploys it in the first user
- * operation. With `sessions` (the default) that deployment also installs Smart Sessions as a validator and
- * SessionHook as the account's hook, so an agent's first operation needs no separate owner transaction. An account
- * can have one hook only.
- *
- * **Example** (Sending a user operation from a Nexus account)
- *
- * ```ts
- * import { NexusAccount } from "@namera-ai/sdk"
- * import { createPublicClient, http, zeroAddress } from "viem"
- * import { createBundlerClient } from "viem/account-abstraction"
- * import { privateKeyToAccount } from "viem/accounts"
- * import { base } from "viem/chains"
- *
- * const client = createPublicClient({ chain: base, transport: http() })
- * const owner = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123")
- * const account = await NexusAccount.from({ client, owner })
- *
- * const bundler = createBundlerClient({ account, client, transport: http("https://bundler.example") })
- * await bundler.sendUserOperation({ calls: [{ to: zeroAddress, value: 1n }] })
- * ```
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare function from(options: from.Options): Promise<from.ReturnType>;
-/**
- * Types of `NexusAccount.from`.
- *
- * @stability experimental
- * @since 2.0.0
- */
-export declare namespace from {
-    /**
-     * The client (with a chain), the owner (a local key, a JSON-RPC wallet, a passkey, or `{ passkeys, threshold }`
-     * for up to 16 passkeys of which `threshold` sign), and optionally the `version` (`"1.3.3"`), `index` (the
-     * counterfactual salt, `0n`), an existing `address`, and `sessions` (install Smart Sessions at deploy, `true`).
-     * Passkeys verify through Namera's `WebAuthnValidator`, installed as a validator module.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    interface Options extends internal.FromOptions, RunOptions {
-    }
-    /**
-     * What `NexusAccount.from` resolves to.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ReturnType = NexusAccount;
-    /**
-     * The errors `NexusAccount.from` can fail with.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ErrorType = AccountError.AccountError | ChainError.ChainError;
-}
-/**
- * Builds a Nexus account on the owner's own address through EIP-7702: the first user operation carries the
- * authorization that delegates the address to Nexus.
- *
- * **Details**
- *
- * With `sessions` (the default) the first user operation also installs Smart Sessions.
- *
- * **Gotchas**
- *
- * The owner must be a local key, which signs the authorization. Before the delegation is included, the account
- * cannot answer ERC-1271 checks.
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare function fromEip7702(options: fromEip7702.Options): Promise<fromEip7702.ReturnType>;
-/**
- * Types of `NexusAccount.fromEip7702`.
- *
- * @stability experimental
- * @since 2.0.0
- */
-export declare namespace fromEip7702 {
-    /**
-     * The client (with a chain), the owner's local key, and optionally the `version` and `sessions`.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    interface Options extends internal.FromEip7702Options, RunOptions {
-    }
-    /**
-     * What `NexusAccount.fromEip7702` resolves to.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ReturnType = NexusAccount;
-    /**
-     * The errors `NexusAccount.fromEip7702` can fail with.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ErrorType = AccountError.AccountError | ChainError.ChainError;
-}
-```
-
-## accounts/Safe7579Account.d.ts
-
-```ts
-/**
- * Safe 1.4.1 with Rhinestone's Safe7579 v2 adapter as a viem smart account: one or more key owners on
- * OwnableValidator, or passkeys on Namera's `WebAuthnValidator`, with a signing threshold.
- *
- * @stability experimental
- * @since 2.0.0
- */
-import type * as ChainError from "../ChainError.ts";
-import { type RunOptions } from "../internal/promise.ts";
-import type * as AccountError from "./AccountError.ts";
-import * as internal from "./internal/safe7579.ts";
-import type * as SmartAccount from "./SmartAccount.ts";
-/**
- * A Safe7579 account built by Namera.
- *
- * @stability experimental
- * @category models
- * @since 2.0.0
- */
-export type Safe7579Account = SmartAccount.SmartAccount<"safe7579">;
-/**
- * Builds a Safe7579 account for its owners, at its counterfactual address unless `address` is given.
- *
- * **Details**
- *
- * The Safe proxy factory deploys the account in the first user operation, adding the Safe7579 adapter through its
- * launchpad with no registry attesters. With `sessions` (the default) that deployment also installs Smart Sessions
- * as a validator and SessionHook as the account's hook. User operations and ERC-1271 signatures carry `threshold` owner signatures.
- *
- * **Gotchas**
- *
- * Fails with `AccountError` (`InvalidOptions`) when the owners repeat, mix keys and passkeys, or `threshold` is not
- * between 1 and the number of owners. Safe7579 has no EIP-7702 path. Deployment costs about twice a Kernel's. A
- * passkey Safe's own owner is an address no key controls, so only its validator signs.
- *
- * **Example** (A two-of-two Safe7579 account)
- *
- * ```ts
- * import { Safe7579Account } from "@namera-ai/sdk"
- * import { createPublicClient, http } from "viem"
- * import { privateKeyToAccount } from "viem/accounts"
- * import { base } from "viem/chains"
- *
- * const client = createPublicClient({ chain: base, transport: http() })
- * const owners = [
- *   privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123"),
- *   privateKeyToAccount("0x1123456789012345678901234567890123456789012345678901234567890123")
- * ]
- * const account = await Safe7579Account.from({ client, owners, threshold: 2 })
- * ```
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare function from(options: from.Options): Promise<from.ReturnType>;
-/**
- * Types of `Safe7579Account.from`.
- *
- * @stability experimental
- * @since 2.0.0
- */
-export declare namespace from {
-    /**
-     * The client (with a chain), the `owners` (keys or JSON-RPC wallets, or up to 16 passkeys) and optionally the
-     * `threshold` (all key owners, one passkey), `version` (`"2"`), `index` (the salt nonce, `0n`), an existing
-     * `address`, and `sessions` (install Smart Sessions at deploy, `true`).
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    interface Options extends internal.FromOptions, RunOptions {
-    }
-    /**
-     * What `Safe7579Account.from` resolves to.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ReturnType = Safe7579Account;
-    /**
-     * The errors `Safe7579Account.from` can fail with.
-     *
-     * @stability experimental
-     * @category utility types
-     * @since 2.0.0
-     */
-    type ErrorType = AccountError.AccountError | ChainError.ChainError;
-}
-```
-
 ## accounts/SmartAccount.d.ts
 
 ```ts
@@ -3333,9 +3091,9 @@ export declare namespace from {
  * **Details**
  *
  * Every account Namera returns is viem's `SmartAccount`, so viem's bundler client, paymasters and wagmi use it
- * unchanged. `SmartAccount.from` takes the same options as viem's `toSmartAccount`; `KernelAccount.from`,
- * `NexusAccount.from` and `Safe7579Account.from` are built on it and add a read-only `namera` field with the account's
- * type and version.
+ * unchanged. `SmartAccount.from` takes the same options as viem's `toSmartAccount`; `KernelAccount.from` is built on
+ * it and adds a read-only `namera` field with the account's type and version. Namera supports one account, Kernel 3.3
+ * on EntryPoint 0.7, deployed or through EIP-7702: the operations here refuse any other.
  *
  * **Gotchas**
  *
@@ -3363,7 +3121,7 @@ import * as internal from "./internal/smartAccount.ts";
  * @category models
  * @since 2.0.0
  */
-export type Metadata<Type extends "kernel" | "nexus" | "safe7579" = "kernel" | "nexus" | "safe7579"> = internal.Metadata<Type>;
+export type Metadata<Type extends "kernel" = "kernel"> = internal.Metadata<Type>;
 /**
  * A smart account Namera built: viem's `SmartAccount`, with its `namera` metadata.
  *
@@ -3391,7 +3149,7 @@ export type Implementation = SmartAccountImplementation;
 export type Owner = Owner_;
 /**
  * A passkey owner: viem's WebAuthn account (`toWebAuthnAccount`), which signs with the device's authenticator.
- * Kernel, Nexus and Safe7579 accounts verify it through Namera's `WebAuthnValidator`.
+ * Kernel accounts verify it through Namera's `WebAuthnValidator`.
  *
  * @stability experimental
  * @category models
@@ -3445,8 +3203,8 @@ export type Call = Call_;
  *
  * **When to use**
  *
- * Use to build an account type Namera has no constructor for. For Kernel, Nexus and Safe7579 use their own `from`,
- * which compute the implementation.
+ * Use to build an account type Namera has no constructor for. For Kernel use `KernelAccount.from`, which computes the
+ * implementation.
  *
  * **Details**
  *
@@ -3495,15 +3253,15 @@ export declare namespace from {
     type ErrorType = AccountError.AccountError | ChainError.ChainError;
 }
 /**
- * Connects to an existing account at an address, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ * Connects to an existing Kernel 3.3 account at an address, deployed or through EIP-7702, as `detect` finds it.
  *
  * **When to use**
  *
- * Use with accounts created elsewhere (ZeroDev, Biconomy or Safe tooling) when their implementation is supported.
+ * Use with Kernel 3.3 accounts created elsewhere, such as with ZeroDev's SDK.
  *
  * **Gotchas**
  *
- * Fails with `AccountError` (`NotSupported`) for an unsupported or undeployed account. An EIP-7702 account needs its
+ * Fails with `AccountError` (`NotSupported`) for an undeployed account or any account but Kernel 3.3. An EIP-7702 account needs its
  * own local key as the owner.
  *
  * **Example** (Connecting to an account another SDK created)
@@ -3536,9 +3294,8 @@ export declare function fromAddress(options: fromAddress.Options): Promise<fromA
  */
 export declare namespace fromAddress {
     /**
-     * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several keys). Passkey owners
-     * work for Kernel, Nexus and Safe7579 accounts that are not EIP-7702: one passkey, or `{ passkeys, threshold }`
-     * when more than one must sign.
+     * The client, the account's address, and its owner (or `owners`, for several passkeys). Passkey owners work for
+     * accounts that are not EIP-7702: one passkey, or `{ passkeys, threshold }` when more than one must sign.
      *
      * @stability experimental
      * @category utility types
@@ -3568,13 +3325,12 @@ export declare namespace fromAddress {
     type ErrorType = AccountError.AccountError | ChainError.ChainError;
 }
 /**
- * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ * Reads whether an address holds a Kernel 3.3 account, and whether Smart Sessions is installed.
  *
  * **Details**
  *
- * Recognises Kernel and Nexus by their ERC-1967 implementation (or EIP-7702 delegation), and Safe7579 by its Safe
- * singleton and the adapter's `accountId`. Accounts other SDKs created are recognised when their implementation is
- * supported.
+ * Recognises Kernel 3.3 by its ERC-1967 implementation, or by its EIP-7702 delegation; any other account is
+ * `unsupported`. Accounts other SDKs created are recognised too.
  *
  * **Example** (Detecting an account)
  *
@@ -3641,8 +3397,8 @@ export declare const installSessionsCalls: (account: SmartAccount) => ReadonlyAr
  *
  * **Gotchas**
  *
- * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
- * with `AccountError` (`OperationNotSupported`) before anything is sent.
+ * Fails with `AccountError` (`NotSupported`) when the bundler client's account is not one Namera built. Smart
+ * Sessions and SessionHook refuse to install on any account but Kernel 3.3.
  *
  * **Example** (Installing Smart Sessions on an existing account)
  *
@@ -3712,9 +3468,8 @@ export declare namespace installSessionsSync {
     type ErrorType = AccountError.AccountError | ChainError.ChainError;
 }
 /**
- * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
- * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
- * none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook bound to it to run for its
+ * operations. An undeployed account has none.
  *
  * @stability experimental
  * @category getters
@@ -3918,7 +3673,7 @@ export declare namespace getOwners {
  *
  * **Details**
  *
- * A Safe7579 account's key owners change on OwnableValidator and on the Safe itself, whose own owners can execute directly. Kernel and Nexus hold one key: change it with `replaceOwner`. Fails with `OwnerExists`, or `OperationNotSupported` when the account has no owners of that kind (`addOwnerValidator` adds them).
+ * Adds passkeys; Kernel's key validator holds one key: change it with `replaceOwner`. Fails with `OwnerExists`, or `OperationNotSupported` for a key or when the account has no owners of that kind (`addOwnerValidator` adds them).
  *
  * @stability experimental
  * @category constructors
@@ -3976,7 +3731,7 @@ export declare function addOwnerSync(client: BundlerClient, options: addOwnerCal
  *
  * **Details**
  *
- * Refuses with `ThresholdUnreachable` when fewer owners than the threshold would remain, and with `OwnerNotFound` for an owner the account doesn't have. A Safe7579 account's key is removed from the Safe's own owners too.
+ * Refuses with `ThresholdUnreachable` when fewer owners than the threshold would remain, and with `OwnerNotFound` for an owner the account doesn't have. Kernel's one key can't be removed (`OperationNotSupported`): replace it with `replaceOwner`.
  *
  * @stability experimental
  * @category constructors
@@ -4034,7 +3789,7 @@ export declare function removeOwnerSync(client: BundlerClient, options: removeOw
  *
  * **Details**
  *
- * Works for passkeys on every account and for a Safe7579 account's keys; Kernel's and Nexus's key validators hold one key. Fails with `ThresholdUnreachable` for a threshold outside 1 to the number of owners.
+ * Works for passkeys; Kernel's key validator holds one key (`OperationNotSupported`). Fails with `ThresholdUnreachable` for a threshold outside 1 to the number of owners.
  *
  * @stability experimental
  * @category constructors
@@ -4093,7 +3848,7 @@ export declare function setThresholdSync(client: BundlerClient, options: setThre
  *
  * **Details**
  *
- * This is how a Kernel or Nexus account rotates its key. On Safe7579 it swaps the key on OwnableValidator and the Safe; for passkeys it adds the new one before removing the old.
+ * This is how a Kernel account rotates its key. For passkeys it adds the new one before removing the old.
  *
  * @stability experimental
  * @category constructors
@@ -4152,7 +3907,7 @@ export declare function replaceOwnerSync(client: BundlerClient, options: replace
  *
  * **Details**
  *
- * Either kind can then sign: build the account with `SmartAccount.fromAddress` and the owner that signs. On Kernel the new validator is installed next to the root, allowed to validate `execute`.
+ * Either kind can then sign: build the account with `SmartAccount.fromAddress` and the owner that signs. The new validator is installed next to the root, allowed to validate `execute`.
  *
  * @stability experimental
  * @category constructors
@@ -4211,8 +3966,8 @@ export declare function addOwnerValidatorSync(client: BundlerClient, options: ad
 
 ```ts
 /**
- * Smart accounts that run Namera sessions: Kernel, Nexus and Safe7579 owner accounts as viem `SmartAccount`s, and
- * detection of existing accounts.
+ * The smart account that runs Namera sessions: Kernel 3.3 (EntryPoint 0.7, deployed or through EIP-7702) owner
+ * accounts as viem `SmartAccount`s, and detection of existing accounts.
  *
  * @stability experimental
  * @since 2.0.0
@@ -4227,16 +3982,6 @@ export * as AccountError from "./AccountError.ts";
  * @since 2.0.0
  */
 export * as KernelAccount from "./KernelAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as NexusAccount from "./NexusAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as Safe7579Account from "./Safe7579Account.ts";
 /**
  * @stability experimental
  * @since 2.0.0
@@ -4830,78 +4575,6 @@ export declare const from: (options: internal.FromOptions) => Effect.Effect<Kern
 export declare const fromEip7702: (options: internal.FromEip7702Options) => Effect.Effect<KernelAccount, AccountError.AccountError | ChainError.ChainError>;
 ```
 
-## effect/accounts/NexusAccount.d.ts
-
-```ts
-/**
- * The Effect form of `NexusAccount`.
- *
- * @stability experimental
- * @since 2.0.0
- */
-import type * as Effect from "effect/Effect";
-import type * as AccountError from "../../accounts/AccountError.ts";
-import * as internal from "../../accounts/internal/nexus.ts";
-import type * as NexusAccount_ from "../../accounts/NexusAccount.ts";
-import type * as ChainError from "../../ChainError.ts";
-/**
- * A Nexus account built by Namera.
- *
- * @stability experimental
- * @category models
- * @since 2.0.0
- */
-export type NexusAccount = NexusAccount_.NexusAccount;
-/**
- * Builds a Nexus account for an owner, at its counterfactual address unless `address` is given.
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare const from: (options: internal.FromOptions) => Effect.Effect<NexusAccount, AccountError.AccountError | ChainError.ChainError>;
-/**
- * Builds a Nexus account on the owner's own address through EIP-7702.
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare const fromEip7702: (options: internal.FromEip7702Options) => Effect.Effect<NexusAccount, AccountError.AccountError | ChainError.ChainError>;
-```
-
-## effect/accounts/Safe7579Account.d.ts
-
-```ts
-/**
- * The Effect form of `Safe7579Account`.
- *
- * @stability experimental
- * @since 2.0.0
- */
-import type * as Effect from "effect/Effect";
-import type * as AccountError from "../../accounts/AccountError.ts";
-import * as internal from "../../accounts/internal/safe7579.ts";
-import type * as Safe7579Account_ from "../../accounts/Safe7579Account.ts";
-import type * as ChainError from "../../ChainError.ts";
-/**
- * A Safe7579 account built by Namera.
- *
- * @stability experimental
- * @category models
- * @since 2.0.0
- */
-export type Safe7579Account = Safe7579Account_.Safe7579Account;
-/**
- * Builds a Safe7579 account for its owners, at its counterfactual address unless `address` is given.
- *
- * @stability experimental
- * @category constructors
- * @since 2.0.0
- */
-export declare const from: (options: internal.FromOptions) => Effect.Effect<Safe7579Account, AccountError.AccountError | ChainError.ChainError>;
-```
-
 ## effect/accounts/SmartAccount.d.ts
 
 ```ts
@@ -4944,7 +4617,7 @@ export type Implementation = SmartAccount_.Implementation;
  */
 export declare const from: <const implementation extends Implementation>(implementation: implementation) => Effect.Effect<SmartAccount_.from.ReturnType<implementation>, AccountError.AccountError | ChainError.ChainError>;
 /**
- * Connects to an existing account at an address, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ * Connects to an existing Kernel 3.3 account at an address, deployed or through EIP-7702, as `detect` finds it.
  *
  * @stability experimental
  * @category constructors
@@ -4952,7 +4625,7 @@ export declare const from: <const implementation extends Implementation>(impleme
  */
 export declare const fromAddress: (options: Omit<SmartAccount_.fromAddress.Options, "signal">) => Effect.Effect<SmartAccount, AccountError.AccountError | ChainError.ChainError>;
 /**
- * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ * Reads whether an address holds a Kernel 3.3 account, and whether Smart Sessions is installed.
  *
  * @stability experimental
  * @category getters
@@ -4975,8 +4648,8 @@ export declare const installSessionsCalls: (account: SmartAccount) => ReadonlyAr
  *
  * **Gotchas**
  *
- * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
- * with `AccountError` (`OperationNotSupported`) before anything is sent.
+ * Fails with `AccountError` (`NotSupported`) when the bundler client's account is not one Namera built. Smart
+ * Sessions and SessionHook refuse to install on any account but Kernel 3.3.
  *
  * @stability experimental
  * @category mutations
@@ -4993,9 +4666,8 @@ export declare const installSessions: (client: BundlerClient) => Effect.Effect<H
  */
 export declare const installSessionsSync: (client: BundlerClient) => Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError>;
 /**
- * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
- * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
- * none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook bound to it to run for its
+ * operations. An undeployed account has none.
  *
  * @stability experimental
  * @category getters
@@ -5216,16 +4888,6 @@ export * as KernelAccount from "./KernelAccount.ts";
  * @stability experimental
  * @since 2.0.0
  */
-export * as NexusAccount from "./NexusAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as Safe7579Account from "./Safe7579Account.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
 export * as SmartAccount from "./SmartAccount.ts";
 ```
 
@@ -5317,16 +4979,6 @@ export * as AccountError from "./accounts/AccountError.ts";
  * @since 2.0.0
  */
 export * as KernelAccount from "./accounts/KernelAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as NexusAccount from "./accounts/NexusAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as Safe7579Account from "./accounts/Safe7579Account.ts";
 /**
  * @stability experimental
  * @since 2.0.0
@@ -5744,7 +5396,7 @@ export * as Keystore from "./Keystore.ts";
 
 ```ts
 /**
- * Namera's Promise API: sessions, policies and grants for agent session keys on ERC-7579 smart accounts, the accounts they run on, key storage, and the bundler and paymaster combinations Namera supports.
+ * Namera's Promise API: sessions, policies and grants for agent session keys on Kernel 3.3 smart accounts (ERC-7579), the account they run on, key storage, and the bundler and paymaster combinations Namera supports.
  *
  * @stability experimental
  * @since 2.0.0
@@ -5799,16 +5451,6 @@ export * as AccountError from "./accounts/AccountError.ts";
  * @since 2.0.0
  */
 export * as KernelAccount from "./accounts/KernelAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as NexusAccount from "./accounts/NexusAccount.ts";
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as Safe7579Account from "./accounts/Safe7579Account.ts";
 /**
  * @stability experimental
  * @since 2.0.0

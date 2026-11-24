@@ -266,6 +266,14 @@ declare const abiV1: readonly [{
     readonly anonymous: false;
 }, {
     readonly type: "error";
+    readonly name: "InvalidCap";
+    readonly inputs: readonly [{
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "PolicyNotInitialized";
     readonly inputs: readonly [{
         readonly name: "id";
@@ -568,7 +576,7 @@ export {};
 
 ```ts
 /**
- * The ERC-4337 EntryPoint every supported account and bundler uses.
+ * The ERC-4337 EntryPoint (v0.7) Kernel 3.3 and every bundler use.
  *
  * **Details**
  *
@@ -603,47 +611,6 @@ export declare const kernel: {
         readonly factoryStaker: "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
         readonly implementation: "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28";
         readonly ecdsaValidator: "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57";
-    };
-};
-/**
- * Biconomy's Nexus smart account: its factory, implementation, bootstrap and default (K1)
- * validator.
- *
- * **Details**
- *
- * Keyed by version (`1.3.3`). The addresses are the same on every chain Namera supports.
- *
- * @stability experimental
- * @category addresses
- * @since 2.0.0
- */
-export declare const nexus: {
-    readonly "1.3.3": {
-        readonly factory: "0x0000b1C08f1418dA76B5E99c1Bf5718486cf8c53";
-        readonly implementation: "0x0000B1c01cB3b5770D8806f0D214d50131a08a5B";
-        readonly bootstrap: "0x0000B1c0A80cb7DD166a15e7390b8A4Ced4500C6";
-        readonly k1Validator: "0x0000B1C0790E5a28293276C320d2B95D651dBaD6";
-    };
-};
-/**
- * Safe 1.4.1 with Rhinestone's Safe7579 adapter: the Safe proxy factory and L2 singleton, the
- * adapter and its launchpad, and the OwnableValidator for the owners.
- *
- * **Details**
- *
- * Keyed by version (`2`). The addresses are the same on every chain Namera supports.
- *
- * @stability experimental
- * @category addresses
- * @since 2.0.0
- */
-export declare const safe7579: {
-    readonly 2: {
-        readonly proxyFactory: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
-        readonly singletonL2: "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762";
-        readonly adapter: "0x7579f2AD53b01c3D8779Fe17928e0D48885B0003";
-        readonly launchpad: "0x75798463024Bda64D83c94A64Bc7D7eaB41300eF";
-        readonly ownableValidator: "0x000000000013fdB5234E4E3162a810F54d9f7E98";
     };
 };
 ```
@@ -1192,18 +1159,14 @@ declare const abiV1: readonly [{
     readonly stateMutability: "view";
 }, {
     readonly type: "function";
-    readonly name: "getInstall";
+    readonly name: "getSmartSession";
     readonly inputs: readonly [{
         readonly name: "account";
         readonly type: "address";
         readonly internalType: "address";
     }];
     readonly outputs: readonly [{
-        readonly name: "flavour";
-        readonly type: "uint8";
-        readonly internalType: "enum SessionHook.Flavour";
-    }, {
-        readonly name: "smartSession";
+        readonly name: "";
         readonly type: "address";
         readonly internalType: "address";
     }];
@@ -1401,11 +1364,6 @@ declare const abiV1: readonly [{
         readonly indexed: true;
         readonly internalType: "address";
     }, {
-        readonly name: "flavour";
-        readonly type: "uint8";
-        readonly indexed: false;
-        readonly internalType: "enum SessionHook.Flavour";
-    }, {
         readonly name: "smartSession";
         readonly type: "address";
         readonly indexed: false;
@@ -1513,6 +1471,14 @@ declare const abiV1: readonly [{
         readonly name: "count";
         readonly type: "uint256";
         readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
+    readonly name: "UnsupportedAccount";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
     }];
 }];
 /**
@@ -3201,6 +3167,14 @@ declare const abiV1: readonly [{
     }];
 }, {
     readonly type: "error";
+    readonly name: "UnsupportedAccount";
+    readonly inputs: readonly [{
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "UnsupportedCallType";
     readonly inputs: readonly [{
         readonly name: "callType";
@@ -4227,8 +4201,8 @@ export * as ApprovalPolicy from "./ApprovalPolicy.ts";
  */
 export * as SignaturePolicy from "./SignaturePolicy.ts";
 /**
- * The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and the supported
- * smart accounts' factories, implementations and validators.
+ * The contracts Namera builds on but does not deploy, by version: EntryPoint 0.7 and Kernel 3.3's
+ * factory, factory staker, implementation and ECDSA validator.
  *
  * @stability experimental
  * @since 2.0.0

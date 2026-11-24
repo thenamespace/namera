@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { AllowPolicy, ECDSASessionValidator, SessionHook, SmartSession } from "@namera-ai/contracts"
-import { KernelAccount, NexusAccount, Safe7579Account, SmartAccount } from "@namera-ai/sdk"
+import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAbi, toHex } from "viem"
 import { entryPoint07Abi, entryPoint07Address, getUserOperationHash, toSmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
@@ -10,9 +10,8 @@ import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 // Session operations through SessionHook on the devnet, whose alto runs in safe mode: it traces each operation's
 // validation and rejects what breaks ERC-7562, as the shared mempool does. A session listing SessionHook (with no
 // execution policies of its own) proves the hook's validation (its policy check reading the account) and its
-// initialization (enable writes) are accepted, and that the SDK installs the hook on every account.
-
-type Type = "kernel" | "nexus" | "safe7579"
+// initialization (enable writes) are accepted, and that the SDK installs the hook on Kernel, deployed through its
+// factory or installed by an EIP-7702 account's first operation.
 
 const recipient = privateKeyToAccount(generatePrivateKey()).address
 const SINGLE = pad("0x00", { dir: "right", size: 32 })
@@ -37,35 +36,22 @@ const sessionFor = (sessionKey: Hex) => ({
   validUntil: 0
 } as const)
 
-// The nonce lane that routes an operation to Smart Sessions on each account.
-const sessionNonceKey = (type: Type): bigint => {
-  const smartSession = SmartSession.v1.address
-  switch (type) {
-    case "kernel":
-      return BigInt(concat(["0x0001", smartSession, "0x0000"]))
-    case "nexus":
-      return BigInt(smartSession)
-    case "safe7579":
-      return BigInt(concat([smartSession, "0x00000000"]))
-  }
-}
+// The nonce lane that routes an operation to Smart Sessions on Kernel.
+const sessionNonceKey = BigInt(concat(["0x0001", SmartSession.v1.address, "0x0000"]))
 
-describe.each(["kernel", "nexus", "safe7579"] as const)(
-  "SessionHook on a %s account",
+describe.each([
+  { name: "a Kernel account", build: KernelAccount.from },
+  { name: "a Kernel account through EIP-7702", build: KernelAccount.fromEip7702 }
+])(
+  "SessionHook on $name",
   { concurrent: false },
-  (type) => {
+  ({ build }) => {
     devnet.isolate({ beforeEach, afterEach })
 
     it("runs tagged session operations under ERC-7562, and refuses untagged ones", async () => {
-      const owner = newOwner()
-      const account = type === "kernel"
-        ? await KernelAccount.from({ client, owner })
-        : type === "nexus"
-        ? await NexusAccount.from({ client, owner })
-        : await Safe7579Account.from({ client, owners: [owner] })
+      const account = await build({ client, owner: newOwner() })
       await devnet.fund(account.address)
-      if (type === "kernel") await devnet.sendUserOperation(account, [{ to: recipient, value: 1n }])
-      else await devnet.deploy(account)
+      await devnet.sendUserOperation(account, [{ to: recipient, value: 1n }])
       assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
 
       // The owner enables a session that lists SessionHook (initialized during this operation).
@@ -90,7 +76,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)(
               address: entryPoint07Address,
               abi: entryPoint07Abi,
               functionName: "getNonce",
-              args: [account.address, sessionNonceKey(type)]
+              args: [account.address, sessionNonceKey]
             }),
           encodeCalls: async (calls) => {
             const call = encodeFunctionData({
@@ -101,7 +87,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)(
               ? concat([call, permissionId, await client.readContract({ ...SessionHook.v1, functionName: "TAG" })])
               : call
             // Kernel runs Smart Sessions' operations through `executeUserOp` once SessionHook is bound.
-            return type === "kernel" ? concat(["0x8dd7712f", body]) : body
+            return concat(["0x8dd7712f", body])
           },
           getStubSignature: async () =>
             concat([

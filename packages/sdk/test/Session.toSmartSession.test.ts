@@ -12,7 +12,7 @@ import {
   ValuePolicy,
   WebAuthnValidator
 } from "@namera-ai/contracts"
-import { Policy, Session, SessionKey } from "@namera-ai/sdk"
+import { Policy, Session, SessionError, SessionKey } from "@namera-ai/sdk"
 import * as AbiFunction from "ox/AbiFunction"
 import * as AbiParameters from "ox/AbiParameters"
 import * as Hash from "ox/Hash"
@@ -187,6 +187,39 @@ describe("Session.toSmartSession", () => {
         validUntil: 2_000_000_000,
         policies: [Policy.approvals({ tokens: [USDC, dai], spenders: [permit2], maxAmount: { [USDC]: 10n } })]
       })
+    )
+  })
+
+  // ApprovalPolicy reverts `InvalidCap` for a zero token or a token capped twice, so the compiler never emits either.
+  it("caps each token of Policy.approvals once, whatever its case, and refuses the zero token", () => {
+    const struct = compile([
+      Policy.anyCall({ unsafe: true }),
+      Policy.approvals({ tokens: [USDC, USDC.toLowerCase() as `0x${string}`], spenders: [permit2], maxAmount: 10n })
+    ])
+    const [, caps] = AbiParameters.decode(
+      AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
+      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData
+    )
+    assert.deepStrictEqual(caps, [{ token: USDC, maxAmount: 10n }])
+
+    const codeOf = (approvals: Policy.approvals.Options) => {
+      try {
+        compile([Policy.anyCall({ unsafe: true }), Policy.approvals(approvals)])
+      } catch (error) {
+        assert.isTrue(SessionError.isSessionError(error))
+        return (error as SessionError.SessionError).reason.problems.map((problem) => problem.code)
+      }
+      return assert.fail("expected a SessionError")
+    }
+    const zero = "0x0000000000000000000000000000000000000000"
+    assert.deepStrictEqual(codeOf({ tokens: [USDC, zero], spenders: [permit2], maxAmount: 10n }), ["INVALID_ADDRESS"])
+    assert.deepStrictEqual(
+      codeOf({
+        tokens: [USDC],
+        spenders: [permit2],
+        maxAmount: { [USDC]: 10n, [USDC.toLowerCase() as `0x${string}`]: 20n }
+      }),
+      ["INVALID_AMOUNT"]
     )
   })
 

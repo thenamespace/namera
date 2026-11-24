@@ -910,6 +910,11 @@ const abiV1 = [
   },
   {
     "type": "error",
+    "name": "UnsupportedAccount",
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }]
+  },
+  {
+    "type": "error",
     "name": "UnsupportedCallType",
     "inputs": [{ "name": "callType", "type": "bytes1", "internalType": "bytes1" }]
   },
@@ -942,10 +947,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0xd18eFE69B5b30629871B59fBE5EAAE16144211dc",
+  "address": "0xf98e7031970f70E6F910BeFB92EA1490B1cC9F09",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0xcf95ab10fe826feba53cbc1278356e7c9fe2576f2cc7e9de3104eab94074f6b3",
+  "initcodeHash": "0x59028f76a733b6c897142237204fd1e40fd18f75a6dadad5578592b0561120c4",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

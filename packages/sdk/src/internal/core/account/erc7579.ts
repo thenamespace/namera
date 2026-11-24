@@ -12,15 +12,11 @@ export interface Call {
 /** @internal */
 export const MODULE_TYPE_VALIDATOR = BigInt("1")
 
-/** ERC-7579 module type of a hook. @internal */
-export const MODULE_TYPE_HOOK = BigInt("4")
-
 const execute = AbiFunction.from("function execute(bytes32 mode, bytes executionCalldata)")
 const installModule = AbiFunction.from("function installModule(uint256 moduleTypeId, address module, bytes initData)")
 const isModuleInstalled = AbiFunction.from(
   "function isModuleInstalled(uint256 moduleTypeId, address module, bytes additionalContext) view returns (bool)"
 )
-const accountId = AbiFunction.from("function accountId() view returns (string)")
 
 const executions = AbiParameters.from(["(address target, uint256 value, bytes callData)[]"])
 
@@ -63,21 +59,3 @@ export const encodeIsModuleInstalled = (moduleType: bigint, module: Hex.Hex): He
 
 /** @internal */
 export const decodeIsModuleInstalled = (result: Hex.Hex): boolean => AbiFunction.decodeResult(isModuleInstalled, result)
-
-/** @internal */
-export const encodeAccountId: Hex.Hex = AbiFunction.encodeData(accountId)
-
-/** @internal */
-export const decodeAccountId = (result: Hex.Hex): string => AbiFunction.decodeResult(accountId, result)
-
-const isInitialized = AbiFunction.from("function isInitialized(address account) view returns (bool)")
-
-/**
- * A module's `isInitialized(account)` view: whether it holds state for the account.
- *
- * @internal
- */
-export const encodeIsInitialized = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(isInitialized, [account])
-
-/** Decodes `isInitialized`'s answer. @internal */
-export const decodeIsInitialized = (result: Hex.Hex): boolean => AbiFunction.decodeResult(isInitialized, result)

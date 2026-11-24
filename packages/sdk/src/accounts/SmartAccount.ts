@@ -6,9 +6,9 @@
  * **Details**
  *
  * Every account Namera returns is viem's `SmartAccount`, so viem's bundler client, paymasters and wagmi use it
- * unchanged. `SmartAccount.from` takes the same options as viem's `toSmartAccount`; `KernelAccount.from`,
- * `NexusAccount.from` and `Safe7579Account.from` are built on it and add a read-only `namera` field with the account's
- * type and version.
+ * unchanged. `SmartAccount.from` takes the same options as viem's `toSmartAccount`; `KernelAccount.from` is built on
+ * it and adds a read-only `namera` field with the account's type and version. Namera supports one account, Kernel 3.3
+ * on EntryPoint 0.7, deployed or through EIP-7702: the operations here refuse any other.
  *
  * **Gotchas**
  *
@@ -46,8 +46,7 @@ import type { NameraSmartAccount } from "./internal/smartAccount.ts"
  * @category models
  * @since 2.0.0
  */
-export type Metadata<Type extends "kernel" | "nexus" | "safe7579" = "kernel" | "nexus" | "safe7579"> =
-  internal.Metadata<Type>
+export type Metadata<Type extends "kernel" = "kernel"> = internal.Metadata<Type>
 
 /**
  * A smart account Namera built: viem's `SmartAccount`, with its `namera` metadata.
@@ -79,7 +78,7 @@ export type Owner = Owner_
 
 /**
  * A passkey owner: viem's WebAuthn account (`toWebAuthnAccount`), which signs with the device's authenticator.
- * Kernel, Nexus and Safe7579 accounts verify it through Namera's `WebAuthnValidator`.
+ * Kernel accounts verify it through Namera's `WebAuthnValidator`.
  *
  * @stability experimental
  * @category models
@@ -139,8 +138,8 @@ export type Call = Call_
  *
  * **When to use**
  *
- * Use to build an account type Namera has no constructor for. For Kernel, Nexus and Safe7579 use their own `from`,
- * which compute the implementation.
+ * Use to build an account type Namera has no constructor for. For Kernel use `KernelAccount.from`, which computes the
+ * implementation.
  *
  * **Details**
  *
@@ -196,15 +195,15 @@ export declare namespace from {
 }
 
 /**
- * Connects to an existing account at an address, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ * Connects to an existing Kernel 3.3 account at an address, deployed or through EIP-7702, as `detect` finds it.
  *
  * **When to use**
  *
- * Use with accounts created elsewhere (ZeroDev, Biconomy or Safe tooling) when their implementation is supported.
+ * Use with Kernel 3.3 accounts created elsewhere, such as with ZeroDev's SDK.
  *
  * **Gotchas**
  *
- * Fails with `AccountError` (`NotSupported`) for an unsupported or undeployed account. An EIP-7702 account needs its
+ * Fails with `AccountError` (`NotSupported`) for an undeployed account or any account but Kernel 3.3. An EIP-7702 account needs its
  * own local key as the owner.
  *
  * **Example** (Connecting to an account another SDK created)
@@ -240,9 +239,8 @@ export function fromAddress(options: fromAddress.Options): Promise<fromAddress.R
  */
 export declare namespace fromAddress {
   /**
-   * The client, the account's address, and its owner (or `owners`, for a Safe7579 with several keys). Passkey owners
-   * work for Kernel, Nexus and Safe7579 accounts that are not EIP-7702: one passkey, or `{ passkeys, threshold }`
-   * when more than one must sign.
+   * The client, the account's address, and its owner (or `owners`, for several passkeys). Passkey owners work for
+   * accounts that are not EIP-7702: one passkey, or `{ passkeys, threshold }` when more than one must sign.
    *
    * @stability experimental
    * @category utility types
@@ -273,13 +271,12 @@ export declare namespace fromAddress {
 }
 
 /**
- * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ * Reads whether an address holds a Kernel 3.3 account, and whether Smart Sessions is installed.
  *
  * **Details**
  *
- * Recognises Kernel and Nexus by their ERC-1967 implementation (or EIP-7702 delegation), and Safe7579 by its Safe
- * singleton and the adapter's `accountId`. Accounts other SDKs created are recognised when their implementation is
- * supported.
+ * Recognises Kernel 3.3 by its ERC-1967 implementation, or by its EIP-7702 delegation; any other account is
+ * `unsupported`. Accounts other SDKs created are recognised too.
  *
  * **Example** (Detecting an account)
  *
@@ -351,8 +348,8 @@ export const installSessionsCalls: (account: SmartAccount) => ReadonlyArray<Call
  *
  * **Gotchas**
  *
- * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
- * with `AccountError` (`OperationNotSupported`) before anything is sent.
+ * Fails with `AccountError` (`NotSupported`) when the bundler client's account is not one Namera built. Smart
+ * Sessions and SessionHook refuse to install on any account but Kernel 3.3.
  *
  * **Example** (Installing Smart Sessions on an existing account)
  *
@@ -430,9 +427,8 @@ export declare namespace installSessionsSync {
 }
 
 /**
- * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
- * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
- * none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook bound to it to run for its
+ * operations. An undeployed account has none.
  *
  * @stability experimental
  * @category getters
@@ -652,7 +648,7 @@ export declare namespace getOwners {
  *
  * **Details**
  *
- * A Safe7579 account's key owners change on OwnableValidator and on the Safe itself, whose own owners can execute directly. Kernel and Nexus hold one key: change it with `replaceOwner`. Fails with `OwnerExists`, or `OperationNotSupported` when the account has no owners of that kind (`addOwnerValidator` adds them).
+ * Adds passkeys; Kernel's key validator holds one key: change it with `replaceOwner`. Fails with `OwnerExists`, or `OperationNotSupported` for a key or when the account has no owners of that kind (`addOwnerValidator` adds them).
  *
  * @stability experimental
  * @category constructors
@@ -718,7 +714,7 @@ export function addOwnerSync(client: BundlerClient, options: addOwnerCalls.Optio
  *
  * **Details**
  *
- * Refuses with `ThresholdUnreachable` when fewer owners than the threshold would remain, and with `OwnerNotFound` for an owner the account doesn't have. A Safe7579 account's key is removed from the Safe's own owners too.
+ * Refuses with `ThresholdUnreachable` when fewer owners than the threshold would remain, and with `OwnerNotFound` for an owner the account doesn't have. Kernel's one key can't be removed (`OperationNotSupported`): replace it with `replaceOwner`.
  *
  * @stability experimental
  * @category constructors
@@ -787,7 +783,7 @@ export function removeOwnerSync(client: BundlerClient, options: removeOwnerCalls
  *
  * **Details**
  *
- * Works for passkeys on every account and for a Safe7579 account's keys; Kernel's and Nexus's key validators hold one key. Fails with `ThresholdUnreachable` for a threshold outside 1 to the number of owners.
+ * Works for passkeys; Kernel's key validator holds one key (`OperationNotSupported`). Fails with `ThresholdUnreachable` for a threshold outside 1 to the number of owners.
  *
  * @stability experimental
  * @category constructors
@@ -859,7 +855,7 @@ export function setThresholdSync(
  *
  * **Details**
  *
- * This is how a Kernel or Nexus account rotates its key. On Safe7579 it swaps the key on OwnableValidator and the Safe; for passkeys it adds the new one before removing the old.
+ * This is how a Kernel account rotates its key. For passkeys it adds the new one before removing the old.
  *
  * @stability experimental
  * @category constructors
@@ -931,7 +927,7 @@ export function replaceOwnerSync(
  *
  * **Details**
  *
- * Either kind can then sign: build the account with `SmartAccount.fromAddress` and the owner that signs. On Kernel the new validator is installed next to the root, allowed to validate `execute`.
+ * Either kind can then sign: build the account with `SmartAccount.fromAddress` and the owner that signs. The new validator is installed next to the root, allowed to validate `execute`.
  *
  * @stability experimental
  * @category constructors

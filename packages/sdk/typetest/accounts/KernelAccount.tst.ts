@@ -1,11 +1,4 @@
-import {
-  type AccountError,
-  type ChainError,
-  KernelAccount,
-  type NexusAccount,
-  type Safe7579Account,
-  SmartAccount
-} from "@namera-ai/sdk"
+import { type AccountError, type ChainError, KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import type { KernelAccount as EffectKernelAccount, SmartAccount as EffectSmartAccount } from "@namera-ai/sdk/effect"
 import type { Effect } from "effect"
 import { describe, expect, it } from "tstyche"
@@ -17,19 +10,16 @@ describe("KernelAccount", () => {
     expect<KernelAccount.KernelAccount>().type.toBeAssignableTo<ViemSmartAccount>()
     expect<SmartAccount.SmartAccount>().type.toBeAssignableTo<ViemSmartAccount>()
     expect<KernelAccount.KernelAccount["namera"]["type"]>().type.toBe<"kernel">()
+    expect<SmartAccount.SmartAccount["namera"]["type"]>().type.toBe<"kernel">()
   })
 
   it("takes a local key, a JSON-RPC wallet, a passkey or several passkeys as owner, and only a local key for EIP-7702", () => {
     type Owner = LocalAccount | JsonRpcAccount | WebAuthnAccount | SmartAccount.Passkeys
     expect<KernelAccount.from.Options["owner"]>().type.toBe<Owner>()
-    expect<NexusAccount.from.Options["owner"]>().type.toBe<Owner>()
     expect<SmartAccount.Passkeys>().type.toBe<{
       readonly passkeys: ReadonlyArray<WebAuthnAccount>
       readonly threshold?: number | undefined
     }>()
-    expect<Safe7579Account.from.Options["owners"]>().type.toBe<
-      ReadonlyArray<LocalAccount | JsonRpcAccount> | ReadonlyArray<WebAuthnAccount>
-    >()
     expect<KernelAccount.fromEip7702.Options["owner"]>().type.toBe<PrivateKeyAccount>()
   })
 
@@ -60,7 +50,6 @@ describe("KernelAccount", () => {
     const detected = {} as SmartAccount.detect.ReturnType
     if (detected.type === "kernel") expect(detected.version).type.toBe<string>()
     if (detected.type === "unsupported") expect(detected.implementation).type.toBe<`0x${string}` | undefined>()
-    expect<Safe7579Account.from.Options["threshold"]>().type.toBe<number | undefined>()
   })
 })
 

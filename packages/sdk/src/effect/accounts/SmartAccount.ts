@@ -53,7 +53,7 @@ export const from: <const implementation extends Implementation>(
 > = internal.from
 
 /**
- * Connects to an existing account at an address, choosing Kernel, Nexus or Safe7579 from what `detect` finds.
+ * Connects to an existing Kernel 3.3 account at an address, deployed or through EIP-7702, as `detect` finds it.
  *
  * @stability experimental
  * @category constructors
@@ -64,7 +64,7 @@ export const fromAddress: (
 ) => Effect.Effect<SmartAccount, AccountError.AccountError | ChainError.ChainError> = detect_.fromAddress
 
 /**
- * Reads which supported account an address holds, which version, and whether Smart Sessions is installed.
+ * Reads whether an address holds a Kernel 3.3 account, and whether Smart Sessions is installed.
  *
  * @stability experimental
  * @category getters
@@ -91,8 +91,8 @@ export const installSessionsCalls: (account: SmartAccount) => ReadonlyArray<Smar
  *
  * **Gotchas**
  *
- * Nexus and Safe7579 run one global hook, and SessionHook must be it: an account that already has another hook fails
- * with `AccountError` (`OperationNotSupported`) before anything is sent.
+ * Fails with `AccountError` (`NotSupported`) when the bundler client's account is not one Namera built. Smart
+ * Sessions and SessionHook refuse to install on any account but Kernel 3.3.
  *
  * @stability experimental
  * @category mutations
@@ -115,9 +115,8 @@ export const installSessionsSync: (
 ) => Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> = sessions.installSessionsSync
 
 /**
- * Checks whether Smart Sessions is installed on the account at an address, with SessionHook running for its
- * operations (bound to Smart Sessions on Kernel, the account's hook on Nexus and Safe7579). An undeployed account has
- * none.
+ * Checks whether Smart Sessions is installed on the account at an address, with SessionHook bound to it to run for its
+ * operations. An undeployed account has none.
  *
  * @stability experimental
  * @category getters

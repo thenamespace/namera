@@ -71,18 +71,6 @@ export * as KernelAccount from "./accounts/KernelAccount.ts"
  * @stability experimental
  * @since 2.0.0
  */
-export * as NexusAccount from "./accounts/NexusAccount.ts"
-
-/**
- * @stability experimental
- * @since 2.0.0
- */
-export * as Safe7579Account from "./accounts/Safe7579Account.ts"
-
-/**
- * @stability experimental
- * @since 2.0.0
- */
 export * as SmartAccount from "./accounts/SmartAccount.ts"
 
 /**

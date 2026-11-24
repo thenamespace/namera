@@ -64,9 +64,9 @@ describe("updating a session", () => {
 
 describe("reading operations back", () => {
   it("finds the lane of a nonce key that routes through Smart Sessions, and no lane otherwise", () => {
-    for (const [type, lane] of [["kernel", 9], ["nexus", 70_000], ["safe7579", 2 ** 31]] as const) {
-      assert.strictEqual(laneOf(type, contracts.smartSession, nonceKey(type, contracts.smartSession, lane)), lane)
-      assert.isUndefined(laneOf(type, contracts.smartSession, nonceKey(type, account, lane)))
+    for (const lane of [0, 9, 2 ** 16 - 1]) {
+      assert.strictEqual(laneOf(contracts.smartSession, nonceKey(contracts.smartSession, lane)), lane)
+      assert.isUndefined(laneOf(contracts.smartSession, nonceKey(account, lane)))
     }
   })
 

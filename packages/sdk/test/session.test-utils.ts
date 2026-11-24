@@ -1,6 +1,6 @@
 import { SessionHook, SmartSession } from "@namera-ai/contracts"
 import type { Devnet } from "@namera-ai/devnet"
-import { KernelAccount, NexusAccount, Safe7579Account, Session } from "@namera-ai/sdk"
+import { KernelAccount, Session } from "@namera-ai/sdk"
 import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAbi, toHex } from "viem"
 import {
   entryPoint07Abi,
@@ -18,8 +18,6 @@ import { devnet, newOwner } from "./accounts/accounts.test-utils.ts"
 // mode, `execute` calldata, the stated time for periodic limits, SessionHook's tag when asked, and Kernel's
 // `executeUserOp` wrapping (SessionHook is bound to Smart Sessions there). Grants' agents use `Grant.toAccount`.
 
-export type AccountType = "kernel" | "nexus" | "safe7579"
-
 const execute = parseAbi(["function execute(bytes32 mode, bytes executionCalldata)"])
 const SINGLE = pad("0x00", { dir: "right", size: 32 })
 const BATCH = pad("0x01", { dir: "right", size: 32 })
@@ -27,24 +25,27 @@ const STUB =
   "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c"
 
 /**
- * An account of `type` with Smart Sessions and SessionHook, funded and deployed (on `on`, the first devnet chain by
- * default), owned by `owner` (a fresh key by default).
+ * A Kernel account with Smart Sessions and SessionHook, funded and deployed (on `on`, the first devnet chain by
+ * default), owned by `owner` (a fresh key by default). With `eip7702`, the owner's own address delegated to Kernel.
  */
 export const deployedAccount = async (
-  type: AccountType,
   options: {
     readonly on?: Devnet.Devnet | undefined
     readonly owner?: PrivateKeyAccount | WebAuthnAccount | undefined
     readonly deploy?: boolean | undefined
+    readonly eip7702?: boolean | undefined
   } = {}
 ) => {
   const chain = options.on ?? devnet
-  const owner = options.owner ?? newOwner()
-  const account = type === "kernel"
-    ? await KernelAccount.from({ client: chain.client, owner })
-    : type === "nexus"
-    ? await NexusAccount.from({ client: chain.client, owner })
-    : await Safe7579Account.from({ client: chain.client, owners: [owner] as never })
+  if (options.eip7702 === true) {
+    const owner = (options.owner ?? newOwner()) as PrivateKeyAccount
+    const account = await KernelAccount.fromEip7702({ client: chain.client, owner })
+    await chain.fund(account.address)
+    // The first operation delegates the address and installs Smart Sessions.
+    if (options.deploy !== false) await chain.sendUserOperation(account, [])
+    return account
+  }
+  const account = await KernelAccount.from({ client: chain.client, owner: options.owner ?? newOwner() })
   await chain.fund(account.address)
   if (options.deploy !== false) await chain.deploy(account)
   return account
@@ -64,21 +65,11 @@ export const enable = async (
   if (!success) throw new Error("enabling the session reverted")
 }
 
-// The nonce lane that routes an operation to Smart Sessions on each account.
-const nonceKey = (type: AccountType): bigint => {
-  switch (type) {
-    case "kernel":
-      return BigInt(concat(["0x0001", SmartSession.v1.address, "0x0000"]))
-    case "nexus":
-      return BigInt(SmartSession.v1.address)
-    case "safe7579":
-      return BigInt(concat([SmartSession.v1.address, "0x00000000"]))
-  }
-}
+// The nonce lane that routes an operation to Smart Sessions on Kernel.
+const nonceKey = BigInt(concat(["0x0001", SmartSession.v1.address, "0x0000"]))
 
 /** The agent's view of the account: session operations signed by `sessionKey`. */
 export const sessionAgent = (options: {
-  readonly type: AccountType
   readonly address: Hex
   readonly session: Session.Session
   readonly sessionKey: PrivateKeyAccount
@@ -100,7 +91,7 @@ export const sessionAgent = (options: {
         address: entryPoint07Address,
         abi: entryPoint07Abi,
         functionName: "getNonce",
-        args: [options.address, nonceKey(options.type)]
+        args: [options.address, nonceKey]
       }),
     encodeCalls: async (calls) => {
       const call = calls.length === 1
@@ -122,8 +113,7 @@ export const sessionAgent = (options: {
       const tag = options.tagged === true
         ? await client.readContract({ ...SessionHook.v1, functionName: "tag", args: [permissionId] })
         : "0x"
-      const body = concat([call, time, tag])
-      return options.type === "kernel" ? concat(["0x8dd7712f", body]) : body
+      return concat(["0x8dd7712f", call, time, tag])
     },
     getStubSignature: async () => sign(STUB),
     signMessage: async () => "0x",

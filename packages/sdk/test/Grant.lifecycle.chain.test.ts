@@ -6,7 +6,7 @@ import type { SmartAccount } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet, newOwner } from "./accounts/accounts.test-utils.ts"
-import { type AccountType, deployedAccount, refusal } from "./session.test-utils.ts"
+import { deployedAccount, refusal } from "./session.test-utils.ts"
 
 // A grant after it was made, on the devnet (safe-mode alto): the owner revokes and updates it with owner operations,
 // and its status, limits and history are read without a key.
@@ -49,12 +49,11 @@ const violationOf = (promise: Promise<unknown>) =>
 const gasLimit = Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
 
 const setUp = async (
-  type: AccountType,
   policies: ReadonlyArray<Policy.Policy>,
   options: { readonly validUntil?: number } = {}
 ) => {
   const sessionKey = privateKeyToAccount(generatePrivateKey())
-  const account = await deployedAccount(type)
+  const account = await deployedAccount()
   const session = Session.from({
     signer: SessionKey.ecdsa(sessionKey.address),
     validUntil: options.validUntil ?? Session.now() + 30 * 86400,
@@ -67,13 +66,11 @@ const setUp = async (
   return { account, grant, owner, sessionKey, agentOf }
 }
 
-describe.each(["kernel", "nexus", "safe7579"] as const)("a grant's lifecycle on a %s account", { concurrent: false }, (
-  type: AccountType
-) => {
+describe("a grant's lifecycle on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   it("is revoked once used: its agent is refused, and revoking again sends nothing", async () => {
-    const { agentOf, grant, owner } = await setUp(type, [transfers])
+    const { agentOf, grant, owner } = await setUp([transfers])
     assert.isTrue((await send(await agentOf(grant), [transfer(1n)])).success)
 
     assert.strictEqual((await Grant.revokeSync(owner, { grant }))?.status, "success")
@@ -84,7 +81,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant's lifecycle on 
   })
 
   it("is revoked unused: its first operation can't enable the session", async () => {
-    const { agentOf, grant, owner } = await setUp(type, [transfers])
+    const { agentOf, grant, owner } = await setUp([transfers])
     assert.strictEqual((await Grant.getStatus(client, { grant })).state, "pending-enable")
 
     assert.isDefined(await Grant.revokeSync(owner, { grant }))
@@ -94,7 +91,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant's lifecycle on 
   })
 
   it("is updated in place: a removed call, a stricter limit and a wider condition take effect", async () => {
-    const { agentOf, grant, owner } = await setUp(type, [transfers, payments])
+    const { agentOf, grant, owner } = await setUp([transfers, payments])
     assert.isTrue((await send(await agentOf(grant), [transfer(1n)])).success)
 
     const { grant: updated } = await Grant.updateSync(owner, {
@@ -121,7 +118,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
   it("updates an unused grant, so the old grant can't enable the old policies", async () => {
-    const { agentOf, grant, owner } = await setUp("nexus", [transfers, payments])
+    const { agentOf, grant, owner } = await setUp([transfers, payments])
     const { grant: updated } = await Grant.updateSync(owner, { grant, remove: [payments] })
 
     // The old grant's enable signature is spent; the updated grant's agent uses the session as updated.
@@ -131,7 +128,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
   })
 
   it("refuses to remove a policy the session doesn't have, or to make an invalid session", async () => {
-    const { grant, owner } = await setUp("kernel", [transfers])
+    const { grant, owner } = await setUp([transfers])
     const reasonOf = (promise: Promise<unknown>) =>
       promise.then(() => assert.fail("expected a refusal"), (error: unknown) => error)
 
@@ -144,7 +141,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
 
   it("reports its state over time, and its limits as they fill and reset", async () => {
     const validUntil = Number((await client.getBlock()).timestamp) + 2 * 86400
-    const { agentOf, grant } = await setUp("safe7579", [
+    const { agentOf, grant } = await setUp([
       transfers,
       Policy.spend({ token, amount: 150n, period: "day" })
     ], {
@@ -173,7 +170,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
   })
 
   it("lists the operations sent under it, and the sessions enabled on its account", async () => {
-    const { account, agentOf, grant, owner, sessionKey } = await setUp("kernel", [transfers])
+    const { account, agentOf, grant, owner, sessionKey } = await setUp([transfers])
     const fromBlock = await client.getBlockNumber()
     const first = await send(await agentOf(grant), [transfer(1n)])
     const second = await send(await Grant.toAccount(client, { grant, signer: sessionKey, lane: 3 }), [transfer(2n)])
@@ -196,8 +193,8 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
     const id = await second.snapshot()
     try {
       const owner = newOwner()
-      const first = await deployedAccount("safe7579", { owner })
-      const other = await deployedAccount("safe7579", { owner, on: second })
+      const first = await deployedAccount({ owner })
+      const other = await deployedAccount({ owner, on: second })
       const sessionKey = privateKeyToAccount(generatePrivateKey())
       const session = Session.from({
         signer: SessionKey.ecdsa(sessionKey.address),
@@ -225,7 +222,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
   })
 
   it("is watched: each change is reported once, until the watch is turned off", async () => {
-    const { agentOf, grant, owner } = await setUp("nexus", [transfers, Policy.rateLimit({ count: 9, period: "day" })])
+    const { agentOf, grant, owner } = await setUp([transfers, Policy.rateLimit({ count: 9, period: "day" })])
     const states: Array<string> = []
     const waiters: Array<{ readonly count: number; readonly resolve: () => void }> = []
     const watcher = Grant.watchStatus(client, {

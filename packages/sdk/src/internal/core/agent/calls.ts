@@ -3,7 +3,6 @@ import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 
 import { type Call, encodeCalls as encodeExecute } from "../account/erc7579.ts"
-import type { AccountType } from "./nonce.ts"
 
 // The calldata of a session operation (contracts/src/policies/lib/UserOpCalls.sol): ERC-7579 `execute`, then the time
 // the agent states (periodic limits charge its period), then SessionHook's tag (sessions with execution policies).
@@ -39,7 +38,6 @@ export interface DecodedCall {
  * @internal
  */
 export const encodeCalls = (options: {
-  readonly type: AccountType
   readonly calls: ReadonlyArray<Call>
   readonly time?: bigint | undefined
   readonly tag?: Hex.Hex | undefined
@@ -49,7 +47,7 @@ export const encodeCalls = (options: {
     options.time === undefined ? "0x" : Hex.fromNumber(options.time, { size: 32 }),
     options.tag === undefined ? "0x" : Hex.concat(options.tag, SESSION_HOOK_TAG)
   )
-  return options.type === "kernel" ? Hex.concat(EXECUTE_USER_OP, body) : body
+  return Hex.concat(EXECUTE_USER_OP, body)
 }
 
 const executions = AbiParameters.from(["(address target, uint256 value, bytes callData)[]"])

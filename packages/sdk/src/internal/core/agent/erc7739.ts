@@ -4,8 +4,6 @@ import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 import * as TypedData from "ox/TypedData"
 
-import type { AccountType } from "./nonce.ts"
-
 // Session-key ERC-1271 signatures (contracts/src/smart-sessions/core/SmartSessionERC7739.sol): the session key signs
 // the app's typed data nested in ERC-7739's `TypedDataSign` under the account's EIP-712 domain, and the signature
 // carries the struct's `encodeData` so signing policies can check its fields.
@@ -35,19 +33,6 @@ export const decodeEip712Domain = (result: Hex.Hex): AccountDomain => {
   const [, name, version, chainId, verifyingContract, salt] = AbiFunction.decodeResult(eip712Domain, result)
   return { name, version, chainId, verifyingContract, salt }
 }
-
-/**
- * The domain Smart Sessions binds an account without `eip712Domain()` (Safe7579) by: its chain and address.
- *
- * @internal
- */
-export const domainless = (chainId: number, account: Hex.Hex): AccountDomain => ({
-  name: "",
-  version: "",
-  chainId: BigInt(chainId),
-  verifyingContract: account,
-  salt: `0x${"00".repeat(32)}`
-})
 
 /**
  * App typed data, as viem's `signTypedData` takes it.
@@ -103,13 +88,11 @@ export const nest = (typedData: AppTypedData, domain: AccountDomain) => {
 /**
  * The signature Smart Sessions reads, `permissionId ‖ sessionKeySignature ‖ contentsData ‖ policyData ‖
  * uint16(contentsData.length) ‖ uint16(policyData.length) ‖ appDomainSeparator ‖ contents ‖ contentsType ‖
- * uint16(contentsType.length)` (no policy data), prefixed for the account: Kernel's validator id, or Smart Sessions'
- * address on Nexus and Safe7579.
+ * uint16(contentsType.length)` (no policy data), prefixed with Smart Sessions' Kernel validator id.
  *
  * @internal
  */
 export const encodeSignature = (options: {
-  readonly type: AccountType
   readonly smartSession: Hex.Hex
   readonly permissionId: Hex.Hex
   readonly sessionKeySignature: Hex.Hex
@@ -118,7 +101,7 @@ export const encodeSignature = (options: {
   const { nested } = options
   const contentsType = Hex.fromString(nested.contentsType)
   return Hex.concat(
-    options.type === "kernel" ? Hex.concat("0x01", options.smartSession) : options.smartSession,
+    Hex.concat("0x01", options.smartSession),
     options.permissionId,
     options.sessionKeySignature,
     nested.contentsData,

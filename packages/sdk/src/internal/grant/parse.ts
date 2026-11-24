@@ -35,7 +35,7 @@ const GrantSchema = Schema.Struct({
   id: Bytes32,
   account: Schema.String.check(Schema.isPattern(/^eip155:[1-9]\d*:0x[0-9a-fA-F]{40}$/)),
   accountType: Schema.Struct({
-    type: Schema.Literals(["kernel", "nexus", "safe7579"]),
+    type: Schema.Literal("kernel"),
     version: Schema.String,
     deployment: Schema.optionalKey(Schema.Struct({ factory: Address, factoryData: Hex }))
   }),

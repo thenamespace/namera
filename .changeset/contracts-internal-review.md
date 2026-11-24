@@ -3,7 +3,7 @@
 ---
 
 Fixes from the internal security review. Smart Sessions' fallback action no longer reaches the account's
-infrastructure (the EntryPoint, its installed validators, executors and hooks, Nexus's default validator); every
+infrastructure (the EntryPoint, its installed validators and executors); every
 reconfiguration spends the session's enable nonce, and uninstalling spends every unused enable signature (`getNonce` is
 now `epoch ‖ counter`); a policy listed twice, calldata of 1 to 3 bytes or starting with the value selector, a policy
 answer longer than one word and an account asking about itself are refused. `SessionHook` refuses a different

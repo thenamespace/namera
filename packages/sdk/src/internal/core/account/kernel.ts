@@ -61,7 +61,7 @@ export const installSessionsData = (sessions: SessionHook.Sessions): Hex.Hex =>
     sessions.smartSession,
     validatorInstallData("0x", {
       address: sessions.sessionHook,
-      data: SessionHook.installData("kernel", sessions.smartSession)
+      data: SessionHook.installData(sessions.smartSession)
     })
   )
 
