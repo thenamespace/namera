@@ -70,8 +70,9 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     // Each chain test worker runs its own anvil and alto (two pairs for multichain tests): with a worker per core,
-    // they compete with the tests for CPU and heavy chain tests time out. Half the cores keeps them under the limit.
-    maxWorkers: "50%",
+    // they compete with the tests for CPU and heavy chain tests time out. At half the cores, the bundler's tracing still
+    // slowed tests fivefold under load; 40% keeps them under the limit.
+    maxWorkers: "40%",
     projects: [
       project("scripts", "scripts"),
       project("@namera-ai/contracts", "packages/contracts"),
