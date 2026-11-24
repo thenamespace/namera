@@ -120,6 +120,13 @@ library ConfigLib {
             if (target == address(0) || target == address(this) || actionId == EMPTY_ACTIONID) {
                 revert ISmartSession.InvalidActionId();
             }
+            // Namera: an action listed twice would keep only its last entry's policy configurations.
+            for (uint256 j; j < i; ++j) {
+                ActionData memory earlier = actionPolicyDatas[j];
+                if (earlier.actionTarget.toActionId(earlier.actionTargetSelector) == actionId) {
+                    revert ISmartSession.InvalidActionId();
+                }
+            }
 
             $self.actionPolicies[actionId].enable({
                 policyType: PolicyType.ACTION,

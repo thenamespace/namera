@@ -268,6 +268,17 @@ contract SessionManagementTest is SmartSessionTestBase {
         enableSession(session);
     }
 
+    /// @dev Regression (rerun review, finding 7): an action listed twice would keep only its last entry's
+    /// configurations.
+    function test_RevertWhen_anActionIsListedTwice() public {
+        Session memory session = defaultSession()
+            .withAction(address(target), SET_VALUE, address(policy), MockPolicyConfig.allow())
+            .withAction(address(target), SET_VALUE, address(policy), MockPolicyConfig.deny());
+
+        vm.expectRevert(ISmartSession.InvalidActionId.selector);
+        enableSession(session);
+    }
+
     function test_RevertWhen_removingTheEmptyPermissionId() public {
         vm.prank(address(account));
         vm.expectRevert(

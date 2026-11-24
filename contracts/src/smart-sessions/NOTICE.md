@@ -113,6 +113,8 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
     fallback handlers) read the last 20 bytes as the original sender, so the account named there passed
     their "account calls itself" checks and a fallback session could install a validator on a Safe. A
     legitimate fallback call whose last argument is the account (a `receiver`) needs an explicit action.
+  - _An action listed twice in one session is refused_ (`InvalidActionId`): only its last entry's policy
+    configurations would have been kept.
 
 ## Additions
 
