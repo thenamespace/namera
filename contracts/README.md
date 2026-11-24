@@ -179,8 +179,11 @@ reason)`, but an inner call's revert is lost (`ExecutionReverted()`). Safe7579 r
 - The address of a contract is `CREATE2(factory, keccak256(label), keccak256(initcode))`. Compiler
   settings in `foundry.toml` are part of the initcode, so they live only in `[profile.default]` and
   must not change after the first deployment. Metadata hashes are disabled for reproducible bytecode.
-- A new contract version gets a new label (`namera.<name>.v<n>`) and therefore a new address. Never
-  reuse a label for changed code.
+- **Alpha:** labels stay `namera.<name>.v1` while the contracts change. Changed code deploys to a new
+  address under the same label, and its record replaces the old one on each chain it is redeployed to;
+  `contracts generate` lists a chain only once it holds the current build. From the first stable
+  release, a new contract version gets a new label (`namera.<name>.v<n>`) and therefore a new address,
+  and a label is never reused for changed code.
 - `Deploy.s.sol` runs a pre-flight first (factory present, EntryPoint v0.7 present, Cancun opcodes
   checked on the real node via `eth_call`) and skips contracts that are already deployed, so re-running
   is safe.
@@ -210,7 +213,9 @@ with one record per contract:
 
 Deploying refuses to run while `src/`, `script/` or the Foundry config have uncommitted changes, so
 the recorded commit is the source that was built. Committed records are kept as long as the chain
-still matches them; a record whose code is gone, changed or at another address fails the command.
+still matches them; a record whose code is gone or changed fails the command. During the alpha, a
+record at another address (an earlier build under the same label) is replaced once the current build
+is deployed there.
 `transaction` is absent when the code was already on chain before this pipeline ran there (anyone
 can deploy the same initcode through the factory).
 

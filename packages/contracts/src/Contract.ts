@@ -41,8 +41,10 @@ export interface Deployment {
  *
  * **Details**
  *
- * The address is the same on every chain. A changed contract gets a new label and therefore a new
- * version and address; a version never changes after its first deployment.
+ * The address is the same on every chain. During the alpha a changed contract keeps its label and
+ * gets a new address, listed only on the chains it has been redeployed to; from the first stable
+ * release, a changed contract gets a new label and therefore a new version, and a version never
+ * changes after its first deployment.
  *
  * @stability experimental
  * @category models

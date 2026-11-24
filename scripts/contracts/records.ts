@@ -49,29 +49,29 @@ export type Observation = {
  * while the contract is not deployed, the committed record while it still matches the chain, and
  * a new record from the current build otherwise. Fails with a problem when the committed record
  * and the chain disagree.
+ *
+ * Alpha: labels stay `v1` while the contracts change. Changed code deploys to a new CREATE2 address
+ * under the same label, and its record replaces the one at the old address; until it is deployed,
+ * the old record stays. Before the first stable release, changed code goes back to needing a new
+ * label.
  */
 export const deploymentRecord = (contract: BuiltContract, observation: Observation) => {
   const { code, previous } = observation
+  const current = Option.filter(previous, (record) => isAddressEqual(record.address, contract.address))
 
   if (code === "0x") {
-    return Option.isSome(previous)
-      ? Result.fail(`${contract.label}: recorded at ${previous.value.address}, but it has no code`)
+    return Option.isSome(current)
+      ? Result.fail(`${contract.label}: recorded at ${current.value.address}, but it has no code`)
       : Result.succeed(Option.none<DeploymentRecord>())
   }
 
   const runtimeCodeHash = keccak256(code)
 
-  if (Option.isSome(previous)) {
-    const record = previous.value
-    if (!isAddressEqual(record.address, contract.address)) {
-      return Result.fail(
-        `${contract.label}: recorded at ${record.address}, but the current build deploys to ${contract.address}; changed code needs a new label`
-      )
-    }
-    if (record.runtimeCodeHash !== runtimeCodeHash) {
+  if (Option.isSome(current)) {
+    if (current.value.runtimeCodeHash !== runtimeCodeHash) {
       return Result.fail(`${contract.label}: the code on chain differs from the recorded code`)
     }
-    return Result.succeed(Option.some(record))
+    return Result.succeed(Option.some(current.value))
   }
 
   return Result.succeed(

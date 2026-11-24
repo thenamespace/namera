@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Option from "effect/Option"
 import * as Path from "effect/Path"
+import * as Rec from "effect/Record"
 import * as Str from "effect/String"
 
 import { isAddressEqual } from "viem"
@@ -34,23 +35,21 @@ export const generate = Effect.fn("contracts.generate")(
 
     yield* tools.run("forge", ["build"], { cwd: contractsDir })
     const contracts = yield* builtContracts()
-    const deployments = yield* allDeployments()
-
-    const mismatches = Arr.flatMap(
-      deployments,
-      ({ chainId, contracts: records }) =>
-        Arr.flatMap(contracts, (contract) => {
-          const record = records[contract.label]
-          return record === undefined || isAddressEqual(record.address, contract.address)
-            ? []
-            : [
-              `${contract.label} on ${chainId}: recorded at ${record.address}, built for ${contract.address}`
-            ]
-        })
-    )
-    if (mismatches.length > 0) {
-      return yield* CheckFailed.make({ check: "contracts generate", problems: mismatches })
-    }
+    // Alpha: changed code keeps its label, so a chain may still hold the previous build's record. The package
+    // lists only chains where the current build is deployed; redeploy there to list them again.
+    const stale: Array<string> = []
+    const deployments = Arr.map(yield* allDeployments(), (file) => ({
+      ...file,
+      contracts: Rec.filter(file.contracts, (record, label) => {
+        const built = Arr.findFirst(contracts, (contract) => contract.label === label)
+        if (Option.isNone(built) || isAddressEqual(record.address, built.value.address)) return true
+        stale.push(
+          `not listed on ${file.chainId}: ${label} is recorded at ${record.address}; redeploy the current build`
+        )
+        return false
+      })
+    }))
+    for (const line of stale) yield* Console.log(line)
 
     const staging = yield* fs.makeTempDirectoryScoped({ prefix: "namera-contracts-" })
     const sources = packageSources(contracts, deployments, yield* externalContracts())

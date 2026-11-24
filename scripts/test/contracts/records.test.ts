@@ -45,7 +45,7 @@ describe("deploymentRecord", () => {
     assert.deepStrictEqual(outcome, Result.succeed(Option.some(committed)))
   })
 
-  it("fails when the recorded code is gone, changed or at another address", () => {
+  it("fails when the recorded code is gone or changed", () => {
     const committed = Option.getOrThrow(Result.getOrThrow(deploymentRecord(contract, observe())))
 
     const gone = deploymentRecord(
@@ -56,19 +56,22 @@ describe("deploymentRecord", () => {
       contract,
       observe({ code: "0x60016002", previous: Option.some(committed) })
     )
-    const moved = deploymentRecord(
-      contract,
-      observe({
-        previous: Option.some({
-          ...committed,
-          address: "0x0000000000000000000000000000000000000001"
-        })
-      })
-    )
 
     assert.isTrue(Result.isFailure(gone))
     assert.isTrue(Result.isFailure(changed))
-    assert.isTrue(Result.isFailure(moved))
+  })
+
+  // Alpha: changed code keeps its label and moves to a new address.
+  it("replaces a record at another address once the current build is deployed, and keeps it until then", () => {
+    const committed = Option.getOrThrow(Result.getOrThrow(deploymentRecord(contract, observe())))
+    const elsewhere = Option.some({ ...committed, address: "0x0000000000000000000000000000000000000001" as const })
+
+    const replaced = Option.getOrThrow(Result.getOrThrow(deploymentRecord(contract, observe({ previous: elsewhere }))))
+    assert.strictEqual(replaced.address, contract.address)
+    assert.deepStrictEqual(replaced.transaction, transaction)
+
+    const pending = deploymentRecord(contract, observe({ code: "0x", previous: elsewhere, transaction: Option.none() }))
+    assert.deepStrictEqual(pending, Result.succeed(Option.none()))
   })
 })
 
