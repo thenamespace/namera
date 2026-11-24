@@ -417,7 +417,7 @@ const abiV1 = [
       "type": "address",
       "internalType": "address"
     }, {
-      "name": "data",
+      "name": "session",
       "type": "tuple",
       "internalType": "struct Session",
       "components": [
@@ -586,14 +586,14 @@ const abiV1 = [
   {
     "type": "function",
     "name": "isInitialized",
-    "inputs": [{ "name": "smartAccount", "type": "address", "internalType": "address" }],
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "isModuleType",
-    "inputs": [{ "name": "typeID", "type": "uint256", "internalType": "uint256" }],
+    "inputs": [{ "name": "moduleTypeId", "type": "uint256", "internalType": "uint256" }],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "pure"
   },
@@ -942,10 +942,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0xDd4d316f91F30931fCC2f8fC2A41209F509F3A6E",
+  "address": "0x703483f2b8527eAD041a9D54E021485Ed90c1AEf",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0xd51413d7986ecf45e1ba742807bb8207b8b2d1238979b729f4206ec9be84c21e",
+  "initcodeHash": "0x1f958c84442fdde4f7d39e9f308455ee975b788c8d487f4200dcd100cb1190c9",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

@@ -2,6 +2,8 @@
 // Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
+import {LibCall} from "solady/utils/LibCall.sol";
+
 import {
     ActionData,
     ActionId,
@@ -24,8 +26,6 @@ import {EnumerableSet} from "../utils/EnumerableSet4337.sol";
 import {Execution, ExecutionLib} from "./ExecutionLib.sol";
 import {IdLib} from "./IdLib.sol";
 import {ValidationDataLib} from "./ValidationDataLib.sol";
-import {ERC4337} from "solady/accounts/ERC4337.sol";
-import {LibCall} from "solady/utils/LibCall.sol";
 
 /// @notice Runs policy checks for user operations, actions and ERC-1271 signatures.
 library PolicyLib {
@@ -37,6 +37,13 @@ library PolicyLib {
 
     /// @dev Mask of the ERC-4337 aggregator / sigFailed bits. Policies may only return time bounds.
     uint256 private constant AGGREGATOR_MASK = type(uint160).max;
+    /// @dev EntryPoint v0.7 and v0.8: a call there moves the account's deposit (`withdrawTo`).
+    address private constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
+    address private constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
+    /// @dev Gas for each account probe: `isModuleInstalled` costs ~4k on Kernel, Nexus and Safe7579 (running out
+    /// counts as installed, failing closed); `getDefaultValidator` far less where it exists.
+    uint256 private constant PROBE_GAS = 100_000;
+    uint256 private constant DEFAULT_VALIDATOR_PROBE_GAS = 30_000;
 
     /// @dev Calls every policy of `permissionId` with `callOnIPolicy` and intersects their validation data.
     /// Reverts with `NoPoliciesSet` if fewer than `minPolicies` are set.
@@ -88,7 +95,7 @@ library PolicyLib {
         uint256 result;
         assembly ("memory-safe") {
             if iszero(success) {
-                mstore(0, 0xf4270752) // `PolicyCheckReverted(bytes32)`
+                mstore(0, 0xf4270752) // `PolicyCheckReverted(bytes32)`.
                 mstore(0x20, mload(add(returnData, 0x20)))
                 revert(0x1c, 0x24)
             }
@@ -114,15 +121,15 @@ library PolicyLib {
         bytes calldata callData,
         uint256 minPolicies
     ) internal returns (ValidationData vd) {
-        bytes4 targetSig = callData.length < 4 ? IdLib.VALUE_SELECTOR : bytes4(callData[:4]);
+        bytes4 selector = callData.length < 4 ? IdLib.VALUE_SELECTOR : bytes4(callData[:4]);
         // Namera: only empty calldata is a plain value transfer; calldata of 1 to 3 bytes, or starting with the
         // value selector, would reach the target's code under the value transfer's action.
-        if (targetSig == IdLib.VALUE_SELECTOR && callData.length != 0) {
+        if (selector == IdLib.VALUE_SELECTOR && callData.length != 0) {
             revert ISmartSession.InvalidTarget();
         }
 
         // A nested execute on the account would bypass the policies of the inner calls.
-        if (targetSig == ERC7579_EXECUTE_SELECTOR && target == msg.sender) {
+        if (selector == ERC7579_EXECUTE_SELECTOR && target == msg.sender) {
             revert ISmartSession.InvalidSelfCall();
         }
         if (target == FALLBACK_TARGET_FLAG) revert ISmartSession.InvalidTarget();
@@ -131,7 +138,7 @@ library PolicyLib {
         if (target == address(this)) {
             actionId = FALLBACK_ACTIONID_SMARTSESSION_CALL;
         } else {
-            actionId = target.toActionId(targetSig);
+            actionId = target.toActionId(selector);
             if (target != msg.sender) {
                 vd = $policies[actionId].tryCheck({
                     permissionId: permissionId,
@@ -157,49 +164,6 @@ library PolicyLib {
             ),
             minPolicies: minPolicies
         });
-    }
-
-    /// @dev EntryPoint v0.7 and v0.8: a call there moves the account's deposit (`withdrawTo`).
-    address private constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
-    address private constant ENTRY_POINT_V08 = 0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108;
-    /// @dev Gas for each account probe: `isModuleInstalled` costs ~4k on Kernel, Nexus and Safe7579 (running out
-    /// counts as installed, failing closed); `getDefaultValidator` far less where it exists.
-    uint256 private constant PROBE_GAS = 100_000;
-    uint256 private constant DEFAULT_VALIDATOR_PROBE_GAS = 30_000;
-
-    /// @dev Whether `target` is part of the calling account's own infrastructure: the EntryPoint, a validator, executor
-    /// or hook the account has installed, or its default validator (Nexus). Modules take the account's calls as its
-    /// own configuration (owners, passkeys, hook installs), so a fallback call there could take the account over.
-    /// Calls to them need an explicit action. A failed module probe counts as installed, failing closed. Fallback
-    /// handlers (type 3) are installed per selector, which a probe without one can't ask about (Kernel and Safe7579
-    /// revert), so they aren't covered.
-    function _isInfrastructure(address target) private view returns (bool) {
-        if (target == ENTRY_POINT_V07 || target == ENTRY_POINT_V08) return true;
-        // Validators (1), executors (2) and hooks (4). Copies at most one word back: the answer is one.
-        for (uint256 moduleType = 1; moduleType <= 4; ++moduleType) {
-            if (moduleType == 3) continue;
-            (bool success, bool exceeded, bytes memory result) = LibCall.tryStaticCall({
-                target: msg.sender,
-                gasStipend: PROBE_GAS,
-                maxCopy: 32,
-                data: abi.encodeWithSignature(
-                    "isModuleInstalled(uint256,address,bytes)", moduleType, target, ""
-                )
-            });
-            if (!success || exceeded || result.length != 32 || abi.decode(result, (bool))) {
-                return true;
-            }
-        }
-        // Nexus keeps its owner in a default validator it doesn't report as installed. A bounded probe: on an account
-        // without it (Safe7579), the call falls into a fallback that burns its gas.
-        (bool found, bool longer, bytes memory defaultValidator) = LibCall.tryStaticCall({
-            target: msg.sender,
-            gasStipend: DEFAULT_VALIDATOR_PROBE_GAS,
-            maxCopy: 32,
-            data: abi.encodeWithSignature("getDefaultValidator()")
-        });
-        return found && !longer && defaultValidator.length == 32
-            && abi.decode(defaultValidator, (address)) == target;
     }
 
     /// @dev Checks every execution of an ERC-7579 batch and intersects the results.
@@ -252,6 +216,41 @@ library PolicyLib {
         return true;
     }
 
+    /// @dev True if every policy in `policyDatas` is enabled (vacuously true for none).
+    function areEnabled(
+        Policy storage $policies,
+        PermissionId permissionId,
+        address account,
+        PolicyData[] calldata policyDatas
+    ) internal view returns (bool) {
+        uint256 length = policyDatas.length;
+        for (uint256 i; i < length; ++i) {
+            if (!$policies.policyList[permissionId].contains(account, policyDatas[i].policy)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// @dev True if every policy of every action in `actionPolicyDatas` is enabled.
+    function areEnabled(
+        EnumerableActionPolicy storage $self,
+        PermissionId permissionId,
+        address account,
+        ActionData[] calldata actionPolicyDatas
+    ) internal view returns (bool) {
+        uint256 length = actionPolicyDatas.length;
+        for (uint256 i; i < length; ++i) {
+            ActionData calldata action = actionPolicyDatas[i];
+            ActionId actionId = action.actionTarget.toActionId(action.actionTargetSelector);
+            if (!$self.actionPolicies[actionId].areEnabled(
+                    permissionId, account, action.actionPolicies
+                )) return false;
+        }
+        return true;
+    }
+
+    /// @dev Whether `policy` accepts the signed request, given the typed data when it reads it.
     function _accepts(
         I1271TypedDataPolicy policy,
         address account,
@@ -278,37 +277,38 @@ library PolicyLib {
         });
     }
 
-    /// @dev True if every policy in `policyDatas` is enabled (vacuously true for none).
-    function areEnabled(
-        Policy storage $policies,
-        PermissionId permissionId,
-        address smartAccount,
-        PolicyData[] calldata policyDatas
-    ) internal view returns (bool) {
-        uint256 length = policyDatas.length;
-        for (uint256 i; i < length; ++i) {
-            if (!$policies.policyList[permissionId].contains(smartAccount, policyDatas[i].policy)) {
-                return false;
+    /// @dev Whether `target` is part of the calling account's own infrastructure: the EntryPoint, a validator, executor
+    /// or hook the account has installed, or its default validator (Nexus). Modules take the account's calls as its
+    /// own configuration (owners, passkeys, hook installs), so a fallback call there could take the account over.
+    /// Calls to them need an explicit action. A failed module probe counts as installed, failing closed. Fallback
+    /// handlers (type 3) are installed per selector, which a probe without one can't ask about (Kernel and Safe7579
+    /// revert), so they aren't covered.
+    function _isInfrastructure(address target) private view returns (bool) {
+        if (target == ENTRY_POINT_V07 || target == ENTRY_POINT_V08) return true;
+        // Validators (1), executors (2) and hooks (4). Copies at most one word back: the answer is one.
+        for (uint256 moduleType = 1; moduleType <= 4; ++moduleType) {
+            if (moduleType == 3) continue;
+            (bool success, bool exceeded, bytes memory result) = LibCall.tryStaticCall({
+                target: msg.sender,
+                gasStipend: PROBE_GAS,
+                maxCopy: 32,
+                data: abi.encodeWithSignature(
+                    "isModuleInstalled(uint256,address,bytes)", moduleType, target, ""
+                )
+            });
+            if (!success || exceeded || result.length != 32 || abi.decode(result, (bool))) {
+                return true;
             }
         }
-        return true;
-    }
-
-    /// @dev True if every policy of every action in `actionPolicyDatas` is enabled.
-    function areEnabled(
-        EnumerableActionPolicy storage $self,
-        PermissionId permissionId,
-        address smartAccount,
-        ActionData[] calldata actionPolicyDatas
-    ) internal view returns (bool) {
-        uint256 length = actionPolicyDatas.length;
-        for (uint256 i; i < length; ++i) {
-            ActionData calldata action = actionPolicyDatas[i];
-            ActionId actionId = action.actionTarget.toActionId(action.actionTargetSelector);
-            if (!$self.actionPolicies[actionId].areEnabled(
-                    permissionId, smartAccount, action.actionPolicies
-                )) return false;
-        }
-        return true;
+        // Nexus keeps its owner in a default validator it doesn't report as installed. A bounded probe: on an account
+        // without it (Safe7579), the call falls into a fallback that burns its gas.
+        (bool found, bool longer, bytes memory defaultValidator) = LibCall.tryStaticCall({
+            target: msg.sender,
+            gasStipend: DEFAULT_VALIDATOR_PROBE_GAS,
+            maxCopy: 32,
+            data: abi.encodeWithSignature("getDefaultValidator()")
+        });
+        return found && !longer && defaultValidator.length == 32
+            && abi.decode(defaultValidator, (address)) == target;
     }
 }

@@ -51,6 +51,7 @@ contract SessionHook is IUserOpPolicy {
     uint256 internal constant MODULE_TYPE_HOOK = 4;
     uint256 internal constant VALIDATION_SUCCESS = 0;
     uint256 internal constant VALIDATION_FAILED = 1;
+    /// @notice The most execution policies one session may list.
     uint256 public constant MAX_EXECUTION_POLICIES = 8;
 
     /// @notice The last word of a tagged operation's calldata.
@@ -64,10 +65,10 @@ contract SessionHook is IUserOpPolicy {
     /// @dev Transient slot base of each account's running check: `keccak256(context)` while one runs.
     bytes32 internal constant CONTEXT_SLOT = keccak256("namera.session-hook.context");
 
-    mapping(address account => Install) internal _installs;
-    mapping(bytes32 configId => mapping(address account => uint256)) internal _counts;
+    mapping(address account => Install) internal $installs;
+    mapping(bytes32 configId => mapping(address account => uint256)) internal $counts;
     mapping(bytes32 configId => mapping(uint256 index => mapping(address account => address)))
-        internal _policies;
+        internal $policies;
 
     event SessionHookInstalled(address indexed account, Flavour flavour, address smartSession);
     event SessionHookUninstalled(address indexed account);
@@ -85,10 +86,11 @@ contract SessionHook is IUserOpPolicy {
     error InvalidContext(address account);
     error ExecutionPolicyViolation(bytes32 permissionId, address policy, bytes reason);
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // ERC-7579 module
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
+    /// @notice Installs the hook on the calling account for the sessions of one Smart Sessions module.
     /// @param data `abi.encode(uint8 flavour, address smartSession)`.
     function onInstall(bytes calldata data) external {
         _requireIdle(msg.sender);
@@ -98,39 +100,43 @@ contract SessionHook is IUserOpPolicy {
         }
         // Reinstalling with the same configuration is allowed (Kernel rebinding runs `onInstall` again); changing the
         // flavour or Smart Sessions needs an uninstall first, so no call can quietly switch the policies off.
-        Install memory installed = _installs[msg.sender];
+        Install memory installed = $installs[msg.sender];
         if (
             installed.flavour != Flavour.None
                 && (uint8(installed.flavour) != flavour || installed.smartSession != smartSession)
         ) revert InvalidInstall();
-        _installs[msg.sender] = Install(Flavour(flavour), smartSession);
+        $installs[msg.sender] = Install(Flavour(flavour), smartSession);
         // Only a transient-storage read (`_requireIdle`) comes before: no external call.
         // forge-lint: disable-next-line(reentrancy-events)
         emit SessionHookInstalled(msg.sender, Flavour(flavour), smartSession);
     }
 
+    /// @notice Uninstalls the hook from the calling account.
     /// @dev Policy lists stay: they are reachable only through enabled sessions of the installed Smart Sessions module,
     /// and re-enabling a session sets its list again.
     function onUninstall(bytes calldata) external {
         _requireIdle(msg.sender);
-        delete _installs[msg.sender];
+        delete $installs[msg.sender];
         // Only a transient-storage read (`_requireIdle`) comes before: no external call.
         // forge-lint: disable-next-line(reentrancy-events)
         emit SessionHookUninstalled(msg.sender);
     }
 
+    /// @notice Whether the hook is installed on `account`.
     function isInitialized(address account) external view returns (bool) {
-        return _installs[account].flavour != Flavour.None;
+        return $installs[account].flavour != Flavour.None;
     }
 
+    /// @notice Whether the hook is of ERC-7579 module type `moduleTypeId` (only hooks, type 4).
     function isModuleType(uint256 moduleTypeId) external pure returns (bool) {
         return moduleTypeId == MODULE_TYPE_HOOK;
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // User operation policy (validation)
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
+    /// @inheritdoc IPolicy
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return interfaceId == type(IPolicy).interfaceId
             || interfaceId == type(IUserOpPolicy).interfaceId || interfaceId == 0x01ffc9a7;
@@ -144,24 +150,25 @@ contract SessionHook is IUserOpPolicy {
         bytes32 sessionConfigId,
         bytes calldata initData
     ) external {
-        Install memory install = _installs[account];
+        Install memory install = $installs[account];
         if (install.flavour == Flavour.None) revert SessionHookNotInstalled(account);
         if (msg.sender != install.smartSession) revert OnlySmartSession(msg.sender);
 
         ExecutionPolicyData[] memory list = abi.decode(initData, (ExecutionPolicyData[]));
-        if (list.length > MAX_EXECUTION_POLICIES) revert TooManyExecutionPolicies(list.length);
-        address[] memory policies = new address[](list.length);
-        for (uint256 i; i < list.length; ++i) {
+        uint256 count = list.length;
+        if (count > MAX_EXECUTION_POLICIES) revert TooManyExecutionPolicies(count);
+        address[] memory policies = new address[](count);
+        for (uint256 i; i < count; ++i) {
             address policy = list[i].policy;
             if (!_isExecutionPolicy(policy)) revert NotExecutionPolicy(policy);
             policies[i] = policy;
-            _policies[sessionConfigId][i][account] = policy;
+            $policies[sessionConfigId][i][account] = policy;
         }
-        _counts[sessionConfigId][account] = list.length;
+        $counts[sessionConfigId][account] = count;
         emit ExecutionPoliciesSet(account, sessionConfigId, policies);
 
         // Initialized after the list is stored (checks-effects-interactions); at most MAX_EXECUTION_POLICIES.
-        for (uint256 i; i < list.length; ++i) {
+        for (uint256 i; i < count; ++i) {
             // slither-disable-next-line calls-loop
             IExecutionPolicy(list[i].policy)
                 .initializeWithMultiplexer(
@@ -179,7 +186,7 @@ contract SessionHook is IUserOpPolicy {
         returns (uint256)
     {
         address account = userOp.sender;
-        Install memory install = _installs[account];
+        Install memory install = $installs[account];
         if (msg.sender != install.smartSession || !_isBound(account, install)) {
             return VALIDATION_FAILED;
         }
@@ -197,9 +204,9 @@ contract SessionHook is IUserOpPolicy {
         return _callsAllowed(id, account, callData) ? VALIDATION_SUCCESS : VALIDATION_FAILED;
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // ERC-7579 hook (execution)
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
     /// @notice Runs the tagged session's execution policies before the calls. Untagged operations, and calls other
     /// than `execute`, pass through.
@@ -209,7 +216,7 @@ contract SessionHook is IUserOpPolicy {
         returns (bytes memory context)
     {
         address account = msg.sender;
-        Install memory install = _installs[account];
+        Install memory install = $installs[account];
         if (install.flavour == Flavour.None) return "";
         if (install.flavour == Flavour.Safe7579) {
             if (msgData.length < SAFE7579_SUFFIX_LENGTH) return "";
@@ -239,27 +246,6 @@ contract SessionHook is IUserOpPolicy {
         _storeContextHash(account, keccak256(context));
     }
 
-    function _runPreChecks(address account, bytes32 permissionId, bytes calldata execData)
-        internal
-        returns (bytes memory)
-    {
-        bytes32 id = configId(account, permissionId);
-        uint256 count = _counts[id][account];
-        address[] memory policies = new address[](count);
-        bytes32[] memory ids = new bytes32[](count);
-        bytes[] memory contexts = new bytes[](count);
-        for (uint256 i; i < count; ++i) {
-            policies[i] = _policies[id][i][account];
-            ids[i] = policyConfigId(id, i);
-            contexts[i] = _call(
-                permissionId,
-                policies[i],
-                abi.encodeCall(IExecutionPolicy.preCheck, (ids[i], account, execData))
-            );
-        }
-        return abi.encode(permissionId, policies, ids, contexts);
-    }
-
     /// @notice Runs the session's execution policies after the calls. Works from `context` alone: the hook may have
     /// been uninstalled during the operation. Empty context: nothing ran, nothing to do.
     function postCheck(bytes calldata context) external {
@@ -274,7 +260,8 @@ contract SessionHook is IUserOpPolicy {
             bytes32[] memory ids,
             bytes[] memory contexts
         ) = abi.decode(context, (bytes32, address[], bytes32[], bytes[]));
-        for (uint256 i; i < policies.length; ++i) {
+        uint256 count = policies.length;
+        for (uint256 i; i < count; ++i) {
             _call(
                 permissionId,
                 policies[i],
@@ -283,9 +270,38 @@ contract SessionHook is IUserOpPolicy {
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Views
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+
+    /// @notice The tail a session operation's calldata ends with.
+    function tag(bytes32 permissionId) external pure returns (bytes memory) {
+        return abi.encodePacked(permissionId, TAG);
+    }
+
+    /// @notice How the hook is installed on `account`: the account type and the Smart Sessions module it serves.
+    function getInstall(address account)
+        external
+        view
+        returns (Flavour flavour, address smartSession)
+    {
+        Install memory install = $installs[account];
+        return (install.flavour, install.smartSession);
+    }
+
+    /// @notice The execution policies of `account`'s session `permissionId`.
+    function getExecutionPolicies(address account, bytes32 permissionId)
+        external
+        view
+        returns (address[] memory policies)
+    {
+        bytes32 id = configId(account, permissionId);
+        uint256 count = $counts[id][account];
+        policies = new address[](count);
+        for (uint256 i; i < count; ++i) {
+            policies[i] = $policies[id][i][account];
+        }
+    }
 
     /// @notice The configuration id Smart Sessions gives this hook as a session's user operation policy.
     function configId(address account, bytes32 permissionId) public pure returns (bytes32) {
@@ -297,41 +313,38 @@ contract SessionHook is IUserOpPolicy {
         return keccak256(abi.encode(sessionConfigId, index));
     }
 
-    /// @notice The tail a session operation's calldata ends with.
-    function tag(bytes32 permissionId) external pure returns (bytes memory) {
-        return abi.encodePacked(permissionId, TAG);
-    }
+    // ---------------------------------------------------------------------------------------------
+    // Internal functions
+    // ---------------------------------------------------------------------------------------------
 
-    function getInstall(address account)
-        external
-        view
-        returns (Flavour flavour, address smartSession)
-    {
-        Install memory install = _installs[account];
-        return (install.flavour, install.smartSession);
-    }
-
-    function getExecutionPolicies(address account, bytes32 permissionId)
-        external
-        view
-        returns (address[] memory policies)
-    {
-        bytes32 id = configId(account, permissionId);
-        policies = new address[](_counts[id][account]);
-        for (uint256 i; i < policies.length; ++i) {
-            policies[i] = _policies[id][i][account];
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------------
-    // Internals
-    // ------------------------------------------------------------------------------------------------------------
-
+    /// @dev The permission id of a tagged operation's calldata, and whether it is tagged.
     function _readTag(bytes calldata data) internal pure returns (bool, bytes32) {
         if (data.length < TAIL_LENGTH || bytes32(data[data.length - 32:]) != TAG) {
             return (false, bytes32(0));
         }
         return (true, bytes32(data[data.length - TAIL_LENGTH:data.length - 32]));
+    }
+
+    /// @dev Runs the session's execution policies' `preCheck`s and encodes what `postCheck` needs.
+    function _runPreChecks(address account, bytes32 permissionId, bytes calldata execData)
+        internal
+        returns (bytes memory)
+    {
+        bytes32 id = configId(account, permissionId);
+        uint256 count = $counts[id][account];
+        address[] memory policies = new address[](count);
+        bytes32[] memory ids = new bytes32[](count);
+        bytes[] memory contexts = new bytes[](count);
+        for (uint256 i; i < count; ++i) {
+            policies[i] = $policies[id][i][account];
+            ids[i] = policyConfigId(id, i);
+            contexts[i] = _call(
+                permissionId,
+                policies[i],
+                abi.encodeCall(IExecutionPolicy.preCheck, (ids[i], account, execData))
+            );
+        }
+        return abi.encode(permissionId, policies, ids, contexts);
     }
 
     /// @dev Whether the account runs this hook for Smart Sessions operations, read from the account: Kernel binds it
@@ -378,7 +391,8 @@ contract SessionHook is IUserOpPolicy {
         }
         if (callType != LibERC7579.CALLTYPE_BATCH) return false;
         Execution[] calldata executions = ExecutionLib.decodeBatch(executionCalldata);
-        for (uint256 i; i < executions.length; ++i) {
+        uint256 length = executions.length;
+        for (uint256 i; i < length; ++i) {
             if (!_targetAllowed(id, account, executions[i].target)) return false;
         }
         return true;
@@ -390,9 +404,9 @@ contract SessionHook is IUserOpPolicy {
         returns (bool)
     {
         if (target == address(this) || target == account) return false;
-        uint256 count = _counts[id][account];
+        uint256 count = $counts[id][account];
         for (uint256 i; i < count; ++i) {
-            if (_policies[id][i][account] == target) return false;
+            if ($policies[id][i][account] == target) return false;
         }
         return true;
     }

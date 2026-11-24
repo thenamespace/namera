@@ -4,22 +4,48 @@ pragma solidity 0.8.38;
 import {P256} from "@openzeppelin/contracts/utils/cryptography/P256.sol";
 import {Base64} from "solady/utils/Base64.sol";
 
-/// @title WebAuthnAssertion
 /// @notice Checks one WebAuthn assertion (a passkey's `navigator.credentials.get` answer) against a challenge and a
 /// P-256 public key.
 /// @dev Checks, following WebAuthn Level 3 §7.2 where they mean something on chain:
-///      - `clientDataJSON` has `"type":"webauthn.get"` at `typeIndex`;
-///      - `clientDataJSON` has `"challenge":"<base64url(challenge)>"` at `challengeIndex`, closing quote included;
-///      - `authenticatorData` is at least 37 bytes, User Present is set, User Verified is set when required, and
-///        Backup State is not set without Backup Eligible;
-///      - its first 32 bytes equal `rpIdHash` when one is pinned;
-///      - the P-256 signature over `sha256(authenticatorData ‖ sha256(clientDataJSON))` is valid with `0 < r < n` and
-///        `0 < s <= n / 2`.
-///      Origin, top origin, the signature counter and extensions are not checked: the authenticator and the browser
-///      enforce the origin, and the rest needs state or has no on-chain meaning.
-///      The P-256 backend is chosen by the caller, never probed: calling an empty `0x100` during validation breaks
-///      ERC-7562, so the signer picks the precompile only where the chain has it.
+/// - `clientDataJSON` has `"type":"webauthn.get"` at `typeIndex`;
+/// - `clientDataJSON` has `"challenge":"<base64url(challenge)>"` at `challengeIndex`, closing quote included;
+/// - `authenticatorData` is at least 37 bytes, User Present is set, User Verified is set when required, and Backup
+///   State is not set without Backup Eligible;
+/// - its first 32 bytes equal `rpIdHash` when one is pinned;
+/// - the P-256 signature over `sha256(authenticatorData ‖ sha256(clientDataJSON))` is valid with `0 < r < n` and
+///   `0 < s <= n / 2`.
+///
+/// Origin, top origin, the signature counter and extensions are not checked: the authenticator and the browser
+/// enforce the origin, and the rest needs state or has no on-chain meaning. The P-256 backend is chosen by the
+/// caller, never probed: calling an empty `0x100` during validation breaks ERC-7562, so the signer picks the
+/// precompile only where the chain has it.
 library WebAuthnAssertion {
+    /// @dev A passkey's public key and the checks its assertions must pass.
+    /// @param x The P-256 public key's x coordinate.
+    /// @param y The P-256 public key's y coordinate.
+    /// @param requireUserVerification Whether assertions must have the User Verified flag (biometrics or PIN).
+    /// @param rpIdHash `sha256(rpId)` the assertions' authenticator data must start with, or zero for any.
+    struct Passkey {
+        bytes32 x;
+        bytes32 y;
+        bool requireUserVerification;
+        bytes32 rpIdHash;
+    }
+
+    /// @dev Where one assertion's parts are in the calldata it was read from, and its P-256 signature.
+    /// @param challengeIndex Where `"challenge":"` starts in `clientDataJSON`.
+    /// @param typeIndex Where `"type":"webauthn.get"` starts in `clientDataJSON`.
+    struct Assertion {
+        bytes32 r;
+        bytes32 s;
+        uint256 challengeIndex;
+        uint256 typeIndex;
+        uint256 authenticatorDataStart;
+        uint256 authenticatorDataEnd;
+        uint256 clientDataJSONStart;
+        uint256 clientDataJSONEnd;
+    }
+
     address internal constant P256_PRECOMPILE = address(0x100);
 
     bytes1 internal constant FLAG_USER_PRESENT = 0x01;
@@ -35,40 +61,16 @@ library WebAuthnAssertion {
     uint256 internal constant CHALLENGE_FIELD_LENGTH = 57;
     uint256 internal constant MIN_AUTHENTICATOR_DATA_LENGTH = 37;
 
+    /// @dev Half the P-256 group order.
     uint256 internal constant HALF_N =
         0x7fffffff800000007fffffffffffffffde737d56d38bcf4279dce5617e3192a8;
 
-    /// @notice A passkey's public key and the checks its assertions must pass.
-    /// @param x The P-256 public key's x coordinate.
-    /// @param y The P-256 public key's y coordinate.
-    /// @param requireUserVerification Whether assertions must have the User Verified flag (biometrics or PIN).
-    /// @param rpIdHash `sha256(rpId)` the assertions' authenticator data must start with, or zero for any.
-    struct Passkey {
-        bytes32 x;
-        bytes32 y;
-        bool requireUserVerification;
-        bytes32 rpIdHash;
-    }
-
-    /// @notice Where one assertion's parts are in the calldata it was read from, and its P-256 signature.
-    /// @param challengeIndex Where `"challenge":"` starts in `clientDataJSON`.
-    /// @param typeIndex Where `"type":"webauthn.get"` starts in `clientDataJSON`.
-    struct Assertion {
-        bytes32 r;
-        bytes32 s;
-        uint256 challengeIndex;
-        uint256 typeIndex;
-        uint256 authenticatorDataStart;
-        uint256 authenticatorDataEnd;
-        uint256 clientDataJSONStart;
-        uint256 clientDataJSONEnd;
-    }
-
+    /// @dev Whether `assertion` is a valid assertion of `passkey` over `challenge`. Never reverts on malformed
+    /// input. The P-256 signature is checked even when an earlier check fails, so a well-formed stub signature costs
+    /// what a real one does during gas estimation.
     /// @param challenge What the passkey signed: a user operation hash or a replay-safe ERC-1271 digest.
     /// @param data The calldata `assertion`'s offsets point into; they must be within it.
     /// @param precompile Whether to verify P-256 with the RIP-7212 / EIP-7951 precompile or in Solidity.
-    /// @dev Never reverts on malformed input. The P-256 signature is checked even when an earlier check fails, so a
-    /// well-formed stub signature costs what a real one does during gas estimation.
     function verify(
         bytes32 challenge,
         bytes calldata data,
@@ -94,7 +96,7 @@ library WebAuthnAssertion {
         ) && fields;
     }
 
-    /// @notice Whether `(x, y)` is a point of the P-256 curve with coordinates below the field modulus.
+    /// @dev Whether `(x, y)` is a point of the P-256 curve with coordinates below the field modulus.
     function isValidPublicKey(bytes32 x, bytes32 y) internal pure returns (bool) {
         return P256.isValidPublicKey(x, y);
     }

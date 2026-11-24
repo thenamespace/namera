@@ -12,6 +12,7 @@ import {PolicyBase, VALIDATION_SUCCESS} from "./lib/PolicyBase.sol";
 /// @dev Not an ERC-1271 policy: allowing every signature would let a session key sign anything.
 // slither-disable-next-line missing-inheritance
 contract AllowPolicy is PolicyBase, IActionPolicy, IUserOpPolicy {
+    /// @inheritdoc IActionPolicy
     function checkAction(bytes32 id, address account, address, uint256, bytes calldata)
         external
         view
@@ -21,6 +22,7 @@ contract AllowPolicy is PolicyBase, IActionPolicy, IUserOpPolicy {
         return VALIDATION_SUCCESS;
     }
 
+    /// @inheritdoc IUserOpPolicy
     function checkUserOpPolicy(bytes32 id, ERC4337.PackedUserOperation calldata userOp)
         external
         view

@@ -2,8 +2,23 @@
 // Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
-import "./DataTypes.sol";
+import {ERC4337} from "solady/accounts/ERC4337.sol";
+import {LibERC7579} from "solady/accounts/LibERC7579.sol";
+import {SignatureCheckerLib} from "solady/utils/SignatureCheckerLib.sol";
 
+import {
+    ActionId,
+    EIP1271_FAILED,
+    ERC1271Request,
+    ERC4337_EXECUTE_USER_OP_SELECTOR,
+    ERC4337_VALIDATION_FAILED,
+    ERC7579_EXECUTE_SELECTOR,
+    EnableSession,
+    PermissionId,
+    SESSION_HOOK_TAG,
+    SmartSessionMode,
+    ValidationData
+} from "./DataTypes.sol";
 import {ISmartSession} from "./ISmartSession.sol";
 import {SmartSessionBase} from "./core/SmartSessionBase.sol";
 import {SmartSessionERC7739} from "./core/SmartSessionERC7739.sol";
@@ -16,9 +31,6 @@ import {IdLib} from "./lib/IdLib.sol";
 import {PolicyLib} from "./lib/PolicyLib.sol";
 import {ValidationDataLib} from "./lib/ValidationDataLib.sol";
 import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
-import {ERC4337} from "solady/accounts/ERC4337.sol";
-import {LibERC7579} from "solady/accounts/LibERC7579.sol";
-import {SignatureCheckerLib} from "solady/utils/SignatureCheckerLib.sol";
 
 /// @title SmartSession
 /// @notice ERC-7579 validator for scoped session keys on ERC-4337 accounts. See `ISmartSession`.
@@ -32,6 +44,10 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     using ExecutionLib for bytes;
     using EncodeLib for bytes;
 
+    // ---------------------------------------------------------------------------------------------
+    // ERC-7579 validator
+    // ---------------------------------------------------------------------------------------------
+
     /// @inheritdoc ISmartSession
     function validateUserOp(ERC4337.PackedUserOperation calldata userOp, bytes32 userOpHash)
         external
@@ -42,17 +58,18 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         address account = userOp.sender;
         if (account != msg.sender) revert InvalidUserOpSender(account);
 
-        (SmartSessionMode mode, PermissionId permissionId, bytes calldata packedSig) =
+        (SmartSessionMode mode, PermissionId permissionId, bytes calldata packed) =
             userOp.signature.unpackMode();
 
         if (mode.isUseMode()) {
-            return _enforcePolicies(permissionId, userOpHash, userOp, packedSig, account);
+            return _enforcePolicies(permissionId, userOpHash, userOp, packed, account);
         }
         if (mode.isEnableMode()) {
-            (EnableSession memory enableData, bytes memory sessionKeySig) = packedSig.decodeEnable();
+            (EnableSession memory enableData, bytes memory sessionKeySignature) =
+                packed.decodeEnable();
             permissionId = enableData.sessionToEnable.toPermissionIdMemory();
             _enableSessionWithOwnerSignature(enableData, permissionId, account, mode);
-            return _enforcePolicies(permissionId, userOpHash, userOp, sessionKeySig, account);
+            return _enforcePolicies(permissionId, userOpHash, userOp, sessionKeySignature, account);
         }
         revert UnsupportedSmartSessionMode(mode);
     }
@@ -81,10 +98,14 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             sender, hash, _erc1271UnwrapSignature(signature)
         );
         assembly ("memory-safe") {
-            // `success ? 0x1626ba7e : 0xffffffff`
+            // `success ? 0x1626ba7e : 0xffffffff`.
             result := shl(224, or(0x1626ba7e, sub(0, iszero(success))))
         }
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Internal functions
+    // ---------------------------------------------------------------------------------------------
 
     /// @dev Verifies the owner's signature over the multichain session digest, then enables the session. The
     /// account's ERC-1271 check must not route back into this module; account implementations ensure this.
@@ -112,7 +133,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         PermissionId permissionId,
         bytes32 userOpHash,
         ERC4337.PackedUserOperation calldata userOp,
-        bytes memory sessionKeySig,
+        bytes memory sessionKeySignature,
         address account
     ) internal returns (ValidationData vd) {
         if (!$enabledSessions.contains(account, PermissionId.unwrap(permissionId))) {
@@ -151,10 +172,13 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         vd = vd.intersect(_checkActions(permissionId, callData, account));
 
         // Reverts if the session has no validator.
-        bool validSig = $sessionValidators.isValidISessionValidator({
-            hash: userOpHash, account: account, permissionId: permissionId, signature: sessionKeySig
+        bool valid = $sessionValidators.isValidISessionValidator({
+            hash: userOpHash,
+            account: account,
+            permissionId: permissionId,
+            signature: sessionKeySignature
         });
-        if (!validSig) return ERC4337_VALIDATION_FAILED;
+        if (!valid) return ERC4337_VALIDATION_FAILED;
 
         return vd.intersect(_sessionValidityData(permissionId, account));
     }
@@ -219,7 +243,7 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
     /// `contents`, every ERC-1271 policy (at least one) passes and the session key signature is valid.
     /// `signature` is `permissionId ‖ sessionKeySignature ‖ contentsData ‖ policyData ‖ uint16(contentsData.length)
     /// ‖ uint16(policyData.length)` (Namera): see `I1271TypedDataPolicy`.
-    // Session expiry is time-based by design (see _isWithinSessionValidity).
+    // Session expiry is time-based by design (see `_isWithinSessionValidity`).
     // slither-disable-next-line timestamp
     function _erc1271IsValidSignatureNowCalldata(
         address sender,

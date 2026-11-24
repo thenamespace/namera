@@ -7,16 +7,18 @@ pragma solidity 0.8.38;
 /// @dev Holds up to 512 bytes (room for P-256/WebAuthn session validator configs). `store` expects cleared
 /// storage: SmartSession only stores a validator config when none is set, and `clear`s it on removal.
 library FlatBytesLib {
+    // Declared before `Bytes`, whose array length it sets: the compiler requires that order.
     uint256 internal constant MAX_SLOTS = 16;
     uint256 internal constant MAX_LENGTH = MAX_SLOTS * 32;
-
-    error DataTooLong(uint256 length);
 
     struct Bytes {
         uint256 totalLength;
         bytes32[MAX_SLOTS] data;
     }
 
+    error DataTooLong(uint256 length);
+
+    /// @dev Stores `data` in cleared storage; reverts past `MAX_LENGTH` bytes.
     function store(Bytes storage self, bytes memory data) internal {
         uint256 length = data.length;
         if (length > MAX_LENGTH) revert DataTooLong(length);
@@ -35,6 +37,7 @@ library FlatBytesLib {
         }
     }
 
+    /// @dev Zeroes the slots `store` wrote and the length.
     function clear(Bytes storage self) internal {
         uint256 slots = (self.totalLength + 31) / 32;
         for (uint256 i; i < slots; ++i) {
@@ -43,6 +46,7 @@ library FlatBytesLib {
         self.totalLength = 0;
     }
 
+    /// @dev Reads back what `store` wrote.
     function load(Bytes storage self) internal view returns (bytes memory data) {
         uint256 length = self.totalLength;
         data = new bytes(length);

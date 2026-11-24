@@ -3,8 +3,9 @@
 // Nested EIP-712 (ERC-7739) assembly derived from Solady's ERC1271 (MIT).
 pragma solidity 0.8.38;
 
-import {ISmartSession} from "../ISmartSession.sol";
 import {EIP712} from "solady/utils/EIP712.sol";
+
+import {ISmartSession} from "../ISmartSession.sol";
 
 /// @notice ERC-7739 (nested EIP-712) unwrapping for session-key ERC-1271 signatures.
 /// @dev A session key signs the app's typed data wrapped in `TypedDataSign`, bound to the account's EIP-712
@@ -126,15 +127,15 @@ abstract contract SmartSessionERC7739 is ISmartSession {
             // `c`: length of `contentsDescription`, from the last two bytes of the signature.
             let c := shr(240, calldataload(add(signature.offset, sub(signature.length, 2))))
             for {} 1 {} {
-                let l := add(0x42, c) // appended data: 32 + 32 + c + 2 bytes
+                let l := add(0x42, c) // Appended data: 32 + 32 + c + 2 bytes.
                 let o := add(signature.offset, sub(signature.length, l))
                 mstore(0x00, 0x1901)
-                calldatacopy(0x20, o, 0x40) // APP_DOMAIN_SEPARATOR, contents
+                calldatacopy(0x20, o, 0x40) // `APP_DOMAIN_SEPARATOR`, `contents`.
                 let appHash := keccak256(0x1e, 0x42)
                 // Namera: Kernel asks about `\x19\x01 ‖ kernelDomainSeparator ‖ hashStruct(Kernel(appHash))`.
                 if and(eq(mload(add(t, 0x40)), KERNEL_NAME_HASH), iszero(eq(appHash, hash))) {
                     mstore(add(t, 0x20), DOMAIN_TYPEHASH)
-                    mstore(add(m, 0x40), keccak256(add(t, 0x20), 0xa0)) // Kernel's domain separator
+                    mstore(add(m, 0x40), keccak256(add(t, 0x20), 0xa0)) // Kernel's domain separator.
                     mstore(m, KERNEL_WRAPPER_TYPEHASH)
                     mstore(add(m, 0x20), appHash)
                     mstore(add(m, 0x60), keccak256(m, 0x40))
@@ -151,10 +152,10 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 // TypedDataSign type: `TypedDataSign({ContentsName} contents,string name,...){ContentsType}`.
                 mstore(m, "TypedDataSign(")
                 let p := add(m, 0x0e)
-                calldatacopy(p, add(o, 0x40), c) // `contentsName`, assuming implicit mode
+                calldatacopy(p, add(o, 0x40), c) // `contentsName`, assuming implicit mode.
                 contents.offset := add(o, 0x40)
                 contents.length := c
-                mstore(add(p, c), 40) // '('
+                mstore(add(p, c), 40) // `(`.
                 // Explicit mode (description does not end with ')'): the name is the trailing part.
                 if iszero(eq(byte(0, mload(sub(add(p, c), 1))), 41)) {
                     let e := 0
@@ -164,7 +165,7 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                             break
                         }
                     }
-                    c := sub(c, e) // truncate the description to `contentsType`
+                    c := sub(c, e) // Truncates the description to `contentsType`.
                     calldatacopy(p, add(add(o, 0x40), c), e)
                     mstore8(add(p, e), 40)
                 }
@@ -177,11 +178,11 @@ abstract contract SmartSessionERC7739 is ISmartSession {
                 mstore(add(p, 0x1c), " version,uint256 chainId,address")
                 mstore(add(p, 0x3c), " verifyingContract,bytes32 salt)")
                 p := add(p, 0x5c)
-                calldatacopy(p, add(o, 0x40), c) // `contentsType`
-                calldatacopy(t, o, 0x40) // `contents` lands at t + 0x20
-                mstore(t, keccak256(m, sub(add(p, c), m))) // TypedDataSign typehash
+                calldatacopy(p, add(o, 0x40), c) // `contentsType`.
+                calldatacopy(t, o, 0x40) // `contents` lands at `t + 0x20`.
+                mstore(t, keccak256(m, sub(add(p, c), m))) // The `TypedDataSign` type hash.
                 appDomainSeparator := mload(0x20)
-                mstore(0x40, keccak256(t, 0xe0)) // hashStruct(TypedDataSign)
+                mstore(0x40, keccak256(t, 0xe0)) // `hashStruct(TypedDataSign)`.
                 // Final hash; corrupted (one extra byte hashed) if `contentsName` is invalid.
                 hash := keccak256(0x1e, add(0x42, and(1, d)))
                 signature.length := sub(signature.length, l)

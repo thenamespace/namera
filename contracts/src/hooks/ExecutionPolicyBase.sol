@@ -4,7 +4,6 @@ pragma solidity 0.8.38;
 import {IPolicy} from "../policies/interfaces/IPolicy.sol";
 import {IExecutionPolicy} from "./interfaces/IExecutionPolicy.sol";
 
-/// @title ExecutionPolicyBase
 /// @notice A starting point for application execution policies run by `SessionHook`: ERC-165, the configuration
 /// event, and every call passed on with the multiplexer (`SessionHook`) so state is keyed `id → multiplexer →
 /// account`. Not deployed by Namera: applications inherit it.
@@ -17,11 +16,13 @@ import {IExecutionPolicy} from "./interfaces/IExecutionPolicy.sol";
 /// - Revert to reject the operation; keep gas bounded, since a policy that runs out of gas rejects every operation of
 ///   its session.
 abstract contract ExecutionPolicyBase is IExecutionPolicy {
+    /// @inheritdoc IPolicy
     function supportsInterface(bytes4 interfaceId) external pure virtual returns (bool) {
         return interfaceId == type(IExecutionPolicy).interfaceId
             || interfaceId == type(IPolicy).interfaceId || interfaceId == 0x01ffc9a7;
     }
 
+    /// @inheritdoc IPolicy
     function initializeWithMultiplexer(address account, bytes32 id, bytes calldata initData)
         external
     {
@@ -29,6 +30,7 @@ abstract contract ExecutionPolicyBase is IExecutionPolicy {
         emit PolicySet(id, msg.sender, account);
     }
 
+    /// @inheritdoc IExecutionPolicy
     function preCheck(bytes32 id, address account, bytes calldata execData)
         external
         returns (bytes memory context)
@@ -36,6 +38,7 @@ abstract contract ExecutionPolicyBase is IExecutionPolicy {
         return _preCheck(id, msg.sender, account, execData);
     }
 
+    /// @inheritdoc IExecutionPolicy
     function postCheck(bytes32 id, address account, bytes calldata context) external {
         _postCheck(id, msg.sender, account, context);
     }

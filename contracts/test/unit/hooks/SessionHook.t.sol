@@ -198,7 +198,7 @@ contract SessionHookTest is Test {
         hook.initializeWithMultiplexer(address(account), id, data);
         (, bytes32[] memory writes) = vm.accesses(address(hook));
 
-        // `_counts` is slot 1, `_policies` slot 2 (after `_installs`).
+        // `$counts` is slot 1, `$policies` slot 2 (after `$installs`).
         bytes32 countSlot =
             keccak256(abi.encode(address(account), keccak256(abi.encode(id, uint256(1)))));
         bytes32[3] memory expected = [

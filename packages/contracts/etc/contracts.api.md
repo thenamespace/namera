@@ -172,7 +172,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -293,7 +293,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -432,7 +432,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -447,7 +447,7 @@ export {};
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Compiler {
     readonly compiler: string;
@@ -466,7 +466,7 @@ export interface Compiler {
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Deployment {
     readonly runtimeCodeHash: `0x${string}`;
@@ -489,7 +489,7 @@ export interface Deployment {
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Version<Abi> {
     readonly label: string;
@@ -556,7 +556,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -574,7 +574,7 @@ export {};
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const entryPoint: {
     readonly "0.7": {
@@ -593,7 +593,7 @@ export declare const entryPoint: {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const kernel: {
     readonly "3.3": {
@@ -613,7 +613,7 @@ export declare const kernel: {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const nexus: {
     readonly "1.3.3": {
@@ -633,7 +633,7 @@ export declare const nexus: {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const safe7579: {
     readonly 2: {
@@ -879,7 +879,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -1067,7 +1067,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -1525,7 +1525,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -1696,7 +1696,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -2332,7 +2332,7 @@ declare const abiV1: readonly [{
         readonly type: "address";
         readonly internalType: "address";
     }, {
-        readonly name: "data";
+        readonly name: "session";
         readonly type: "tuple";
         readonly internalType: "struct Session";
         readonly components: readonly [{
@@ -2621,7 +2621,7 @@ declare const abiV1: readonly [{
     readonly type: "function";
     readonly name: "isInitialized";
     readonly inputs: readonly [{
-        readonly name: "smartAccount";
+        readonly name: "account";
         readonly type: "address";
         readonly internalType: "address";
     }];
@@ -2635,7 +2635,7 @@ declare const abiV1: readonly [{
     readonly type: "function";
     readonly name: "isModuleType";
     readonly inputs: readonly [{
-        readonly name: "typeID";
+        readonly name: "moduleTypeId";
         readonly type: "uint256";
         readonly internalType: "uint256";
     }];
@@ -3238,7 +3238,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -3434,7 +3434,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -3630,7 +3630,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -4111,7 +4111,7 @@ declare const abiV1: readonly [{
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export declare const v1: Contract.Version<typeof abiV1>;
 export {};
@@ -4125,7 +4125,7 @@ export {};
  * chain and the `Compiler` settings it was built with.
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export type * as Contract from "./Contract.ts";
 /**
@@ -4133,7 +4133,7 @@ export type * as Contract from "./Contract.ts";
  * version (`SmartSession.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SmartSession from "./SmartSession.ts";
 /**
@@ -4141,7 +4141,7 @@ export * as SmartSession from "./SmartSession.ts";
  * export per version (`ECDSASessionValidator.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ECDSASessionValidator from "./ECDSASessionValidator.ts";
 /**
@@ -4149,7 +4149,7 @@ export * as ECDSASessionValidator from "./ECDSASessionValidator.ts";
  * per version (`WebAuthnValidator.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as WebAuthnValidator from "./WebAuthnValidator.ts";
 /**
@@ -4157,7 +4157,7 @@ export * as WebAuthnValidator from "./WebAuthnValidator.ts";
  * version (`SessionHook.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SessionHook from "./SessionHook.ts";
 /**
@@ -4165,7 +4165,7 @@ export * as SessionHook from "./SessionHook.ts";
  * version (`AllowPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as AllowPolicy from "./AllowPolicy.ts";
 /**
@@ -4173,7 +4173,7 @@ export * as AllowPolicy from "./AllowPolicy.ts";
  * version (`ArgPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ArgPolicy from "./ArgPolicy.ts";
 /**
@@ -4181,7 +4181,7 @@ export * as ArgPolicy from "./ArgPolicy.ts";
  * version (`SpendPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SpendPolicy from "./SpendPolicy.ts";
 /**
@@ -4189,7 +4189,7 @@ export * as SpendPolicy from "./SpendPolicy.ts";
  * version (`ValuePolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ValuePolicy from "./ValuePolicy.ts";
 /**
@@ -4197,7 +4197,7 @@ export * as ValuePolicy from "./ValuePolicy.ts";
  * version (`RateLimitPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as RateLimitPolicy from "./RateLimitPolicy.ts";
 /**
@@ -4205,7 +4205,7 @@ export * as RateLimitPolicy from "./RateLimitPolicy.ts";
  * version (`GasPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as GasPolicy from "./GasPolicy.ts";
 /**
@@ -4213,7 +4213,7 @@ export * as GasPolicy from "./GasPolicy.ts";
  * version (`ApprovalPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ApprovalPolicy from "./ApprovalPolicy.ts";
 /**
@@ -4221,7 +4221,7 @@ export * as ApprovalPolicy from "./ApprovalPolicy.ts";
  * version (`SignaturePolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SignaturePolicy from "./SignaturePolicy.ts";
 /**
@@ -4229,7 +4229,7 @@ export * as SignaturePolicy from "./SignaturePolicy.ts";
  * smart accounts' factories, implementations and validators.
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as External from "./External.ts";
 ```

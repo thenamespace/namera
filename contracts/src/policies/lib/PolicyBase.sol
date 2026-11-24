@@ -16,24 +16,26 @@ abstract contract PolicyBase is IPolicy {
 
     PolicyStorage.Layout internal $;
 
-    /// @dev The interface ids this policy implements besides IPolicy and ERC-165.
-    function _supportsKind(bytes4 interfaceId) internal pure virtual returns (bool);
-
-    /// @dev What the policy stores of `initData`, its ABI configuration: a packed form its checks read back with
-    /// fewer storage reads (each word read costs 2,100 gas cold). Reverts if `initData` cannot configure the policy.
-    function _pack(bytes calldata initData) internal pure virtual returns (bytes memory);
-
+    /// @inheritdoc IPolicy
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return interfaceId == type(IPolicy).interfaceId || interfaceId == 0x01ffc9a7
             || _supportsKind(interfaceId);
     }
 
+    /// @inheritdoc IPolicy
     function initializeWithMultiplexer(address account, bytes32 configId, bytes calldata initData)
         external
     {
         $.write(PolicyStorage.configKey(configId, msg.sender), account, _pack(initData));
         emit PolicySet(configId, msg.sender, account);
     }
+
+    /// @dev The interface ids this policy implements besides IPolicy and ERC-165.
+    function _supportsKind(bytes4 interfaceId) internal pure virtual returns (bool);
+
+    /// @dev What the policy stores of `initData`, its ABI configuration: a packed form its checks read back with
+    /// fewer storage reads (each word read costs 2,100 gas cold). Reverts if `initData` cannot configure the policy.
+    function _pack(bytes calldata initData) internal pure virtual returns (bytes memory);
 
     /// @dev The packed configuration `msg.sender` set for `account` and `configId`; reverts if there is none.
     function _config(bytes32 configId, address account)
@@ -65,6 +67,7 @@ abstract contract PolicyBase is IPolicy {
         return $.counters[counter][account];
     }
 
+    /// @dev Sets `account`'s word of `counter`.
     function _setCounter(bytes32 counter, address account, uint256 word) internal {
         $.counters[counter][account] = word;
     }

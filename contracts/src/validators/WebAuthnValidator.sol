@@ -66,6 +66,7 @@ contract WebAuthnValidator is EIP712 {
 
     uint256 internal constant MODULE_TYPE_VALIDATOR = 1;
     uint256 internal constant MODULE_TYPE_STATELESS_VALIDATOR = 7;
+    /// @notice The most passkeys an account may hold.
     uint256 public constant MAX_PASSKEYS = 16;
 
     uint8 internal constant MODE_DIRECT = 0;
@@ -85,13 +86,15 @@ contract WebAuthnValidator is EIP712 {
     bytes4 internal constant ERC1271_VALID = 0x1626ba7e;
     bytes4 internal constant ERC1271_INVALID = 0xffffffff;
 
+    /// @notice EIP-712 type hash of `ReplaySafeHash`, which binds an ERC-1271 digest to the account.
     bytes32 public constant REPLAY_SAFE_HASH_TYPEHASH =
         keccak256("ReplaySafeHash(address account,bytes32 hash)");
+    /// @notice EIP-712 type hash of `WebAuthnMultichain`, the challenge of a multichain signature.
     bytes32 public constant MULTICHAIN_TYPEHASH = keccak256("WebAuthnMultichain(bytes32 root)");
 
-    mapping(bytes32 credentialId => mapping(address account => Stored)) internal _passkeys;
-    mapping(uint256 index => mapping(address account => bytes32)) internal _credentialIds;
-    mapping(address account => Config) internal _configs;
+    mapping(bytes32 credentialId => mapping(address account => Stored)) internal $passkeys;
+    mapping(uint256 index => mapping(address account => bytes32)) internal $credentialIds;
+    mapping(address account => Config) internal $configs;
 
     event PasskeyAdded(address indexed account, bytes32 indexed credentialId, bytes32 x, bytes32 y);
     event PasskeyRemoved(address indexed account, bytes32 indexed credentialId);
@@ -104,63 +107,73 @@ contract WebAuthnValidator is EIP712 {
     error PasskeyNotFound(bytes32 credentialId);
     error NotInitialized(address account);
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // ERC-7579 module
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
-    /// @param data `abi.encode(uint256 threshold, WebAuthnAssertion.Passkey[] passkeys)`.
+    /// @notice Installs the validator on the calling account with its passkeys and threshold.
     /// @dev Overwrites any state left by an earlier install: every account swallows `onUninstall` failures.
+    /// @param data `abi.encode(uint256 threshold, WebAuthnAssertion.Passkey[] passkeys)`.
     function onInstall(bytes calldata data) external {
         (uint256 threshold, WebAuthnAssertion.Passkey[] memory passkeys) =
             abi.decode(data, (uint256, WebAuthnAssertion.Passkey[]));
         _clear(msg.sender);
-        for (uint256 i; i < passkeys.length; ++i) {
+        uint256 length = passkeys.length;
+        for (uint256 i; i < length; ++i) {
             _add(msg.sender, passkeys[i]);
         }
         _setThreshold(msg.sender, threshold);
     }
 
+    /// @notice Removes the calling account's passkeys and threshold.
     function onUninstall(bytes calldata) external {
         _clear(msg.sender);
     }
 
+    /// @notice Whether `account` has passkeys.
     function isInitialized(address account) external view returns (bool) {
-        return _configs[account].count != 0;
+        return $configs[account].count != 0;
     }
 
+    /// @notice Whether the validator is of ERC-7579 module type `moduleTypeId`: a validator (1) or a stateless
+    /// validator (7).
     function isModuleType(uint256 moduleTypeId) external pure returns (bool) {
         return
             moduleTypeId == MODULE_TYPE_VALIDATOR || moduleTypeId == MODULE_TYPE_STATELESS_VALIDATOR;
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Passkey management, called by the account
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
+    /// @notice Adds a passkey to the calling account.
     function addPasskey(WebAuthnAssertion.Passkey calldata passkey) external {
         _requireInitialized(msg.sender);
         _add(msg.sender, passkey);
     }
 
+    /// @notice Removes the calling account's passkey `id`; the threshold must stay reachable.
     function removePasskey(bytes32 id) external {
         _requireInitialized(msg.sender);
-        if (_passkeys[id][msg.sender].position == 0) revert PasskeyNotFound(id);
-        Config memory config = _configs[msg.sender];
+        if ($passkeys[id][msg.sender].position == 0) revert PasskeyNotFound(id);
+        Config memory config = $configs[msg.sender];
         if (config.count - 1 < config.threshold) {
             revert InvalidThreshold(config.threshold, config.count - 1);
         }
         _remove(msg.sender, id);
     }
 
+    /// @notice Sets how many of the calling account's passkeys must sign.
     function setThreshold(uint256 threshold) external {
         _requireInitialized(msg.sender);
         _setThreshold(msg.sender, threshold);
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Validation
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
+    /// @notice Validates a user operation of the calling account: ERC-4337 validation data, 0 or 1.
     function validateUserOp(ERC4337.PackedUserOperation calldata userOp, bytes32 userOpHash)
         external
         view
@@ -173,12 +186,13 @@ contract WebAuthnValidator is EIP712 {
             userOp.signature,
             msg.sender,
             new WebAuthnAssertion.Passkey[](0),
-            _configs[msg.sender].threshold
+            $configs[msg.sender].threshold
         )
             ? VALIDATION_SUCCESS
             : VALIDATION_FAILED;
     }
 
+    /// @notice ERC-7579 ERC-1271 forwarding: whether the calling account's passkeys signed `hash`.
     /// @dev An empty signature (Nexus's ERC-7739 support probe) is invalid, never a revert.
     function isValidSignatureWithSender(address sender, bytes32 hash, bytes calldata signature)
         external
@@ -193,7 +207,7 @@ contract WebAuthnValidator is EIP712 {
             signature,
             msg.sender,
             new WebAuthnAssertion.Passkey[](0),
-            _configs[msg.sender].threshold
+            $configs[msg.sender].threshold
         )
             ? ERC1271_VALID
             : ERC1271_INVALID;
@@ -213,23 +227,9 @@ contract WebAuthnValidator is EIP712 {
         return parsed && _verify(envelope, signature, address(0), passkeys, threshold);
     }
 
-    // ------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Views
-    // ------------------------------------------------------------------------------------------------------------
-
-    /// @notice What a passkey signs for an ERC-1271 check of `hash` on `account`.
-    function replaySafeHash(address account, bytes32 hash) public view returns (bytes32) {
-        return _hashTypedData(keccak256(abi.encode(REPLAY_SAFE_HASH_TYPEHASH, account, hash)));
-    }
-
-    /// @notice What a passkey signs to approve every user operation under a multichain `root`.
-    function multichainChallenge(bytes32 root) public pure returns (bytes32) {
-        return keccak256(abi.encode(MULTICHAIN_TYPEHASH, root));
-    }
-
-    function credentialId(bytes32 x, bytes32 y) public pure returns (bytes32) {
-        return keccak256(abi.encode(x, y));
-    }
+    // ---------------------------------------------------------------------------------------------
 
     /// @notice The account's threshold and passkeys, in the order they were added (removal moves the last one).
     function getPasskeys(address account)
@@ -241,12 +241,12 @@ contract WebAuthnValidator is EIP712 {
             WebAuthnAssertion.Passkey[] memory passkeys
         )
     {
-        Config memory config = _configs[account];
+        Config memory config = $configs[account];
         credentialIds = new bytes32[](config.count);
         passkeys = new WebAuthnAssertion.Passkey[](config.count);
         for (uint256 i; i < config.count; ++i) {
-            bytes32 id = _credentialIds[i][account];
-            Stored storage stored = _passkeys[id][account];
+            bytes32 id = $credentialIds[i][account];
+            Stored storage stored = $passkeys[id][account];
             credentialIds[i] = id;
             passkeys[i] = WebAuthnAssertion.Passkey(
                 stored.x, stored.y, stored.requireUserVerification, stored.rpIdHash
@@ -255,9 +255,24 @@ contract WebAuthnValidator is EIP712 {
         return (config.threshold, credentialIds, passkeys);
     }
 
-    // ------------------------------------------------------------------------------------------------------------
-    // Internals
-    // ------------------------------------------------------------------------------------------------------------
+    /// @notice What a passkey signs for an ERC-1271 check of `hash` on `account`.
+    function replaySafeHash(address account, bytes32 hash) public view returns (bytes32) {
+        return _hashTypedData(keccak256(abi.encode(REPLAY_SAFE_HASH_TYPEHASH, account, hash)));
+    }
+
+    /// @notice What a passkey signs to approve every user operation under a multichain `root`.
+    function multichainChallenge(bytes32 root) public pure returns (bytes32) {
+        return keccak256(abi.encode(MULTICHAIN_TYPEHASH, root));
+    }
+
+    /// @notice The id of the passkey with public key `(x, y)`.
+    function credentialId(bytes32 x, bytes32 y) public pure returns (bytes32) {
+        return keccak256(abi.encode(x, y));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Internal functions
+    // ---------------------------------------------------------------------------------------------
 
     function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
         return ("WebAuthnValidator", "1");
@@ -373,12 +388,13 @@ contract WebAuthnValidator is EIP712 {
         return (true, valid, assertion.clientDataJSONEnd);
     }
 
+    /// @dev The account's passkey `id`, and whether it is registered.
     function _stored(address account, bytes32 id)
         internal
         view
         returns (bool, WebAuthnAssertion.Passkey memory passkey)
     {
-        Stored storage stored = _passkeys[id][account];
+        Stored storage stored = $passkeys[id][account];
         if (stored.position == 0) return (false, passkey);
         return (
             true,
@@ -388,12 +404,14 @@ contract WebAuthnValidator is EIP712 {
         );
     }
 
+    /// @dev The passkey of `passkeys` with credential id `id`, and whether there is one.
     function _find(WebAuthnAssertion.Passkey[] memory passkeys, bytes32 id)
         internal
         pure
         returns (bool, WebAuthnAssertion.Passkey memory passkey)
     {
-        for (uint256 i; i < passkeys.length; ++i) {
+        uint256 length = passkeys.length;
+        for (uint256 i; i < length; ++i) {
             if (credentialId(passkeys[i].x, passkeys[i].y) == id) return (true, passkeys[i]);
         }
         return (false, passkey);
@@ -404,13 +422,13 @@ contract WebAuthnValidator is EIP712 {
             revert InvalidPasskey(passkey.x, passkey.y);
         }
         bytes32 id = credentialId(passkey.x, passkey.y);
-        Stored storage stored = _passkeys[id][account];
+        Stored storage stored = $passkeys[id][account];
         if (stored.position != 0) revert DuplicatePasskey(id);
-        Config storage config = _configs[account];
+        Config storage config = $configs[account];
         uint256 count = config.count;
         if (count == MAX_PASSKEYS) revert TooManyPasskeys(MAX_PASSKEYS);
 
-        _credentialIds[count][account] = id;
+        $credentialIds[count][account] = id;
         stored.x = passkey.x;
         stored.y = passkey.y;
         stored.rpIdHash = passkey.rpIdHash;
@@ -427,18 +445,18 @@ contract WebAuthnValidator is EIP712 {
 
     /// @dev Moves the last passkey into the removed one's index. The caller checks `id` is registered.
     function _remove(address account, bytes32 id) internal {
-        uint256 position = _passkeys[id][account].position;
-        Config storage config = _configs[account];
+        uint256 position = $passkeys[id][account].position;
+        Config storage config = $configs[account];
         uint256 last = config.count - 1;
         if (position - 1 != last) {
-            bytes32 moved = _credentialIds[last][account];
-            _credentialIds[position - 1][account] = moved;
+            bytes32 moved = $credentialIds[last][account];
+            $credentialIds[position - 1][account] = moved;
             // Positions are at most MAX_PASSKEYS (16).
             // forge-lint: disable-next-line(unsafe-typecast)
-            _passkeys[moved][account].position = uint8(position);
+            $passkeys[moved][account].position = uint8(position);
         }
-        delete _credentialIds[last][account];
-        delete _passkeys[id][account];
+        delete $credentialIds[last][account];
+        delete $passkeys[id][account];
         // `last < count <= MAX_PASSKEYS` (16).
         // forge-lint: disable-next-line(unsafe-typecast)
         config.count = uint8(last);
@@ -446,7 +464,7 @@ contract WebAuthnValidator is EIP712 {
     }
 
     function _setThreshold(address account, uint256 threshold) internal {
-        Config storage config = _configs[account];
+        Config storage config = $configs[account];
         if (threshold == 0 || threshold > config.count) {
             revert InvalidThreshold(threshold, config.count);
         }
@@ -458,18 +476,19 @@ contract WebAuthnValidator is EIP712 {
         emit ThresholdSet(account, threshold);
     }
 
+    /// @dev Removes every passkey of `account` and its threshold.
     function _clear(address account) internal {
-        uint256 count = _configs[account].count;
+        uint256 count = $configs[account].count;
         for (uint256 i; i < count; ++i) {
-            bytes32 id = _credentialIds[i][account];
-            delete _passkeys[id][account];
-            delete _credentialIds[i][account];
+            bytes32 id = $credentialIds[i][account];
+            delete $passkeys[id][account];
+            delete $credentialIds[i][account];
             emit PasskeyRemoved(account, id);
         }
-        delete _configs[account];
+        delete $configs[account];
     }
 
     function _requireInitialized(address account) internal view {
-        if (_configs[account].count == 0) revert NotInitialized(account);
+        if ($configs[account].count == 0) revert NotInitialized(account);
     }
 }

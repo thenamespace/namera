@@ -2,8 +2,9 @@
 // Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
-import {EnableSession, PermissionId, SmartSessionMode} from "../DataTypes.sol";
 import {LibZip} from "solady/utils/LibZip.sol";
+
+import {EnableSession, PermissionId, SmartSessionMode} from "../DataTypes.sol";
 
 /// @notice Decoding of `userOp.signature`.
 library EncodeLib {
@@ -25,11 +26,11 @@ library EncodeLib {
     }
 
     /// @dev Decodes the FastLZ-compressed `abi.encode(EnableSession, bytes signature)`.
-    function decodeEnable(bytes calldata packedSig)
+    function decodeEnable(bytes calldata packed)
         internal
         pure
         returns (EnableSession memory enableData, bytes memory signature)
     {
-        (enableData, signature) = abi.decode(packedSig.flzDecompress(), (EnableSession, bytes));
+        (enableData, signature) = abi.decode(packed.flzDecompress(), (EnableSession, bytes));
     }
 }

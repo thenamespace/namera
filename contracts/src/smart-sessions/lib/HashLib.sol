@@ -2,6 +2,8 @@
 // Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
+import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
+
 import {
     ActionData,
     ChainDigest,
@@ -16,7 +18,6 @@ import {
     SmartSessionMode
 } from "../DataTypes.sol";
 import {ISmartSession} from "../ISmartSession.sol";
-import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
 
 // EIP-712 typehashes: keccak256 of the primary type followed by its referenced types in alphabetical order.
 // Referenced type strings:
@@ -63,8 +64,9 @@ bytes32 constant MULTICHAIN_SESSION_TYPEHASH =
 // Domain of the multichain digest the owner signs: { name: "SmartSession", version: "1" }. Chain ID and verifying
 // contract are omitted so one signature covers several chains; both are bound inside each session digest
 // (`smartSession`) and its ChainSession entry (`chainId`).
-// keccak256(abi.encode(keccak256("EIP712Domain(string name,string version)"), keccak256("SmartSession"), keccak256("1")))
-bytes32 constant _MULTICHAIN_DOMAIN_SEPARATOR =
+// `keccak256(abi.encode(keccak256("EIP712Domain(string name,string version)"), keccak256("SmartSession"),
+// keccak256("1")))`.
+bytes32 constant MULTICHAIN_DOMAIN_SEPARATOR =
     0x057501e891776d1482927e5f094ae44049a4d893ba2d7b334dd7db8d38d3a0e1;
 
 /// @notice EIP-712 hashing of sessions, so owners can sign them with `eth_signTypedData`.
@@ -112,7 +114,7 @@ library HashLib {
             );
         }
         bytes32 structHash = keccak256(abi.encode(MULTICHAIN_SESSION_TYPEHASH, a.hash()));
-        return keccak256(abi.encodePacked(hex"1901", _MULTICHAIN_DOMAIN_SEPARATOR, structHash));
+        return keccak256(abi.encodePacked(hex"1901", MULTICHAIN_DOMAIN_SEPARATOR, structHash));
     }
 
     /// @dev `hashStruct(SignedSession)` for `session` on this module. The chain ID lives in `ChainSession`.
@@ -165,6 +167,7 @@ library HashLib {
         );
     }
 
+    /// @dev `hashStruct` of a `PolicyData[]`.
     function hashPolicyDataArray(PolicyData[] memory policyDatas) internal pure returns (bytes32) {
         uint256 length = policyDatas.length;
         bytes32[] memory a = EfficientHashLib.malloc(length);
@@ -216,6 +219,7 @@ library HashLib {
         actionsHash = a.hash();
     }
 
+    /// @dev `hashStruct(ERC7739Data)`.
     function hashERC7739Data(ERC7739Data memory data) internal pure returns (bytes32) {
         ERC7739Context[] memory contexts = data.allowedERC7739Content;
         uint256 length = contexts.length;
@@ -237,6 +241,7 @@ library HashLib {
         );
     }
 
+    /// @dev EIP-712 encoding of a `string[]`: the hash of its strings' hashes.
     function hashStringArray(string[] memory strings) internal pure returns (bytes32) {
         uint256 length = strings.length;
         bytes32[] memory a = EfficientHashLib.malloc(length);

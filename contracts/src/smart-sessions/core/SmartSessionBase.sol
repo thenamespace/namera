@@ -2,7 +2,26 @@
 // Derived from erc7579/smartsessions@f5aaf86 (Rhinestone, Biconomy). Modified by Namera; see NOTICE.md.
 pragma solidity 0.8.38;
 
-import "../DataTypes.sol";
+import {
+    ActionData,
+    ActionId,
+    EMPTY_PERMISSIONID,
+    ERC7579_MODULE_TYPE_VALIDATOR,
+    ERC7739Context,
+    ERC7739ContextHashes,
+    ERC7739Data,
+    EnumerableActionPolicy,
+    EnumerableERC7739Config,
+    PermissionId,
+    Policy,
+    PolicyData,
+    PolicyType,
+    Session,
+    SessionValidity,
+    SignerConf,
+    SmartSessionMode,
+    ValidationData
+} from "../DataTypes.sol";
 import {ISmartSession} from "../ISmartSession.sol";
 import {ConfigLib} from "../lib/ConfigLib.sol";
 import {FlatBytesLib} from "../lib/FlatBytesLib.sol";
@@ -28,20 +47,19 @@ abstract contract SmartSessionBase is ISmartSession {
     EnumerableActionPolicy internal $actionPolicies;
     EnumerableSet.Bytes32Set internal $enabledSessions;
     EnumerableERC7739Config internal $enabledERC7739;
-    mapping(PermissionId permissionId => mapping(address smartAccount => SignerConf conf)) internal
+    mapping(PermissionId permissionId => mapping(address account => SignerConf conf)) internal
         $sessionValidators;
     mapping(
-        PermissionId permissionId => mapping(address smartAccount => bool permitERC4337Paymaster)
+        PermissionId permissionId => mapping(address account => bool permitERC4337Paymaster)
     ) internal $permitERC4337Paymaster;
-    mapping(
-        PermissionId permissionId => mapping(address smartAccount => SessionValidity validity)
-    ) internal $sessionValidity;
+    mapping(PermissionId permissionId => mapping(address account => SessionValidity validity))
+        internal $sessionValidity;
     /// @dev Enable-signature nonce; incrementing it invalidates signed but unused enable data.
-    mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
+    mapping(PermissionId permissionId => mapping(address account => uint256 nonce)) internal
         $signerNonce;
     /// @dev Namera: bumped when the module is uninstalled, invalidating the unused enable data of every session,
     /// including those never enabled (which uninstalling can't enumerate). The high 128 bits of the enable nonce.
-    mapping(address smartAccount => uint256 epoch) internal $nonceEpoch;
+    mapping(address account => uint256 epoch) internal $nonceEpoch;
 
     /// @dev Requires the session to be enabled before and after the call, so policy initialization cannot remove
     /// it in between.
@@ -51,16 +69,17 @@ abstract contract SmartSessionBase is ISmartSession {
         $enabledSessions.requirePermissionIdEnabled(permissionId);
     }
 
+    /// @dev Requires the session to be enabled before the call.
     modifier disableWithPermissionId(PermissionId permissionId) {
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Session management
-    // -----------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
-    /// @notice Enables sessions for the calling account and returns their permission IDs.
+    /// @inheritdoc ISmartSession
     function enableSessions(Session[] calldata sessions)
         external
         returns (PermissionId[] memory permissionIds)
@@ -68,7 +87,7 @@ abstract contract SmartSessionBase is ISmartSession {
         return _enableSessions(sessions);
     }
 
-    /// @notice Adds or reconfigures user operation policies of an enabled session.
+    /// @inheritdoc ISmartSession
     function enableUserOpPolicies(PermissionId permissionId, PolicyData[] memory userOpPolicies)
         external
         enableWithPermissionId(permissionId)
@@ -83,6 +102,7 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
+    /// @inheritdoc ISmartSession
     function disableUserOpPolicies(PermissionId permissionId, address[] calldata policies)
         external
         disableWithPermissionId(permissionId)
@@ -91,13 +111,13 @@ abstract contract SmartSessionBase is ISmartSession {
         _revokeEnableSignature(permissionId);
         $userOpPolicies.disable({
             policyType: PolicyType.USER_OP,
-            smartAccount: msg.sender,
+            account: msg.sender,
             permissionId: permissionId,
             policies: policies
         });
     }
 
-    /// @notice Adds ERC-7739 contents and ERC-1271 policies to an enabled session.
+    /// @inheritdoc ISmartSession
     function enableERC1271Policies(PermissionId permissionId, ERC7739Data calldata erc1271Policies)
         external
         enableWithPermissionId(permissionId)
@@ -115,6 +135,7 @@ abstract contract SmartSessionBase is ISmartSession {
         });
     }
 
+    /// @inheritdoc ISmartSession
     function disableERC1271Policies(
         PermissionId permissionId,
         address[] calldata policies,
@@ -125,13 +146,13 @@ abstract contract SmartSessionBase is ISmartSession {
         $enabledERC7739.disable(contexts, permissionId, msg.sender);
         $erc1271Policies.disable({
             policyType: PolicyType.ERC1271,
-            smartAccount: msg.sender,
+            account: msg.sender,
             permissionId: permissionId,
             policies: policies
         });
     }
 
-    /// @notice Adds or reconfigures action policies of an enabled session.
+    /// @inheritdoc ISmartSession
     function enableActionPolicies(PermissionId permissionId, ActionData[] memory actionPolicies)
         external
         enableWithPermissionId(permissionId)
@@ -141,7 +162,7 @@ abstract contract SmartSessionBase is ISmartSession {
         $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: actionPolicies});
     }
 
-    /// @notice Disables an action and all of its policies.
+    /// @inheritdoc ISmartSession
     function disableActionId(PermissionId permissionId, ActionId actionId)
         external
         disableWithPermissionId(permissionId)
@@ -154,7 +175,7 @@ abstract contract SmartSessionBase is ISmartSession {
         emit ActionIdDisabled(permissionId, actionId, msg.sender);
     }
 
-    /// @notice Disables some policies of an action; the action is disabled when none remain.
+    /// @inheritdoc ISmartSession
     function disableActionPolicies(
         PermissionId permissionId,
         ActionId actionId,
@@ -166,7 +187,7 @@ abstract contract SmartSessionBase is ISmartSession {
             $actionPolicies.actionPolicies[actionId].policyList[permissionId];
         $actionPolicies.actionPolicies[actionId].disable({
             policyType: PolicyType.ACTION,
-            smartAccount: msg.sender,
+            account: msg.sender,
             permissionId: permissionId,
             policies: policies
         });
@@ -180,6 +201,7 @@ abstract contract SmartSessionBase is ISmartSession {
         }
     }
 
+    /// @notice Sets whether user operations of an enabled session may use a paymaster.
     function setPermit4337Paymaster(PermissionId permissionId, bool enabled) external {
         // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
         _revokeEnableSignature(permissionId);
@@ -187,47 +209,16 @@ abstract contract SmartSessionBase is ISmartSession {
         _setPermit4337Paymaster(permissionId, enabled);
     }
 
-    /// @notice Removes a session with its validator, policies, contents, paymaster flag and validity window, and
-    /// revokes unused owner enable signatures for it on this chain.
-    /// @dev Policy state is not wiped: re-enabling a policy re-initializes it (`initializeWithMultiplexer`).
-    function removeSession(PermissionId permissionId) public {
-        if (permissionId == EMPTY_PERMISSIONID) revert InvalidSession(permissionId);
-
-        $userOpPolicies.policyList[permissionId].removeAll(msg.sender);
-        $erc1271Policies.policyList[permissionId].removeAll(msg.sender);
-
-        EnumerableSet.Bytes32Set storage $actionIds = $actionPolicies.enabledActionIds[permissionId];
-        bytes32[] memory actionIds = $actionIds.values(msg.sender);
-        for (uint256 i; i < actionIds.length; ++i) {
-            $actionPolicies.actionPolicies[ActionId.wrap(
-                    actionIds[i]
-                )].policyList[permissionId].removeAll(msg.sender);
-        }
-        $actionIds.removeAll(msg.sender);
-
-        $sessionValidators.disable({permissionId: permissionId, smartAccount: msg.sender});
-        delete $permitERC4337Paymaster[permissionId][msg.sender];
-        delete $sessionValidity[permissionId][msg.sender];
-
-        // slither-disable-next-line unused-return
-        $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
-        $enabledERC7739.removeAll({permissionId: permissionId, smartAccount: msg.sender});
-        // Otherwise an unused ENABLE signature for this session could enable it again.
-        _revokeEnableSignature(permissionId);
-        emit SessionRemoved(permissionId, msg.sender);
-    }
-
-    /// @notice Increments the enable nonce, invalidating signed but unused enable data for this permission.
+    /// @inheritdoc ISmartSession
     function revokeEnableSignature(PermissionId permissionId) external {
         _revokeEnableSignature(permissionId);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
     // Module lifecycle
-    // -----------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 
-    /// @notice Installs the module, optionally enabling sessions.
-    /// @param data Empty, or `abi.encodePacked(enableMode, abi.encode(Session[]))`.
+    /// @inheritdoc ISmartSession
     function onInstall(bytes calldata data) external override {
         // Sessions left over from an earlier installation must be removed explicitly first; reinstalling must not
         // silently reactivate them.
@@ -240,7 +231,7 @@ abstract contract SmartSessionBase is ISmartSession {
         if (!mode.isEnableMode()) revert InvalidMode();
         data = data[1:];
 
-        // abi.decode(data, (Session[])) without copying to memory.
+        // `abi.decode(data, (Session[]))` without copying to memory.
         Session[] calldata sessions;
         assembly ("memory-safe") {
             let dataPointer := add(data.offset, calldataload(data.offset))
@@ -250,30 +241,286 @@ abstract contract SmartSessionBase is ISmartSession {
         _enableSessions(sessions);
     }
 
-    /// @notice Removes every session of the calling account.
+    /// @inheritdoc ISmartSession
     function onUninstall(bytes calldata) external override {
         uint256 count = $enabledSessions.length(msg.sender);
         for (uint256 i; i < count; ++i) {
-            // removeSession shifts the set, so always remove the first entry.
+            // `removeSession` shifts the set, so always remove the first entry.
             removeSession(PermissionId.wrap($enabledSessions.valueAt(msg.sender, 0)));
         }
         // Namera: sessions never enabled keep unused enable signatures; a new epoch invalidates them all.
         ++$nonceEpoch[msg.sender];
     }
 
-    function isInitialized(address smartAccount) external view override returns (bool) {
-        return $enabledSessions.length(smartAccount) != 0;
+    /// @inheritdoc ISmartSession
+    function isInitialized(address account) external view override returns (bool) {
+        return $enabledSessions.length(account) != 0;
     }
 
-    function isModuleType(uint256 typeID) external pure override returns (bool) {
-        return typeID == ERC7579_MODULE_TYPE_VALIDATOR;
+    /// @inheritdoc ISmartSession
+    function isModuleType(uint256 moduleTypeId) external pure override returns (bool) {
+        return moduleTypeId == ERC7579_MODULE_TYPE_VALIDATOR;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Internal
-    // -----------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+    // Views
+    // ---------------------------------------------------------------------------------------------
 
-    // Policies run with msg.sender = policy, so reentrancy from them cannot change this account's state.
+    /// @inheritdoc ISmartSession
+    function getSessionDigest(
+        PermissionId permissionId,
+        address account,
+        Session memory session,
+        SmartSessionMode mode
+    ) external view returns (bytes32) {
+        return session.sessionDigest({
+            account: account, mode: mode, nonce: _nonce(permissionId, account)
+        });
+    }
+
+    /// @inheritdoc ISmartSession
+    function getPermissionId(Session calldata session) external pure returns (PermissionId) {
+        return session.toPermissionId();
+    }
+
+    /// @inheritdoc ISmartSession
+    function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
+        return _nonce(permissionId, account);
+    }
+
+    /// @inheritdoc ISmartSession
+    function getSessionValidity(PermissionId permissionId, address account)
+        external
+        view
+        returns (uint48 validAfter, uint48 validUntil)
+    {
+        SessionValidity memory validity = $sessionValidity[permissionId][account];
+        return (validity.validAfter, validity.validUntil);
+    }
+
+    /// @inheritdoc ISmartSession
+    function getPermissionIDs(address account)
+        external
+        view
+        returns (PermissionId[] memory permissionIds)
+    {
+        bytes32[] memory ids = $enabledSessions.values(account);
+        assembly ("memory-safe") {
+            permissionIds := ids
+        }
+    }
+
+    /// @inheritdoc ISmartSession
+    function isPermissionEnabled(PermissionId permissionId, address account)
+        external
+        view
+        returns (bool)
+    {
+        return $enabledSessions.contains(account, PermissionId.unwrap(permissionId));
+    }
+
+    /// @notice Whether `account`'s session `permissionId` has a session validator.
+    function isISessionValidatorSet(PermissionId permissionId, address account)
+        external
+        view
+        returns (bool)
+    {
+        return _isISessionValidatorSet(permissionId, account);
+    }
+
+    /// @notice The session validator of `account`'s session `permissionId` and its configuration.
+    function getSessionValidatorAndConfig(address account, PermissionId permissionId)
+        external
+        view
+        returns (address sessionValidator, bytes memory sessionValidatorData)
+    {
+        SignerConf storage $conf = $sessionValidators[permissionId][account];
+        sessionValidator = address($conf.sessionValidator);
+        sessionValidatorData = $conf.config.load();
+    }
+
+    /// @notice Whether every policy of `userOpPolicies` is a user operation policy of the session.
+    /// @dev Takes full `PolicyData` (not addresses) so a `Session` can be checked directly.
+    function areUserOpPoliciesEnabled(
+        address account,
+        PermissionId permissionId,
+        PolicyData[] calldata userOpPolicies
+    ) external view returns (bool) {
+        return $userOpPolicies.areEnabled({
+            permissionId: permissionId, account: account, policyDatas: userOpPolicies
+        });
+    }
+
+    /// @notice Whether every policy of `erc1271Policies` is an ERC-1271 policy of the session.
+    function areERC1271PoliciesEnabled(
+        address account,
+        PermissionId permissionId,
+        PolicyData[] calldata erc1271Policies
+    ) external view returns (bool) {
+        return $erc1271Policies.areEnabled({
+            permissionId: permissionId, account: account, policyDatas: erc1271Policies
+        });
+    }
+
+    /// @notice Whether every policy of every action of `actions` is enabled for the session.
+    function areActionsEnabled(
+        address account,
+        PermissionId permissionId,
+        ActionData[] calldata actions
+    ) external view returns (bool) {
+        return $actionPolicies.areEnabled({
+            permissionId: permissionId, account: account, actionPolicyDatas: actions
+        });
+    }
+
+    /// @notice Whether `policy` is a user operation policy of the session.
+    function isUserOpPolicyEnabled(address account, PermissionId permissionId, address policy)
+        external
+        view
+        returns (bool)
+    {
+        return $userOpPolicies.policyList[permissionId].contains(account, policy);
+    }
+
+    /// @notice Whether `policy` is an ERC-1271 policy of the session.
+    function isERC1271PolicyEnabled(address account, PermissionId permissionId, address policy)
+        external
+        view
+        returns (bool)
+    {
+        return $erc1271Policies.policyList[permissionId].contains(account, policy);
+    }
+
+    /// @notice Whether `policy` is a policy of the session's action `actionId`.
+    function isActionPolicyEnabled(
+        address account,
+        PermissionId permissionId,
+        ActionId actionId,
+        address policy
+    ) external view returns (bool) {
+        return $actionPolicies.actionPolicies[actionId].policyList[permissionId].contains(
+            account, policy
+        );
+    }
+
+    /// @notice Whether the session has action `actionId`.
+    function isActionIdEnabled(address account, PermissionId permissionId, ActionId actionId)
+        external
+        view
+        returns (bool)
+    {
+        return
+            $actionPolicies.enabledActionIds[permissionId].contains(
+                account, ActionId.unwrap(actionId)
+            );
+    }
+
+    /// @notice Whether the session key may sign ERC-7739 content `content` for the app domain `appDomainSeparator`.
+    function isERC7739ContentEnabled(
+        address account,
+        PermissionId permissionId,
+        bytes32 appDomainSeparator,
+        string memory content
+    ) external view returns (bool) {
+        return $enabledERC7739.enabledContentNames[permissionId][appDomainSeparator].contains(
+            account, content.hashERC7739Content()
+        );
+    }
+
+    /// @notice The session's user operation policies.
+    function getUserOpPolicies(address account, PermissionId permissionId)
+        external
+        view
+        returns (address[] memory)
+    {
+        return $userOpPolicies.policyList[permissionId].values(account);
+    }
+
+    /// @notice The session's ERC-1271 policies.
+    function getERC1271Policies(address account, PermissionId permissionId)
+        external
+        view
+        returns (address[] memory)
+    {
+        return $erc1271Policies.policyList[permissionId].values(account);
+    }
+
+    /// @notice The policies of the session's action `actionId`.
+    function getActionPolicies(address account, PermissionId permissionId, ActionId actionId)
+        external
+        view
+        returns (address[] memory)
+    {
+        return $actionPolicies.actionPolicies[actionId].policyList[permissionId].values(account);
+    }
+
+    /// @notice The session's action ids.
+    function getEnabledActions(address account, PermissionId permissionId)
+        external
+        view
+        returns (bytes32[] memory)
+    {
+        return $actionPolicies.enabledActionIds[permissionId].values(account);
+    }
+
+    /// @notice The session's ERC-7739 app domains, each with the hashes of its allowed content names.
+    function getEnabledERC7739Content(address account, PermissionId permissionId)
+        external
+        view
+        returns (ERC7739ContextHashes[] memory contents)
+    {
+        bytes32[] memory domainSeparators =
+            $enabledERC7739.enabledDomainSeparators[permissionId].values(account);
+        uint256 length = domainSeparators.length;
+        contents = new ERC7739ContextHashes[](length);
+        for (uint256 i; i < length; ++i) {
+            bytes32 domainSeparator = domainSeparators[i];
+            contents[i].appDomainSeparator = domainSeparator;
+            contents[i].contentNameHashes =
+                $enabledERC7739.enabledContentNames[permissionId][domainSeparator].values(account);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Session removal
+    // ---------------------------------------------------------------------------------------------
+
+    /// @inheritdoc ISmartSession
+    /// @dev Policy state is not wiped: re-enabling a policy re-initializes it (`initializeWithMultiplexer`).
+    function removeSession(PermissionId permissionId) public {
+        if (permissionId == EMPTY_PERMISSIONID) revert InvalidSession(permissionId);
+
+        $userOpPolicies.policyList[permissionId].removeAll(msg.sender);
+        $erc1271Policies.policyList[permissionId].removeAll(msg.sender);
+
+        EnumerableSet.Bytes32Set storage $actionIds = $actionPolicies.enabledActionIds[permissionId];
+        bytes32[] memory actionIds = $actionIds.values(msg.sender);
+        uint256 length = actionIds.length;
+        for (uint256 i; i < length; ++i) {
+            $actionPolicies.actionPolicies[ActionId.wrap(
+                    actionIds[i]
+                )].policyList[permissionId].removeAll(msg.sender);
+        }
+        $actionIds.removeAll(msg.sender);
+
+        $sessionValidators.disable({permissionId: permissionId, account: msg.sender});
+        delete $permitERC4337Paymaster[permissionId][msg.sender];
+        delete $sessionValidity[permissionId][msg.sender];
+
+        // slither-disable-next-line unused-return
+        $enabledSessions.remove({account: msg.sender, value: PermissionId.unwrap(permissionId)});
+        $enabledERC7739.removeAll({permissionId: permissionId, account: msg.sender});
+        // Otherwise an unused ENABLE signature for this session could enable it again.
+        _revokeEnableSignature(permissionId);
+        emit SessionRemoved(permissionId, msg.sender);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Internal functions
+    // ---------------------------------------------------------------------------------------------
+
+    /// @dev Enables each of `sessions` for the calling account, spending its enable nonce first.
+    // Policies run with `msg.sender` = policy, so reentrancy from them cannot change this account's state.
     // slither-disable-next-line reentrancy-benign,reentrancy-events,reentrancy-no-eth
     function _enableSessions(Session[] calldata sessions)
         internal
@@ -286,7 +533,7 @@ abstract contract SmartSessionBase is ISmartSession {
         for (uint256 i; i < length; ++i) {
             PermissionId permissionId = sessions[i].toPermissionId();
             permissionIds[i] = permissionId;
-            // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+            // Policies called in earlier iterations run with `msg.sender` = policy, so a reentrant call cannot
             // change this account's state.
             // forge-lint: disable-next-line(reentrancy-events)
             emit SessionCreated(permissionId, msg.sender);
@@ -327,9 +574,10 @@ abstract contract SmartSessionBase is ISmartSession {
         $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: session.actions});
     }
 
+    /// @dev Spends the enable nonce of the calling account's session `permissionId`.
     function _revokeEnableSignature(PermissionId permissionId) internal {
         uint256 nonce = $signerNonce[permissionId][msg.sender]++;
-        // In `_enableSessions`, policies called in earlier iterations run with msg.sender = policy, so a reentrant call
+        // In `_enableSessions`, policies called in earlier iterations run with `msg.sender` = policy, so a reentrant call
         // cannot change this account's state.
         // forge-lint: disable-next-line(reentrancy-events)
         emit NonceIterated(permissionId, msg.sender, nonce + 1);
@@ -337,12 +585,13 @@ abstract contract SmartSessionBase is ISmartSession {
 
     function _setPermit4337Paymaster(PermissionId permissionId, bool enabled) internal {
         $permitERC4337Paymaster[permissionId][msg.sender] = enabled;
-        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+        // Policies called in earlier iterations run with `msg.sender` = policy, so a reentrant call cannot
         // change this account's state.
         // forge-lint: disable-next-line(reentrancy-events)
         emit PermissionIdPermit4337Paymaster(permissionId, msg.sender, enabled);
     }
 
+    /// @dev Stores the session's validity window; `validAfter` must be before a nonzero `validUntil`.
     function _setSessionValidity(PermissionId permissionId, uint48 validAfter, uint48 validUntil)
         internal
     {
@@ -351,10 +600,15 @@ abstract contract SmartSessionBase is ISmartSession {
         }
         $sessionValidity[permissionId][msg.sender] =
             SessionValidity({validAfter: validAfter, validUntil: validUntil});
-        // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+        // Policies called in earlier iterations run with `msg.sender` = policy, so a reentrant call cannot
         // change this account's state.
         // forge-lint: disable-next-line(reentrancy-events)
         emit SessionValiditySet(permissionId, msg.sender, validAfter, validUntil);
+    }
+
+    /// @dev The enable nonce the owner signs: the account's epoch ‖ the session's counter (128 bits each).
+    function _nonce(PermissionId permissionId, address account) internal view returns (uint256) {
+        return ($nonceEpoch[account] << 128) | $signerNonce[permissionId][account];
     }
 
     /// @dev The validity window as ERC-4337 validation data, so the EntryPoint enforces it without this contract
@@ -391,207 +645,5 @@ abstract contract SmartSessionBase is ISmartSession {
         returns (bool)
     {
         return address($sessionValidators[permissionId][account].sessionValidator) != address(0);
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Views
-    // -----------------------------------------------------------------------------------------------------------------
-
-    function getSessionDigest(
-        PermissionId permissionId,
-        address account,
-        Session memory data,
-        SmartSessionMode mode
-    ) external view returns (bytes32) {
-        return data.sessionDigest({
-            account: account, mode: mode, nonce: _nonce(permissionId, account)
-        });
-    }
-
-    function getPermissionId(Session calldata session) external pure returns (PermissionId) {
-        return session.toPermissionId();
-    }
-
-    function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
-        return _nonce(permissionId, account);
-    }
-
-    /// @dev The enable nonce the owner signs: the account's epoch ‖ the session's counter (128 bits each).
-    function _nonce(PermissionId permissionId, address account) internal view returns (uint256) {
-        return ($nonceEpoch[account] << 128) | $signerNonce[permissionId][account];
-    }
-
-    function getSessionValidity(PermissionId permissionId, address account)
-        external
-        view
-        returns (uint48 validAfter, uint48 validUntil)
-    {
-        SessionValidity memory validity = $sessionValidity[permissionId][account];
-        return (validity.validAfter, validity.validUntil);
-    }
-
-    function getPermissionIDs(address account)
-        external
-        view
-        returns (PermissionId[] memory permissionIds)
-    {
-        bytes32[] memory ids = $enabledSessions.values(account);
-        assembly ("memory-safe") {
-            permissionIds := ids
-        }
-    }
-
-    function isPermissionEnabled(PermissionId permissionId, address account)
-        external
-        view
-        returns (bool)
-    {
-        return $enabledSessions.contains(account, PermissionId.unwrap(permissionId));
-    }
-
-    function isISessionValidatorSet(PermissionId permissionId, address account)
-        external
-        view
-        returns (bool)
-    {
-        return _isISessionValidatorSet(permissionId, account);
-    }
-
-    function getSessionValidatorAndConfig(address account, PermissionId permissionId)
-        external
-        view
-        returns (address sessionValidator, bytes memory sessionValidatorData)
-    {
-        SignerConf storage $conf = $sessionValidators[permissionId][account];
-        sessionValidator = address($conf.sessionValidator);
-        sessionValidatorData = $conf.config.load();
-    }
-
-    /// @dev Takes full `PolicyData` (not addresses) so a `Session` can be checked directly.
-    function areUserOpPoliciesEnabled(
-        address account,
-        PermissionId permissionId,
-        PolicyData[] calldata userOpPolicies
-    ) external view returns (bool) {
-        return $userOpPolicies.areEnabled({
-            permissionId: permissionId, smartAccount: account, policyDatas: userOpPolicies
-        });
-    }
-
-    function areERC1271PoliciesEnabled(
-        address account,
-        PermissionId permissionId,
-        PolicyData[] calldata erc1271Policies
-    ) external view returns (bool) {
-        return $erc1271Policies.areEnabled({
-            permissionId: permissionId, smartAccount: account, policyDatas: erc1271Policies
-        });
-    }
-
-    function areActionsEnabled(
-        address account,
-        PermissionId permissionId,
-        ActionData[] calldata actions
-    ) external view returns (bool) {
-        return $actionPolicies.areEnabled({
-            permissionId: permissionId, smartAccount: account, actionPolicyDatas: actions
-        });
-    }
-
-    function isUserOpPolicyEnabled(address account, PermissionId permissionId, address policy)
-        external
-        view
-        returns (bool)
-    {
-        return $userOpPolicies.policyList[permissionId].contains(account, policy);
-    }
-
-    function isERC1271PolicyEnabled(address account, PermissionId permissionId, address policy)
-        external
-        view
-        returns (bool)
-    {
-        return $erc1271Policies.policyList[permissionId].contains(account, policy);
-    }
-
-    function isActionPolicyEnabled(
-        address account,
-        PermissionId permissionId,
-        ActionId actionId,
-        address policy
-    ) external view returns (bool) {
-        return $actionPolicies.actionPolicies[actionId].policyList[permissionId].contains(
-            account, policy
-        );
-    }
-
-    function isActionIdEnabled(address account, PermissionId permissionId, ActionId actionId)
-        external
-        view
-        returns (bool)
-    {
-        return
-            $actionPolicies.enabledActionIds[permissionId].contains(
-                account, ActionId.unwrap(actionId)
-            );
-    }
-
-    function isERC7739ContentEnabled(
-        address account,
-        PermissionId permissionId,
-        bytes32 appDomainSeparator,
-        string memory content
-    ) external view returns (bool) {
-        return $enabledERC7739.enabledContentNames[permissionId][appDomainSeparator].contains(
-            account, content.hashERC7739Content()
-        );
-    }
-
-    function getUserOpPolicies(address account, PermissionId permissionId)
-        external
-        view
-        returns (address[] memory)
-    {
-        return $userOpPolicies.policyList[permissionId].values(account);
-    }
-
-    function getERC1271Policies(address account, PermissionId permissionId)
-        external
-        view
-        returns (address[] memory)
-    {
-        return $erc1271Policies.policyList[permissionId].values(account);
-    }
-
-    function getActionPolicies(address account, PermissionId permissionId, ActionId actionId)
-        external
-        view
-        returns (address[] memory)
-    {
-        return $actionPolicies.actionPolicies[actionId].policyList[permissionId].values(account);
-    }
-
-    function getEnabledActions(address account, PermissionId permissionId)
-        external
-        view
-        returns (bytes32[] memory)
-    {
-        return $actionPolicies.enabledActionIds[permissionId].values(account);
-    }
-
-    function getEnabledERC7739Content(address account, PermissionId permissionId)
-        external
-        view
-        returns (ERC7739ContextHashes[] memory contents)
-    {
-        bytes32[] memory domainSeparators =
-            $enabledERC7739.enabledDomainSeparators[permissionId].values(account);
-        contents = new ERC7739ContextHashes[](domainSeparators.length);
-        for (uint256 i; i < domainSeparators.length; ++i) {
-            contents[i].appDomainSeparator = domainSeparators[i];
-            contents[i].contentNameHashes = $enabledERC7739.enabledContentNames[permissionId][domainSeparators[i]].values(
-                account
-            );
-        }
     }
 }

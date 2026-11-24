@@ -42,6 +42,7 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
     error NoVerifiers();
     error InvalidFieldRule(uint256 typeIndex, uint256 ruleIndex);
 
+    /// @inheritdoc I1271TypedDataPolicy
     function check1271TypedData(
         bytes32 id,
         address requestSender,
@@ -63,6 +64,7 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
         return false;
     }
 
+    /// @inheritdoc I1271Policy
     function check1271SignedAction(
         bytes32 id,
         address requestSender,
@@ -72,6 +74,30 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
     ) external view returns (bool) {
         Config memory config = abi.decode(_config(id, account), (Config));
         return config.types.length == 0 && _isVerifier(config.verifiers, requestSender);
+    }
+
+    function _supportsKind(bytes4 interfaceId) internal pure override returns (bool) {
+        return interfaceId == type(I1271Policy).interfaceId
+            || interfaceId == type(I1271TypedDataPolicy).interfaceId;
+    }
+
+    /// @dev Stores `initData` as is: ERC-1271 checks are views, outside the user operation's gas.
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory) {
+        Config memory config = abi.decode(initData, (Config));
+        if (config.verifiers.length == 0) revert NoVerifiers();
+        uint256 typeCount = config.types.length;
+        for (uint256 i; i < typeCount; ++i) {
+            FieldRule[] memory fields = abi.decode(config.types[i], (TypedData)).fields;
+            uint256 fieldCount = fields.length;
+            for (uint256 j; j < fieldCount; ++j) {
+                // An index this large would overflow the word's offset in `_matches`.
+                if (
+                    fields[j].index > type(uint32).max
+                        || !Conditions.wellFormed(fields[j].condition, fields[j].refs)
+                ) revert InvalidFieldRule(i, j);
+            }
+        }
+        return initData;
     }
 
     function _isVerifier(address[] memory verifiers, address requestSender)
@@ -107,27 +133,5 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
             if (!Conditions.holds(rule.condition, rule.refs, x)) return false;
         }
         return true;
-    }
-
-    function _supportsKind(bytes4 interfaceId) internal pure override returns (bool) {
-        return interfaceId == type(I1271Policy).interfaceId
-            || interfaceId == type(I1271TypedDataPolicy).interfaceId;
-    }
-
-    /// @dev Stores `initData` as is: ERC-1271 checks are views, outside the user operation's gas.
-    function _pack(bytes calldata initData) internal pure override returns (bytes memory) {
-        Config memory config = abi.decode(initData, (Config));
-        if (config.verifiers.length == 0) revert NoVerifiers();
-        for (uint256 i; i < config.types.length; ++i) {
-            FieldRule[] memory fields = abi.decode(config.types[i], (TypedData)).fields;
-            for (uint256 j; j < fields.length; ++j) {
-                // An index this large would overflow the word's offset in `_matches`.
-                if (
-                    fields[j].index > type(uint32).max
-                        || !Conditions.wellFormed(fields[j].condition, fields[j].refs)
-                ) revert InvalidFieldRule(i, j);
-            }
-        }
-        return initData;
     }
 }

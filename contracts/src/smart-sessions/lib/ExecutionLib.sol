@@ -10,7 +10,7 @@ struct Execution {
 }
 
 /// @notice Decodes ERC-7579 `execute(bytes32 mode, bytes executionCalldata)` user operation calldata.
-/// Single executions and execution modes are decoded with Solady's LibERC7579. Batches are decoded into a typed
+/// @dev Single executions and execution modes are decoded with Solady's LibERC7579. Batches are decoded into a typed
 /// `Execution[] calldata` so Solidity validates every field on access: SmartSession compares `target` against
 /// `msg.sender` and `address(this)`, which must not see dirty upper address bits.
 library ExecutionLib {
@@ -20,9 +20,9 @@ library ExecutionLib {
         pure
         returns (bytes calldata erc7579ExecutionCalldata)
     {
-        assembly {
+        assembly ("memory-safe") {
             if lt(userOpCallData.length, 68) { revert(0, 0) }
-            let baseOffset := add(userOpCallData.offset, 0x24) // skip the selector and the execution mode
+            let baseOffset := add(userOpCallData.offset, 0x24) // Skips the selector and the execution mode.
             let calldataLoadOffset := calldataload(baseOffset)
             if gt(calldataLoadOffset, 0xffffffffffffffff) { revert(0, 0) }
             erc7579ExecutionCalldata.offset := add(baseOffset, calldataLoadOffset)
@@ -31,7 +31,7 @@ library ExecutionLib {
             )
             if gt(erc7579ExecutionCalldata.length, 0xffffffffffffffff) { revert(0, 0) }
 
-            // revert if the execution calldata starts or ends after the user operation calldata
+            // Reverts if the execution calldata starts or ends after the user operation calldata.
             let calldataBound := add(userOpCallData.offset, userOpCallData.length)
             if gt(erc7579ExecutionCalldata.offset, calldataBound) { revert(0, 0) }
             if gt(
@@ -52,8 +52,7 @@ library ExecutionLib {
         pure
         returns (Execution[] calldata executionBatch)
     {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             let u := calldataload(executionCalldata.offset)
             let s := add(executionCalldata.offset, u)
             let e := sub(add(executionCalldata.offset, executionCalldata.length), 0x20)

@@ -263,10 +263,10 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.session-hook.v1",
-  "address": "0x639b06DAbC0f47577FB594ccc6764d96787b486b",
+  "address": "0xdF523DbB7AcB129f58655B0738211295fe0f827C",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xecc31949170d266f6a92e1bddbb52b24cfe72376b7ad77cf3a90f87480d3af24",
-  "initcodeHash": "0x68fabc99e07376c4387785b15eeaf64ba043222688ec68922d760ddfa74638be",
+  "initcodeHash": "0x1892b60e03dd89610143fbeadfbda0d1b35ab8a7cd8c4bc6a59eb868856385e2",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

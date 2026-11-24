@@ -37,6 +37,7 @@ library IdLib {
         return Erc1271PolicyId.wrap(keccak256(abi.encodePacked("ERC1271: ", permissionId)));
     }
 
+    /// @dev Config ids are keyed by the account (`msg.sender`), so policy state is associated with it.
     function toConfigId(UserOpPolicyId userOpPolicyId) internal view returns (ConfigId) {
         return ConfigId.wrap(keccak256(abi.encodePacked(msg.sender, userOpPolicyId)));
     }

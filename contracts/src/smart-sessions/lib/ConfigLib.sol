@@ -72,8 +72,8 @@ library ConfigLib {
         ConfigId configId,
         PolicyData[] memory policyDatas
     ) internal {
-        uint256 lengthConfigs = policyDatas.length;
-        for (uint256 i; i < lengthConfigs; ++i) {
+        uint256 length = policyDatas.length;
+        for (uint256 i; i < length; ++i) {
             address policy = policyDatas[i].policy;
 
             policy.requirePolicyType(policyType);
@@ -86,7 +86,7 @@ library ConfigLib {
 
             // slither-disable-next-line unused-return
             $policy.policyList[permissionId].add({account: msg.sender, value: policy});
-            // Policies called in earlier iterations run with msg.sender = policy, so a reentrant call cannot
+            // Policies called in earlier iterations run with `msg.sender` = policy, so a reentrant call cannot
             // change this account's state.
             // forge-lint: disable-next-line(reentrancy-events)
             emit ISmartSession.PolicyEnabled(permissionId, policyType, policy, msg.sender);
@@ -115,8 +115,8 @@ library ConfigLib {
             address target = actionPolicyData.actionTarget;
             ActionId actionId = target.toActionId(actionPolicyData.actionTargetSelector);
 
-            // disallow actions to be set for address(0) or to the smartsession module itself
-            // sessionkeys that have access to smartsessions, may use this access to elevate their privileges
+            // No action may target `address(0)` or this module: a session key with access to Smart Sessions could
+            // use it to elevate its own privileges.
             if (target == address(0) || target == address(this) || actionId == EMPTY_ACTIONID) {
                 revert ISmartSession.InvalidActionId();
             }
@@ -149,8 +149,8 @@ library ConfigLib {
                     msg.sender, appDomainSeparator
                 );
             }
-            for (uint256 y; y < contentNamesLength; ++y) {
-                bytes32 contentHash = contexts[i].contentNames[y].hashERC7739Content();
+            for (uint256 j; j < contentNamesLength; ++j) {
+                bytes32 contentHash = contexts[i].contentNames[j].hashERC7739Content();
                 $enabledERC7739.enabledContentNames[permissionId][appDomainSeparator].add(
                     msg.sender, contentHash
                 );
@@ -161,7 +161,7 @@ library ConfigLib {
     /// @dev Sets the ISessionValidator and its configuration for a permission of the calling account.
     function enable(
         mapping(
-            PermissionId permissionId => mapping(address smartAccount => SignerConf conf)
+            PermissionId permissionId => mapping(address account => SignerConf conf)
         ) storage $sessionValidators,
         PermissionId permissionId,
         ISessionValidator sessionValidator,
@@ -182,45 +182,46 @@ library ConfigLib {
         );
     }
 
-    /// @dev Disables policies for a given permission ID and smart account.
-    /// @notice Cleaning state on policies is not required as on enable, initializeWithMultiplexer is called which MUST
-    ///       overwrite the current state.
+    /// @dev Disables policies for a given permission ID and account. Policy state is not cleaned: enabling a policy
+    /// again calls `initializeWithMultiplexer`, which must overwrite it.
     function disable(
         Policy storage $policy,
         PolicyType policyType,
-        address smartAccount,
+        address account,
         PermissionId permissionId,
         address[] calldata policies
     ) internal {
         uint256 length = policies.length;
         for (uint256 i; i < length; ++i) {
             address policy = policies[i];
-            if ($policy.policyList[permissionId].remove(smartAccount, policy)) {
-                emit ISmartSession.PolicyDisabled(permissionId, policyType, policy, smartAccount);
+            if ($policy.policyList[permissionId].remove(account, policy)) {
+                emit ISmartSession.PolicyDisabled(permissionId, policyType, policy, account);
             }
         }
     }
 
+    /// @dev Removes the session validator of a permission of `account`.
     function disable(
         mapping(
-            PermissionId permissionId => mapping(address smartAccount => SignerConf conf)
+            PermissionId permissionId => mapping(address account => SignerConf conf)
         ) storage $sessionValidators,
         PermissionId permissionId,
-        address smartAccount
+        address account
     ) internal {
-        SignerConf storage $conf = $sessionValidators[permissionId][smartAccount];
+        SignerConf storage $conf = $sessionValidators[permissionId][account];
         emit ISmartSession.SessionValidatorDisabled(
-            permissionId, address($conf.sessionValidator), smartAccount
+            permissionId, address($conf.sessionValidator), account
         );
         delete $conf.sessionValidator;
         $conf.config.clear();
     }
 
+    /// @dev Disables ERC-7739 contents of a permission of `account`; an app domain without contents left is removed.
     function disable(
         EnumerableERC7739Config storage $enabledERC7739,
         ERC7739Context[] memory contexts,
         PermissionId permissionId,
-        address smartAccount
+        address account
     ) internal {
         uint256 length = contexts.length;
         for (uint256 i; i < length; ++i) {
@@ -229,33 +230,34 @@ library ConfigLib {
                 $enabledERC7739.enabledContentNames[permissionId][appDomainSeparator];
 
             uint256 contentNamesLength = contexts[i].contentNames.length;
-            for (uint256 y; y < contentNamesLength; ++y) {
-                $contentNames.remove(smartAccount, contexts[i].contentNames[y].hashERC7739Content());
+            for (uint256 j; j < contentNamesLength; ++j) {
+                $contentNames.remove(account, contexts[i].contentNames[j].hashERC7739Content());
             }
 
-            if ($contentNames.length(smartAccount) == 0) {
+            if ($contentNames.length(account) == 0) {
                 $enabledERC7739.enabledDomainSeparators[permissionId].remove(
-                    smartAccount, appDomainSeparator
+                    account, appDomainSeparator
                 );
             }
         }
     }
 
+    /// @dev Removes every ERC-7739 content and app domain of a permission of `account`.
     function removeAll(
         EnumerableERC7739Config storage $enabledERC7739,
         PermissionId permissionId,
-        address smartAccount
+        address account
     ) internal {
         bytes32[] memory domainSeparators = $enabledERC7739.enabledDomainSeparators[permissionId].values(
-            smartAccount
+            account
         );
         uint256 length = domainSeparators.length;
         for (uint256 i; i < length; ++i) {
             $enabledERC7739.enabledContentNames[permissionId][domainSeparators[i]].removeAll(
-                smartAccount
+                account
             );
         }
-        $enabledERC7739.enabledDomainSeparators[permissionId].removeAll(smartAccount);
+        $enabledERC7739.enabledDomainSeparators[permissionId].removeAll(account);
     }
 
     /// @dev Validates `signature` over `hash` with the session validator of `permissionId` for `account`.
@@ -273,7 +275,7 @@ library ConfigLib {
             revert ISmartSession.SignerNotFound(permissionId, account);
         }
         return sessionValidator.validateSignatureWithData({
-            hash: hash, sig: signature, data: $conf.config.load()
+            hash: hash, signature: signature, data: $conf.config.load()
         });
     }
 }

@@ -6,10 +6,6 @@ import {ISessionValidator} from "./interfaces/ISessionValidator.sol";
 import {FlatBytesLib} from "./lib/FlatBytesLib.sol";
 import {EnumerableSet} from "./utils/EnumerableSet4337.sol";
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Session parameters
-// ---------------------------------------------------------------------------------------------------------------------
-
 /// @notice A session to enable inside a user operation (ENABLE / UNSAFE_ENABLE modes).
 /// @param chainDigestIndex Index of this chain's entry in `hashesAndChainIds`.
 /// @param hashesAndChainIds Session digest per chain; the owner signs all of them at once.
@@ -101,9 +97,7 @@ struct ERC7739ContextHashes {
     bytes32[] contentNameHashes;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Storage (account-associated, so validation-time reads satisfy ERC-7562)
-// ---------------------------------------------------------------------------------------------------------------------
+// Storage structs. Every slot is associated with the account, so validation-time reads satisfy ERC-7562.
 
 struct SessionValidity {
     uint48 validAfter;
@@ -130,10 +124,6 @@ struct EnumerableERC7739Config {
     mapping(PermissionId => EnumerableSet.Bytes32Set) enabledDomainSeparators;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Types and constants
-// ---------------------------------------------------------------------------------------------------------------------
-
 type PermissionId is bytes32;
 
 type ActionId is bytes32;
@@ -148,6 +138,13 @@ type ConfigId is bytes32;
 
 /// @dev ERC-4337 validation data: `aggregator | validUntil << 160 | validAfter << 208`.
 type ValidationData is uint256;
+
+enum PolicyType {
+    NA,
+    USER_OP,
+    ACTION,
+    ERC1271
+}
 
 ActionId constant EMPTY_ACTIONID = ActionId.wrap(bytes32(0));
 PermissionId constant EMPTY_PERMISSIONID = PermissionId.wrap(bytes32(0));
@@ -165,23 +162,17 @@ bytes4 constant ERC4337_EXECUTE_USER_OP_SELECTOR = 0x8dd7712f;
 /// @dev Namera: the last word of an operation tagged for `SessionHook` (`… ‖ permissionId ‖ SESSION_HOOK_TAG`).
 bytes32 constant SESSION_HOOK_TAG = keccak256("namera.session-hook.tag");
 
-enum PolicyType {
-    NA,
-    USER_OP,
-    ACTION,
-    ERC1271
-}
-
 /// @dev Action target that marks a fallback action. With `FALLBACK_TARGET_SELECTOR_FLAG` its policies apply to
-/// every action without its own policies, except calls on the account itself; with `FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION`
-/// they apply to calls into this module.
+/// every action without its own policies, except calls on the account itself; with
+/// `FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION` they apply to calls into this module.
 address constant FALLBACK_TARGET_FLAG = address(1);
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG = 0x00000001;
 bytes4 constant FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION = 0x00000002;
-/// @dev keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG))
+/// @dev `keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG))`.
 ActionId constant FALLBACK_ACTIONID =
     ActionId.wrap(0xd884b6afa19f8ace90a388daca691e4e28f20cdac5aeefd46ad8bd1c074d28cf);
-/// @dev keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG, FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION))
+/// @dev `keccak256(abi.encodePacked(FALLBACK_TARGET_FLAG,
+/// FALLBACK_TARGET_SELECTOR_FLAG_PERMITTED_TO_CALL_SMARTSESSION))`.
 ActionId constant FALLBACK_ACTIONID_SMARTSESSION_CALL =
     ActionId.wrap(0x986126569d6396d837d7adeb3ca726199afaf83546f38726e6f331bb92d8e9d6);
 

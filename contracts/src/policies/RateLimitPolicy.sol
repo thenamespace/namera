@@ -3,6 +3,7 @@ pragma solidity 0.8.38;
 
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
+import {IUserOpPolicy} from "./interfaces/IPolicy.sol";
 import {LimitPolicy} from "./lib/LimitPolicy.sol";
 
 /// @title RateLimitPolicy
@@ -12,6 +13,7 @@ import {LimitPolicy} from "./lib/LimitPolicy.sol";
 contract RateLimitPolicy is LimitPolicy {
     bytes32 internal constant TAG = keccak256("namera.rate-limit");
 
+    /// @inheritdoc IUserOpPolicy
     function checkUserOpPolicy(bytes32 id, ERC4337.PackedUserOperation calldata userOp)
         external
         returns (uint256)

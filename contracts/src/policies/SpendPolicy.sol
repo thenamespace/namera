@@ -3,6 +3,7 @@ pragma solidity 0.8.38;
 
 import {ERC4337} from "solady/accounts/ERC4337.sol";
 
+import {IUserOpPolicy} from "./interfaces/IPolicy.sol";
 import {LimitPolicy} from "./lib/LimitPolicy.sol";
 import {UserOpCalls} from "./lib/UserOpCalls.sol";
 
@@ -33,6 +34,7 @@ contract SpendPolicy is LimitPolicy {
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     bytes4 internal constant PERMIT2_APPROVE = 0x87517c45;
 
+    /// @inheritdoc IUserOpPolicy
     function checkUserOpPolicy(bytes32 id, ERC4337.PackedUserOperation calldata userOp)
         external
         returns (uint256)
@@ -41,11 +43,12 @@ contract SpendPolicy is LimitPolicy {
         UserOpCalls.Call[] memory calls = UserOpCalls.decode(userOp.callData, userOp.sender);
         Charge memory c = _begin(userOp);
 
-        uint256 length = packed.length / 64;
-        for (uint256 i; i < length; ++i) {
+        uint256 limitCount = packed.length / 64;
+        uint256 callCount = calls.length;
+        for (uint256 i; i < limitCount; ++i) {
             Limit memory limit = _limitAt(packed, i);
             uint256 spent = 0;
-            for (uint256 j; j < calls.length; ++j) {
+            for (uint256 j; j < callCount; ++j) {
                 spent += _spent(calls[j], limit);
             }
             _charge(
@@ -59,6 +62,19 @@ contract SpendPolicy is LimitPolicy {
             );
         }
         return _end(c);
+    }
+
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
+        Limit[] memory limits = abi.decode(initData, (Limit[]));
+        uint256 length = limits.length;
+        packed = new bytes(64 * length);
+        for (uint256 i; i < length; ++i) {
+            Limit memory limit = limits[i];
+            if (limit.token == address(0)) revert InvalidLimit(i);
+            uint256 head = uint256(uint160(limit.token)) | (limit.countApprovals ? 1 << 160 : 0);
+            _setWordAt(packed, 2 * i, head);
+            _setWordAt(packed, 2 * i + 1, _packBudget(limit.amount, limit.period, i));
+        }
     }
 
     /// @dev The `index`th limit of a packed configuration: two words, `countApprovals ‖ token` and the budget.
@@ -121,18 +137,6 @@ contract SpendPolicy is LimitPolicy {
     function _word(bytes memory data, uint256 offset) private pure returns (uint256 word) {
         assembly ("memory-safe") {
             word := mload(add(add(data, 0x20), offset))
-        }
-    }
-
-    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
-        Limit[] memory limits = abi.decode(initData, (Limit[]));
-        packed = new bytes(64 * limits.length);
-        for (uint256 i; i < limits.length; ++i) {
-            Limit memory limit = limits[i];
-            if (limit.token == address(0)) revert InvalidLimit(i);
-            uint256 head = uint256(uint160(limit.token)) | (limit.countApprovals ? 1 << 160 : 0);
-            _setWordAt(packed, 2 * i, head);
-            _setWordAt(packed, 2 * i + 1, _packBudget(limit.amount, limit.period, i));
         }
     }
 }

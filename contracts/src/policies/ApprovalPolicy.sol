@@ -25,6 +25,7 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
     /// @dev Uniswap's Permit2, the same address on every chain.
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
 
+    /// @inheritdoc IActionPolicy
     function checkAction(
         bytes32 id,
         address account,
@@ -59,6 +60,26 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
                 : VALIDATION_FAILED;
     }
 
+    function _supportsKind(bytes4 interfaceId) internal pure override returns (bool) {
+        return interfaceId == type(IActionPolicy).interfaceId;
+    }
+
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
+        (address[] memory spenders, Cap[] memory caps) = abi.decode(initData, (address[], Cap[]));
+        packed = new bytes(32 * (1 + spenders.length + 2 * caps.length));
+        _setWordAt(packed, 0, spenders.length);
+        uint256 spenderCount = spenders.length;
+        for (uint256 i; i < spenderCount; ++i) {
+            _setWordAt(packed, 1 + i, uint256(uint160(spenders[i])));
+        }
+        uint256 base = 1 + spenderCount;
+        uint256 capCount = caps.length;
+        for (uint256 i; i < capCount; ++i) {
+            _setWordAt(packed, base + 2 * i, uint256(uint160(caps[i].token)));
+            _setWordAt(packed, base + 2 * i + 1, caps[i].maxAmount);
+        }
+    }
+
     /// @dev The cap on `token` in a packed configuration: the number of spenders, the spenders, then a
     /// `(token, maxAmount)` pair of words per cap.
     function _cap(bytes memory packed, address token) private pure returns (bool, uint256) {
@@ -73,6 +94,7 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
         return (false, 0);
     }
 
+    /// @dev Whether `spender` is among the packed configuration's spenders.
     function _isSpender(bytes memory packed, address spender) private pure returns (bool) {
         uint256 count = _wordAt(packed, 0);
         for (uint256 i = 1; i <= count; ++i) {
@@ -81,23 +103,5 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
             if (address(uint160(_wordAt(packed, i))) == spender) return true;
         }
         return false;
-    }
-
-    function _supportsKind(bytes4 interfaceId) internal pure override returns (bool) {
-        return interfaceId == type(IActionPolicy).interfaceId;
-    }
-
-    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
-        (address[] memory spenders, Cap[] memory caps) = abi.decode(initData, (address[], Cap[]));
-        packed = new bytes(32 * (1 + spenders.length + 2 * caps.length));
-        _setWordAt(packed, 0, spenders.length);
-        for (uint256 i; i < spenders.length; ++i) {
-            _setWordAt(packed, 1 + i, uint256(uint160(spenders[i])));
-        }
-        uint256 base = 1 + spenders.length;
-        for (uint256 i; i < caps.length; ++i) {
-            _setWordAt(packed, base + 2 * i, uint256(uint160(caps[i].token)));
-            _setWordAt(packed, base + 2 * i + 1, caps[i].maxAmount);
-        }
     }
 }

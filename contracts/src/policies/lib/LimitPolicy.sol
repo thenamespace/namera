@@ -17,17 +17,33 @@ import {UserOpCalls} from "./UserOpCalls.sol";
 /// period needs the agent's stated time (`UserOpCalls.timestamp`); an operation that uses nothing needs none and gets
 /// no time bounds.
 abstract contract LimitPolicy is PolicyBase, IUserOpPolicy {
+    struct Charge {
+        bool hasTime;
+        uint256 time;
+        uint256 validationData;
+        bool exceeded;
+    }
+
     /// @dev Counters and stored budgets keep a period (index or length) above a 208-bit amount.
     uint256 private constant AMOUNT_BITS = 208;
     uint256 private constant MAX_AMOUNT = (1 << AMOUNT_BITS) - 1;
 
     error InvalidLimit(uint256 index);
 
-    struct Charge {
-        bool hasTime;
-        uint256 time;
-        uint256 validationData;
-        bool exceeded;
+    /// @notice What `account` has used of what `tag` counts (a token, or the policy's own tag) in the period of
+    /// `period` seconds containing `time`, under the configuration `configId` that `multiplexer` set. Lets an agent
+    /// check a budget before it sends.
+    function usage(
+        bytes32 configId,
+        address multiplexer,
+        address account,
+        bytes32 tag,
+        uint256 period,
+        uint256 time
+    ) external view returns (uint256) {
+        bytes32 counter = _counter(PolicyStorage.configKey(configId, multiplexer), tag, period);
+        (uint256 latest, uint256 used) = _unpack(_counterOf(counter, account));
+        return latest == Period.index(period, time) ? used : 0;
     }
 
     /// @dev Starts charging `userOp`: reads the agent's time once for every budget of the policy.
@@ -80,34 +96,18 @@ abstract contract LimitPolicy is PolicyBase, IUserOpPolicy {
         c.validationData = Period.intersect(c.validationData, bounds);
     }
 
-    /// @notice What `account` has used of what `tag` counts (a token, or the policy's own tag) in the period of
-    /// `period` seconds containing `time`, under the configuration `configId` that `multiplexer` set. Lets an agent
-    /// check a budget before it sends.
-    function usage(
-        bytes32 configId,
-        address multiplexer,
-        address account,
-        bytes32 tag,
-        uint256 period,
-        uint256 time
-    ) external view returns (uint256) {
-        bytes32 counter = _counter(PolicyStorage.configKey(configId, multiplexer), tag, period);
-        (uint256 latest, uint256 used) = _unpack(_counterOf(counter, account));
-        return latest == Period.index(period, time) ? used : 0;
+    /// @dev The validation data of a finished charge.
+    function _end(Charge memory c) internal pure returns (uint256) {
+        return c.exceeded ? VALIDATION_FAILED : c.validationData;
     }
 
-    /// @dev The counter of `tag` over periods of `period` seconds.
-    function _counter(bytes32 configKey, bytes32 tag, uint256 period)
-        private
-        pure
-        returns (bytes32)
+    /// @dev The budget of a policy with one, stored by the default `_pack`.
+    function _budget(bytes32 configId, address account)
+        internal
+        view
+        returns (uint256 amount, uint256 period)
     {
-        return keccak256(abi.encode(configKey, tag, period));
-    }
-
-    /// @dev A counter's latest period index and the usage in it.
-    function _unpack(uint256 word) private pure returns (uint256 index, uint256 used) {
-        return (word >> AMOUNT_BITS, word & MAX_AMOUNT);
+        return _unpackBudget(_wordAt(_config(configId, account), 0));
     }
 
     /// @dev A budget as stored: `period ‖ amount`, the amount capped at what a counter holds (no budget can allow
@@ -126,27 +126,27 @@ abstract contract LimitPolicy is PolicyBase, IUserOpPolicy {
         return (word & MAX_AMOUNT, word >> AMOUNT_BITS);
     }
 
-    /// @dev The budget of a policy with one, stored by the default `_pack`.
-    function _budget(bytes32 configId, address account)
-        internal
-        view
-        returns (uint256 amount, uint256 period)
-    {
-        return _unpackBudget(_wordAt(_config(configId, account), 0));
-    }
-
     /// @dev A policy with one budget: `initData` is `abi.encode(uint256 amount, uint256 period)`.
     function _pack(bytes calldata initData) internal pure virtual override returns (bytes memory) {
         (uint256 amount, uint256 period) = abi.decode(initData, (uint256, uint256));
         return abi.encode(_packBudget(amount, period, 0));
     }
 
-    /// @dev The validation data of a finished charge.
-    function _end(Charge memory c) internal pure returns (uint256) {
-        return c.exceeded ? VALIDATION_FAILED : c.validationData;
-    }
-
     function _supportsKind(bytes4 interfaceId) internal pure override returns (bool) {
         return interfaceId == type(IUserOpPolicy).interfaceId;
+    }
+
+    /// @dev The counter of `tag` over periods of `period` seconds.
+    function _counter(bytes32 configKey, bytes32 tag, uint256 period)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(configKey, tag, period));
+    }
+
+    /// @dev A counter's latest period index and the usage in it.
+    function _unpack(uint256 word) private pure returns (uint256 index, uint256 used) {
+        return (word >> AMOUNT_BITS, word & MAX_AMOUNT);
     }
 }

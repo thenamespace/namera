@@ -21,7 +21,7 @@ contract ArgPolicy is PolicyBase, IActionPolicy {
         bytes32[] refs;
     }
 
-    /// @dev The `offset` that compares the call's value instead of an argument.
+    /// @notice The `offset` that compares the call's value instead of an argument.
     uint256 public constant VALUE = type(uint256).max;
 
     /// @dev A stored rule is a word `condition (8) ‖ number of refs (16) ‖ offset (232)`, then its refs; the largest
@@ -31,6 +31,7 @@ contract ArgPolicy is PolicyBase, IActionPolicy {
 
     error InvalidRule(uint256 index);
 
+    /// @inheritdoc IActionPolicy
     function checkAction(bytes32 id, address account, address, uint256 value, bytes calldata data)
         external
         view
@@ -68,13 +69,14 @@ contract ArgPolicy is PolicyBase, IActionPolicy {
 
     function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
         Rule[] memory rules = abi.decode(initData, (Rule[]));
+        uint256 length = rules.length;
         uint256 words = 0;
-        for (uint256 i; i < rules.length; ++i) {
+        for (uint256 i; i < length; ++i) {
             words += 1 + rules[i].refs.length;
         }
         packed = new bytes(32 * words);
         uint256 w = 0;
-        for (uint256 i; i < rules.length; ++i) {
+        for (uint256 i; i < length; ++i) {
             Rule memory rule = rules[i];
             uint256 count = rule.refs.length;
             if (

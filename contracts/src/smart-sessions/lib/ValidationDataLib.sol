@@ -13,7 +13,7 @@ library ValidationDataLib {
         pure
         returns (ValidationData validationData)
     {
-        assembly {
+        assembly ("memory-safe") {
             // Valid when the aggregator fields are equal, or one side is entirely time bounds.
             let sum := shl(96, add(a, b))
             switch or(
@@ -30,25 +30,25 @@ library ValidationDataLib {
                     or(a, b),
                     0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
                 )
-                // validAfter
-                let a_vd :=
+                // The later `validAfter`.
+                let aTime :=
                     and(0xffffffffffff0000000000000000000000000000000000000000000000000000, a)
-                let b_vd :=
+                let bTime :=
                     and(0xffffffffffff0000000000000000000000000000000000000000000000000000, b)
                 validationData := or(
                     validationData,
-                    xor(a_vd, mul(xor(a_vd, b_vd), gt(b_vd, a_vd)))
+                    xor(aTime, mul(xor(aTime, bTime), gt(bTime, aTime)))
                 )
-                // validUntil
-                a_vd := and(0x000000000000ffffffffffff0000000000000000000000000000000000000000, a)
-                if iszero(a_vd) {
-                    a_vd := 0x000000000000ffffffffffff0000000000000000000000000000000000000000
+                // The earlier `validUntil`, zero read as unbounded.
+                aTime := and(0x000000000000ffffffffffff0000000000000000000000000000000000000000, a)
+                if iszero(aTime) {
+                    aTime := 0x000000000000ffffffffffff0000000000000000000000000000000000000000
                 }
-                b_vd := and(0x000000000000ffffffffffff0000000000000000000000000000000000000000, b)
-                if iszero(b_vd) {
-                    b_vd := 0x000000000000ffffffffffff0000000000000000000000000000000000000000
+                bTime := and(0x000000000000ffffffffffff0000000000000000000000000000000000000000, b)
+                if iszero(bTime) {
+                    bTime := 0x000000000000ffffffffffff0000000000000000000000000000000000000000
                 }
-                let until := xor(a_vd, mul(xor(a_vd, b_vd), lt(b_vd, a_vd)))
+                let until := xor(aTime, mul(xor(aTime, bTime), lt(bTime, aTime)))
                 if iszero(until) {
                     until := 0x000000000000ffffffffffff0000000000000000000000000000000000000000
                 }

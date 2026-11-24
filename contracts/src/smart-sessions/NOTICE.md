@@ -177,6 +177,8 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - `disableERC1271Policies` drops a duplicate enabled-check (its modifier already reverts).
 - `FlatBytesLib.store` no longer clears first; configs are only stored on cleared storage.
 - Externally-only functions are `external`. The full ABI (74 entries) is unchanged by these steps.
+- Restyled to Namera's Solidity conventions (named imports, naming, NatSpec, declaration order and
+  layout) without behaviour, ABI or storage layout changes; only some parameter names differ.
 
 ## Static analysis
 

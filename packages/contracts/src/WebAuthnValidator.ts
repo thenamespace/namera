@@ -251,10 +251,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.webauthn-validator.v1",
-  "address": "0x0Ee6BC2f6E885c90F7A63C15c68F856545Bc5dCB",
+  "address": "0x2E041Cf8D0374D339EBaa86774baEEA36Af241a0",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xd3862f8da90336198b92a577df9783ac4b76197d2d8012e294e9305ac2dc45bf",
-  "initcodeHash": "0x188c940d034082077c69c79bf060837f058c9e0aff8a324d9f4d3777a73e4764",
+  "initcodeHash": "0xd8941403e412e1270fd7d52da1cf861834973cd35d7150ffdd0d50ce27a73a9f",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 10000, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

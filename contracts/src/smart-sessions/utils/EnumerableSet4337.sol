@@ -8,10 +8,9 @@ pragma solidity 0.8.38;
 /// element `i` at `slot + 1 + i`, plus a position map `value => account => index + 1`. Every slot is derived
 /// from the account, so validation-time reads are allowed by ERC-7562 as long as a set holds at most 127 values.
 library EnumerableSet {
-    error AssociatedArray_OutOfBounds(uint256 index);
-
     struct Set {
-        uint256 _array; // base slot only; data lives at keccak256(account ‖ this slot)
+        // The base slot only: the array lives at `keccak256(account ‖ this slot)`.
+        uint256 _array;
         mapping(bytes32 value => mapping(address account => uint256)) _positions;
     }
 
@@ -23,9 +22,7 @@ library EnumerableSet {
         Set _inner;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Bytes32Set
-    // -----------------------------------------------------------------------------------------------------------------
+    error AssociatedArray_OutOfBounds(uint256 index);
 
     /// @dev Returns true if `value` was added (not already present).
     function add(Bytes32Set storage set, address account, bytes32 value) internal returns (bool) {
@@ -40,6 +37,7 @@ library EnumerableSet {
         return _remove(set._inner, account, value);
     }
 
+    /// @dev Empties `account`'s set.
     function removeAll(Bytes32Set storage set, address account) internal {
         _removeAll(set._inner, account);
     }
@@ -56,6 +54,7 @@ library EnumerableSet {
         return _length(set._inner, account);
     }
 
+    /// @dev The value at `index` of `account`'s array; reverts past its end.
     function valueAt(Bytes32Set storage set, address account, uint256 index)
         internal
         view
@@ -72,14 +71,12 @@ library EnumerableSet {
         return _values(set._inner, account);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // AddressSet
-    // -----------------------------------------------------------------------------------------------------------------
-
+    /// @dev Returns true if `value` was added (not already present).
     function add(AddressSet storage set, address account, address value) internal returns (bool) {
         return _add(set._inner, account, bytes32(uint256(uint160(value))));
     }
 
+    /// @dev Returns true if `value` was removed (was present). Does not preserve order.
     function remove(AddressSet storage set, address account, address value)
         internal
         returns (bool)
@@ -87,6 +84,7 @@ library EnumerableSet {
         return _remove(set._inner, account, bytes32(uint256(uint160(value))));
     }
 
+    /// @dev Empties `account`'s set.
     function removeAll(AddressSet storage set, address account) internal {
         _removeAll(set._inner, account);
     }
@@ -115,10 +113,7 @@ library EnumerableSet {
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Implementation
-    // -----------------------------------------------------------------------------------------------------------------
-
+    /// @dev The slot of `account`'s array (its length; element `i` is at `slot + 1 + i`).
     function _arraySlot(Set storage set, address account) private pure returns (uint256 slot) {
         assembly ("memory-safe") {
             mstore(0x00, account)
@@ -142,7 +137,7 @@ library EnumerableSet {
         uint256 slot = _arraySlot(set, account);
         assembly ("memory-safe") {
             if iszero(lt(index, sload(slot))) {
-                mstore(0x00, 0x8277484f) // `AssociatedArray_OutOfBounds(uint256)`
+                mstore(0x00, 0x8277484f) // `AssociatedArray_OutOfBounds(uint256)`.
                 mstore(0x20, index)
                 revert(0x1c, 0x24)
             }
