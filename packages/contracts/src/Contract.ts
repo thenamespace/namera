@@ -4,7 +4,7 @@
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Compiler {
   readonly compiler: string
@@ -24,7 +24,7 @@ export interface Compiler {
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Deployment {
   readonly runtimeCodeHash: `0x${string}`
@@ -46,7 +46,7 @@ export interface Deployment {
  *
  * @stability experimental
  * @category models
- * @since 0.1.0
+ * @since 2.0.0
  */
 export interface Version<Abi> {
   readonly label: string

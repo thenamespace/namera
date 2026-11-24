@@ -3,7 +3,7 @@
  * chain and the `Compiler` settings it was built with.
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export type * as Contract from "./Contract.ts"
 
@@ -12,7 +12,7 @@ export type * as Contract from "./Contract.ts"
  * version (`SmartSession.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SmartSession from "./SmartSession.ts"
 
@@ -21,7 +21,7 @@ export * as SmartSession from "./SmartSession.ts"
  * export per version (`ECDSASessionValidator.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"
 
@@ -30,7 +30,7 @@ export * as ECDSASessionValidator from "./ECDSASessionValidator.ts"
  * per version (`WebAuthnValidator.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as WebAuthnValidator from "./WebAuthnValidator.ts"
 
@@ -39,7 +39,7 @@ export * as WebAuthnValidator from "./WebAuthnValidator.ts"
  * version (`SessionHook.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SessionHook from "./SessionHook.ts"
 
@@ -48,7 +48,7 @@ export * as SessionHook from "./SessionHook.ts"
  * version (`AllowPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as AllowPolicy from "./AllowPolicy.ts"
 
@@ -57,7 +57,7 @@ export * as AllowPolicy from "./AllowPolicy.ts"
  * version (`ArgPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ArgPolicy from "./ArgPolicy.ts"
 
@@ -66,7 +66,7 @@ export * as ArgPolicy from "./ArgPolicy.ts"
  * version (`SpendPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SpendPolicy from "./SpendPolicy.ts"
 
@@ -75,7 +75,7 @@ export * as SpendPolicy from "./SpendPolicy.ts"
  * version (`ValuePolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ValuePolicy from "./ValuePolicy.ts"
 
@@ -84,7 +84,7 @@ export * as ValuePolicy from "./ValuePolicy.ts"
  * version (`RateLimitPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as RateLimitPolicy from "./RateLimitPolicy.ts"
 
@@ -93,7 +93,7 @@ export * as RateLimitPolicy from "./RateLimitPolicy.ts"
  * version (`GasPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as GasPolicy from "./GasPolicy.ts"
 
@@ -102,7 +102,7 @@ export * as GasPolicy from "./GasPolicy.ts"
  * version (`ApprovalPolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as ApprovalPolicy from "./ApprovalPolicy.ts"
 
@@ -111,7 +111,7 @@ export * as ApprovalPolicy from "./ApprovalPolicy.ts"
  * version (`SignaturePolicy.v1`, …).
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as SignaturePolicy from "./SignaturePolicy.ts"
 
@@ -120,6 +120,6 @@ export * as SignaturePolicy from "./SignaturePolicy.ts"
  * smart accounts' factories, implementations and validators.
  *
  * @stability experimental
- * @since 0.1.0
+ * @since 2.0.0
  */
 export * as External from "./External.ts"

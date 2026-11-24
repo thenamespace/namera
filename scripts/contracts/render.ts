@@ -7,7 +7,7 @@ import * as Str from "effect/String"
 import type { ChainDeployments, DeploymentRecord, ExternalConfig } from "./schema.ts"
 import { type BuiltContract, factory } from "./workspace.ts"
 
-const since = "0.1.0"
+const since = "2.0.0"
 const width = 100
 
 const wrap = (paragraph: string) => {

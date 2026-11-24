@@ -7,7 +7,7 @@
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export const entryPoint = {
   "0.7": {
@@ -27,7 +27,7 @@ export const entryPoint = {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export const kernel = {
   "3.3": {
@@ -48,7 +48,7 @@ export const kernel = {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export const nexus = {
   "1.3.3": {
@@ -69,7 +69,7 @@ export const nexus = {
  *
  * @stability experimental
  * @category addresses
- * @since 0.1.0
+ * @since 2.0.0
  */
 export const safe7579 = {
   2: {

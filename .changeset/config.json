@@ -4,7 +4,7 @@
   "commit": false,
   "format": false,
   "linked": [],
-  "fixed": [],
+  "fixed": [["@namera-ai/sdk", "@namera-ai/contracts"]],
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

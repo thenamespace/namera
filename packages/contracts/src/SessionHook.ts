@@ -259,7 +259,7 @@ const abiV1 = [
  *
  * @stability experimental
  * @category contracts
- * @since 0.1.0
+ * @since 2.0.0
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.session-hook.v1",
