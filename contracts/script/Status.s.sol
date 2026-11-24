@@ -17,6 +17,8 @@ contract Status is Script {
         console2.log("  create2 factory   ", checks.factory);
         console2.log("  entrypoint v0.7   ", checks.entryPoint);
         console2.log("  cancun opcodes    ", checks.cancun);
+        console2.log("  p256 precompile   ", checks.p256);
+        console2.log("  p256 unforgeable  ", checks.p256Safe);
 
         ContractSpec[] memory specs = Contracts.all();
         uint256 missing;

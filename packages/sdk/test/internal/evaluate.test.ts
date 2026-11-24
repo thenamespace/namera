@@ -6,7 +6,7 @@ import { evaluateSignature } from "@namera-ai/sdk/internal/core/evaluate/signatu
 import { counterKey, counters } from "@namera-ai/sdk/internal/core/evaluate/usage"
 import { contracts } from "@namera-ai/sdk/internal/session/contracts"
 import * as AbiFunction from "ox/AbiFunction"
-import type * as Hex from "ox/Hex"
+import * as Hex from "ox/Hex"
 
 // The evaluator's edge cases, each as the contracts decide them (contracts/src/policies, Smart Sessions' PolicyLib).
 // Agreement with the deployed contracts on generated calls is shown by Grant.differential.chain.test.ts.
@@ -148,6 +148,16 @@ describe("calls", () => {
     assert.deepStrictEqual(tags(compiled, [call(router, "0x", BigInt(1))]), [])
     assert.deepStrictEqual(tags(compiled, [call(router, "0x01", BigInt(1))]), ["CallNotAllowed"])
     assert.deepStrictEqual(tags(compiled, [call(router, "0xffffffff00", BigInt(1))]), ["CallNotAllowed"])
+  })
+
+  // Rerun review, findings 1 to 3, as PolicyLib decides them.
+  it("refuse module lifecycle and hook functions, and calldata ending in the account, through the fallback", () => {
+    const compiled = compiledOf([Policy.anyCall({ unsafe: true })])
+    for (const selector of ["0x6d61fe70", "0x8a91b0e3", "0xd68f6025", "0x173bf7da"] as const) {
+      assert.deepStrictEqual(tags(compiled, [call(router, selector)]), ["CallNotAllowed"])
+    }
+    assert.deepStrictEqual(tags(compiled, [call(router, Hex.concat("0x12345678", account))]), ["CallNotAllowed"])
+    assert.deepStrictEqual(tags(compiled, [call(router, Hex.concat("0x12345678", recipient))]), [])
   })
 })
 

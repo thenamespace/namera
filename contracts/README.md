@@ -76,16 +76,16 @@ ERC-1271 signature format; `test/accounts/RealAccountTestBase.sol` holds the sha
 `src/policies/` holds the launch policies that back the SDK's `Policy.*` builders. Every one is immutable and
 admin-free, and serves every account and session from one deployment:
 
-| Contract          | Kind            | Enforces                                                                                                                 |
-| ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `AllowPolicy`     | action, user op | nothing: the policy for a call allowed without conditions (Smart Sessions needs one per action)                          |
-| `ArgPolicy`       | action          | conditions on static argument words and the value: `Eq`, `Neq`, `Lt`, `Lte`, `Gt`, `Gte`, `Between`, `OneOf`             |
-| `ApprovalPolicy`  | action          | allowed spenders and a cap per token for ERC-20 `approve` and Permit2 `approve` (`increaseAllowance` refused)            |
-| `SpendPolicy`     | user op         | ERC-20 budgets per token and period across every call (transfers, and approvals unless an `ApprovalPolicy` governs them) |
-| `ValuePolicy`     | user op         | a native-currency budget per period                                                                                      |
-| `RateLimitPolicy` | user op         | operations per period                                                                                                    |
-| `GasPolicy`       | user op         | worst-case gas cost per period                                                                                           |
-| `SignaturePolicy` | ERC-1271        | which contracts may verify the session's signatures, and conditions on the signed typed data's fields                    |
+| Contract          | Kind            | Enforces                                                                                                      |
+| ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `AllowPolicy`     | action, user op | nothing: the policy for a call allowed without conditions (Smart Sessions needs one per action)               |
+| `ArgPolicy`       | action          | conditions on static argument words and the value: `Eq`, `Neq`, `Lt`, `Lte`, `Gt`, `Gte`, `Between`, `OneOf`  |
+| `ApprovalPolicy`  | action          | allowed spenders and a cap per token for ERC-20 `approve` and Permit2 `approve` (`increaseAllowance` refused) |
+| `SpendPolicy`     | user op         | ERC-20 budgets per token and period across every call (transfers and approvals)                               |
+| `ValuePolicy`     | user op         | a native-currency budget per period                                                                           |
+| `RateLimitPolicy` | user op         | operations per period                                                                                         |
+| `GasPolicy`       | user op         | worst-case gas cost per period                                                                                |
+| `SignaturePolicy` | ERC-1271        | which contracts may verify the session's signatures, and conditions on the signed typed data's fields         |
 
 **Periods without TIMESTAMP.** ERC-7562 bans `TIMESTAMP` during validation. The agent appends the time it sends at
 as one 32-byte word after the ABI encoding of the account's `execute` calldata (accounts and Smart Sessions ignore it;
@@ -110,7 +110,17 @@ before the session, nor what a token paymaster takes in `postOp`; an execution p
 `ValuePolicy` counts call values, not gas: the agent sets the fees, which the account pays without a paymaster, so
 every session needs a `GasPolicy` (the SDK refuses one without). `SignaturePolicy` checks each signature on its own
 (ERC-1271 is a view), so its caps don't add up across signatures. `ArgPolicy` compares whole words, so the SDK adds a
-range rule to a lower bound on a narrow integer, against contracts that ignore the bits above the type.
+range rule to a lower bound on a narrow integer, against contracts that ignore the bits above the type. Budgets
+reset at fixed, epoch-aligned periods, so a session can spend a full budget at the end of one period and again at the
+start of the next. Signed approvals (ERC-2612 `permit`, Permit2 permits, EIP-3009) aren't calls, so `SpendPolicy`
+doesn't count them; `SignaturePolicy` caps each one. `ApprovalPolicy` doesn't limit a Permit2 approval's expiration,
+so the spender keeps the allowance after the session ends.
+
+**The fallback action** (`Policy.anyCall`) never reaches the account's infrastructure: the account itself, Smart
+Sessions, the EntryPoint, and installed validators, executors and hooks. It also refuses any module lifecycle or hook
+function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`), and calldata ending in the account's address, which
+ERC-2771 contracts such as Safe7579's adapter read as the account calling itself. A call whose last argument is the
+account (a vault's `receiver`) therefore needs an explicit action.
 
 **Signatures.** A session key's ERC-1271 signature carries the signed struct's EIP-712 `encodeData`, and Smart Sessions
 checks that it hashes to the signed struct before passing it to policies that implement `I1271TypedDataPolicy`.

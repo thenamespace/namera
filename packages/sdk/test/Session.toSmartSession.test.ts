@@ -165,7 +165,8 @@ describe("Session.toSmartSession", () => {
       AbiParameters.from(["(address token, uint256 amount, uint256 period, bool countApprovals)[]"]),
       struct.userOpPolicies[0]!.initData
     )[0]
-    assert.isFalse(limits[0]!.countApprovals)
+    // Rerun review: a capped approval still counts against the spend budget, or approve-then-pull would bypass it.
+    assert.isTrue(limits[0]!.countApprovals)
   })
 
   // Internal review, finding 14: tokens with different decimals get their own caps.

@@ -11,8 +11,8 @@ import {UserOpCalls} from "./lib/UserOpCalls.sol";
 /// @notice ERC-20 budgets per token and period, across every call of a user operation.
 /// @dev `initData` is `abi.encode(Limit[])`. Each call to a limited token counts the amount of `transfer` and
 /// `transferFrom`, and, when `countApprovals`, of `approve`, `increaseAllowance` and Permit2's `approve` of the token
-/// (an approval lets a spender move the tokens later, so it is spending unless an `ApprovalPolicy` governs approvals
-/// of the token). Any other function of a limited token counts as unlimited, failing the budget: the policy can't
+/// (an approval lets a spender move the tokens later; the SDK always counts them, since an `ApprovalPolicy` caps each
+/// approval but not their total). Any other function of a limited token counts as unlimited, failing the budget: the policy can't
 /// tell what it moves (`transferAndCall`, `push`, share transfers). The requested amount counts, so fee-on-transfer
 /// and rebasing tokens count what was asked, not what moved. Tokens a spender pulls with an allowance given before
 /// the session are not seen; an execution policy measuring balances covers them. A token may have several limits

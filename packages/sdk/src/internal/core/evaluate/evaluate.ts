@@ -146,8 +146,9 @@ const actionViolations = (
 
 /**
  * `PolicyLib.checkSingle7579Exec` for each call: the call's own action (target and selector), else the fallback
- * action, never the fallback for a call on the account itself or the EntryPoint (the account's installed modules are
- * refused on chain, which an offline check can't see); no nested `execute` on the account, no call to Smart Sessions or
+ * action, never the fallback for a call on the account itself or the EntryPoint, a module lifecycle or hook function, or
+ * calldata ending in the account's address (`PolicyLib._reachesAccount`; the account's installed modules are refused
+ * on chain too, which an offline check can't see); no nested `execute` on the account, no call to Smart Sessions or
  * the fallback's marker target, and no calldata of 1 to 3 bytes or starting with the value selector.
  */
 const callViolations = (
@@ -173,8 +174,15 @@ const callViolations = (
       same(entry.actionTarget, call.to) && same(entry.actionTargetSelector, selector)
     )
     if (action !== undefined) return actionViolations(action.actionPolicies, contracts, call, where)
-    // The fallback never reaches the EntryPoint; the account's installed modules are refused on chain too.
-    if (self || ENTRY_POINTS.some((entryPoint) => same(call.to, entryPoint))) return refused
+    // The fallback never reaches the EntryPoint, a module's lifecycle or hook functions, or an ERC-2771 contract with
+    // the account as the sender; the account's installed modules are refused on chain too.
+    const actsAsAccount = Hex.size(call.data) >= 20 && same(Hex.slice(call.data, -20), account)
+    if (
+      self || ENTRY_POINTS.some((entryPoint) => same(call.to, entryPoint)) || MODULE_FUNCTIONS.includes(selector)
+      || actsAsAccount
+    ) {
+      return refused
+    }
     const fallback = compiled.actions.find((entry) =>
       same(entry.actionTarget, FALLBACK.target) && entry.actionTargetSelector === FALLBACK.selector
     )
@@ -203,6 +211,9 @@ const spent = (call: DecodedCall, token: Hex.Hex, countApprovals: boolean): bigi
   if (offset === undefined) return MAX
   return word(data, offset) ?? MAX
 }
+
+/** `onInstall(bytes)`, `onUninstall(bytes)`, `preCheck(address,uint256,bytes)`, `postCheck(bytes)`. */
+const MODULE_FUNCTIONS: ReadonlyArray<string> = ["0x6d61fe70", "0x8a91b0e3", "0xd68f6025", "0x173bf7da"]
 
 const MAX_USED = (BigInt(1) << BigInt(208)) - BigInt(1)
 

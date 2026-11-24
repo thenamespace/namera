@@ -164,4 +164,32 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         );
         assertEq(other.value(), 2);
     }
+
+    /// @dev Regression (rerun review, findings 1 to 3): the fallback can't call a module lifecycle or hook function
+    /// on any contract (Kernel's permission signers and bound hooks aren't reported as installed), nor send calldata
+    /// ending in the account's address, which ERC-2771 contracts (Safe7579's adapter, fallback handlers) read as the
+    /// account calling itself.
+    function test_theFallbackCannotConfigureModulesOrActAsTheAccount() public {
+        Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
+        session.salt = keccak256("fallback modules");
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
+
+        MockTarget other = new MockTarget();
+        bytes[5] memory calls = [
+            abi.encodeWithSignature("onInstall(bytes)", ""),
+            abi.encodeWithSignature("onUninstall(bytes)", ""),
+            abi.encodeWithSignature("preCheck(address,uint256,bytes)", address(0), 0, ""),
+            abi.encodeWithSignature("postCheck(bytes)", ""),
+            abi.encodePacked(abi.encodeCall(MockTarget.setValue, (3)), smartAccount)
+        ];
+        for (uint256 i; i < calls.length; ++i) {
+            ERC4337.PackedUserOperation memory op = signUse(
+                userOp(smartAccount, executeSingle(address(other), 0, calls[i])), permissionId
+            );
+            vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
+            handleOp(op);
+        }
+        assertEq(other.value(), 0);
+    }
 }

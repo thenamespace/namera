@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.38;
 
+import {ERC4337} from "solady/accounts/ERC4337.sol";
+
+import {AllowPolicy} from "src/policies/AllowPolicy.sol";
+import {PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
+
+import {IEntryPoint} from "../utils/EntryPoint.sol";
+import {SessionBuilder} from "../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../utils/SmartSessionTestBase.sol";
 import {RealAccountTestBase} from "./RealAccountTestBase.sol";
 import {SessionHookFlows} from "./SessionHookFlows.sol";
@@ -46,6 +53,8 @@ interface ISafe7579Launchpad {
 /// @notice Safe 1.4.1 with the Safe7579 v2 adapter: the owner is an OwnableValidator, SmartSession a second
 /// validator; no registry attesters.
 contract Safe7579Test is RealAccountTestBase {
+    using SessionBuilder for Session;
+
     address internal constant SAFE_SINGLETON_L2 = 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762;
     address internal constant PROXY_FACTORY = 0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67;
     address internal constant ADAPTER = 0x7579f2AD53b01c3D8779Fe17928e0D48885B0003;
@@ -101,6 +110,25 @@ contract Safe7579Test is RealAccountTestBase {
         returns (bytes memory)
     {
         return abi.encodePacked(OWNABLE_VALIDATOR, signRaw(ownerKey, digest));
+    }
+
+    /// @dev Regression (rerun review, finding 1): a fallback session called the adapter with the Safe's address
+    /// appended, which the adapter read as the Safe calling itself, and installed its own validator.
+    function test_theFallbackCannotInstallAModuleThroughTheAdapter() public {
+        Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
+        session.salt = keccak256("adapter");
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
+
+        address module = makeAddr("module");
+        bytes memory install = abi.encodePacked(
+            abi.encodeWithSignature("installModule(uint256,address,bytes)", 1, module, ""),
+            smartAccount
+        );
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(smartAccount, executeSingle(ADAPTER, 0, install)), permissionId);
+        vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
+        handleOp(op);
     }
 }
 

@@ -942,26 +942,11 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0x703483f2b8527eAD041a9D54E021485Ed90c1AEf",
+  "address": "0x84a2F3B8F51c3C2c4d622d82ebabc4aa64168450",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
-  "initcodeHash": "0x1f958c84442fdde4f7d39e9f308455ee975b788c8d487f4200dcd100cb1190c9",
+  "initcodeHash": "0x43e0d5935549570eaf6a2749cf51033e9793cdf58965bd407c43d754eb8d650e",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {
-    84532: {
-      "runtimeCodeHash": "0x51b960585fdc1ae24bc3e0a26c16292067c4539127e66610073b1a380d6f9272",
-      "transactionHash": "0xa15167cb15cc78742b723323d24df1eed10cf2d7d95895dc6b4e6f61ec8e7dbc",
-      "blockNumber": BigInt("63034690"),
-      "blockHash": "0x6a68d82d69e524ee8e0ce5613d9a50d6d55c3a0177c79ea3033ef708daf1af32",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "8b58046d8c19a3ef51603cb14140ffe8a4aa9061",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    }
-  }
+  "deployments": {}
 }

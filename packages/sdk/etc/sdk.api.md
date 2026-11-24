@@ -1561,6 +1561,12 @@ export declare namespace call {
  * EntryPoint, and the validators, executors and hooks the account has installed (a call there could replace its
  * owner); those need an explicit policy. Needs `unsafe: true`; `Session.validate` warns.
  *
+ * **Details**
+ *
+ * It also refuses any module lifecycle or hook function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`), and
+ * calldata ending in the account's address, which ERC-2771 contracts read as the account calling itself. A call whose
+ * last argument is the account, such as a vault deposit with the account as `receiver`, needs an explicit policy.
+ *
  * @stability experimental
  * @category constructors
  * @since 2.0.0
@@ -1569,8 +1575,8 @@ export declare const anyCall: (options: {
     readonly unsafe: true;
 }) => internal.AnyCallPolicy;
 /**
- * Limits how much of an ERC-20 token the session may spend per period: transfers, and approvals unless a
- * `Policy.approvals` covers the token.
+ * Limits how much of an ERC-20 token the session may spend per period: transfers and approvals (an approval lets a
+ * spender pull the tokens later, which the policy doesn't see).
  *
  * **Details**
  *
@@ -1694,7 +1700,7 @@ export declare namespace gas {
  * **Details**
  *
  * It limits approvals other policies allow (`Policy.erc20Approve`, `Policy.call`, `Policy.anyCall`); it allows
- * nothing by itself. With it, `Policy.spend` stops counting that token's approvals. List ERC-20 tokens only: an
+ * nothing by itself; `Policy.spend` still counts the approvals it allows. List ERC-20 tokens only: an
  * ERC-721's `approve(spender, tokenId)` has the same selector.
  *
  * @stability experimental

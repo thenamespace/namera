@@ -44,6 +44,12 @@ library PolicyLib {
     /// counts as installed, failing closed); `getDefaultValidator` far less where it exists.
     uint256 private constant PROBE_GAS = 100_000;
     uint256 private constant DEFAULT_VALIDATOR_PROBE_GAS = 30_000;
+    /// @dev ERC-7579 module lifecycle and hook functions: `onInstall(bytes)`, `onUninstall(bytes)`,
+    /// `preCheck(address,uint256,bytes)` and `postCheck(bytes)`.
+    bytes4 private constant ON_INSTALL = 0x6d61fe70;
+    bytes4 private constant ON_UNINSTALL = 0x8a91b0e3;
+    bytes4 private constant PRE_CHECK = 0xd68f6025;
+    bytes4 private constant POST_CHECK = 0x173bf7da;
 
     /// @dev Calls every policy of `permissionId` with `callOnIPolicy` and intersects their validation data.
     /// Reverts with `NoPoliciesSet` if fewer than `minPolicies` are set.
@@ -149,8 +155,10 @@ library PolicyLib {
                     minPolicies: minPolicies
                 });
                 if (!(vd == RETRY_WITH_FALLBACK)) return vd;
-                // Namera: the fallback never reaches the account's infrastructure (see `_isInfrastructure`).
-                if (_isInfrastructure(target)) revert ISmartSession.InvalidTarget();
+                // Namera: the fallback never reaches the account's infrastructure (see `_reachesAccount`).
+                if (_reachesAccount(target, selector, callData)) {
+                    revert ISmartSession.InvalidTarget();
+                }
                 actionId = FALLBACK_ACTIONID;
             }
         }
@@ -275,6 +283,30 @@ library PolicyLib {
             hash: request.hash,
             signature: signature
         });
+    }
+
+    /// @dev Whether a fallback call could act as the account's own configuration, so it needs an explicit action:
+    /// - a module lifecycle or hook function (`onInstall`, `onUninstall`, `preCheck`, `postCheck`) on any target.
+    ///   Modules key their state on the calling account, and some an account doesn't report as installed (Kernel's
+    ///   permission signers and policies, hooks Kernel binds to a validator);
+    /// - calldata ending in the account's address. ERC-2771 contracts (Safe7579's adapter, ERC-7579 fallback
+    ///   handlers) read the last 20 bytes as the original sender, and the account named there passes their
+    ///   "account calls itself" checks. A legitimate call whose last argument is the account (a `receiver`) is
+    ///   refused too: give it an explicit action;
+    /// - the account's infrastructure (`_isInfrastructure`).
+    function _reachesAccount(address target, bytes4 selector, bytes calldata callData)
+        private
+        view
+        returns (bool)
+    {
+        if (
+            selector == ON_INSTALL || selector == ON_UNINSTALL || selector == PRE_CHECK
+                || selector == POST_CHECK
+        ) return true;
+        if (
+            callData.length >= 20 && address(bytes20(callData[callData.length - 20:])) == msg.sender
+        ) return true;
+        return _isInfrastructure(target);
     }
 
     /// @dev Whether `target` is part of the calling account's own infrastructure: the EntryPoint, a validator, executor

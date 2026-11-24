@@ -198,7 +198,6 @@ const actionsOf = (resolved: Resolved, contracts: Contracts): ReadonlyArray<Acti
 
 const userOpPoliciesOf = (resolved: Resolved, contracts: Contracts): ReadonlyArray<PolicyData> => {
   const policies: Array<PolicyData> = []
-  const approval = resolved.approvals[0]
   if (resolved.spends.length > 0) {
     policies.push({
       policy: contracts.spendPolicy,
@@ -207,7 +206,9 @@ const userOpPoliciesOf = (resolved: Resolved, contracts: Contracts): ReadonlyArr
           token: spend.token,
           amount: spend.amount,
           period: BigInt(spend.period),
-          countApprovals: approval === undefined || !approval.tokens.some((token) => same(token, spend.token))
+          // Approvals always count: with `Policy.approvals` capping each approval but not their total, an approve
+          // then a spender's pull, repeated, would leave the budget untouched (rerun review).
+          countApprovals: true
         }))
       ])
     })

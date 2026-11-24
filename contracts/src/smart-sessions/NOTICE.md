@@ -105,6 +105,14 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   - _A policy answer longer than one word fails_, rather than being read as its first word.
   - _An account asking about itself_ (`sender == msg.sender`, as Nexus does for module-enable digests)
     gets no session ERC-1271 signature: a session signs for apps.
+- **Rerun review (2026-11-24).**
+  - _The fallback can't act as the account's configuration._ It refuses a module lifecycle or hook
+    function on any target (`onInstall`, `onUninstall`, `preCheck`, `postCheck`): Kernel doesn't report
+    its permission signers and policies, nor the hook it binds to a validator, as installed. It also
+    refuses calldata ending in the account's address: ERC-2771 contracts (Safe7579's adapter, ERC-7579
+    fallback handlers) read the last 20 bytes as the original sender, so the account named there passed
+    their "account calls itself" checks and a fallback session could install a validator on a Safe. A
+    legitimate fallback call whose last argument is the account (a `receiver`) needs an explicit action.
 
 ## Additions
 
@@ -153,6 +161,12 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
 - **Any installed validator can sign the enable digest.** The owner's ENABLE signature is checked with
   the account's ERC-1271, which routes to whichever validator the signature names; an account with
   another session module installed (one whose sessions sign arbitrary hashes) is only as safe as it.
+- **127 enabled sessions per account.** ERC-7562 associates at most 128 slots past an account-keyed
+  slot, and a session list keeps one slot per session; past 127 sessions, bundlers refuse an ENABLE
+  operation. Remove sessions that are no longer used.
+- **`onUninstall` costs ~180k gas per session.** Accounts ignore a failed `onUninstall`: if it runs out
+  of gas, sessions stay enabled and unused enable signatures stay valid after a reinstall. Remove
+  sessions first, or give the uninstall enough gas.
 - **The paymaster isn't constrained.** `permitERC4337Paymaster` is one flag: a sponsored session may name
   any paymaster, including a token paymaster the account approved, whose `postOp` pull no policy counts.
 
