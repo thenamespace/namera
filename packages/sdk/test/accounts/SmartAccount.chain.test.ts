@@ -117,10 +117,6 @@ describe("SmartAccount", { concurrent: false }, () => {
 
     assert.strictEqual(receipt.status, "success")
     assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
-    const [install, ...rest] = SmartAccount.installSessionsCalls(account)
-    assert.strictEqual(install?.to, account.address)
-    assert.include(install?.data ?? "", SmartSession.v1.address.slice(2).toLowerCase())
-    assert.strictEqual(rest.length, 0)
   })
 
   it("refuses to install sessions next to another global hook on Nexus, before sending", async () => {

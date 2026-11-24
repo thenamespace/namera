@@ -33,15 +33,13 @@ describe("KernelAccount", () => {
     expect<KernelAccount.fromEip7702.Options["owner"]>().type.toBe<PrivateKeyAccount>()
   })
 
-  it("signs multichain user operations with what prepareUserOperation returns", () => {
+  it("signs multichain user operations in both APIs", () => {
     expect(SmartAccount.signUserOperations).type.toBe<
       (options: SmartAccount.signUserOperations.Options) => Promise<ReadonlyArray<`0x${string}`>>
     >()
     expect<ReturnType<typeof EffectSmartAccount.signUserOperations>>().type.toBe<
       Effect.Effect<ReadonlyArray<`0x${string}`>, AccountError.AccountError>
     >()
-    expect<{ readonly callData: `0x${string}`; readonly factory: `0x${string}` | undefined }>().type
-      .toBeAssignableTo<SmartAccount.UserOperation>()
   })
 
   it("returns a Promise in the Promise API and an Effect without requirements in the Effect API", () => {

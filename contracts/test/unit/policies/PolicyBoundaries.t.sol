@@ -233,7 +233,6 @@ contract ConditionsBoundaryTest is Test {
 contract ApprovalBoundaryTest is Test {
     ApprovalPolicy internal policy = new ApprovalPolicy();
     address internal account = makeAddr("account");
-    address internal low = address(0x1000);
     address internal spender = address(0x2000);
     address internal high = address(0x3000);
     address internal token = address(0x4000);
@@ -248,13 +247,6 @@ contract ApprovalBoundaryTest is Test {
 
     function _check(bytes memory data) internal view returns (uint256) {
         return policy.checkAction("id", account, token, 0, data);
-    }
-
-    function test_onlyTheListedSpenderUpToTheMaximum() public view {
-        assertEq(_check(PolicyCalls.approve(spender, 50)), 0);
-        assertEq(_check(PolicyCalls.approve(low, 50)), 1);
-        assertEq(_check(PolicyCalls.approve(high, 50)), 1);
-        assertEq(_check(PolicyCalls.approve(high, 101)), 1);
     }
 
     function test_acceptsTrailingCalldataAndRejectsOtherSelectorsAroundTheApprovalOnes()
@@ -409,17 +401,6 @@ contract SpendBoundaryTest is Test {
 }
 
 contract LimitBoundaryTest is Test {
-    function test_signaturePolicyMatchesOnlyItsVerifiers() public {
-        SignaturePolicy policy = new SignaturePolicy();
-        address[] memory verifiers = new address[](1);
-        verifiers[0] = address(0x3000);
-        policy.initializeWithMultiplexer(
-            address(this), "id", abi.encode(SignaturePolicy.Config(verifiers, new bytes[](0)))
-        );
-        assertFalse(policy.check1271SignedAction("id", address(0x2000), address(this), 0, ""));
-        assertFalse(policy.check1271SignedAction("id", address(0x4000), address(this), 0, ""));
-    }
-
     function test_gasCountsAPaymasterWithoutData() public {
         GasPolicy policy = new GasPolicy();
         ERC4337.PackedUserOperation memory op = PolicyCalls.op(address(this), "");

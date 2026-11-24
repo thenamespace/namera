@@ -1,10 +1,9 @@
 import { assert, describe, it } from "@effect/vitest"
 import { SessionKey, SessionKeyError } from "@namera-ai/sdk"
-import * as Effect_ from "@namera-ai/sdk/effect"
-import { Effect, Exit } from "effect"
 import * as fs from "node:fs"
 import * as P256 from "ox/P256"
 import * as PublicKey from "ox/PublicKey"
+import { decodeAbiParameters, parseAbiParameters } from "viem"
 
 import * as WebAuthn from "@namera-ai/sdk/internal/core/account/webauthn"
 
@@ -78,15 +77,6 @@ describe("SessionKey", () => {
     }
   })
 
-  it("fails in the Effect API's error channel, with the same reasons", async () => {
-    assert.deepStrictEqual(
-      await Effect.runPromise(Effect_.SessionKey.ecdsa(c!)),
-      SessionKey.ecdsa(c!)
-    )
-    const exit = await Effect.runPromiseExit(Effect_.SessionKey.ecdsaThreshold({ threshold: 2, signers: [a!] }))
-    assert.isTrue(Exit.isFailure(exit))
-  })
-
   describe("passkeys", () => {
     // Three P-256 public keys, uncompressed (`0x04 ‖ x ‖ y`).
     const keys = ["0x01", "0x02", "0x03"].map((privateKey) =>
@@ -109,9 +99,16 @@ describe("SessionKey", () => {
         sessionKey.passkeys.find((passkey) => passkey.publicKey === keys[1])?.requireUserVerification,
         false
       )
-      assert.strictEqual(
-        SessionKey.toValidatorData(sessionKey),
-        WebAuthn.installData({ threshold: 2, passkeys: sessionKey.passkeys })
+      // WebAuthnValidator's install data: the threshold, then (x, y, requireUserVerification, rpIdHash) per passkey.
+      const [threshold, passkeys] = decodeAbiParameters(
+        parseAbiParameters("uint256, (bytes32 x, bytes32 y, bool requireUserVerification, bytes32 rpIdHash)[]"),
+        SessionKey.toValidatorData(sessionKey)
+      )
+      assert.strictEqual(threshold, 2n)
+      assert.deepStrictEqual(passkeys.map(({ x, y }) => `0x04${x.slice(2)}${y.slice(2)}`), byCredentialId)
+      assert.deepStrictEqual(
+        passkeys.map(({ requireUserVerification }) => requireUserVerification),
+        byCredentialId.map((publicKey) => publicKey !== keys[1])
       )
       assert.isTrue(SessionKey.isSessionKey(sessionKey))
     })
@@ -145,15 +142,6 @@ describe("SessionKey", () => {
         reasonOf(() => SessionKey.passkeyThreshold({ threshold: 2, passkeys: [{ publicKey: keys[0]! }] })),
         { _tag: "InvalidThreshold", signers: 1 }
       )
-    })
-
-    it("fails in the Effect API's error channel", async () => {
-      assert.deepStrictEqual(
-        await Effect.runPromise(Effect_.SessionKey.passkey({ publicKey: keys[0]! })),
-        SessionKey.passkey({ publicKey: keys[0]! })
-      )
-      const exit = await Effect.runPromiseExit(Effect_.SessionKey.passkey({ publicKey: "0x" }))
-      assert.isTrue(Exit.isFailure(exit))
     })
   })
 })

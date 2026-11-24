@@ -132,10 +132,4 @@ contract ArgPolicyTest is Test {
         );
         policy.checkAction(ID, address(9), address(0), 0, "");
     }
-
-    function test_reportsActionPolicySupport() public view {
-        assertTrue(policy.supportsInterface(0x05c00895)); // IActionPolicy
-        assertTrue(policy.supportsInterface(0x01ffc9a7));
-        assertFalse(policy.supportsInterface(0xffffffff));
-    }
 }

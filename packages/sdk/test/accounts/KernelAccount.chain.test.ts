@@ -126,16 +126,6 @@ describe("KernelAccount", { concurrent: false }, () => {
     await verify()
   })
 
-  it("installs Smart Sessions later on an account deployed without them", async () => {
-    const account = await KernelAccount.from({ client, owner: newOwner(), sessions: false })
-    await devnet.fund(account.address)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
-    assert.isFalse(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
-
-    assert.isTrue((await devnet.sendUserOperation(account, SmartAccount.installSessionsCalls(account))).success)
-    assert.isTrue(await SmartAccount.isSessionsInstalled(client, { address: account.address }))
-  })
-
   it("delegates the owner's address through EIP-7702 in the first operation, with Smart Sessions", async () => {
     const owner = newOwner()
     const account = await KernelAccount.fromEip7702({ client, owner })

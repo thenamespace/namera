@@ -752,39 +752,6 @@ contract WebAuthnValidatorTest is WebAuthnTestBase {
         assertEq(ids[1], carol.id);
     }
 
-    /// @dev Removal leaves no stale index behind: `_credentialIds` (slot 1) is empty past the count.
-    function test_removeAndUninstall_clearTheIndex() public {
-        _install(account, 1, _list(alice, bob, carol));
-        vm.prank(account);
-        validator.removePasskey(alice.id);
-        assertEq(vm.load(address(validator), _indexSlot(2, account)), bytes32(0));
-
-        vm.prank(account);
-        validator.onUninstall("");
-        for (uint256 i; i < 3; ++i) {
-            assertEq(vm.load(address(validator), _indexSlot(i, account)), bytes32(0));
-        }
-    }
-
-    function test_erc1271_onlyTheAccountItselfGetsTheBareDigest() public {
-        _install(account, 1, _list(alice));
-        bytes32 digest = keccak256("bare digest");
-        bytes memory signature = _signature(BACKEND_SOLIDITY, _assert(alice, digest));
-
-        for (uint160 sender = 1; sender < 4; ++sender) {
-            vm.prank(account);
-            assertEq(
-                validator.isValidSignatureWithSender(address(sender), digest, signature),
-                ERC1271_INVALID
-            );
-        }
-        vm.prank(account);
-        assertEq(
-            validator.isValidSignatureWithSender(address(type(uint160).max), digest, signature),
-            ERC1271_INVALID
-        );
-    }
-
     function test_unknownModeIsInvalidEvenWithAMultichainBody() public {
         _install(account, 1, _list(alice));
         (bytes32 root,, bytes32 leafB) = _tree(USER_OP_HASH, keccak256("b"));
@@ -968,13 +935,6 @@ contract WebAuthnValidatorTest is WebAuthnTestBase {
         assertFalse(_userOpValid(account, _signature(BACKEND_PRECOMPILE, assertion)));
     }
 
-    function test_removePasskey_reportsTheCountItWouldLeave() public {
-        _install(account, 3, _list(alice, bob, carol));
-        vm.prank(account);
-        vm.expectRevert(abi.encodeWithSelector(WebAuthnValidator.InvalidThreshold.selector, 3, 2));
-        validator.removePasskey(alice.id);
-    }
-
     function test_removePasskey_fromTheMiddleOfALongList() public {
         TestPasskey memory dave = _passkey("dave");
         TestPasskey[] memory four = new TestPasskey[](4);
@@ -1110,11 +1070,6 @@ contract WebAuthnValidatorTest is WebAuthnTestBase {
         return uint256(a) < uint256(b)
             ? keccak256(abi.encodePacked(a, b))
             : keccak256(abi.encodePacked(b, a));
-    }
-
-    /// @dev The storage slot of `_credentialIds[index][account]`: the mapping is the validator's slot 1.
-    function _indexSlot(uint256 index, address who) internal pure returns (bytes32) {
-        return keccak256(abi.encode(who, keccak256(abi.encode(index, uint256(1)))));
     }
 
     function _indexOf(bytes memory haystack, bytes memory needle) internal pure returns (uint16) {

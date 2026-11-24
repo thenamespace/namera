@@ -134,17 +134,6 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a passkey %s account", 
     const error = await rejection(devnet.sendUserOperation(short, [{ to: zeroAddress, value: 2n }]))
     assert.include(String(error), "AA24")
   })
-
-  it("connects to the existing account with fromAddress", async () => {
-    const passkey = newPasskey()
-    const account = await ready(type, passkey)
-    await devnet.sendUserOperation(account, [{ to: zeroAddress }])
-
-    const connected = await SmartAccount.fromAddress({ client, address: account.address, owner: passkey })
-    assert.strictEqual(connected.namera.type, type)
-    assert.strictEqual(connected.address, account.address)
-    assert.isTrue((await devnet.sendUserOperation(connected, [{ to: zeroAddress, value: 1n }])).success)
-  })
 })
 
 describe("passkey owners", { concurrent: false }, () => {

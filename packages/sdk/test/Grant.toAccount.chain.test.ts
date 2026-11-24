@@ -206,6 +206,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
 
     const spent = await violationOf(send(agent, [transfer(50n)]))
     assert.deepInclude(spent, { _tag: "SpendLimitExceeded", attempted: 50n, remaining: 40n })
+    // Periods are epoch-aligned: a daily budget resets at the next UTC midnight.
     const now = Number((await client.getBlock()).timestamp)
     assert.strictEqual(
       (spent as PolicyViolationError.SpendLimitExceeded).resetsAt,

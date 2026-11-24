@@ -1,7 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Key, Keystore, type KeystoreError } from "@namera-ai/sdk"
-import * as Effect_ from "@namera-ai/sdk/effect"
-import { Effect, Exit } from "effect"
 import { parseEther, recoverMessageAddress, recoverTransactionAddress, recoverTypedDataAddress } from "viem"
 import { recoverAuthorizationAddress } from "viem/utils"
 
@@ -39,7 +37,13 @@ describe("Keystore.encryptedJson", () => {
   })
 
   it("throws Unavailable for data that is not an export", () => {
-    assert.throws(() => Keystore.encryptedJson({ password, data: "{}" }), /not available/)
+    let error: unknown
+    try {
+      Keystore.encryptedJson({ password, data: "{}" })
+    } catch (thrown) {
+      error = thrown
+    }
+    assert.strictEqual(reasonOf(error)._tag, "Unavailable")
   })
 
   it("fails toJson with Unavailable for another store", async () => {
@@ -124,16 +128,5 @@ describe("Keystore.toAccount", () => {
     await Keystore.remove(store, { id: key.id })
 
     assert.strictEqual(reasonOf(await rejection(account.signMessage({ message: "hello" })))._tag, "NotFound")
-  })
-})
-
-describe("the Effect Keystore", () => {
-  it("fails in the error channel with the same errors", async () => {
-    const store = Effect_.Keystore.memory()
-    const exit = await Effect.runPromiseExit(Effect_.Keystore.get(store, { id: "missing" }))
-
-    assert.isTrue(Exit.isFailure(exit))
-    const opened = await Effect.runPromiseExit(Effect_.Keystore.encryptedJson({ password, data: "{}" }))
-    assert.isTrue(Exit.isFailure(opened))
   })
 })

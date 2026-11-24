@@ -1,15 +1,16 @@
 import { assert, describe, it } from "@effect/vitest"
+import { SmartSession } from "@namera-ai/contracts"
 import { Policy, Session, SessionKey } from "@namera-ai/sdk"
 import { laneOf, nonceKey } from "@namera-ai/sdk/internal/core/agent/nonce"
 import {
-  encodeEnableSessions,
   encodeEnableSignature,
   encodeUseSignature,
   signaturePermissionId
 } from "@namera-ai/sdk/internal/core/grant/enable"
-import { actionId, encodeUpdate } from "@namera-ai/sdk/internal/core/grant/lifecycle"
+import { encodeUpdate } from "@namera-ai/sdk/internal/core/grant/lifecycle"
 import { contracts } from "@namera-ai/sdk/internal/session/contracts"
 import * as AbiFunction from "ox/AbiFunction"
+import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 
 const account: Hex.Hex = "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
@@ -21,14 +22,11 @@ const sessionWith = (policies: ReadonlyArray<Policy.Policy>) =>
   Session.from({ signer: SessionKey.ecdsa(recipient), validUntil: 2_000_000_000, salt, policies })
 
 const selectorsOf = (calls: ReadonlyArray<Hex.Hex>) => calls.map((call) => Hex.slice(call, 0, 4))
-const selector = (signature: string) => AbiFunction.getSelector(AbiFunction.from(signature) as AbiFunction.AbiFunction)
-const disableActionId = selector("function disableActionId(bytes32, bytes32)")
-const disableUserOpPolicies = selector("function disableUserOpPolicies(bytes32, address[])")
-const enableSessions = Hex.slice(
-  encodeEnableSessions([Session.toSmartSession(sessionWith([Policy.anyCall({ unsafe: true })]))]),
-  0,
-  4
-)
+const selector = (name: "disableActionId" | "disableUserOpPolicies" | "enableSessions") =>
+  AbiFunction.getSelector(AbiFunction.fromAbi(SmartSession.v1.abi, name))
+const disableActionId = selector("disableActionId")
+const disableUserOpPolicies = selector("disableUserOpPolicies")
+const enableSessions = selector("enableSessions")
 
 describe("updating a session", () => {
   const transfers = Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } })
@@ -49,7 +47,7 @@ describe("updating a session", () => {
     })
     assert.deepStrictEqual(selectorsOf(calls), [disableUserOpPolicies, disableActionId, enableSessions])
     // The native transfer's action, and the rate limit's policy.
-    assert.include(calls[1]!, actionId(recipient, "0xffffffff").slice(2))
+    assert.include(calls[1]!, Hash.keccak256(Hex.concat(recipient, "0xffffffff")).slice(2))
     assert.include(calls[0]!, contracts.rateLimitPolicy.slice(2).toLowerCase())
   })
 

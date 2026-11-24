@@ -116,6 +116,7 @@ export const table: Record<string, Conformance> = {
     kind: "sync",
     check: async () => {
       assert.strictEqual(Key.address(devKey, "eip155"), await Effect.runPromise(Effect_.Key.address(devKey, "eip155")))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.Key.address(devKey, "solana"))))
     }
   },
   "Key.caip10": {
@@ -148,6 +149,11 @@ export const table: Record<string, Conformance> = {
         await Effect.runPromise(Effect_.SessionKey.ecdsaThreshold(options))
       )
       assert.throws(() => SessionKey.ecdsaThreshold({ threshold: 0, signers: options.signers }))
+      assert.isTrue(
+        Exit.isFailure(
+          await Effect.runPromiseExit(Effect_.SessionKey.ecdsaThreshold({ threshold: 0, signers: options.signers }))
+        )
+      )
     }
   },
   "Keystore.encryptedJson": {

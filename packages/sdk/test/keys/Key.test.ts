@@ -1,7 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Key, Keystore, KeystoreError } from "@namera-ai/sdk"
-import * as Effect_ from "@namera-ai/sdk/effect"
-import { Effect, Exit } from "effect"
 import { privateKeyToAccount } from "viem/accounts"
 
 // Hardhat's first development key and its address.
@@ -40,13 +38,5 @@ describe("Key", () => {
     assert.isTrue(Key.isKey(key))
     assert.isFalse(Key.isKey({ ...key, curve: "rsa" }))
     assert.isFalse(Key.isKey("0x1234"))
-  })
-
-  it("fails in the Effect API's error channel instead of throwing", async () => {
-    assert.strictEqual(
-      await Effect.runPromise(Effect_.Key.address(key, "eip155")),
-      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-    )
-    assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.Key.address(key, "solana"))))
   })
 })

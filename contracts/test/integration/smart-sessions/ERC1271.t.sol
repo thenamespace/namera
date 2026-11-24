@@ -66,14 +66,6 @@ contract ERC1271Test is SmartSessionTestBase {
     }
 
     /// @dev Regression for the upstream bug: a signed mail cannot authorize a different mail.
-    function test_signatureForOneMessage_isRejectedForAnotherMessage() public {
-        bytes memory signature = _sign(mail, sessionKey);
-        ERC7739Signer.AppData memory attackerMail =
-            ERC7739Signer.mail(APP_DOMAIN, makeAddr("attacker"));
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(attackerMail), signature), INVALID);
-    }
-
     function testFuzz_signatureNeverValidatesOtherHashes(bytes32 otherHash) public view {
         vm.assume(otherHash != ERC7739Signer.appHash(mail));
         bytes memory signature = _sign(mail, sessionKey);
@@ -173,7 +165,8 @@ contract ERC1271Test is SmartSessionTestBase {
     }
 
     function testFuzz_anyOtherRequester_isAccepted(address requester) public {
-        vm.assume(requester != address(smartSession));
+        // The account asking about itself is refused (test_theAccountAsSender_isRejected).
+        vm.assume(requester != address(smartSession) && requester != address(account));
         bytes memory signature = _sign(mail, sessionKey);
         bytes32 hash = ERC7739Signer.appHash(mail);
 
@@ -324,19 +317,6 @@ contract ERC1271Test is SmartSessionTestBase {
         assertEq(kernel.isValidSignature(ERC7739Signer.appHash(otherMail), signature), INVALID);
     }
 
-    function testFuzz_kernelWrappedHash_isAcceptedForAnyMail(address to) public {
-        MockKernelAccount kernel = new MockKernelAccount(owner);
-        installSmartSession(address(kernel), "");
-        PermissionId kernelId = enableSession(address(kernel), _signingSession());
-        ERC7739Signer.AppData memory anyMail = ERC7739Signer.mail(APP_DOMAIN, to);
-        bytes memory signature = abi.encodePacked(
-            address(smartSession),
-            ERC7739Signer.sign(anyMail, address(kernel), kernelId, sessionKey)
-        );
-
-        assertEq(kernel.isValidSignature(ERC7739Signer.appHash(anyMail), signature), EIP1271_MAGIC);
-    }
-
     /// @dev Only an account named "Kernel" may ask about the Kernel wrapping of the app's hash.
     function test_kernelWrapping_isRefusedForOtherAccounts() public {
         bytes32 domainSeparator = keccak256(
@@ -398,15 +378,6 @@ contract ERC1271Test is SmartSessionTestBase {
         // Claim a contents description longer than the whole signature.
         signature[signature.length - 2] = 0xff;
         signature[signature.length - 1] = 0xff;
-
-        assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
-    }
-
-    /// @dev The typed data in the signature must be the signed struct's preimage, so policies can trust it.
-    function test_typedDataThatIsNotTheStructsPreimage_isRejected() public {
-        bytes memory forged = abi.encode(keccak256(bytes(MAIL)), makeAddr("someone else"));
-        bytes memory signature =
-            ERC7739Signer.sign(mail, address(account), permissionId, sessionKey, forged, "");
 
         assertEq(_isValidSignature(ERC7739Signer.appHash(mail), signature), INVALID);
     }

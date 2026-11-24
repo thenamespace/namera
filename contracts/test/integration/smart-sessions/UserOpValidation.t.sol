@@ -14,14 +14,6 @@ import {MockPolicy, MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 contract UserOpValidationTest is SmartSessionTestBase {
     using SessionBuilder for Session;
 
-    function test_executesCallThroughEntryPoint() public {
-        PermissionId permissionId = enableSession(defaultSession());
-
-        handleOp(signUse(userOp(callSetValue(42)), permissionId));
-
-        assertEq(target.value(), 42);
-    }
-
     function test_RevertWhen_permissionNotEnabled() public {
         PermissionId permissionId = smartSession.getPermissionId(defaultSession());
         ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);

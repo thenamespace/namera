@@ -58,12 +58,8 @@ export const encodeGetPermissionIDs = (account: Hex.Hex): Hex.Hex =>
 export const decodeGetPermissionIDs = (result: Hex.Hex): ReadonlyArray<Hex.Hex> =>
   AbiFunction.decodeResult(functions.getPermissionIDs, result)
 
-/**
- * Smart Sessions' id of an action: `keccak256(target ‖ selector)`.
- *
- * @internal
- */
-export const actionId = (target: Hex.Hex, selector: Hex.Hex): Hex.Hex => Hash.keccak256(Hex.concat(target, selector))
+/** Smart Sessions' id of an action: `keccak256(target ‖ selector)`. */
+const actionId = (target: Hex.Hex, selector: Hex.Hex): Hex.Hex => Hash.keccak256(Hex.concat(target, selector))
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 const missing = (from: ReadonlyArray<string>, to: ReadonlyArray<string>) =>

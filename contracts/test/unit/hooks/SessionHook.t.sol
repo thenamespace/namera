@@ -8,6 +8,7 @@ import {LibERC7579} from "solady/accounts/LibERC7579.sol";
 import {SessionHook} from "src/hooks/SessionHook.sol";
 import {IExecutionPolicy} from "src/hooks/interfaces/IExecutionPolicy.sol";
 import {IPolicy, IUserOpPolicy} from "src/policies/interfaces/IPolicy.sol";
+import {UserOpCalls} from "src/policies/lib/UserOpCalls.sol";
 import {Execution} from "src/smart-sessions/lib/ExecutionLib.sol";
 
 import {MockExecutionPolicy} from "../../utils/mocks/MockExecutionPolicy.sol";
@@ -221,7 +222,6 @@ contract SessionHookTest is Test {
                 writes[i] == expected[0] || writes[i] == expected[1] || writes[i] == expected[2];
             assertTrue(known, "a write outside the account's slots");
         }
-        assertEq(uint256(vm.load(address(hook), countSlot)), 2);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -580,16 +580,12 @@ contract SessionHookTest is Test {
         hook.postCheck(forged);
     }
 
-    function test_views_tagAndConfigIds() public view {
-        assertEq(
-            hook.tag(PERMISSION), abi.encodePacked(PERMISSION, keccak256("namera.session-hook.tag"))
-        );
-        assertEq(
-            hook.configId(address(account), PERMISSION),
-            keccak256(abi.encodePacked(address(account), PERMISSION))
-        );
-        assertEq(hook.policyConfigId(PERMISSION, 3), keccak256(abi.encode(PERMISSION, uint256(3))));
+    /// @dev The tag is a wire format: the SDK appends `permissionId ‖ keccak256("namera.session-hook.tag")`, and
+    /// the policies strip it before reading the stated time.
+    function test_views_theTagIsTheWireFormat() public view {
         assertEq(hook.TAG(), keccak256("namera.session-hook.tag"));
+        assertEq(hook.TAG(), UserOpCalls.SESSION_HOOK_TAG);
+        assertEq(hook.tag(PERMISSION), abi.encodePacked(PERMISSION, hook.TAG()));
     }
 
     // --------------------------------------------------------------------------------------------

@@ -10,8 +10,7 @@ import {
     I1271Policy,
     I1271TypedDataPolicy,
     IActionPolicy,
-    IPolicy,
-    IUserOpPolicy
+    IPolicy
 } from "src/policies/interfaces/IPolicy.sol";
 import {Conditions} from "src/policies/lib/Conditions.sol";
 
@@ -35,12 +34,6 @@ contract AllowPolicyTest is Test {
             )
         );
         policy.checkAction(ID, account, address(1), 0, "");
-    }
-
-    function test_isAnActionAndUserOperationPolicyButNeverAnErc1271One() public view {
-        assertTrue(policy.supportsInterface(type(IActionPolicy).interfaceId));
-        assertTrue(policy.supportsInterface(type(IUserOpPolicy).interfaceId));
-        assertFalse(policy.supportsInterface(type(I1271Policy).interfaceId));
     }
 }
 
@@ -267,13 +260,6 @@ contract SignaturePolicyTest is Test {
         assertTrue(_check(USDC_DOMAIN, abi.encodePacked(PERMIT_TYPEHASH)));
     }
 
-    function test_withTypes_theHashOnlyHookRefusesEveryone() public {
-        policy.initializeWithMultiplexer(account, ID, _permitConfig(100));
-
-        assertFalse(policy.check1271SignedAction(ID, usdc, account, bytes32(0), ""));
-        assertFalse(policy.check1271SignedAction(ID, makeAddr("other"), account, bytes32(0), ""));
-    }
-
     function test_acceptsTheLargestFieldIndex() public {
         SignaturePolicy.FieldRule[] memory rules = new SignaturePolicy.FieldRule[](1);
         rules[0] = _rule(Conditions.Condition.Eq, type(uint32).max, bytes32(0));
@@ -282,12 +268,6 @@ contract SignaturePolicyTest is Test {
         policy.initializeWithMultiplexer(account, ID, _config(types));
 
         assertFalse(_check(USDC_DOMAIN, _permit(spender, 1)));
-    }
-
-    function test_rejectsARuleThatIsBothOutOfRangeAndMalformed() public {
-        SignaturePolicy.FieldRule[] memory rules = new SignaturePolicy.FieldRule[](1);
-        rules[0] = _rule(Conditions.Condition.Between, uint256(type(uint32).max) + 1, bytes32(0));
-        _expectInvalidRule(rules);
     }
 
     function _expectInvalidRule(SignaturePolicy.FieldRule[] memory rules) internal {

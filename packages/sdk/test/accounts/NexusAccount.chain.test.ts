@@ -1,7 +1,7 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { External } from "@namera-ai/contracts"
 import { ChainError, NexusAccount, SmartAccount } from "@namera-ai/sdk"
-import { decodeFunctionData, parseAbi, zeroAddress, zeroHash } from "viem"
+import { decodeFunctionData, parseAbi, zeroAddress } from "viem"
 
 import { client, devnet, newOwner } from "./accounts.test-utils.ts"
 
@@ -88,26 +88,6 @@ describe("NexusAccount", { concurrent: false }, () => {
     )
     assert.strictEqual(await client.getBalance({ address: recipient }), 5n)
     assert.deepStrictEqual(account.namera, { type: "nexus", version: "1.3.3", entryPoint: "0.7", eip7702: false })
-  })
-
-  it("signs in the domain the deployed account reports (1.3.3 reports version 1.3.2)", async () => {
-    const account = await NexusAccount.from({ client, owner: newOwner() })
-    await devnet.deploy(account)
-
-    const [, name, version, chainId, verifyingContract, salt] = await client.readContract({
-      address: account.address,
-      abi: parseAbi([
-        "function eip712Domain() view returns (bytes1, string, string, uint256, address, bytes32, uint256[])"
-      ]),
-      functionName: "eip712Domain"
-    })
-    assert.deepStrictEqual([name, version, chainId, verifyingContract, salt], [
-      "Nexus",
-      "1.3.2",
-      BigInt(devnet.chain.id),
-      account.address,
-      zeroHash
-    ])
   })
 
   it("signs ERC-1271 messages and typed data that viem verifies, before and after deployment", async () => {

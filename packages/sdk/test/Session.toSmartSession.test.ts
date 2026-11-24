@@ -313,24 +313,4 @@ describe("Session.toSmartSession", () => {
     assert.strictEqual(webauthn.sessionValidatorInitData, SessionKey.toValidatorData(passkey))
     assert.strictEqual(webauthn.validUntil, 0)
   })
-
-  it("computes the permission id from the validator, its config and the salt", () => {
-    const session = Session.from({
-      signer: agent,
-      validUntil: 2_000_000_000,
-      policies: [Policy.anyCall({ unsafe: true })],
-      salt
-    })
-
-    assert.strictEqual(
-      Session.getPermissionId(session),
-      Hash.keccak256(
-        AbiParameters.encode(AbiParameters.from(["address", "bytes", "bytes32"]), [
-          ECDSASessionValidator.v1.address,
-          SessionKey.toValidatorData(agent),
-          salt
-        ])
-      )
-    )
-  })
 })

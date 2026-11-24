@@ -106,15 +106,29 @@ contract EnumerableSet4337Test is Test {
         set.valueAt(alice, 1);
     }
 
-    /// @dev ERC-7562 associated storage: length at keccak256(account ‖ slot), element i at that slot + 1 + i.
-    function test_storageIsAssociatedWithTheAccount() public {
+    /// @dev ERC-7562 lets validation touch only storage associated with the account: `keccak256(account ‖ x) + n`,
+    /// n ≤ 128. Here the array (at `keccak256(account ‖ 0)`) and each value's position (`_positions[value][account]`).
+    function test_touchesOnlyStorageAssociatedWithTheAccount() public {
+        set.add(bob, "a");
+        vm.record();
         set.add(alice, "a");
         set.add(alice, "b");
-        uint256 arraySlot = uint256(keccak256(abi.encode(alice, uint256(0))));
+        set.contains(alice, "b");
+        set.remove(alice, "a");
+        set.values(alice);
+        (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(set));
 
-        assertEq(vm.load(address(set), bytes32(arraySlot)), bytes32(uint256(2)));
-        assertEq(vm.load(address(set), bytes32(arraySlot + 1)), bytes32("a"));
-        assertEq(vm.load(address(set), bytes32(arraySlot + 2)), bytes32("b"));
+        uint256 array = uint256(keccak256(abi.encode(alice, uint256(0))));
+        for (uint256 i; i < reads.length + writes.length; ++i) {
+            uint256 slot = uint256(i < reads.length ? reads[i] : writes[i - reads.length]);
+            bool associated = (slot >= array && slot <= array + 128)
+                || slot == _position(alice, "a") || slot == _position(alice, "b");
+            assertTrue(associated, "a slot not associated with the account");
+        }
+    }
+
+    function _position(address account, bytes32 value) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(account, keccak256(abi.encode(value, uint256(1))))));
     }
 
     function testFuzz_holdsEachDistinctValueOnce(uint8[] memory seeds) public {

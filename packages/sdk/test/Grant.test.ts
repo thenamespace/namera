@@ -1,9 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Grant, GrantError, Policy, Session, SessionKey } from "@namera-ai/sdk"
-import { Grant as EffectGrant } from "@namera-ai/sdk/effect"
 import { sessionDigest, toTypedData } from "@namera-ai/sdk/internal/core/grant/typedData"
 import { contracts } from "@namera-ai/sdk/internal/session/contracts"
-import { Effect, Exit } from "effect"
 import * as SignatureErc6492 from "ox/erc6492/SignatureErc6492"
 
 const account = "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
@@ -110,11 +108,6 @@ describe("Grant.serialize and Grant.parse", () => {
     assert.strictEqual(reasonOf(() => Grant.parse(JSON.stringify({ ...grant, chains: [] })))._tag, "Malformed")
     assert.strictEqual(reasonOf(() => Grant.parse("not a grant"))._tag, "Malformed")
     assert.strictEqual(reasonOf(() => Grant.parse("nmr1_***"))._tag, "Malformed")
-  })
-
-  it("fails in the Effect API's error channel", async () => {
-    const exit = await Effect.runPromiseExit(EffectGrant.parse("nmr1_"))
-    assert.isTrue(Exit.isFailure(exit))
   })
 })
 

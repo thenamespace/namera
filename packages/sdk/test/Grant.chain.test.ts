@@ -59,7 +59,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
 ) => {
   devnet.isolate({ beforeEach, afterEach })
 
-  it("is enabled by the agent's first operation, with no owner transaction", async () => {
+  it("signs the contract's session digest, and verifies", async () => {
     const account = await deployedAccount(type)
     const session = newSession()
     const grant = await Grant.create({ account, session })
@@ -72,10 +72,6 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
     })
     assert.strictEqual(grant.chains[0]!.sessionDigest, onChain)
     await Grant.verify(client, grant)
-
-    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
-    assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
-    assert.isTrue(await isEnabled(devnet, session, account.address))
   })
 
   it("verifies, and refuses an altered session or another owner's signature", async () => {

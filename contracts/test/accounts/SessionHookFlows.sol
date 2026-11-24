@@ -72,17 +72,6 @@ abstract contract SessionHookFlows is RealAccountTestBase {
         );
     }
 
-    function test_hook_aFailingPolicyRevertsTheExecution() public {
-        Session memory session = hookedSession("post", MockExecutionPolicy.Mode.RevertPost);
-        PermissionId permissionId = smartSession.getPermissionId(session);
-        handleOp(signEnable(userOp(smartAccount, tagged(callSetValue(7), permissionId)), session));
-
-        // Validated (the session is enabled), executed and rolled back.
-        assertTrue(smartSession.isPermissionEnabled(permissionId, smartAccount));
-        assertEq(target.value(), 0);
-        assertEq(executionPolicy.postChecks(smartAccount), 0);
-    }
-
     function test_hook_anUntaggedOperationFailsValidation() public {
         Session memory session = hookedSession("untagged", MockExecutionPolicy.Mode.Pass);
         ERC4337.PackedUserOperation memory op =

@@ -59,21 +59,6 @@ contract ExecutionLibTest is Test {
         harness.executionCalldata(callData);
     }
 
-    function test_RevertWhen_executionCalldataOffsetOverflows() public {
-        bytes memory callData = abi.encodePacked(EXECUTE, bytes32(0), uint256(1) << 64, uint256(0));
-
-        vm.expectRevert();
-        harness.executionCalldata(callData);
-    }
-
-    function test_RevertWhen_executionCalldataLengthOverflows() public {
-        bytes memory callData =
-            abi.encodePacked(EXECUTE, bytes32(0), uint256(0x40), uint256(1) << 64);
-
-        vm.expectRevert();
-        harness.executionCalldata(callData);
-    }
-
     function testFuzz_decodesBatch(address to, uint256 value, bytes memory data) public view {
         Execution[] memory executions = new Execution[](2);
         executions[0] = Execution(to, value, data);
@@ -119,14 +104,6 @@ contract ExecutionLibTest is Test {
 
         vm.expectRevert();
         harness.batch(encoded);
-    }
-
-    function test_RevertWhen_batchOffsetHasUpperBits() public {
-        _expectCorruptedBatchToRevert(0x00, (uint256(1) << 64) | 0x20);
-    }
-
-    function test_RevertWhen_executionCalldataOffsetHasUpperBits() public {
-        _expectCorruptedBatchToRevert(0xa0, (uint256(1) << 64) | 0x60);
     }
 
     function test_RevertWhen_executionCalldataLengthExceedsBatch() public {

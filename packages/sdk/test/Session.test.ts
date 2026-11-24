@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
 import { Policy, Session, SessionError, SessionKey } from "@namera-ai/sdk"
 import { Session as EffectSession } from "@namera-ai/sdk/effect"
-import { Effect, Exit } from "effect"
+import { Effect } from "effect"
 import { TestClock } from "effect/testing"
 
 const agent = SessionKey.ecdsa("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
@@ -244,13 +244,6 @@ describe("Session.from", () => {
       ]
     })
     assert.strictEqual(Session.toSmartSession(session).actions[0]?.actionTargetSelector, "0xc4076876")
-  })
-
-  it("fails in the Effect API's error channel", async () => {
-    const exit = await Effect.runPromiseExit(
-      EffectSession.from({ signer: agent, validUntil: "never", policies: [transfer] })
-    )
-    assert.isTrue(Exit.isFailure(exit))
   })
 })
 
