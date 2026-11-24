@@ -44,6 +44,8 @@ export const FoundryArtifact = Schema.Struct({
   metadata: Schema.Struct({
     compiler: Schema.Struct({ version: Schema.String }),
     settings: Schema.Struct({
+      /** The source file and contract name, e.g. `{ "src/smart-sessions/SmartSession.sol": "SmartSession" }`. */
+      compilationTarget: Schema.Record(Schema.String, Schema.String),
       evmVersion: Schema.String,
       optimizer: Schema.Struct({ enabled: Schema.Boolean, runs: Schema.Int }),
       viaIR: Schema.optionalKey(Schema.Boolean)

@@ -18,7 +18,7 @@ import { getAddress } from "viem"
 import * as Environment from "../contracts/environment.ts"
 import { broadcastCreations, deploymentRecord } from "../contracts/records.ts"
 import * as Rpc from "../contracts/rpc.ts"
-import { BroadcastRun, type Chain, type DeploymentRecord } from "../contracts/schema.ts"
+import { BroadcastRun, type Chain, type DeploymentRecord, FoundryArtifact } from "../contracts/schema.ts"
 import {
   builtContracts,
   chains,
@@ -262,6 +262,22 @@ const profileOf = (
     })
   )
 
+/**
+ * The `path:Contract` identifier of an artifact (`File.sol:Contract`), read from its build: with a compilation profile,
+ * `forge verify-contract` resolves only source paths.
+ */
+const sourceIdentifier = Effect.fnUntraced(function*(artifact: string) {
+  const path = yield* Path.Path
+  const [file, contract] = Str.split(artifact, ":")
+  const build = yield* readJson(path.join(contractsDir, "out", file ?? "", `${contract ?? ""}.json`), FoundryArtifact)
+  const target = Arr.head(Rec.toEntries(build.metadata.settings.compilationTarget))
+  if (Option.isNone(target)) {
+    return yield* SetupError.make({ message: `${artifact}: the build names no compilation target` })
+  }
+  const [source, name] = target.value
+  return `${source}:${name}`
+})
+
 /** Verifies every recorded contract of `chain` on each of its verifiers. */
 export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
   const deployments = yield* readDeployments(chain.id)
@@ -273,6 +289,7 @@ export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
 
   for (const [label, entry] of Rec.toEntries(deployments.value.contracts)) {
     const profile = yield* profileOf(profiles, entry.source)
+    const identifier = yield* sourceIdentifier(entry.artifact)
     for (const verifier of chain.verifiers) {
       if (verifier === "etherscan" && Option.isNone(etherscanKey)) {
         yield* Console.log(`skip etherscan for ${label}: ETHERSCAN_API_KEY is not set`)
@@ -281,7 +298,7 @@ export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
       yield* forge([
         "verify-contract",
         entry.address,
-        entry.artifact,
+        identifier,
         "--chain",
         String(chain.id),
         "--verifier",
@@ -346,6 +363,7 @@ const recordCommand = Command.make("record", selection, (flags) =>
 const verifyCommand = Command.make("verify", selection, (flags) =>
   Effect.gen(function*() {
     const selected = yield* selectedChains(flags, false)
+    yield* forge(["build"])
     yield* forEachChain("contracts verify", selected, verify)
   })).pipe(Command.withDescription("Verify recorded contracts on Sourcify and Etherscan"))
 
