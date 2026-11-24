@@ -44,7 +44,8 @@ const literal: (value: unknown) => string = (value) => {
   if (Predicate.isTagged(value, "Identifier") && Predicate.hasProperty(value, "name")) {
     return String(value.name)
   }
-  if (Predicate.isBigInt(value)) return `${value}n`
+  // A call rather than a literal: the repository lints out bigint literals (`effect/no-bigint-literals`).
+  if (Predicate.isBigInt(value)) return `BigInt("${value}")`
   if (Arr.isArray(value)) return `[${Arr.join(Arr.map(value, literal), ", ")}]`
   if (Predicate.isObject(value)) {
     const fields = Arr.map(
