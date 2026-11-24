@@ -958,5 +958,76 @@ export const v1: Contract.Version<typeof abiV1> = {
   "initcodeHash": "0xe52ddf284d3e18192453afab9b56626e0005b40b9d384e5a511b9cd5c7ca7ddb",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {}
+  "deployments": {
+    8453: {
+      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+      "transactionHash": "0xd2630435446ada9297fb959098c64b09574a4ee139431ff7f1082384fad4e95e",
+      "blockNumber": BigInt("61800554"),
+      "blockHash": "0xe6c388e40301a4db133c8214e8f607f6eb0969ce92f1af062c5eb3d61d3fa019",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    84532: {
+      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+      "transactionHash": "0x383d1c7b6123f1d0497bc4068da94245a785ea97d9e12af59965cf95cf12ca50",
+      "blockNumber": BigInt("63140054"),
+      "blockHash": "0x8518e8e91d40e02fdb2daeab57a710629dc672e99ab3cbce9e6e7e98867dc9dd",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    421614: {
+      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+      "transactionHash": "0x1eac2f4511ac4e76931e391b200fc333c91c4c37a4faad19e7360a3b411247a5",
+      "blockNumber": BigInt("332385624"),
+      "blockHash": "0xde1bb02e4d0d1666869a1369018fa6ee797815adeb1a936b9f3791e96455051a",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    11155111: {
+      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+      "transactionHash": "0x245508e14f7f4be58725483da65bae9b93edb24af6787124675fca352482ef38",
+      "blockNumber": BigInt("12204736"),
+      "blockHash": "0xd7caf178dd4d80e07a0cc19c2c366b932059983d3456bc317f88a136e2a8c4c8",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    },
+    11155420: {
+      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+      "transactionHash": "0xe478538f810ba7a6fb58d61c3161d643320ba0b31d00d3d59339fa0d31c502a2",
+      "blockNumber": BigInt("51873769"),
+      "blockHash": "0xdf4cfcc9422a6c731c8bcfd676ab4fe5bb7a367ad99640020cf913b6e757570b",
+      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+      "source": {
+        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+        "compiler": "0.8.38+commit.1835d247",
+        "evmVersion": "cancun",
+        "optimizerRuns": 200,
+        "viaIR": true
+      }
+    }
+  }
 }
