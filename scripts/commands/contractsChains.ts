@@ -215,6 +215,53 @@ export const record = Effect.fn("contracts.record")(
   Effect.catchTag("PlatformError", (cause) => SetupError.make({ message: String(cause) }))
 )
 
+/** The parts of `forge config --json` that name the compilation profiles. */
+const ForgeProfiles = Schema.Struct({
+  optimizer_runs: Schema.Int,
+  via_ir: Schema.Boolean,
+  additional_compiler_profiles: Schema.Array(Schema.Struct({
+    name: Schema.String,
+    optimizer_runs: Schema.NullOr(Schema.Int),
+    via_ir: Schema.NullOr(Schema.Boolean)
+  }))
+})
+
+/** Each compilation profile in `foundry.toml` with its settings; unset settings are the default profile's. */
+const compilationProfiles = Effect.gen(function*() {
+  const tools = yield* Tools
+  const config = yield* tools.run("forge", ["config", "--json"], { cwd: contractsDir }).pipe(
+    Effect.flatMap(Schema.decodeUnknownEffect(Schema.fromJsonString(ForgeProfiles))),
+    Effect.mapError((cause) => SetupError.make({ message: `forge config: ${String(cause)}` }))
+  )
+  return [
+    { name: "default", runs: config.optimizer_runs, viaIR: config.via_ir },
+    ...Arr.map(config.additional_compiler_profiles, (profile) => ({
+      name: profile.name,
+      runs: profile.optimizer_runs ?? config.optimizer_runs,
+      viaIR: profile.via_ir ?? config.via_ir
+    }))
+  ]
+})
+
+/**
+ * The profile a recorded contract was built with, matched on the settings the record keeps: `forge verify-contract`
+ * needs it once `foundry.toml` has more than one.
+ */
+const profileOf = (
+  profiles: ReadonlyArray<{ readonly name: string; readonly runs: number; readonly viaIR: boolean }>,
+  source: { readonly optimizerRuns: number; readonly viaIR: boolean }
+) =>
+  Arr.findFirst(profiles, (profile) => profile.runs === source.optimizerRuns && profile.viaIR === source.viaIR).pipe(
+    Option.match({
+      onNone: () =>
+        Effect.fail(SetupError.make({
+          message:
+            `no compilation profile in foundry.toml builds with ${source.optimizerRuns} runs, viaIR ${source.viaIR}`
+        })),
+      onSome: (profile) => Effect.succeed(profile.name)
+    })
+  )
+
 /** Verifies every recorded contract of `chain` on each of its verifiers. */
 export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
   const deployments = yield* readDeployments(chain.id)
@@ -222,8 +269,10 @@ export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
     return yield* Console.log("no deployment records; nothing to verify")
   }
   const etherscanKey = yield* Environment.etherscanApiKey
+  const profiles = yield* compilationProfiles
 
   for (const [label, entry] of Rec.toEntries(deployments.value.contracts)) {
+    const profile = yield* profileOf(profiles, entry.source)
     for (const verifier of chain.verifiers) {
       if (verifier === "etherscan" && Option.isNone(etherscanKey)) {
         yield* Console.log(`skip etherscan for ${label}: ETHERSCAN_API_KEY is not set`)
@@ -238,6 +287,8 @@ export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
         "--verifier",
         verifier,
         "--watch",
+        "--compilation-profile",
+        profile,
         ...(verifier === "etherscan" && Option.isSome(etherscanKey)
           ? ["--etherscan-api-key", etherscanKey.value]
           : [])
