@@ -99,7 +99,12 @@ describe("NameraError.decode", () => {
   describe("the paymaster bundler allowlist (BundlerNotAllowed)", () => {
     it.each([
       ["as Candide's Python bytes", fixture.candideBundlerNotAllowed, "0x3cfdc212769c890907bce93d3d8c2c53de6a7a89"],
-      ["as Etherspot's FailedOpWithRevert", fixture.etherspotBundlerNotAllowed, `0x${"0".repeat(40)}`]
+      ["as Etherspot's FailedOpWithRevert", fixture.etherspotBundlerNotAllowed, `0x${"0".repeat(40)}`],
+      [
+        "of Alchemy's Gas Manager (SenderNotAllowed) through Candide",
+        fixture.candideSenderNotAllowed,
+        "0x3cfdc212769c890907bce93d3d8c2c53de6a7a89"
+      ]
     ])("decodes the revert %s to BundlerBound", async (_, message, bundler) => {
       const error = NameraError.decode(await failure({ code: -32500, message })) as PaymasterError.PaymasterError
 

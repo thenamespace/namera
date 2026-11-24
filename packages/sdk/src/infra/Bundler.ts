@@ -174,7 +174,8 @@ export declare namespace alchemy {
  * **Details**
  *
  * Candide estimates no paymaster gas, so the helper fills the paymaster fields its estimates leave out (the
- * operation's own, or 150k for verification) instead of sending none.
+ * operation's own, or 150k for verification) instead of sending none. Its estimates are also the tightest, so the
+ * helper adds 5,000 verification gas: its bundler wants 2,000 spare, which an agent's operation didn't have.
  *
  * @stability experimental
  * @category constructors
@@ -188,7 +189,7 @@ export const candide = (options: candide.Options = {}): Bundler =>
     http: options.http,
     strict: strictOf(options),
     fees: ({ rpc }) => candideVendor.fees(rpc),
-    estimate: candideVendor.fillPaymasterGas
+    estimate: candideVendor.adjustEstimate
   })
 
 /**

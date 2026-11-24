@@ -159,11 +159,14 @@ export const describe = (error: unknown): Failure => {
   return { code, text: redactUrls(texts.join(" | ")), data, method, url, timeoutHash, timedOut }
 }
 
-// The revert errors decoding knows: Smart Sessions' and SessionHook's (from their ABIs), and the bundler allowlist of
-// Pimlico's singleton paymaster (`0x7777…834C`), which also backs ZeroDev's sponsorship.
+// The revert errors decoding knows: Smart Sessions' and SessionHook's (from their ABIs), and the bundler allowlists of
+// Pimlico's singleton paymaster (`0x7777…834C`), which also backs ZeroDev's sponsorship, and of Alchemy's Gas Manager
+// paymaster, which names the bundler's sender (Candide's executor, Base Sepolia, 2026-11-25).
 const bundlerNotAllowed = AbiError.from("error BundlerNotAllowed(address bundler)")
+const senderNotAllowed = AbiError.from("error SenderNotAllowed(address sender)")
 const known = [
   bundlerNotAllowed,
+  senderNotAllowed,
   ...SmartSession.v1.abi.filter((item) => item.type === "error").map((item) =>
     AbiError.from(item as AbiError.AbiError)
   ),
@@ -188,6 +191,8 @@ interface Revert {
   readonly data: Hex.Hex
   readonly error: AbiError.AbiError
   readonly args: ReadonlyArray<unknown>
+  /** Whether the arguments decoded: vendors also print a revert's selector alone, before its data. */
+  readonly complete: boolean
 }
 
 const decodeRevert = (data: Hex.Hex): Revert | undefined => {
@@ -196,12 +201,17 @@ const decodeRevert = (data: Hex.Hex): Revert | undefined => {
   if (error === undefined) return undefined
   try {
     const decoded = AbiError.decode(error, data, { as: "Array" }) as unknown
-    return { data, error, args: Array.isArray(decoded) ? decoded : decoded === undefined ? [] : [decoded] }
+    return {
+      data,
+      error,
+      args: Array.isArray(decoded) ? decoded : decoded === undefined ? [] : [decoded],
+      complete: true
+    }
   } catch {
     // Candide cuts the address argument to 20 bytes.
-    return error === bundlerNotAllowed && Hex.size(data) >= 24
-      ? { data, error, args: [Hex.slice(data, 4, 24)] }
-      : { data, error, args: [] }
+    return (error === bundlerNotAllowed || error === senderNotAllowed) && Hex.size(data) >= 24
+      ? { data, error, args: [Hex.slice(data, 4, 24)], complete: true }
+      : { data, error, args: [], complete: false }
   }
 }
 
@@ -209,11 +219,8 @@ const aaCode = (text: string): string | undefined => /\b(AA\d{2})\b/.exec(text)?
 
 const revertOf = (failure: Failure): Revert | undefined => {
   const candidates = [...failure.data, ...hexIn(failure.text), ...pythonBytes(failure.text)]
-  for (const candidate of candidates) {
-    const revert = decodeRevert(candidate)
-    if (revert !== undefined) return revert
-  }
-  return undefined
+  const reverts = candidates.flatMap((candidate) => decodeRevert(candidate) ?? [])
+  return reverts.find((revert) => revert.complete) ?? reverts[0]
 }
 
 // Unknown revert data: a structured field, or the longest hex after the EntryPoint code (`AA23 reverted 0x…`; Alchemy
@@ -233,7 +240,7 @@ const fromRevert = (
   options: BundlerError.Options
 ): NameraError => {
   const name = revert.error.name
-  if (revert.error === bundlerNotAllowed) {
+  if (revert.error === bundlerNotAllowed || revert.error === senderNotAllowed) {
     const bundler = revert.args[0]
     return PaymasterError.bundlerBound({
       ...options,

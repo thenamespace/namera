@@ -60,6 +60,10 @@ export interface PaymasterEntry extends Evidence {
   readonly bundlers: ReadonlyArray<BundlerVendor> | "any"
   /** The chains it is on: `any` when the vendor's URL takes the chain id. */
   readonly chains: ReadonlyArray<number> | "any"
+  /** Bundlers it refuses on one chain only, where `bundlers` allows them elsewhere. */
+  readonly refusedBy?: ReadonlyArray<{ readonly bundler: BundlerVendor; readonly chainId: number }> | undefined
+  /** `false` when it refuses agents' operations (Smart Sessions), though it sponsors the owner's. */
+  readonly agents?: boolean | undefined
   readonly note?: string | undefined
 }
 
@@ -67,6 +71,7 @@ export interface PaymasterEntry extends Evidence {
 export interface RuleEntry extends Evidence {
   readonly code:
     | "PAYMASTER_BUNDLER_BOUND"
+    | "PAYMASTER_AGENT_UNSUPPORTED"
     | "SPONSORSHIP_BUNDLER_BOUND"
     | "EIP7702_UNSUPPORTED"
     | "SLOW_INCLUSION"
@@ -89,6 +94,7 @@ export interface Matrix {
 
 const run1 = { source: "Namera live tests, Base Sepolia (owner operations, 60 of 60)", date: "2026-11-15" }
 const run2 = { source: "Namera live tests, Base Sepolia (paymaster × bundler, run 2)", date: "2026-11-15" }
+const run3 = { source: "Namera live matrix, Base Sepolia and Sepolia (208 cells)", date: "2026-11-25" }
 const scan = { source: "eth_getCode scan of Circle's paymasters, and Circle's published addresses", date: "2026-11-15" }
 
 const alchemyChains = Object.keys(networks).map(Number)
@@ -160,23 +166,34 @@ export const matrix: Matrix = {
     {
       vendor: "circle",
       bundlers: "any",
-      chains: Object.keys(circleChains).map(Number),
+      // Circle's Sepolia paymaster has no EntryPoint deposit or stake (AA31/AA33 on every bundler).
+      chains: Object.keys(circleChains).map(Number).filter((chainId) => chainId !== 11155111),
       note: "USDC permit signed by the account; no API",
-      ...run2
+      ...run3
     },
     {
       vendor: "alchemy",
       bundlers: "any",
       chains: alchemyChains,
+      // `SenderNotAllowed` for Candide's executor on Base Sepolia; Candide's bundler works on Sepolia.
+      refusedBy: [{ bundler: "candide", chainId: 84532 }],
       note: "Gas Manager, onchain paymaster policy",
-      ...run2
+      ...run3
     },
-    { vendor: "etherspot", bundlers: "any", chains: "any", note: "Arka, verifying paymaster", ...run2 },
+    {
+      vendor: "etherspot",
+      bundlers: "any",
+      chains: "any",
+      // Arka's stub runs Skandha's estimate, which reverts for a Smart Sessions signature.
+      agents: false,
+      note: "Arka, verifying paymaster; owner operations only",
+      ...run3
+    },
     {
       vendor: "candide",
       bundlers: "any",
       chains: "any",
-      note: "needs at least 30k call gas (floored by the helper)",
+      note: "needs a minimum call gas it computes per operation (the helper floors 30k, then adopts the one it names)",
       ...run2
     },
     {
@@ -227,8 +244,14 @@ export const matrix: Matrix = {
       code: "PAYMASTER_BUNDLER_BOUND",
       severity: "problem",
       rule:
-        "Pimlico's and ZeroDev's sponsorship and Pimlico's ERC-20 paymaster only work through Pimlico's or ZeroDev's bundler",
-      ...run2
+        "Pimlico's and ZeroDev's sponsorship and Pimlico's ERC-20 paymaster only work through Pimlico's or ZeroDev's bundler; Alchemy's Gas Manager refuses Candide's bundler on Base Sepolia",
+      ...run3
+    },
+    {
+      code: "PAYMASTER_AGENT_UNSUPPORTED",
+      severity: "problem",
+      rule: "Etherspot's Arka sponsors owner operations but refuses agents' (Smart Sessions) operations",
+      ...run3
     },
     {
       code: "SPONSORSHIP_BUNDLER_BOUND",

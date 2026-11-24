@@ -28,6 +28,18 @@ export type {
   UserOperationRequest
 }
 
+// viem's bundler actions read a transport's failure as one of viem's own errors: they `walk` it for a JSON-RPC code
+// (`getBundlerError`) whenever its message names no EntryPoint code they know. A translated Namera error has no
+// `walk`, so it gets one that finds only the error itself, and viem wraps it as an unknown bundler error, its cause.
+const walkable = (error: unknown): unknown => {
+  if (typeof error !== "object" || error === null || "walk" in error) return error
+  Object.defineProperty(error, "walk", {
+    value: (matches?: (candidate: unknown) => boolean) => matches === undefined || matches(error) ? error : undefined,
+    configurable: true
+  })
+  return error
+}
+
 /**
  * An HTTP transport to a vendor's endpoint, built for the client's chain. Failures go through `translate` (which
  * keeps the endpoint's credentials out of them), and `result` may adjust what the endpoint answered.
@@ -56,7 +68,7 @@ export const vendorTransport = (options: {
     try {
       result = await base.request(args, requestOptions)
     } catch (error) {
-      throw options.translate(error, args.method, url)
+      throw walkable(options.translate(error, args.method, url))
     }
     return options.result === undefined ? result : options.result(args.method, args.params, result)
   }) as EIP1193RequestFn

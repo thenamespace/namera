@@ -154,7 +154,8 @@ export declare namespace pimlicoErc20 {
 }
 
 /**
- * Alchemy's Gas Manager (an onchain paymaster policy), which works with any bundler.
+ * Alchemy's Gas Manager (an onchain paymaster policy), which works with any bundler except Candide's on Base Sepolia
+ * (`PAYMASTER_BUNDLER_BOUND`).
  *
  * @stability experimental
  * @category constructors
@@ -194,8 +195,9 @@ export declare namespace alchemy {
  *
  * **Details**
  *
- * Candide's paymaster refuses operations below its minimum call gas, which other bundlers' estimates go under, so
- * the helper raises the call gas limit to 30k before Candide signs.
+ * Candide's paymaster refuses operations below a minimum call gas it computes per operation, which other bundlers'
+ * estimates go under: the helper raises the call gas limit to 30k before Candide signs, and to the minimum Candide
+ * names when it still refuses.
  *
  * @stability experimental
  * @category constructors
@@ -208,7 +210,8 @@ export const candide = (options: candide.Options): Paymaster =>
     context: { sponsorshipPolicyId: options.policyId },
     secrets: options.apiKey === undefined ? [] : [options.apiKey],
     http: options.http,
-    minCallGas: candideVendor.MIN_CALL_GAS
+    minCallGas: candideVendor.MIN_CALL_GAS,
+    minCallGasOf: candideVendor.minCallGasOf
   })
 
 /**
@@ -272,7 +275,8 @@ export declare namespace zerodev {
 }
 
 /**
- * Etherspot's Arka paymaster in verifying mode, which works with any bundler.
+ * Etherspot's Arka paymaster in verifying mode, which works with any bundler for the owner's operations. It refuses
+ * agents' operations (`PAYMASTER_AGENT_UNSUPPORTED`).
  *
  * @stability experimental
  * @category constructors

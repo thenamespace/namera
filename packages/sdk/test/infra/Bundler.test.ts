@@ -1,7 +1,7 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Bundler, BundlerError, ChainError, CompatError, KernelAccount, Paymaster } from "@namera-ai/sdk"
+import { Bundler, BundlerError, ChainError, CompatError, KernelAccount, NameraError, Paymaster } from "@namera-ai/sdk"
 import { type Chain, createPublicClient, http } from "viem"
-import { createBundlerClient, type UserOperationRequest } from "viem/account-abstraction"
+import { createBundlerClient, getUserOperationError, type UserOperationRequest } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { base, baseSepolia, mainnet } from "viem/chains"
 
@@ -204,12 +204,15 @@ describe("Bundler estimates", () => {
 
   const estimated = { callGasLimit: "0x1dcf", verificationGasLimit: "0x42c20", preVerificationGas: "0x13abb" }
 
-  it("fills the paymaster gas Candide's estimate leaves out", async () => {
+  // Candide's bundler wants 2,000 verification gas spare: an agent's operation with Candide's paymaster had 1,533 at
+  // its estimate (Base Sepolia, 2026-11-25), so the helper adds 5,000.
+  it("fills the paymaster gas Candide's estimate leaves out, and pads its verification gas", async () => {
     const fake = endpoint(() => ({ result: estimated }))
     const bundler = Bundler.candide({ http: fake.http })
+    const padded = { ...estimated, verificationGasLimit: "0x43fa8" }
 
     assert.deepStrictEqual(await estimate(bundler, { paymaster: "0x777777777777AeC03fd955926DbF81597e66834C" }), {
-      ...estimated,
+      ...padded,
       paymasterVerificationGasLimit: "0x249f0"
     })
     assert.deepStrictEqual(
@@ -218,9 +221,9 @@ describe("Bundler estimates", () => {
         paymasterVerificationGasLimit: "0x30d40",
         paymasterPostOpGasLimit: "0xc350"
       }),
-      { ...estimated, paymasterVerificationGasLimit: "0x30d40", paymasterPostOpGasLimit: "0xc350" }
+      { ...padded, paymasterVerificationGasLimit: "0x30d40", paymasterPostOpGasLimit: "0xc350" }
     )
-    assert.deepStrictEqual(await estimate(bundler, {}), estimated)
+    assert.deepStrictEqual(await estimate(bundler, {}), padded)
   })
 
   it("sends Alchemy's sponsorship policy as a header, with no preVerificationGas", async () => {
@@ -255,6 +258,20 @@ describe("Bundler errors", () => {
     assert.deepInclude((error as BundlerError.BundlerError).reason, { _tag: "Rejected", aa: "AA22" })
     assert.strictEqual((error as BundlerError.BundlerError).url, "https://api.pimlico.io/v2/84532/rpc")
     assert.isFalse(leaks(error))
+  })
+
+  // Captured from Alchemy's bundler sponsorship with a Gas Manager policy of the paymaster type (Base Sepolia,
+  // 2026-11-25): viem's bundler actions read it with `getUserOperationError`, which walks it for a JSON-RPC code when
+  // its message names no EntryPoint code.
+  it("fails viem's bundler actions with the decoded error as the cause, not a TypeError", async () => {
+    const error = await request({
+      error: { code: -32602, message: "Policy with ID 'gm_1' does not support bundler sponsorship" }
+    })
+    const thrown = getUserOperationError(error as never, {} as never)
+    const decoded = NameraError.decode(thrown)
+
+    assert.isTrue(BundlerError.isBundlerError(decoded))
+    assert.deepInclude((decoded as BundlerError.BundlerError).reason, { _tag: "Rejected", code: -32602 })
   })
 
   it("turns an HTTP failure into a ChainError, without the API key", async () => {

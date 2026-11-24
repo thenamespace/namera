@@ -19,7 +19,7 @@ const TypeId = "~@namera-ai/sdk/CompatError" as const
  *
  * **Details**
  *
- * The codes are `PAYMASTER_BUNDLER_BOUND`, `SPONSORSHIP_BUNDLER_BOUND`, `EIP7702_UNSUPPORTED`, `SLOW_INCLUSION`,
+ * The codes are `PAYMASTER_BUNDLER_BOUND`, `PAYMASTER_AGENT_UNSUPPORTED`, `SPONSORSHIP_BUNDLER_BOUND`, `EIP7702_UNSUPPORTED`, `SLOW_INCLUSION`,
  * `SESSION_PERMIT_REQUIRED` and `NOT_ON_CHAIN`; `Compat.matrix()` lists the rule behind each.
  *
  * @stability experimental
@@ -30,6 +30,7 @@ export const Problem: Schema.Struct<{
   readonly code: Schema.Literals<
     readonly [
       "PAYMASTER_BUNDLER_BOUND",
+      "PAYMASTER_AGENT_UNSUPPORTED",
       "SPONSORSHIP_BUNDLER_BOUND",
       "EIP7702_UNSUPPORTED",
       "SLOW_INCLUSION",
@@ -41,6 +42,7 @@ export const Problem: Schema.Struct<{
 }> = Schema.Struct({
   code: Schema.Literals([
     "PAYMASTER_BUNDLER_BOUND",
+    "PAYMASTER_AGENT_UNSUPPORTED",
     "SPONSORSHIP_BUNDLER_BOUND",
     "EIP7702_UNSUPPORTED",
     "SLOW_INCLUSION",

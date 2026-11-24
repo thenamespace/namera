@@ -5854,7 +5854,8 @@ export declare namespace alchemy {
  * **Details**
  *
  * Candide estimates no paymaster gas, so the helper fills the paymaster fields its estimates leave out (the
- * operation's own, or 150k for verification) instead of sending none.
+ * operation's own, or 150k for verification) instead of sending none. Its estimates are also the tightest, so the
+ * helper adds 5,000 verification gas: its bundler wants 2,000 spare, which an agent's operation didn't have.
  *
  * @stability experimental
  * @category constructors
@@ -6293,7 +6294,7 @@ declare const TypeId: "~@namera-ai/sdk/CompatError";
  *
  * **Details**
  *
- * The codes are `PAYMASTER_BUNDLER_BOUND`, `SPONSORSHIP_BUNDLER_BOUND`, `EIP7702_UNSUPPORTED`, `SLOW_INCLUSION`,
+ * The codes are `PAYMASTER_BUNDLER_BOUND`, `PAYMASTER_AGENT_UNSUPPORTED`, `SPONSORSHIP_BUNDLER_BOUND`, `EIP7702_UNSUPPORTED`, `SLOW_INCLUSION`,
  * `SESSION_PERMIT_REQUIRED` and `NOT_ON_CHAIN`; `Compat.matrix()` lists the rule behind each.
  *
  * @stability experimental
@@ -6303,6 +6304,7 @@ declare const TypeId: "~@namera-ai/sdk/CompatError";
 export declare const Problem: Schema.Struct<{
     readonly code: Schema.Literals<readonly [
         "PAYMASTER_BUNDLER_BOUND",
+        "PAYMASTER_AGENT_UNSUPPORTED",
         "SPONSORSHIP_BUNDLER_BOUND",
         "EIP7702_UNSUPPORTED",
         "SLOW_INCLUSION",
@@ -6321,7 +6323,7 @@ export declare const Problem: Schema.Struct<{
 export type Problem = typeof Problem.Type;
 declare const Incompatible_base: Schema.Class<Incompatible, Schema.TaggedStruct<"Incompatible", {
     readonly problems: Schema.$Array<Schema.Struct<{
-        readonly code: Schema.Literals<readonly ["PAYMASTER_BUNDLER_BOUND", "SPONSORSHIP_BUNDLER_BOUND", "EIP7702_UNSUPPORTED", "SLOW_INCLUSION", "SESSION_PERMIT_REQUIRED", "NOT_ON_CHAIN"]>;
+        readonly code: Schema.Literals<readonly ["PAYMASTER_BUNDLER_BOUND", "PAYMASTER_AGENT_UNSUPPORTED", "SPONSORSHIP_BUNDLER_BOUND", "EIP7702_UNSUPPORTED", "SLOW_INCLUSION", "SESSION_PERMIT_REQUIRED", "NOT_ON_CHAIN"]>;
         readonly message: Schema.String;
     }>>;
 }>, import("effect/Cause").YieldableError>;
@@ -6536,7 +6538,8 @@ export declare namespace pimlicoErc20 {
     }
 }
 /**
- * Alchemy's Gas Manager (an onchain paymaster policy), which works with any bundler.
+ * Alchemy's Gas Manager (an onchain paymaster policy), which works with any bundler except Candide's on Base Sepolia
+ * (`PAYMASTER_BUNDLER_BOUND`).
  *
  * @stability experimental
  * @category constructors
@@ -6567,8 +6570,9 @@ export declare namespace alchemy {
  *
  * **Details**
  *
- * Candide's paymaster refuses operations below its minimum call gas, which other bundlers' estimates go under, so
- * the helper raises the call gas limit to 30k before Candide signs.
+ * Candide's paymaster refuses operations below a minimum call gas it computes per operation, which other bundlers'
+ * estimates go under: the helper raises the call gas limit to 30k before Candide signs, and to the minimum Candide
+ * names when it still refuses.
  *
  * @stability experimental
  * @category constructors
@@ -6626,7 +6630,8 @@ export declare namespace zerodev {
     }
 }
 /**
- * Etherspot's Arka paymaster in verifying mode, which works with any bundler.
+ * Etherspot's Arka paymaster in verifying mode, which works with any bundler for the owner's operations. It refuses
+ * agents' operations (`PAYMASTER_AGENT_UNSUPPORTED`).
  *
  * @stability experimental
  * @category constructors

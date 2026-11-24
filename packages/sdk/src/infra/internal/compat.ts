@@ -133,6 +133,21 @@ export const check = (options: Check): Result => {
         })
       }
     }
+    const refusal = paymasterEntry.refusedBy?.find((entry) =>
+      entry.bundler === bundler.vendor && entry.chainId === chainId
+    )
+    if (refusal !== undefined) {
+      problems.push({
+        code: "PAYMASTER_BUNDLER_BOUND",
+        message: `${names[sponsor]} refuses ${names[bundler.vendor]}'s bundler on chain ${chainId}: use another bundler`
+      })
+    }
+    if (paymasterEntry.agents === false && account.session !== undefined) {
+      problems.push({
+        code: "PAYMASTER_AGENT_UNSUPPORTED",
+        message: `${names[sponsor]} refuses agents' operations: sponsor the agent with another paymaster`
+      })
+    }
     if (!onChain(paymasterEntry.chains, chainId)) {
       problems.push({ code: "NOT_ON_CHAIN", message: `${names[sponsor]} is not on chain ${chainId}` })
     }

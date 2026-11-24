@@ -31,20 +31,36 @@ export const fees = (rpc: Rpc): Effect.Effect<Fees, NameraError> =>
 export const DEFAULT_PAYMASTER_VERIFICATION_GAS = BigInt(150_000)
 
 /**
- * Candide's bundler estimates no paymaster gas: without the fields, an operation would carry no paymaster gas and
- * the paymaster would run out of it (`AA33` without revert data). Fills what the estimate leaves out: the operation's
- * own values, or 150k for verification.
+ * The verification gas added to Candide's estimate. Its estimates are the tightest of the vendors' (94–97% of the
+ * limits used), and its bundler wants 2,000 gas spare: an agent's operation with Candide's paymaster had 1,533 (Base
+ * Sepolia, 2026-11-25), since a session key's real signature costs a little more to check than its stub.
  *
  * @internal
  */
-export const fillPaymasterGas = (params: unknown, answer: unknown): unknown => {
-  const operation = Array.isArray(params) ? params[0] : undefined
-  if (!Predicate.hasProperty(operation, "paymaster") || !Predicate.isString(operation.paymaster)) return answer
+export const VERIFICATION_MARGIN = BigInt(5_000)
+
+/**
+ * Adjusts Candide's estimate: adds `VERIFICATION_MARGIN` to the verification gas, and fills the paymaster gas its
+ * bundler doesn't estimate (without it an operation would carry none and the paymaster would run out, `AA33` without
+ * revert data): the operation's own values, or 150k for verification.
+ *
+ * @internal
+ */
+export const adjustEstimate = (params: unknown, answer: unknown): unknown => {
   if (!Predicate.isObject(answer)) return answer
-  const given = (key: string) => (operation as Record<string, unknown>)[key]
   const estimated = answer as Record<string, unknown>
+  const verification = Predicate.isString(estimated.verificationGasLimit)
+    ? BigInt(estimated.verificationGasLimit)
+    : undefined
+  const padded = verification === undefined
+    ? estimated
+    : { ...estimated, verificationGasLimit: `0x${(verification + VERIFICATION_MARGIN).toString(16)}` }
+
+  const operation = Array.isArray(params) ? params[0] : undefined
+  if (!Predicate.hasProperty(operation, "paymaster") || !Predicate.isString(operation.paymaster)) return padded
+  const given = (key: string) => (operation as Record<string, unknown>)[key]
   return {
-    ...estimated,
+    ...padded,
     paymasterVerificationGasLimit: estimated.paymasterVerificationGasLimit
       ?? given("paymasterVerificationGasLimit")
       ?? `0x${DEFAULT_PAYMASTER_VERIFICATION_GAS.toString(16)}`,
@@ -55,9 +71,23 @@ export const fillPaymasterGas = (params: unknown, answer: unknown): unknown => {
 }
 
 /**
- * The least call gas Candide's paymaster signs for: it refuses operations below its minimum (`0x4603` for a Safe
- * on Base Sepolia), which other bundlers' estimates go under (Alchemy's 9,100 for Kernel).
+ * The least call gas Candide's paymaster signs for: it refuses operations below its minimum, which other bundlers'
+ * estimates go under (Alchemy's 9,100 for Kernel).
  *
  * @internal
  */
 export const MIN_CALL_GAS = BigInt(30_000)
+
+/**
+ * The minimum call gas Candide's paymaster named when it refused an operation: it computes one per operation (`0x4603`
+ * for a Safe's transfer, `0x86fd` and `0xc271` for a Kernel account's on Base Sepolia, 2026-11-25), so a fixed floor
+ * can't cover it.
+ *
+ * @internal
+ */
+export const minCallGasOf = (error: { readonly message: string }): bigint | undefined => {
+  const named = /callGasLimit is lower than the minimum allowed gas limit for this UserOp of (0x[0-9a-fA-F]+)/.exec(
+    error.message
+  )
+  return named === null ? undefined : BigInt(named[1]!)
+}

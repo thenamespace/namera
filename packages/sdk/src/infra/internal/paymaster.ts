@@ -71,6 +71,8 @@ export interface Spec {
   readonly secrets: ReadonlyArray<string>
   readonly http?: HttpTransportConfig | undefined
   readonly minCallGas?: bigint | undefined
+  /** The minimum call gas named in the paymaster's refusal, which it then signs for. */
+  readonly minCallGasOf?: ((error: { readonly message: string }) => bigint | undefined) | undefined
 }
 
 const notOnChain = (vendor: string, chainId: number) =>
@@ -128,18 +130,29 @@ export const erc7677 = (spec: Spec): Paymaster => {
       run(Effect.gen(function*() {
         const { client } = yield* clientFor(parameters.chainId)
         const callGasLimit = (parameters as { readonly callGasLimit?: bigint | undefined }).callGasLimit
-        const raised = spec.minCallGas !== undefined && callGasLimit !== undefined && callGasLimit < spec.minCallGas
+        const request = (raised: bigint | undefined) =>
+          Effect.tryPromise({
+            try: () =>
+              getPaymasterData(client, {
+                ...parameters,
+                ...(raised === undefined ? {} : { callGasLimit: raised }),
+                context: mergeContext(spec.context, parameters.context)
+              } as GetPaymasterDataParameters),
+            catch: (error) => translate(endpoint)(error, "pm_getPaymasterData")
+          }).pipe(Effect.map((data) => ({ data, raised })))
+        const floored = spec.minCallGas !== undefined && callGasLimit !== undefined && callGasLimit < spec.minCallGas
           ? spec.minCallGas
           : undefined
-        const data = yield* Effect.tryPromise({
-          try: () =>
-            getPaymasterData(client, {
-              ...parameters,
-              ...(raised === undefined ? {} : { callGasLimit: raised }),
-              context: mergeContext(spec.context, parameters.context)
-            } as GetPaymasterDataParameters),
-          catch: (error) => translate(endpoint)(error, "pm_getPaymasterData")
-        })
+        // A paymaster that names the call gas it wants gets asked once more with it.
+        const { data, raised } = yield* request(floored).pipe(
+          Effect.catchIf(
+            (error) => {
+              const minimum = spec.minCallGasOf?.(error)
+              return minimum !== undefined && minimum > (floored ?? callGasLimit ?? BigInt(0))
+            },
+            (error) => request(spec.minCallGasOf!(error))
+          )
+        )
         // viem spreads the answer into the operation, so a raised call gas limit reaches the operation the paymaster
         // signed for.
         return (raised === undefined ? data : { ...data, callGasLimit: raised }) as GetPaymasterDataReturnType

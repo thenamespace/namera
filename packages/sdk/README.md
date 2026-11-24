@@ -333,7 +333,7 @@ Recommended setups:
 
 - **Bundler:** Pimlico (`Bundler.pimlico`) or Alchemy (`Bundler.alchemy`).
 - **Sponsorship:** Circle (`Paymaster.circle`, gas paid in USDC) or Alchemy's Gas Manager (`Paymaster.alchemy`). Both
-  work with any bundler.
+  work with any bundler, except Alchemy's with Candide's on Base Sepolia.
 - **Pimlico's paymaster only through Pimlico's or ZeroDev's bundler:** its contract refuses other bundlers
   (`BundlerNotAllowed`), and so do ZeroDev's sponsorship and Pimlico's ERC-20 paymaster, which use the same contract.
 
@@ -353,13 +353,15 @@ What the helpers handle:
 - **Endpoints** for the client's chain, and **fees** from the bundler that submits, through its own method
   (`pimlico_getUserOperationGasPrice`, `zd_getUserOperationGasPrice`, Alchemy's `rundler_maxPriorityFeePerGas`,
   Candide's `voltaire_feesPerGas`, Etherspot's `skandha_getGasPrice`; the node's fees for `Bundler.from`).
-- **Vendor quirks:** paymaster gas Candide's bundler doesn't estimate is filled in (150k verification), Candide's
-  paymaster gets at least 30k call gas, and Alchemy's bundler sponsorship (`sponsorship: { policyId }`) and ZeroDev's
-  UltraRelay (`sponsorship: "ultra-relay"`) send zero fees and no paymaster.
+- **Vendor quirks:** paymaster gas Candide's bundler doesn't estimate is filled in (150k verification), its tight
+  verification estimate gets 5,000 gas more, Candide's paymaster gets at least 30k call gas (or the minimum it names),
+  and Alchemy's bundler sponsorship (`sponsorship: { policyId }`) and ZeroDev's UltraRelay
+  (`sponsorship: "ultra-relay"`) send zero fees and no paymaster.
 - **Paymaster fields are never changed after the paymaster signs them**, and stub requests send zeroed gas.
 - **Circle** builds its USDC permit itself: the owner's account signs it for owner operations, and the session key for
   an agent's, which needs the session to allow it (`Policy.signTypedData` of USDC's `Permit` with Circle's paymaster
-  as spender). Its EntryPoint 0.7 paymaster is on Base, Base Sepolia, Sepolia and Arbitrum Sepolia.
+  as spender). Its EntryPoint 0.7 paymaster works on Base, Base Sepolia and Arbitrum Sepolia; the Sepolia one is
+  unfunded.
 - **API keys never appear in errors**: bundler and paymaster failures become `BundlerError`, `PaymasterError` or
   `CompatError` without the endpoint's credentials.
 
@@ -375,14 +377,16 @@ Compat.check({ account, bundler: "candide", paymaster: "pimlico", chainId: base.
 // → { ok: false, problems: [{ code: "PAYMASTER_BUNDLER_BOUND", message: "…" }], warnings: [] }
 ```
 
-| Rule                                                                                                           | Code                        |
-| -------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| Pimlico's and ZeroDev's sponsorship and Pimlico's ERC-20 paymaster only through Pimlico's or ZeroDev's bundler | `PAYMASTER_BUNDLER_BOUND`   |
-| Alchemy's bundler sponsorship only through Alchemy, UltraRelay only through ZeroDev, neither with a paymaster  | `SPONSORSHIP_BUNDLER_BOUND` |
-| Etherspot's EntryPoint 0.7 endpoint rejects EIP-7702 authorizations (until the account is delegated)           | `EIP7702_UNSUPPORTED`       |
-| Etherspot includes operations in about 95 s: raise `waitForUserOperationReceipt`'s timeout                     | warning `SLOW_INCLUSION`    |
-| Circle's paymaster for an agent needs a session that allows its permit                                         | `SESSION_PERMIT_REQUIRED`   |
-| The bundler, paymaster or Namera's session contracts are not on the chain                                      | `NOT_ON_CHAIN`              |
+| Rule                                                                                                           | Code                          |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Pimlico's and ZeroDev's sponsorship and Pimlico's ERC-20 paymaster only through Pimlico's or ZeroDev's bundler | `PAYMASTER_BUNDLER_BOUND`     |
+| Alchemy's Gas Manager refuses Candide's bundler on Base Sepolia                                                | `PAYMASTER_BUNDLER_BOUND`     |
+| Etherspot's Arka sponsors owner operations only, not agents'                                                   | `PAYMASTER_AGENT_UNSUPPORTED` |
+| Alchemy's bundler sponsorship only through Alchemy, UltraRelay only through ZeroDev, neither with a paymaster  | `SPONSORSHIP_BUNDLER_BOUND`   |
+| Etherspot's EntryPoint 0.7 endpoint rejects EIP-7702 authorizations (until the account is delegated)           | `EIP7702_UNSUPPORTED`         |
+| Etherspot includes operations in about 95 s: raise `waitForUserOperationReceipt`'s timeout                     | warning `SLOW_INCLUSION`      |
+| Circle's paymaster for an agent needs a session that allows its permit                                         | `SESSION_PERMIT_REQUIRED`     |
+| The bundler, paymaster or Namera's session contracts are not on the chain                                      | `NOT_ON_CHAIN`                |
 
 `Session.validate(session, { paymaster, chainId })` warns `SESSION_PERMIT_REQUIRED` too, before the owner signs the
 grant.
@@ -417,7 +421,8 @@ try {
 `src/` follows the Effect v4 source layout: PascalCase public modules, `internal/` implementation, and an `effect/`
 tree mirroring the Promise tree. Barrels, the exports maps and `src/internal/version.ts` are generated by
 `pnpm codegen`; never edit them by hand. Unit tests need no chain; `*.chain.test.ts` run against the private
-`@namera-ai/devnet` package.
+`@namera-ai/devnet` package. The live bundler and paymaster matrix runs by hand against real testnets and vendors
+(`pnpm test:live`); see [`test/live/README.md`](./test/live/README.md).
 
 ## License
 

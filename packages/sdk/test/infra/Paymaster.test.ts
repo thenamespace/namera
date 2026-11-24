@@ -156,6 +156,23 @@ describe("Paymaster ERC-7677 fields", () => {
     assert.strictEqual((calls[0]!.params[0] as { readonly callGasLimit: string }).callGasLimit, "0x7530")
     assert.deepStrictEqual(data, { paymaster: PAYMASTER, paymasterData: "0xabcdef", callGasLimit: 30_000n } as never)
   })
+
+  it("asks Candide again with the minimum call gas it names when it refuses the floor", async () => {
+    const { calls, paymaster } = through(
+      (http) => Paymaster.candide({ policyId: "cp_1", http }),
+      () =>
+        calls.length === 1
+          ? { error: { code: -32602, message: fixture.candideCallGasTooLow } }
+          : { result: { paymaster: PAYMASTER, paymasterData: "0xabcdef" } }
+    )
+    const data = await paymaster.getPaymasterData(estimated as GetPaymasterDataParameters)
+
+    assert.deepStrictEqual(
+      calls.map((call) => (call.params[0] as { readonly callGasLimit: string }).callGasLimit),
+      ["0x7530", "0x86fd"]
+    )
+    assert.deepStrictEqual(data, { paymaster: PAYMASTER, paymasterData: "0xabcdef", callGasLimit: 34_557n } as never)
+  })
 })
 
 describe("Paymaster errors", () => {

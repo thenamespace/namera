@@ -4,6 +4,7 @@ import { Bundler, Compat, CompatError, Paymaster, Policy, Session, SessionKey } 
 const BASE = 8453
 const BASE_SEPOLIA = 84532
 const OP_SEPOLIA = 11155420
+const SEPOLIA = 11155111
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 const CIRCLE_BASE = "0x6C973eBe80dCD8660841D4356bf15c32460271C9"
 
@@ -69,6 +70,27 @@ describe("Compat.check", () => {
         }
       }
     )
+
+    it("refuses Alchemy's Gas Manager on Candide's bundler on Base Sepolia only", () => {
+      assert.deepStrictEqual(
+        codes(Compat.check({ bundler: "candide", paymaster: "alchemy", chainId: BASE_SEPOLIA })).problems,
+        ["PAYMASTER_BUNDLER_BOUND"]
+      )
+      assert.isTrue(Compat.check({ bundler: "candide", paymaster: "alchemy", chainId: SEPOLIA }).ok)
+    })
+  })
+
+  describe("PAYMASTER_AGENT_UNSUPPORTED", () => {
+    it("refuses Arka for an agent, not for the owner", () => {
+      assert.deepStrictEqual(
+        codes(
+          Compat.check({ account: { session: session() }, bundler: "pimlico", paymaster: "etherspot", chainId: BASE })
+        )
+          .problems,
+        ["PAYMASTER_AGENT_UNSUPPORTED"]
+      )
+      assert.isTrue(Compat.check({ bundler: "pimlico", paymaster: "etherspot", chainId: BASE }).ok)
+    })
   })
 
   describe("SPONSORSHIP_BUNDLER_BOUND", () => {
@@ -158,6 +180,11 @@ describe("Compat.check", () => {
         ]
       )
       assert.isTrue(Compat.check({ bundler: "pimlico", paymaster: "circle", chainId: BASE_SEPOLIA }).ok)
+      // Circle's Sepolia paymaster is deployed but unfunded.
+      assert.deepStrictEqual(
+        codes(Compat.check({ bundler: "pimlico", paymaster: "circle", chainId: SEPOLIA })).problems,
+        ["NOT_ON_CHAIN"]
+      )
     })
 
     it("refuses an agent where Namera's session contracts aren't, except on a local devnet", () => {

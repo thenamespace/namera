@@ -23,6 +23,13 @@ export const candideBundlerNotAllowed = String
 export const etherspotBundlerNotAllowed =
   `FailedOpWithRevert(0,"AA33 reverted",0x55d3ab460000000000000000000000000000000000000000000000000000000000000000)`
 
+/**
+ * Alchemy's Gas Manager through Candide's bundler (Base Sepolia, 2026-11-25): its paymaster reverts
+ * `SenderNotAllowed(address)` naming Candide's executor.
+ */
+export const candideSenderNotAllowed =
+  "AA33 reverted: unknown revert (selector 0xd0d25976): 0xd0d259760000000000000000000000003cfdc212769c890907bce93d3d8c2c53de6a7a89"
+
 /** Pimlico's paymaster through Alchemy's bundler: no revert data. */
 export const alchemyAa33 = "validation reverted: [reason]: AA33 reverted"
 
@@ -50,6 +57,10 @@ export const replayedEnable =
 
 /** An expired session. */
 export const expired = "UserOperation reverted with reason: AA22 expired or not due"
+
+/** Candide's paymaster refusing a Kernel owner transfer through Pimlico's bundler (Base Sepolia, 2026-11-25). */
+export const candideCallGasTooLow =
+  "validator: UserOp's callGasLimit is lower than the minimum allowed gas limit for this UserOp of 0x86fd"
 
 /** Pimlico sponsorship with an inactive policy. */
 export const policyInactive = "sponsorshipPolicy not active"
