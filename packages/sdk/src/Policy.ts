@@ -328,8 +328,9 @@ export declare namespace call {
 }
 
 /**
- * Allows any call to any contract except the account itself and Smart Sessions. Needs `unsafe: true`;
- * `Session.validate` warns.
+ * Allows any call to any contract except the account's own infrastructure: the account itself, Smart Sessions, the
+ * EntryPoint, and the validators, executors and hooks the account has installed (a call there could replace its
+ * owner); those need an explicit policy. Needs `unsafe: true`; `Session.validate` warns.
  *
  * @stability experimental
  * @category constructors
@@ -436,7 +437,8 @@ export declare namespace rateLimit {
 
 /**
  * Limits the gas the session may spend per period, counted at its worst case (`maxFeePerGas` × every gas limit),
- * sponsored operations included.
+ * sponsored operations included. Every session needs one (`Session.validate` reports `GAS_LIMIT_REQUIRED`): the agent
+ * sets each operation's fees, and without a paymaster the account pays them.
  *
  * @stability experimental
  * @category constructors
@@ -465,13 +467,16 @@ export declare namespace gas {
 }
 
 /**
- * Limits ERC-20 approvals (`approve`, `increaseAllowance`) of the listed tokens, and Permit2 approvals of them, to
- * the listed spenders and at most `maxAmount` each. Revoking (amount 0) is always allowed.
+ * Limits ERC-20 `approve` of the listed tokens, and Permit2 approvals of them, to the listed spenders and at most
+ * `maxAmount` each: one cap for every token, or a cap per token (`{ [token]: amount }`) for tokens with different
+ * decimals. Revoking (amount 0) is always allowed; `increaseAllowance` is refused, since repeated calls would add up
+ * past the cap.
  *
  * **Details**
  *
  * It limits approvals other policies allow (`Policy.erc20Approve`, `Policy.call`, `Policy.anyCall`); it allows
- * nothing by itself. With it, `Policy.spend` stops counting that token's approvals.
+ * nothing by itself. With it, `Policy.spend` stops counting that token's approvals. List ERC-20 tokens only: an
+ * ERC-721's `approve(spender, tokenId)` has the same selector.
  *
  * @stability experimental
  * @category constructors
@@ -496,7 +501,7 @@ export declare namespace approvals {
   export interface Options {
     readonly tokens: ReadonlyArray<`0x${string}`>
     readonly spenders: ReadonlyArray<`0x${string}`>
-    readonly maxAmount: bigint
+    readonly maxAmount: bigint | { readonly [token: `0x${string}`]: bigint }
   }
 }
 

@@ -56,8 +56,14 @@ abstract contract LimitPolicy is PolicyBase, IUserOpPolicy {
             c.exceeded = true;
             return;
         }
+        uint256 bounds = Period.bounds(period, c.time);
+        // A one-second period at time 0 is the only periodic charge without bounds (0 reads as "always valid").
+        if (period != 0 && bounds == 0) {
+            c.exceeded = true;
+            return;
+        }
         _setUsed(counter, account, used + amount);
-        c.validationData = Period.intersect(c.validationData, Period.bounds(period, c.time));
+        c.validationData = Period.intersect(c.validationData, bounds);
     }
 
     /// @notice What `account` has used of what `tag` counts (a token, or the policy's own tag) in the period of

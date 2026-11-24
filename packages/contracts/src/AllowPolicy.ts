@@ -76,8 +76,8 @@ const abiV1 = [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -85,11 +85,11 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.allow-policy.v1",
-  "address": "0x479fDd81bd81151ec4db72fF95311FDC5e9005A4",
+  "address": "0x723473e78D99B8C5b6Fc91247709DDdCF56c32D1",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xded22ee30042e008d828d95d2b702a5269dae61fb517f237917f9d16256da5b6",
-  "initcodeHash": "0xab868d097004574f566c7aad157a2a2f8cb29c9e241241edc7a423136c5ddf0b",
-  "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
+  "initcodeHash": "0x1bfb0a107cfc40e7791ec7258d53728bb5e36eea749fb90f6a0149739707c7bb",
+  "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}
 }

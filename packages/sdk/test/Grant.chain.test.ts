@@ -31,7 +31,11 @@ const newSession = () =>
   Session.from({
     signer: SessionKey.ecdsa(sessionKey.address),
     validUntil: Session.now() + 30 * 86400,
-    policies: [Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } })]
+    policies: [
+      Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } }),
+      // Every session needs a gas limit (Session.validate): the agent sets each operation's fees.
+      Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
+    ]
   })
 
 const isEnabled = (on: Devnet.Devnet, session: Session.Session, account: `0x${string}`) =>

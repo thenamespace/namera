@@ -17,6 +17,7 @@ import {PolicyCalls} from "../utils/PolicyCalls.sol";
 import {SessionBuilder} from "../utils/SessionBuilder.sol";
 import {SmartSessionTestBase} from "../utils/SmartSessionTestBase.sol";
 import {MockERC20} from "../utils/mocks/MockERC20.sol";
+import {MockTarget} from "../utils/mocks/MockTarget.sol";
 
 /// @notice SmartSession on a real deployed account implementation (loaded from fixtures). Each account test
 /// supplies how to deploy the account with SmartSession installed, its nonce key layout and its owner ERC-1271
@@ -125,5 +126,42 @@ abstract contract RealAccountTestBase is SmartSessionTestBase {
         vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
         handleOp(over);
         assertEq(token.balanceOf(recipient), 60);
+    }
+
+    /// @dev The module that holds the account's owner, which takes the account's calls as configuration.
+    function ownerValidator() internal view virtual returns (address);
+
+    /// @dev Regression (internal review, findings 1 and 7): the fallback action can't call the account's owner
+    /// validator (replacing the owner) or the EntryPoint (moving the deposit out); both need an explicit action.
+    function test_theFallbackCannotReachTheOwnersValidatorOrTheEntryPoint() public {
+        Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
+        session.salt = keccak256("fallback infrastructure");
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
+
+        address[2] memory targets = [ownerValidator(), address(entryPoint)];
+        bytes[2] memory calls = [
+            abi.encodeWithSignature("onUninstall(bytes)", ""),
+            abi.encodeWithSignature("withdrawTo(address,uint256)", makeAddr("thief"), 1)
+        ];
+        for (uint256 i; i < targets.length; ++i) {
+            ERC4337.PackedUserOperation memory op =
+                signUse(userOp(smartAccount, executeSingle(targets[i], 0, calls[i])), permissionId);
+            vm.expectPartialRevert(IEntryPoint.FailedOpWithRevert.selector);
+            handleOp(op);
+        }
+
+        // Any other target still goes through the fallback (the session has no action for this one).
+        MockTarget other = new MockTarget();
+        handleOp(
+            signUse(
+                userOp(
+                    smartAccount,
+                    executeSingle(address(other), 0, abi.encodeCall(MockTarget.setValue, (2)))
+                ),
+                permissionId
+            )
+        );
+        assertEq(other.value(), 2);
     }
 }

@@ -104,6 +104,15 @@ contract MockAccount is EIP712 {
         IValidatorModule(module).onUninstall(deInitData);
     }
 
+    /// @dev ERC-7579's view: only validators are tracked.
+    function isModuleInstalled(uint256 moduleTypeId, address module, bytes calldata)
+        external
+        view
+        returns (bool)
+    {
+        return moduleTypeId == MODULE_TYPE_VALIDATOR && isValidatorInstalled[module];
+    }
+
     function isValidSignature(bytes32 hash, bytes calldata signature)
         external
         view

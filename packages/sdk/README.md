@@ -145,7 +145,8 @@ const session = Session.from({
       args: { params: { recipient: owner } }
     }),
     Policy.spend({ token: USDC, amount: 200_000000n, period: "day" }),
-    Policy.rateLimit({ count: 20, period: "hour" })
+    Policy.rateLimit({ count: 20, period: "hour" }),
+    Policy.gas({ maxCost: parseEther("0.01"), period: "day" }) // every session needs one
   ]
 })
 
@@ -165,10 +166,27 @@ Session.toSmartSession(session) // Smart Sessions' Session struct, for enableSes
 Conditions are plain values: `x` (equal), `[a, b]` (one of), `{ lte }`, `{ lt }`, `{ gte }`, `{ gt }`,
 `{ between: [low, high] }`. `Policy.function` infers its `args` from a `const` ABI; conditions apply to static
 arguments and static struct fields. `Session.from` throws `SessionError` (`InvalidSession`) listing every malformed
-part; `Session.validate` reports errors such as `NO_CALL_POLICY`, `OVERLAPPING_CALLS`, `CONFLICTING_LIMITS`,
-`EXECUTION_WITHOUT_LIMITS` (execution policies need `Policy.rateLimit` and `Policy.gas`) and `SIGNS_FOR_ACCOUNT`, and
-warnings such as `UNRESTRICTED_AMOUNT_ARG`, `ANY_CALL` and `LONG_SESSION`. `Policy.signMessage` is refused: Smart
-Sessions can't check personal messages.
+part; `Session.validate` reports errors such as `GAS_LIMIT_REQUIRED`, `NO_CALL_POLICY`, `OVERLAPPING_CALLS`,
+`CONFLICTING_LIMITS`, `DUPLICATE_POLICY`, `EXECUTION_WITHOUT_LIMITS` (execution policies need `Policy.rateLimit` and
+`Policy.gas`) and `SIGNS_FOR_ACCOUNT`, and warnings such as `UNRESTRICTED_AMOUNT_ARG`, `ANY_CALL` and `LONG_SESSION`.
+`Policy.signMessage` is refused: Smart Sessions can't check personal messages.
+
+What the policies enforce, and where they stop:
+
+- **Gas.** The agent sets each operation's fees, and without a paymaster the account pays them, up to its whole
+  balance, to whoever bundles the operation. A sponsored session's agent can simply leave the paymaster out, so every
+  session needs `Policy.gas` (`GAS_LIMIT_REQUIRED`).
+- **`Policy.anyCall`** reaches any contract but the account's own infrastructure: the account itself, Smart Sessions,
+  the EntryPoint (its deposit), and the validators, executors and hooks the account has installed (they take the
+  account's calls as configuration, so a call there could replace its owner). Those need an explicit policy.
+- **`Policy.spend`** counts `transfer`, `transferFrom` and approvals (`approve`, `increaseAllowance`, and Permit2's
+  `approve` of the token) and refuses any other function of a limited token, which it can't measure. It doesn't see
+  tokens a contract pulls with an allowance given before the session; an execution policy measuring balances does.
+- **`Policy.approvals`** caps `approve` per token (one cap, or `{ [token]: cap }` for tokens with different decimals),
+  only to the listed spenders, and refuses `increaseAllowance`, whose calls would add up past the cap.
+- **Arguments** are compared as whole words, so a lower bound on a narrow integer (`uint24 fee: { gte }`) also caps the
+  word at the type's range.
+- **Signing caps** (`Policy.signTypedData`) apply to each signature; there is no running total across signatures.
 
 ## Grants
 
@@ -285,8 +303,10 @@ watcher.off()
 - **Revoking** removes an enabled session, or revokes an unused grant's enable signature so a leaked grant can never
   be enabled; revoking again sends nothing.
 - **Updating** keeps the permission id and what the limits have used, validates the updated session first, and
-  revokes the old enable signature, so the old grant can't bring the old policies back. The updated grant is
-  installed: it carries no enable signature, and its agent uses the session as it is.
+  spends the old enable signature, so the old grant can't bring the old policies back. The updated grant is
+  installed: it carries no enable signature, and its agent uses the session as it is. Removing a call policy while
+  `Policy.anyCall` stays is refused (`GrantError` `RemovalWidens`): the call would go through `anyCall` without the
+  removed policy's conditions.
 - **History** comes from the EntryPoint's logs, read in pages: pass `fromBlock` (the block the grant was created in)
   on a long chain. Smart Sessions stores permission ids, not sessions, so `Grant.list` matches ids to the grants you
   pass and marks the rest `foreign`.

@@ -22,6 +22,8 @@ abstract contract SessionHookFlows is RealAccountTestBase {
 
     MockExecutionPolicy internal executionPolicy;
 
+    bytes4 private constant EXECUTE_USER_OP = 0x8dd7712f;
+
     function setUp() public virtual override {
         super.setUp();
         executionPolicy = new MockExecutionPolicy();
@@ -195,6 +197,54 @@ abstract contract SessionHookFlows is RealAccountTestBase {
         assertTrue(smartSession.isPermissionEnabled(permissionId, smartAccount));
         assertEq(target.value(), passes ? 7 : 0);
         assertEq(executionPolicy.postChecks(smartAccount), passes ? 1 : 0);
+    }
+
+    /// @dev Smart Sessions and the hook accept `executeUserOp(execute(…))` on every account (upstream refuses it, as
+    /// an account may run something else). On these accounts a wrapped operation either runs the execution policies
+    /// (Kernel, Nexus) or doesn't execute (Safe7579): never the calls without the policies.
+    function test_hook_aWrappedOperationNeverRunsWithoutThePolicies() public {
+        Session memory session = hookedSession("wrap", MockExecutionPolicy.Mode.Pass);
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, tagged(callSetValue(1), permissionId)), session));
+
+        ERC4337.PackedUserOperation memory op =
+            userOp(smartAccount, tagged(callSetValue(2), permissionId));
+        if (bytes4(op.callData) != EXECUTE_USER_OP) {
+            op.callData = abi.encodePacked(EXECUTE_USER_OP, op.callData);
+        }
+        handleOp(signUse(op, permissionId));
+
+        bool executed = target.value() == 2;
+        assertEq(executionPolicy.preChecks(smartAccount), executed ? 2 : 1);
+    }
+
+    /// @dev Regression (internal review, findings 1 to 3): a session with the fallback action can't make the account
+    /// uninstall or reinstall the hook, which would switch off every session's execution policies. Nexus and Safe7579
+    /// report the hook as installed, so Smart Sessions refuses the call in validation; Kernel doesn't report a
+    /// validator's hook, so the hook refuses it during the operation (it holds the lock around Smart Sessions'
+    /// operations there) and the operation fails.
+    function test_hook_theFallbackCannotReachTheHook() public {
+        Session memory session = defaultSession().withFallbackAction(address(new AllowPolicy()), "");
+        session.salt = keccak256("fallback");
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        handleOp(signEnable(userOp(smartAccount, callSetValue(1)), session));
+        (SessionHook.Flavour flavour, address installed) = sessionHook.getInstall(smartAccount);
+
+        bytes[2] memory calls = [
+            abi.encodeCall(SessionHook.onUninstall, ("")),
+            abi.encodeCall(SessionHook.onInstall, (abi.encode(uint8(3), address(smartSession))))
+        ];
+        for (uint256 i; i < calls.length; ++i) {
+            ERC4337.PackedUserOperation[] memory ops = new ERC4337.PackedUserOperation[](1);
+            ops[0] = signUse(
+                userOp(smartAccount, executeSingle(address(sessionHook), 0, calls[i])), permissionId
+            );
+            try entryPoint.handleOps(ops, payable(makeAddr("beneficiary"))) {} catch {}
+        }
+
+        (SessionHook.Flavour after_, address installedAfter) = sessionHook.getInstall(smartAccount);
+        assertEq(uint8(after_), uint8(flavour));
+        assertEq(installedAfter, installed);
     }
 
     /// @dev Removes SessionHook from SmartSession's operations the way the account allows.

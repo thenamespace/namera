@@ -154,6 +154,14 @@ contract SpendPolicyTest is LimitPolicyTest {
         assertEq(policy.usage(ID, address(this), recipient, tag, DAY, T), 0);
     }
 
+    /// @dev Regression (internal review, leads): a one-second period at time 0 would have no time bounds (0 reads as
+    /// always valid), so it fails; at any later time it is bounded to its second.
+    function test_aOneSecondPeriodAtTimeZeroFails() public {
+        _configure(_limit(100, 1, true));
+        assertEq(policy.checkUserOpPolicy(ID, _transferAt(1, 0)), 1);
+        assertEq(policy.checkUserOpPolicy(ID, _transferAt(1, 1)), _bounds(1, 1));
+    }
+
     function test_aTruncatedTransferCountsAsUnlimited() public {
         _configure(_limit(type(uint256).max - 1, 0, true));
         bytes memory truncated = abi.encodeWithSelector(0xa9059cbb, recipient);

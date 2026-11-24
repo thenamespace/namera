@@ -228,7 +228,7 @@ export const toAccount = Effect.fnUntraced(function*(
     if (check) {
       const state = yield* readState(client, { grant, chain, compiled, time: yield* latestTimestamp(client) })
       const verifier = app.domain?.verifyingContract as Hex.Hex | undefined
-      yield* refuse(evaluateSignature({ compiled, contracts, nested, verifier, state }))
+      yield* refuse(evaluateSignature({ compiled, contracts, nested, verifier, account: address, state }))
     }
     return Erc7739.encodeSignature({
       type,

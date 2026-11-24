@@ -60,7 +60,8 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the evaluator on a %s a
         Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } }),
         Policy.nativeTransfer({ to: [payee], value: { lte: 1000n } }),
         Policy.spend({ token, amount: 150n, period: "day" }),
-        Policy.value({ amount: 1500n, period: "day" })
+        Policy.value({ amount: 1500n, period: "day" }),
+        Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
       ]
     })
     grant = await Grant.create({ account: await deployedAccount(type), session })
@@ -71,7 +72,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the evaluator on a %s a
 
   // A few short properties with their own seeds, so each stays within the test time limit: the bundler simulates and
   // traces each operation.
-  for (const seed of [12, 34, 56]) {
+  for (const seed of [12, 34, 56, 78, 90]) {
     it.effect.prop(`agrees with the chain on what is included (seed ${seed})`, {
       first: allowed,
       second: any,
@@ -97,6 +98,6 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the evaluator on a %s a
           included,
           `calls ${alone ? first : `${first}, ${second}`}: ${violations.map((violation) => violation._tag).join(", ")}`
         )
-      }), { arbitrary: { runs: 5, seed } })
+      }), { arbitrary: { runs: 3, seed } })
   }
 })

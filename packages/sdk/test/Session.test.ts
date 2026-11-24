@@ -81,8 +81,19 @@ const problemsOf = (thunk: () => unknown) => {
 
 const codesOf = (thunk: () => unknown) => problemsOf(thunk).map((problem) => problem.code)
 
-const validation = (overrides: Partial<Session.from.Options>, account?: `0x${string}`) =>
-  Session.validate(build(overrides), { now: NOW, account })
+// Every session needs a gas limit; the cases add one unless they test its absence or bring their own.
+const gasLimit = Policy.gas({ maxCost: 10n ** 16n, period: "day" })
+const validation = (
+  overrides: Partial<Session.from.Options>,
+  account?: `0x${string}`,
+  options: { readonly gas?: boolean } = {}
+) => {
+  const policies = overrides.policies ?? [transfer]
+  const withGas = options.gas === false || policies.some((policy) => policy.type === "gas")
+    ? policies
+    : [...policies, gasLimit]
+  return Session.validate(build({ ...overrides, policies: withGas }), { now: NOW, account })
+}
 
 describe("Session.from", () => {
   it("sorts and deduplicates policies, so equal sessions are equal values", () => {
@@ -321,14 +332,29 @@ describe("Session.validate", () => {
     })
   }
 
+  // Internal review, finding 6: the agent sets each operation's fees, and the account pays them without a paymaster
+  // (which a sponsored session's agent can leave out).
+  it("reports GAS_LIMIT_REQUIRED for every session without Policy.gas, sponsored or not", () => {
+    for (const sponsored of [false, true]) {
+      const result = validation({ sponsored }, undefined, { gas: false })
+      assert.deepStrictEqual(result.problems.map((problem) => problem.code), ["GAS_LIMIT_REQUIRED"])
+    }
+  })
+
+  // Internal review, finding 9: a policy contract listed twice keeps only its last configuration.
+  it("reports DUPLICATE_POLICY for a policy contract listed twice in one list", () => {
+    const custom = (initData: `0x${string}`) => Policy.custom({ kind: "limit", address: router, initData })
+    const result = validation({ policies: [transfer, custom("0x01"), custom("0x02")] })
+    assert.deepStrictEqual(result.problems.map((problem) => problem.code), ["DUPLICATE_POLICY"])
+  })
+
   const warnings: ReadonlyArray<readonly [string, Partial<Session.from.Options>]> = [
     ["UNRESTRICTED_ADDRESS_ARG", { policies: [Policy.erc20Transfer({ token: USDC, amount: 1n })] }],
     ["UNRESTRICTED_AMOUNT_ARG", { policies: [Policy.erc20Transfer({ token: USDC, to: merchant })] }],
     ["RAW_CALL_POLICY", { policies: [Policy.call({ to: router, selector: "0x414bf389" })] }],
     ["ANY_CALL", { policies: [Policy.anyCall({ unsafe: true })] }],
     ["LONG_SESSION", { validUntil: NOW + 91 * 86400 }],
-    ["NO_EXPIRY", { validUntil: "never", unsafe: true }],
-    ["SPONSORED_WITHOUT_GAS_LIMIT", { sponsored: true }]
+    ["NO_EXPIRY", { validUntil: "never", unsafe: true }]
   ]
   for (const [code, overrides] of warnings) {
     it(`warns ${code}`, () => {
@@ -354,7 +380,7 @@ describe("Session.validate", () => {
   it.effect("checks against the Clock's time in the Effect API", () =>
     Effect.gen(function*() {
       yield* TestClock.setTime((NOW + 86400) * 1000)
-      const result = yield* EffectSession.validate(build())
+      const result = yield* EffectSession.validate(build({ policies: [transfer, gasLimit] }))
       assert.deepStrictEqual(result.problems.map((problem) => problem.code), ["EXPIRY_IN_PAST"])
     }))
 })

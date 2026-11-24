@@ -72,8 +72,9 @@ const missing = (from: ReadonlyArray<string>, to: ReadonlyArray<string>) =>
 /**
  * The owner's calls (to Smart Sessions) that turn the enabled session `previous` into `next`, which has the same
  * permission id: disable what `next` no longer has, then enable `next`, which adds what is new and reconfigures what
- * stays (and sets its window and paymaster flag); and revoke the enable signature, so the grant for `previous` can't
- * enable its policies again. A session that isn't enabled has nothing to disable: `next` is enabled outright.
+ * stays (and sets its window and paymaster flag). Each call spends the session's enable nonce, so the grant for
+ * `previous` can't enable its policies again. A session that isn't enabled has nothing to disable: `next` is enabled
+ * outright.
  *
  * @internal
  */
@@ -132,6 +133,5 @@ export const encodeUpdate = (options: {
     }
   }
   calls.push(AbiFunction.encodeData(functions.enableSessions, [[next]] as never))
-  calls.push(encodeRevokeEnableSignature(permissionId))
   return calls
 }

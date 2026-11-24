@@ -41,6 +41,12 @@ interface INexusBootstrap {
 contract NexusTest is RealAccountTestBase {
     address internal constant FACTORY = 0x0000b1C08f1418dA76B5E99c1Bf5718486cf8c53;
     address internal constant BOOTSTRAP = 0x0000B1c0A80cb7DD166a15e7390b8A4Ced4500C6;
+    /// @dev Nexus's default validator, holding the owner.
+    address internal constant K1_VALIDATOR = 0x0000B1C0790E5a28293276C320d2B95D651dBaD6;
+
+    function ownerValidator() internal pure override returns (address) {
+        return K1_VALIDATOR;
+    }
 
     function deployAccount() internal virtual override returns (address) {
         INexusBootstrap.BootstrapConfig[] memory validators =

@@ -3,7 +3,7 @@ import * as Hex from "ox/Hex"
 
 import type { DecodedCall } from "../agent/calls.ts"
 import { type Compiled, type Contracts, FALLBACK, type PolicyData } from "../session/compile.ts"
-import { VALUE_OFFSET, VALUE_SELECTOR } from "../session/resolve.ts"
+import { PERMIT2, VALUE_OFFSET, VALUE_SELECTOR } from "../session/resolve.ts"
 import { amountAndPeriod, counterKey, limits, resetsAt, tags, tokenTag } from "./usage.ts"
 import type { Violation } from "./violation.ts"
 
@@ -15,6 +15,8 @@ import type { Violation } from "./violation.ts"
 /** `execute(bytes32,bytes)`, which a session may not call on the account itself. */
 const EXECUTE = "0xe9ae5c53"
 const MAX = BigInt(2) ** BigInt(256) - BigInt(1)
+const UINT160 = (BigInt(1) << BigInt(160)) - BigInt(1)
+const ENTRY_POINTS = ["0x0000000071727De22E5E9d8BAf0edAc6f37da032", "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"]
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
@@ -84,7 +86,7 @@ export const holds = (condition: number, refs: ReadonlyArray<Hex.Hex>, x: bigint
 }
 
 const rules = AbiParameters.from(["(uint8 condition, uint256 offset, bytes32[] refs)[]"])
-const approvalConfig = AbiParameters.from(["address[] spenders", "uint256 maxAmount", "address[] tokens"])
+const approvalConfig = AbiParameters.from(["address[] spenders", "(address token, uint256 maxAmount)[] caps"])
 
 /** `ArgPolicy.checkAction`: every rule holds on its argument word, or on the value. */
 const argumentsHold = (initData: Hex.Hex, call: DecodedCall): boolean => {
@@ -95,29 +97,35 @@ const argumentsHold = (initData: Hex.Hex, call: DecodedCall): boolean => {
   })
 }
 
-/** `ApprovalPolicy.checkAction`: an approval of a listed spender up to the maximum, or a revocation. */
+/**
+ * `ApprovalPolicy.checkAction`: `approve` on a listed token, or Permit2's `approve` of one, without value, to a listed
+ * spender up to the token's cap, or a revocation. `increaseAllowance` and anything else fail.
+ */
 const approvalHolds = (initData: Hex.Hex, call: DecodedCall): boolean => {
-  const [spenders, maxAmount, tokens] = AbiParameters.decode(approvalConfig, initData)
+  const [spenders, caps] = AbiParameters.decode(approvalConfig, initData)
   const data = call.data.toLowerCase() as Hex.Hex
-  if (Hex.size(data) < 4) return false
+  if (call.value !== BigInt(0) || Hex.size(data) < 4) return false
   const selector = Hex.slice(data, 0, 4)
+  let token: Hex.Hex
   let spender: Hex.Hex
   let amount: bigint
-  if (selector === "0x095ea7b3" || selector === "0x39509351") {
+  if (selector === "0x095ea7b3") {
     if (Hex.size(data) < 68) return false
+    token = call.to
     spender = Hex.slice(data, 16, 36)
     amount = word(data, 36)!
-  } else if (selector === "0x87517c45") {
+  } else if (selector === "0x87517c45" && same(call.to, PERMIT2)) {
     if (Hex.size(data) < 132) return false
-    const token = Hex.slice(data, 16, 36)
+    token = Hex.slice(data, 16, 36)
     spender = Hex.slice(data, 48, 68)
-    amount = word(data, 68)! & ((BigInt(1) << BigInt(160)) - BigInt(1))
-    if (amount !== BigInt(0) && !tokens.some((entry) => same(entry, token))) return false
+    amount = word(data, 68)! & UINT160
   } else {
     return false
   }
+  const cap = caps.find((entry) => same(entry.token, token))
+  if (cap === undefined) return false
   if (amount === BigInt(0)) return true
-  return amount <= maxAmount && spenders.some((entry) => same(entry, spender))
+  return amount <= cap.maxAmount && spenders.some((entry) => same(entry, spender))
 }
 
 const actionViolations = (
@@ -138,8 +146,9 @@ const actionViolations = (
 
 /**
  * `PolicyLib.checkSingle7579Exec` for each call: the call's own action (target and selector), else the fallback
- * action, never the fallback for a call on the account itself; no nested `execute` on the account, and no call to
- * Smart Sessions or the fallback's marker target.
+ * action, never the fallback for a call on the account itself or the EntryPoint (the account's installed modules are
+ * refused on chain, which an offline check can't see); no nested `execute` on the account, no call to Smart Sessions or
+ * the fallback's marker target, and no calldata of 1 to 3 bytes or starting with the value selector.
  */
 const callViolations = (
   compiled: Compiled,
@@ -152,33 +161,47 @@ const callViolations = (
     const where = { call: index, to: call.to, selector }
     const refused: ReadonlyArray<Violation> = [{ _tag: "CallNotAllowed", ...where }]
     const self = same(call.to, account)
-    if ((self && selector === EXECUTE) || same(call.to, FALLBACK.target) || same(call.to, contracts.smartSession)) {
+    // Only empty calldata is a plain value transfer.
+    const valueAlias = selector === VALUE_SELECTOR && Hex.size(call.data) !== 0
+    if (
+      valueAlias || (self && selector === EXECUTE) || same(call.to, FALLBACK.target)
+      || same(call.to, contracts.smartSession)
+    ) {
       return refused
     }
     const action = compiled.actions.find((entry) =>
       same(entry.actionTarget, call.to) && same(entry.actionTargetSelector, selector)
     )
     if (action !== undefined) return actionViolations(action.actionPolicies, contracts, call, where)
-    if (self) return refused
+    // The fallback never reaches the EntryPoint; the account's installed modules are refused on chain too.
+    if (self || ENTRY_POINTS.some((entryPoint) => same(call.to, entryPoint))) return refused
     const fallback = compiled.actions.find((entry) =>
       same(entry.actionTarget, FALLBACK.target) && entry.actionTargetSelector === FALLBACK.selector
     )
     return fallback === undefined ? refused : actionViolations(fallback.actionPolicies, contracts, call, where)
   })
 
-/** What `call` spends of `token` as `SpendPolicy._spent` counts it; a truncated amount counts as unlimited. */
+/**
+ * What `call` spends of `token` as `SpendPolicy._spent` counts it: `transfer`, `transferFrom`, and approvals (Permit2's
+ * included) when they count; any other function of the token, or a truncated amount, counts as unlimited.
+ */
 const spent = (call: DecodedCall, token: Hex.Hex, countApprovals: boolean): bigint => {
-  if (!same(call.to, token) || Hex.size(call.data) < 4) return BigInt(0)
-  const selector = Hex.slice(call.data, 0, 4).toLowerCase()
-  const offset = selector === "0xa9059cbb"
-    ? 36
-    : selector === "0x23b872dd"
-    ? 68
-    : countApprovals && (selector === "0x095ea7b3" || selector === "0x39509351")
-    ? 36
-    : undefined
-  if (offset === undefined) return BigInt(0)
-  return word(call.data, offset) ?? MAX
+  const data = call.data.toLowerCase() as Hex.Hex
+  const size = Hex.size(data)
+  if (same(call.to, PERMIT2)) {
+    if (!countApprovals || size < 4 || Hex.slice(data, 0, 4) !== "0x87517c45") return BigInt(0)
+    if (size < 100) return MAX
+    if (!same(Hex.slice(data, 16, 36), token)) return BigInt(0)
+    return word(data, 68)! & UINT160
+  }
+  if (!same(call.to, token) || size === 0) return BigInt(0)
+  if (size < 4) return MAX
+  const selector = Hex.slice(data, 0, 4)
+  const approval = selector === "0x095ea7b3" || selector === "0x39509351"
+  if (approval && !countApprovals) return BigInt(0)
+  const offset = selector === "0xa9059cbb" ? 36 : selector === "0x23b872dd" ? 68 : approval ? 36 : undefined
+  if (offset === undefined) return MAX
+  return word(data, offset) ?? MAX
 }
 
 /** A limit's charge: within the budget, or a violation with what is left and when it resets. */

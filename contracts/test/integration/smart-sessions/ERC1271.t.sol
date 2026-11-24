@@ -82,6 +82,22 @@ contract ERC1271Test is SmartSessionTestBase {
         assertNotEq(_isValidSignature(otherHash, signature), EIP1271_MAGIC);
     }
 
+    /// @dev Regression (internal review, leads): the account asking about itself (Nexus's module-enable digests) is
+    /// refused; a session signs for apps.
+    function test_theAccountAsSender_isRejected() public {
+        bytes memory signature = _sign(mail, sessionKey);
+        bytes32 hash = ERC7739Signer.appHash(mail);
+
+        vm.startPrank(address(account));
+        assertEq(
+            smartSession.isValidSignatureWithSender(address(this), hash, signature), EIP1271_MAGIC
+        );
+        assertEq(
+            smartSession.isValidSignatureWithSender(address(account), hash, signature), INVALID
+        );
+        vm.stopPrank();
+    }
+
     function test_wrongSessionKey_isRejected() public {
         (, uint256 otherKey) = makeAddrAndKey("other");
 
@@ -360,7 +376,8 @@ contract ERC1271Test is SmartSessionTestBase {
         bytes32 hash = ERC7739Signer.appHash(mail);
         bytes memory signature =
             ERC7739Signer.sign(mail, address(domainless), domainlessId, sessionKey);
-        uint256 chainId = block.chainid;
+        // `vm.getChainId`: the IR pipeline may read `block.chainid` once per call, before `vm.chainId` changes it.
+        uint256 chainId = vm.getChainId();
         vm.chainId(chainId + 1);
         bytes memory otherChain =
             ERC7739Signer.sign(mail, address(domainless), domainlessId, sessionKey);

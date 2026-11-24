@@ -79,6 +79,19 @@ contract SessionHookTest is Test {
         hook.onInstall(abi.encode(NEXUS, address(0)));
     }
 
+    /// @dev Regression (internal review, findings 2 and 3): an installed hook can't be switched to another flavour or
+    /// Smart Sessions module without an uninstall; reinstalling the same configuration (Kernel rebinding) is fine.
+    function test_install_aDifferentReinstallIsRefused() public {
+        install(NEXUS);
+        vm.startPrank(address(account));
+        hook.onInstall(abi.encode(NEXUS, address(smartSession)));
+        vm.expectRevert(SessionHook.InvalidInstall.selector);
+        hook.onInstall(abi.encode(SAFE7579, address(smartSession)));
+        vm.expectRevert(SessionHook.InvalidInstall.selector);
+        hook.onInstall(abi.encode(NEXUS, makeAddr("other smart sessions")));
+        vm.stopPrank();
+    }
+
     // --------------------------------------------------------------------------------------------
     // Policy lists
     // --------------------------------------------------------------------------------------------
@@ -277,8 +290,10 @@ contract SessionHookTest is Test {
             assertEq(checkAccount(address(probed), callData), 1);
         }
 
-        vm.prank(address(probed));
+        vm.startPrank(address(probed));
+        hook.onUninstall("");
         hook.onInstall(abi.encode(NEXUS, address(smartSession)));
+        vm.stopPrank();
         bytes4 hookProbe = bytes4(keccak256("isModuleInstalled(uint256,address,bytes)"));
         probed.respond(hookProbe, false, abi.encode(true));
         assertEq(checkAccount(address(probed), callData), 0);
@@ -616,9 +631,12 @@ contract SessionHookTest is Test {
     // Helpers
     // --------------------------------------------------------------------------------------------
 
+    /// @dev Installs the hook with `flavour`, uninstalling it first: a different reinstall is refused.
     function install(uint8 flavour) internal {
-        vm.prank(address(account));
+        vm.startPrank(address(account));
+        hook.onUninstall("");
         hook.onInstall(abi.encode(flavour, address(smartSession)));
+        vm.stopPrank();
     }
 
     function configId() internal view returns (bytes32) {

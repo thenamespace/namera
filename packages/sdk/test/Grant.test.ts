@@ -134,6 +134,32 @@ describe("Grant.from", () => {
   })
 })
 
+describe("Grant.updateCalls", () => {
+  // Internal review, finding 10: with Policy.anyCall kept, a removed call policy's calls would go through the
+  // fallback without its conditions.
+  it("refuses removing a call policy while Policy.anyCall stays, and allows it with anyCall removed too", () => {
+    const transfer = Policy.erc20Transfer({ token: USDC, to: [account], amount: { lte: 1n } })
+    const anyCall = Policy.anyCall({ unsafe: true })
+    const gas = Policy.gas({ maxCost: 10n ** 16n, period: "day" })
+    const grant = grantOf(
+      Session.from({
+        signer: SessionKey.ecdsa(account),
+        validUntil: 2_000_000_000,
+        unsafe: true,
+        policies: [transfer, anyCall, gas]
+      })
+    )
+
+    assert.deepInclude(reasonOf(() => Grant.updateCalls(grant, { remove: [transfer] })), {
+      _tag: "RemovalWidens",
+      index: 0
+    })
+    const { calls, session } = Grant.updateCalls(grant, { remove: [transfer, anyCall] })
+    assert.isAbove(calls.length, 0)
+    assert.notDeepInclude(session.policies, anyCall)
+  })
+})
+
 describe("Grant.describe", () => {
   it("names the account and chains, then the session, recomputed rather than read from the summary", () => {
     const grant = { ...grantOf(sessions[0]!), summary: ["May do anything."] }

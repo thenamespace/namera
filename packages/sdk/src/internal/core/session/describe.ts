@@ -175,12 +175,12 @@ const policyLine = (policy: Policy, index: number, resolved: Resolved, tokens: T
       return `May use at most ${amount(policy.maxCost, undefined, tokens)} of gas ${
         period(resolved.gas.find((entry) => entry.source === index)!.period)
       }, sponsored operations included.`
-    case "approvals":
-      return `Approvals of ${policy.tokens.map((token) => tokenName(token, tokens)).join(", ")} only to ${
-        policy.spenders.map((spender) => Address.checksum(spender)).join(", ")
-      }, each for at most ${
-        policy.tokens.length === 1 ? amount(policy.maxAmount, policy.tokens[0], tokens) : String(policy.maxAmount)
-      }.`
+    case "approvals": {
+      const approval = resolved.approvals.find((entry) => entry.source === index)!
+      return `Approvals (\`approve\`, or through Permit2) only to ${
+        approval.spenders.map((spender) => Address.checksum(spender)).join(", ")
+      }, for at most ${approval.tokens.map((token, i) => amount(approval.caps[i]!, token, tokens)).join(", ")}.`
+    }
     case "signTypedData": {
       const signature = resolved.signatures.find((entry) => entry.source === index)!
       const domain = policy.domain.name === undefined

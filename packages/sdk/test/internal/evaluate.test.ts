@@ -20,7 +20,8 @@ const NOW = BigInt(1_800_000_000)
 const erc20 = {
   transfer: AbiFunction.from("function transfer(address to, uint256 amount)"),
   transferFrom: AbiFunction.from("function transferFrom(address from, address to, uint256 amount)"),
-  approve: AbiFunction.from("function approve(address spender, uint256 amount)")
+  approve: AbiFunction.from("function approve(address spender, uint256 amount)"),
+  increaseAllowance: AbiFunction.from("function increaseAllowance(address spender, uint256 amount)")
 }
 const permit2Approve = AbiFunction.from(
   "function approve(address token, address spender, uint160 amount, uint48 expiration)"
@@ -114,6 +115,40 @@ describe("calls", () => {
     assert.deepStrictEqual(tags(compiled, [permit2(token, BigInt(5))]), [])
     assert.deepStrictEqual(tags(compiled, [permit2(recipient, BigInt(5))]), ["ArgumentRejected"])
   })
+
+  // Internal review, findings 13 and 14 and the target and value leads, as ApprovalPolicy decides them.
+  it("refuse increaseAllowance, other tokens, value, and approvals past each token's own cap", () => {
+    const dai: Hex.Hex = "0x6b175474e89094c44da98b954eedeac495271d0f"
+    const compiled = compiledOf([
+      Policy.anyCall({ unsafe: true }),
+      Policy.approvals({
+        tokens: [token, dai],
+        spenders: [router],
+        maxAmount: { [token]: BigInt(5), [dai]: BigInt(500) }
+      })
+    ])
+    const approveOn = (target: Hex.Hex, amount: bigint, value = BigInt(0)) =>
+      call(target, AbiFunction.encodeData(erc20.approve, [router, amount]), value)
+    assert.deepStrictEqual(tags(compiled, [approveOn(token, BigInt(5)), approveOn(dai, BigInt(500))]), [])
+    assert.deepStrictEqual(tags(compiled, [approveOn(token, BigInt(6))]), ["ArgumentRejected"])
+    assert.deepStrictEqual(tags(compiled, [approveOn(token, BigInt(1), BigInt(1))]), ["ArgumentRejected"])
+    assert.deepStrictEqual(
+      tags(compiled, [call(token, AbiFunction.encodeData(erc20.increaseAllowance, [router, BigInt(1)]))]),
+      ["ArgumentRejected"]
+    )
+  })
+
+  // Internal review, finding 1 and the value-selector lead: the fallback never reaches the EntryPoint, and only empty
+  // calldata is a plain value transfer.
+  it("refuse the EntryPoint through the fallback, and calldata that isn't empty under the value selector", () => {
+    const compiled = compiledOf([Policy.anyCall({ unsafe: true }), Policy.nativeTransfer({ to: [router] })])
+    assert.deepStrictEqual(tags(compiled, [call("0x0000000071727De22E5E9d8BAf0edAc6f37da032", "0x205c2878")]), [
+      "CallNotAllowed"
+    ])
+    assert.deepStrictEqual(tags(compiled, [call(router, "0x", BigInt(1))]), [])
+    assert.deepStrictEqual(tags(compiled, [call(router, "0x01", BigInt(1))]), ["CallNotAllowed"])
+    assert.deepStrictEqual(tags(compiled, [call(router, "0xffffffff00", BigInt(1))]), ["CallNotAllowed"])
+  })
 })
 
 describe("limits", () => {
@@ -144,6 +179,25 @@ describe("limits", () => {
     })
     // A transfer too short to hold its amount counts as unlimited.
     assert.deepStrictEqual(tags(compiled, [call(token, "0xa9059cbb")]), ["SpendLimitExceeded"])
+  })
+
+  // Internal review, findings 4 and 5, as SpendPolicy decides them.
+  it("count Permit2 approvals of the token, and any other function of the token as unlimited", () => {
+    const compiled = compiledOf([
+      Policy.anyCall({ unsafe: true }),
+      Policy.spend({ token, amount: BigInt(100), period: "lifetime" })
+    ])
+    const permit2 = (approved: Hex.Hex, amount: bigint) =>
+      call(
+        "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        AbiFunction.encodeData(permit2Approve, [approved, router, amount, 0])
+      )
+    assert.deepStrictEqual(tags(compiled, [permit2(token, BigInt(100))]), [])
+    assert.deepStrictEqual(tags(compiled, [permit2(token, BigInt(101))]), ["SpendLimitExceeded"])
+    assert.deepStrictEqual(tags(compiled, [permit2(recipient, BigInt(101))]), [])
+    // `transferAndCall(address,uint256,bytes)`: the policy can't tell what it moves.
+    assert.deepStrictEqual(tags(compiled, [call(token, "0x4000aea0")]), ["SpendLimitExceeded"])
+    assert.deepStrictEqual(tags(compiled, [call(token, "0x", BigInt(1))]), [])
   })
 
   it("count operations against a rate limit and the worst-case gas against a gas budget", () => {

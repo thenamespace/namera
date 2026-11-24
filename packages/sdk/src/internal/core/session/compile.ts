@@ -1,6 +1,6 @@
 import * as AbiParameters from "ox/AbiParameters"
 import * as Hash from "ox/Hash"
-import type * as Hex from "ox/Hex"
+import * as Hex from "ox/Hex"
 
 import { validatorData } from "../sessionKey.ts"
 import type { CallRule, Resolved } from "./resolve.ts"
@@ -74,7 +74,7 @@ export const FALLBACK = { target: "0x0000000000000000000000000000000000000001", 
 const rules = AbiParameters.from(["(uint8 condition, uint256 offset, bytes32[] refs)[]"])
 const limits = AbiParameters.from(["(address token, uint256 amount, uint256 period, bool countApprovals)[]"])
 const amountAndPeriod = AbiParameters.from(["uint256", "uint256"])
-const approvals = AbiParameters.from(["address[] spenders", "uint256 maxAmount", "address[] tokens"])
+const approvals = AbiParameters.from(["address[] spenders", "(address token, uint256 maxAmount)[] caps"])
 const signatureConfig = AbiParameters.from(["(address[] verifiers, bytes[] types)"])
 const typedData = AbiParameters.from([
   "(bytes32 appDomainSeparator, bytes32 typeHash, (uint8 condition, uint256 index, bytes32[] refs)[] fields)"
@@ -82,9 +82,26 @@ const typedData = AbiParameters.from([
 const executionPolicies = AbiParameters.from(["(address policy, bytes initData)[]"])
 const permissionIdParameters = AbiParameters.from(["address", "bytes", "bytes32"])
 
+// `Lte`, `Gt`, `Gte` and `Between` (Conditions.sol).
+const LTE = 3
+const LOWER_BOUNDS: ReadonlyArray<number> = [4, 5, 6]
+
+/**
+ * `ArgPolicy` rules for a call. `ArgPolicy` compares whole words, so a lower bound on an integer narrower than 256 bits
+ * also gets a range rule: a word with bits above the type passes the bound, and a contract that ignores them (an older
+ * compiler or language) reads a smaller number.
+ */
 const encodeRules = (callRules: ReadonlyArray<CallRule>): Hex.Hex =>
   AbiParameters.encode(rules, [
-    callRules.map((rule) => ({ condition: rule.comparison.operator, offset: rule.offset, refs: rule.comparison.refs }))
+    callRules.flatMap((rule) => {
+      const encoded = { condition: rule.comparison.operator, offset: rule.offset, refs: rule.comparison.refs }
+      const { word } = rule
+      if (word.type !== "uint" || word.bits >= 256 || !LOWER_BOUNDS.includes(rule.comparison.operator)) {
+        return [encoded]
+      }
+      const max = Hex.fromNumber(BigInt(2) ** BigInt(word.bits) - BigInt(1), { size: 32 })
+      return [encoded, { condition: LTE, offset: rule.offset, refs: [max] }]
+    })
   ])
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
@@ -116,7 +133,10 @@ const actionsOf = (resolved: Resolved, contracts: Contracts): ReadonlyArray<Acti
   const approval = resolved.approvals[0]
   const approvalPolicy = approval === undefined ? undefined : {
     policy: contracts.approvalPolicy,
-    initData: AbiParameters.encode(approvals, [approval.spenders, approval.maxAmount, approval.tokens])
+    initData: AbiParameters.encode(approvals, [
+      approval.spenders,
+      approval.tokens.map((token, index) => ({ token, maxAmount: approval.caps[index]! }))
+    ])
   }
   const governed = (target: string, selector: string) =>
     approval !== undefined

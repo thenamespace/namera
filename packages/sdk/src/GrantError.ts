@@ -1,7 +1,7 @@
 /**
  * Failures reading or checking a grant: input that isn't a grant, a version this SDK doesn't read, an owner signature
  * that doesn't verify, a chain the grant doesn't cover, digests that don't match its session, an agent signer that
- * isn't its session key, or a policy to remove that the session doesn't have.
+ * isn't its session key, or a policy to remove that the session doesn't have (or whose removal would widen it).
  *
  * @stability experimental
  * @since 2.0.0
@@ -171,6 +171,29 @@ export class PolicyNotFound
 }
 
 /**
+ * Removing a call policy from a session that keeps `Policy.anyCall` would widen it: the call would then go through
+ * `anyCall`, without the removed policy's conditions.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class RemovalWidens
+  extends Schema.TaggedError<RemovalWidens>("@namera-ai/sdk/GrantError/RemovalWidens")("RemovalWidens", {
+    index: Schema.Number
+  })
+{
+  override get message(): string {
+    return `Removing policy ${this.index} would let its calls through Policy.anyCall without its conditions`
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Remove Policy.anyCall in the same update, or narrow the policy's conditions instead of removing it."
+  }
+}
+
+/**
  * Schema for the reason of a `GrantError`.
  *
  * @stability experimental
@@ -185,7 +208,8 @@ export const GrantErrorReason: Schema.Union<
     typeof ChainNotCovered,
     typeof DigestMismatch,
     typeof SignerMismatch,
-    typeof PolicyNotFound
+    typeof PolicyNotFound,
+    typeof RemovalWidens
   ]
 > = Schema.Union([
   Malformed,
@@ -194,7 +218,8 @@ export const GrantErrorReason: Schema.Union<
   ChainNotCovered,
   DigestMismatch,
   SignerMismatch,
-  PolicyNotFound
+  PolicyNotFound,
+  RemovalWidens
 ])
 
 /**

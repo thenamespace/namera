@@ -98,7 +98,8 @@ export interface ApprovalsPolicy {
   readonly type: "approvals"
   readonly tokens: ReadonlyArray<Hex.Hex>
   readonly spenders: ReadonlyArray<Hex.Hex>
-  readonly maxAmount: bigint
+  /** One cap for every token, or a cap per token (each listed token needs one). */
+  readonly maxAmount: bigint | { readonly [token: string]: bigint }
 }
 
 export interface SignTypedDataPolicy {

@@ -39,6 +39,9 @@ abstract contract SmartSessionBase is ISmartSession {
     /// @dev Enable-signature nonce; incrementing it invalidates signed but unused enable data.
     mapping(PermissionId permissionId => mapping(address smartAccount => uint256 nonce)) internal
         $signerNonce;
+    /// @dev Namera: bumped when the module is uninstalled, invalidating the unused enable data of every session,
+    /// including those never enabled (which uninstalling can't enumerate). The high 128 bits of the enable nonce.
+    mapping(address smartAccount => uint256 epoch) internal $nonceEpoch;
 
     /// @dev Requires the session to be enabled before and after the call, so policy initialization cannot remove
     /// it in between.
@@ -70,6 +73,8 @@ abstract contract SmartSessionBase is ISmartSession {
         external
         enableWithPermissionId(permissionId)
     {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $userOpPolicies.enable({
             policyType: PolicyType.USER_OP,
             permissionId: permissionId,
@@ -82,6 +87,8 @@ abstract contract SmartSessionBase is ISmartSession {
         external
         disableWithPermissionId(permissionId)
     {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $userOpPolicies.disable({
             policyType: PolicyType.USER_OP,
             smartAccount: msg.sender,
@@ -95,6 +102,8 @@ abstract contract SmartSessionBase is ISmartSession {
         external
         enableWithPermissionId(permissionId)
     {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $enabledERC7739.enable({
             contexts: erc1271Policies.allowedERC7739Content, permissionId: permissionId
         });
@@ -111,6 +120,8 @@ abstract contract SmartSessionBase is ISmartSession {
         address[] calldata policies,
         ERC7739Context[] calldata contexts
     ) external disableWithPermissionId(permissionId) {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $enabledERC7739.disable(contexts, permissionId, msg.sender);
         $erc1271Policies.disable({
             policyType: PolicyType.ERC1271,
@@ -125,6 +136,8 @@ abstract contract SmartSessionBase is ISmartSession {
         external
         enableWithPermissionId(permissionId)
     {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $actionPolicies.enable({permissionId: permissionId, actionPolicyDatas: actionPolicies});
     }
 
@@ -133,6 +146,8 @@ abstract contract SmartSessionBase is ISmartSession {
         external
         disableWithPermissionId(permissionId)
     {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $actionPolicies.actionPolicies[actionId].policyList[permissionId].removeAll(msg.sender);
         // slither-disable-next-line unused-return
         $actionPolicies.enabledActionIds[permissionId].remove(msg.sender, ActionId.unwrap(actionId));
@@ -145,8 +160,10 @@ abstract contract SmartSessionBase is ISmartSession {
         ActionId actionId,
         address[] calldata policies
     ) external disableWithPermissionId(permissionId) {
-        EnumerableSet.AddressSet storage $policies = $actionPolicies.actionPolicies[actionId]
-            .policyList[permissionId];
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
+        EnumerableSet.AddressSet storage $policies =
+            $actionPolicies.actionPolicies[actionId].policyList[permissionId];
         $actionPolicies.actionPolicies[actionId].disable({
             policyType: PolicyType.ACTION,
             smartAccount: msg.sender,
@@ -164,6 +181,8 @@ abstract contract SmartSessionBase is ISmartSession {
     }
 
     function setPermit4337Paymaster(PermissionId permissionId, bool enabled) external {
+        // Namera: an unused enable signature must not restore what the owner changes (spent before any policy call).
+        _revokeEnableSignature(permissionId);
         $enabledSessions.requirePermissionIdEnabled(permissionId);
         _setPermit4337Paymaster(permissionId, enabled);
     }
@@ -238,6 +257,8 @@ abstract contract SmartSessionBase is ISmartSession {
             // removeSession shifts the set, so always remove the first entry.
             removeSession(PermissionId.wrap($enabledSessions.valueAt(msg.sender, 0)));
         }
+        // Namera: sessions never enabled keep unused enable signatures; a new epoch invalidates them all.
+        ++$nonceEpoch[msg.sender];
     }
 
     function isInitialized(address smartAccount) external view override returns (bool) {
@@ -253,7 +274,7 @@ abstract contract SmartSessionBase is ISmartSession {
     // -----------------------------------------------------------------------------------------------------------------
 
     // Policies run with msg.sender = policy, so reentrancy from them cannot change this account's state.
-    // slither-disable-next-line reentrancy-benign,reentrancy-events
+    // slither-disable-next-line reentrancy-benign,reentrancy-events,reentrancy-no-eth
     function _enableSessions(Session[] calldata sessions)
         internal
         returns (PermissionId[] memory permissionIds)
@@ -269,6 +290,8 @@ abstract contract SmartSessionBase is ISmartSession {
             // change this account's state.
             // forge-lint: disable-next-line(reentrancy-events)
             emit SessionCreated(permissionId, msg.sender);
+            // Namera: an unused enable signature must not restore an older configuration of this session.
+            _revokeEnableSignature(permissionId);
             _enableSession(permissionId, sessions[i]);
         }
     }
@@ -306,6 +329,9 @@ abstract contract SmartSessionBase is ISmartSession {
 
     function _revokeEnableSignature(PermissionId permissionId) internal {
         uint256 nonce = $signerNonce[permissionId][msg.sender]++;
+        // In `_enableSessions`, policies called in earlier iterations run with msg.sender = policy, so a reentrant call
+        // cannot change this account's state.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit NonceIterated(permissionId, msg.sender, nonce + 1);
     }
 
@@ -378,7 +404,7 @@ abstract contract SmartSessionBase is ISmartSession {
         SmartSessionMode mode
     ) external view returns (bytes32) {
         return data.sessionDigest({
-            account: account, mode: mode, nonce: $signerNonce[permissionId][account]
+            account: account, mode: mode, nonce: _nonce(permissionId, account)
         });
     }
 
@@ -387,7 +413,12 @@ abstract contract SmartSessionBase is ISmartSession {
     }
 
     function getNonce(PermissionId permissionId, address account) external view returns (uint256) {
-        return $signerNonce[permissionId][account];
+        return _nonce(permissionId, account);
+    }
+
+    /// @dev The enable nonce the owner signs: the account's epoch ‖ the session's counter (128 bits each).
+    function _nonce(PermissionId permissionId, address account) internal view returns (uint256) {
+        return ($nonceEpoch[account] << 128) | $signerNonce[permissionId][account];
     }
 
     function getSessionValidity(PermissionId permissionId, address account)

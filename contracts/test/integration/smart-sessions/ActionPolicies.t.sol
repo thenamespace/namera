@@ -16,6 +16,23 @@ import {MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
 import {MockSilentPolicy} from "../../utils/mocks/MockSilentPolicy.sol";
 import {MockTarget} from "../../utils/mocks/MockTarget.sol";
 
+/// @dev A policy answering with two words, the first zero (valid).
+contract MockTwoWordPolicy {
+    function supportsInterface(bytes4) external pure returns (bool) {
+        return true;
+    }
+
+    function initializeWithMultiplexer(address, bytes32, bytes calldata) external {}
+
+    fallback() external {
+        assembly ("memory-safe") {
+            mstore(0, 0)
+            mstore(0x20, 0)
+            return(0, 0x40)
+        }
+    }
+}
+
 contract ActionPoliciesTest is SmartSessionTestBase {
     using SessionBuilder for Session;
 
@@ -205,7 +222,8 @@ contract ActionPoliciesTest is SmartSessionTestBase {
 
         handleOp(signUse(userOp(executeSingle(address(smartSession), 0, revokeCall)), permissionId));
 
-        assertEq(smartSession.getNonce(permissionId, address(account)), 1);
+        // Enabling the session spent one nonce, the revocation another.
+        assertEq(smartSession.getNonce(permissionId, address(account)), 2);
     }
 
     function test_RevertWhen_accountFunctionHasNoPolicy() public {
@@ -376,5 +394,39 @@ contract ActionPoliciesTest is SmartSessionTestBase {
             SessionBuilder.ecdsaConfig(sessionSigner),
             keccak256("actions")
         );
+    }
+
+    /// @dev Regression (internal review, leads): only empty calldata is a plain value transfer; calldata of 1 to 3
+    /// bytes, or starting with the value selector, can't reach the target's code under the value action.
+    function test_onlyEmptyCalldataUsesTheValueAction() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), VALUE_SELECTOR, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 1, "")), permissionId)), VALID
+        );
+        bytes[2] memory data = [bytes(hex"01"), abi.encodePacked(VALUE_SELECTOR, uint256(1))];
+        for (uint256 i; i < data.length; ++i) {
+            ERC4337.PackedUserOperation memory op =
+                signUse(userOp(executeSingle(address(target), 1, data[i])), permissionId);
+            vm.expectRevert(ISmartSession.InvalidTarget.selector);
+            validate(op);
+        }
+    }
+
+    /// @dev Regression (internal review, leads): a policy's answer longer than one word is cut to its first word when
+    /// copied, so it must not read as that word.
+    function test_RevertWhen_aPolicyAnswersWithMoreThanOneWord() public {
+        address twoWords = address(new MockTwoWordPolicy());
+        Session memory session =
+            _emptySession().withAction(address(target), SET_VALUE, twoWords, "");
+        PermissionId permissionId = enableSession(session);
+
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+        vm.expectRevert(
+            abi.encodeWithSelector(ISmartSession.PolicyViolation.selector, permissionId, twoWords)
+        );
+        validate(op);
     }
 }

@@ -74,7 +74,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
             return bytes4(0x77390003);
         }
         // A session may not authorize another session.
-        if (sender == address(this)) return EIP1271_FAILED;
+        // Namera: nor an account asking about itself (module-enable digests on Nexus): a session signs for apps.
+        if (sender == address(this) || sender == msg.sender) return EIP1271_FAILED;
 
         bool success = _erc1271IsValidSignatureViaNestedEIP712(
             sender, hash, _erc1271UnwrapSignature(signature)
@@ -93,7 +94,8 @@ contract SmartSession is ISmartSession, SmartSessionBase, SmartSessionERC7739 {
         address account,
         SmartSessionMode mode
     ) internal {
-        uint256 nonce = $signerNonce[permissionId][account]++;
+        uint256 nonce = _nonce(permissionId, account);
+        ++$signerNonce[permissionId][account];
         bytes32 hash = enableData.getAndVerifyDigest(account, nonce, mode);
         if (!SignatureCheckerLib.isValidERC1271SignatureNow(
                 account, hash, enableData.permissionEnableSig

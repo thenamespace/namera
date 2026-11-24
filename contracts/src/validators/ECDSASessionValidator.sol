@@ -17,6 +17,9 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 contract ECDSASessionValidator {
     uint256 internal constant MODULE_TYPE_STATELESS_VALIDATOR = 7;
     uint256 internal constant SIGNATURE_LENGTH = 65;
+    /// @dev Half the secp256k1 group order.
+    uint256 internal constant HALF_ORDER =
+        0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
 
     function validateSignatureWithData(bytes32 hash, bytes calldata signature, bytes calldata data)
         external
@@ -31,6 +34,8 @@ contract ECDSASessionValidator {
         address previous = address(0);
         for (uint256 i; i < threshold; ++i) {
             bytes calldata sig = signature[i * SIGNATURE_LENGTH:(i + 1) * SIGNATURE_LENGTH];
+            // Only low-s signatures: each signature has one valid form, so no one can alter its bytes.
+            if (uint256(bytes32(sig[32:64])) > HALF_ORDER) return false;
             address recovered = ECDSA.tryRecoverCalldata(digest, sig);
             // Also rejects a failed recovery (address(0)) for the first signature.
             if (recovered <= previous || !_contains(signers, recovered)) return false;

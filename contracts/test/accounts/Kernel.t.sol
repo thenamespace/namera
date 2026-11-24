@@ -41,6 +41,10 @@ contract KernelTest is RealAccountTestBase {
 
     bytes4 internal constant EXECUTE_USER_OP = 0x8dd7712f;
 
+    function ownerValidator() internal pure override returns (address) {
+        return ECDSA_VALIDATOR;
+    }
+
     function deployAccount() internal virtual override returns (address) {
         // Kernel validator install data: hook (1 = none) ‖ abi.encode(validatorData, hookData, selectorData). With
         // SessionHook, `hookData` is flag 0xff (always run the hook's onInstall) ‖ its install data.

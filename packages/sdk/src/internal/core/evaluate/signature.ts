@@ -43,12 +43,16 @@ export const evaluateSignature = (options: {
   readonly contracts: Contracts
   readonly nested: ReturnType<typeof nest>
   readonly verifier?: Hex.Hex | undefined
+  readonly account?: Hex.Hex | undefined
   readonly state: Pick<State, "time" | "enabled" | "revoked">
 }): ReadonlyArray<Violation> => {
-  const { compiled, contracts, nested, state, verifier } = options
+  const { account, compiled, contracts, nested, state, verifier } = options
   const window = windowViolations(compiled, state)
   if (window.length > 0) return window
   if (!state.enabled) return [{ _tag: "SessionNotEnabled" }]
+  if (verifier !== undefined && account !== undefined && same(verifier, account)) {
+    return [{ _tag: "SignatureNotAllowed", detail: "the account can't ask about itself: a session signs for apps" }]
+  }
 
   const allowed = compiled.erc7739Policies.allowedERC7739Content.some((content) =>
     same(content.appDomainSeparator, nested.appDomainSeparator) && content.contentNames.includes(nested.contentsType)

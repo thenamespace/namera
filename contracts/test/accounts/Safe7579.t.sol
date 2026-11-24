@@ -52,6 +52,10 @@ contract Safe7579Test is RealAccountTestBase {
     address internal constant LAUNCHPAD = 0x75798463024Bda64D83c94A64Bc7D7eaB41300eF;
     address internal constant OWNABLE_VALIDATOR = 0x000000000013fdB5234E4E3162a810F54d9f7E98;
 
+    function ownerValidator() internal pure override returns (address) {
+        return OWNABLE_VALIDATOR;
+    }
+
     function deployAccount() internal virtual override returns (address) {
         address[] memory owners = new address[](1);
         owners[0] = owner;

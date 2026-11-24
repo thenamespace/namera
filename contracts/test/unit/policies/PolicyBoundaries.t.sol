@@ -206,9 +206,9 @@ contract ApprovalBoundaryTest is Test {
     function setUp() public {
         address[] memory spenders = new address[](1);
         spenders[0] = spender;
-        address[] memory tokens = new address[](1);
-        tokens[0] = token;
-        policy.initializeWithMultiplexer(account, "id", abi.encode(spenders, uint256(100), tokens));
+        ApprovalPolicy.Cap[] memory caps = new ApprovalPolicy.Cap[](1);
+        caps[0] = ApprovalPolicy.Cap(token, 100);
+        policy.initializeWithMultiplexer(account, "id", abi.encode(spenders, caps));
     }
 
     function _check(bytes memory data) internal view returns (uint256) {
@@ -226,24 +226,58 @@ contract ApprovalBoundaryTest is Test {
         public
         view
     {
+        address permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
         assertEq(_check(abi.encodePacked(PolicyCalls.approve(spender, 50), uint256(1))), 0);
         bytes memory permit =
             abi.encodeWithSelector(0x87517c45, token, spender, uint160(50), uint48(1));
-        assertEq(_check(abi.encodePacked(permit, uint256(1))), 0);
+        assertEq(
+            policy.checkAction("id", account, permit2, 0, abi.encodePacked(permit, uint256(1))), 0
+        );
         assertEq(_check(abi.encodeWithSelector(0x00000001, spender, 50)), 1);
         assertEq(_check(abi.encodeWithSelector(0xfffffffe, spender, 50)), 1);
         assertEq(
-            _check(abi.encodeWithSelector(0x87517c44, token, spender, uint160(50), uint48(1))), 1
+            policy.checkAction(
+                "id",
+                account,
+                permit2,
+                0,
+                abi.encodeWithSelector(0x87517c44, token, spender, uint160(50), uint48(1))
+            ),
+            1
         );
         assertEq(
-            _check(abi.encodeWithSelector(0x87517c46, token, spender, uint160(50), uint48(1))), 1
+            policy.checkAction(
+                "id",
+                account,
+                permit2,
+                0,
+                abi.encodeWithSelector(0x87517c46, token, spender, uint160(50), uint48(1))
+            ),
+            1
         );
     }
 
-    function test_revokesThroughPermit2ForAnyToken() public view {
-        assertEq(_check(abi.encodeWithSelector(0x87517c45, token, high, uint160(0), uint48(1))), 0);
+    function test_revokesThroughPermit2OnlyForAListedToken() public view {
+        address permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
         assertEq(
-            _check(abi.encodeWithSelector(0x87517c45, address(1), high, uint160(0), uint48(1))), 0
+            policy.checkAction(
+                "id",
+                account,
+                permit2,
+                0,
+                abi.encodeWithSelector(0x87517c45, token, high, uint160(0), uint48(1))
+            ),
+            0
+        );
+        assertEq(
+            policy.checkAction(
+                "id",
+                account,
+                permit2,
+                0,
+                abi.encodeWithSelector(0x87517c45, address(1), high, uint160(0), uint48(1))
+            ),
+            1
         );
     }
 }
@@ -272,22 +306,47 @@ contract SpendBoundaryTest is Test {
         assertEq(_check(token, abi.encodeWithSelector(0x39509351, address(1), 1)), 1);
     }
 
-    function test_countsOnlyApprovalSelectorsAsApprovals() public {
-        _configure(1, 0, true);
+    /// @dev Regression (internal review, finding 5): a function of a limited token the policy can't measure counts as
+    /// unlimited, so it can't move tokens past the budget (`transferAndCall`, `push`, share transfers).
+    function test_countsOtherFunctionsOfTheTokenAsUnlimited() public {
+        _configure(1000, 0, true);
         bytes4[4] memory others = [bytes4(0x00000001), 0x095ea7b2, 0x39509352, 0xffffffff];
         for (uint256 i; i < others.length; ++i) {
-            assertEq(_check(token, abi.encodeWithSelector(others[i], address(1), 5)), 0);
+            assertEq(_check(token, abi.encodeWithSelector(others[i], address(1), 5)), 1);
         }
+        assertEq(_check(token, hex"0102"), 1);
+        // Plain value to the token moves none of it.
+        assertEq(_check(token, ""), 0);
     }
 
-    function test_ignoresOtherTargetsAndOtherFunctions() public {
+    /// @dev Regression (internal review, finding 4): Permit2's `approve` of a limited token is spending, unless an
+    /// approvals policy governs the token's approvals.
+    function test_countsPermit2ApprovalsOfTheToken() public {
+        address permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+        bytes memory approve40 =
+            abi.encodeWithSelector(0x87517c45, token, address(1), uint160(40), uint48(1));
+        _configure(50, 0, true);
+        assertEq(_check(permit2, approve40), 0);
+        assertEq(_check(permit2, approve40), 1);
+        assertEq(
+            _check(
+                permit2,
+                abi.encodeWithSelector(0x87517c45, address(2), address(1), uint160(99), uint48(1))
+            ),
+            0
+        );
+        assertEq(_check(permit2, abi.encodeWithSelector(0x87517c45, token)), 1);
+
+        _configure(1, 0, false);
+        assertEq(_check(permit2, approve40), 0);
+    }
+
+    function test_ignoresOtherTargetsAndGovernedApprovals() public {
         _configure(1, 0, false);
         assertEq(_check(address(0x4fff), PolicyCalls.transfer(address(1), 5)), 0);
         assertEq(_check(address(0x5001), PolicyCalls.transfer(address(1), 5)), 0);
-        assertEq(_check(token, abi.encodeWithSelector(0xffffffff, address(1), 5)), 0);
-        assertEq(_check(token, abi.encodeWithSelector(0x00000001, address(1), 5)), 0);
         assertEq(_check(token, PolicyCalls.approve(address(1), 5)), 0);
-        assertEq(_check(token, hex"0102"), 0);
+        assertEq(_check(token, abi.encodeWithSelector(0x39509351, address(1), 5)), 0);
     }
 
     function test_countsTransfersWithTrailingCalldataAndASelectorAloneAsUnlimited() public {

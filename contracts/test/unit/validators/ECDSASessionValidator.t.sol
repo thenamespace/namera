@@ -90,6 +90,22 @@ contract ECDSASessionValidatorTest is Test {
         assertFalse(validator.validateSignatureWithData(HASH, _sign(0), _config(2, signers)));
     }
 
+    /// @dev Regression (internal review, leads): the malleable twin of a valid signature (high s, flipped v) is
+    /// refused, so a signature's bytes can't be altered.
+    function test_highS_isInvalid() public view {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(keys[0], ECDSA.toEthSignedMessageHash(HASH));
+        uint256 n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
+        bytes memory twin =
+            abi.encodePacked(r, bytes32(n - uint256(s)), v == 27 ? uint8(28) : uint8(27));
+
+        assertTrue(
+            validator.validateSignatureWithData(
+                HASH, abi.encodePacked(r, s, v), _config(1, signers)
+            )
+        );
+        assertFalse(validator.validateSignatureWithData(HASH, twin, _config(1, signers)));
+    }
+
     function test_malformedSignature_isInvalid() public view {
         assertFalse(validator.validateSignatureWithData(HASH, new bytes(65), _config(1, signers)));
     }

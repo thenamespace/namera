@@ -1,6 +1,7 @@
 # Compiler settings determine the bytecode and therefore every CREATE2 address. They live only in
-# [profile.default] and no other profile may override them. Frozen: the legacy pipeline at 200 runs has
-# the lowest validateUserOp gas of the settings that keep SmartSession under the 24,576-byte limit.
+# [profile.default] and no other profile may override them. The IR pipeline at 200 runs: it leaves
+# SmartSession ~1.5 KB under the 24,576-byte limit for the internal review's fixes (legacy left 13 bytes),
+# and USE-mode validateUserOp costs ~10% less (ENABLE ~1% more), measured on the real-account suite.
 [profile.default]
 src = "src"
 test = "test"
@@ -11,7 +12,7 @@ solc_version = "0.8.38"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
-via_ir = false
+via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
 auto_detect_remappings = false

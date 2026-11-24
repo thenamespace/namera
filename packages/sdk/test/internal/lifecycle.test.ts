@@ -2,6 +2,7 @@ import { assert, describe, it } from "@effect/vitest"
 import { Policy, Session, SessionKey } from "@namera-ai/sdk"
 import { laneOf, nonceKey } from "@namera-ai/sdk/internal/core/agent/nonce"
 import {
+  encodeEnableSessions,
   encodeEnableSignature,
   encodeUseSignature,
   signaturePermissionId
@@ -23,7 +24,11 @@ const selectorsOf = (calls: ReadonlyArray<Hex.Hex>) => calls.map((call) => Hex.s
 const selector = (signature: string) => AbiFunction.getSelector(AbiFunction.from(signature) as AbiFunction.AbiFunction)
 const disableActionId = selector("function disableActionId(bytes32, bytes32)")
 const disableUserOpPolicies = selector("function disableUserOpPolicies(bytes32, address[])")
-const revokeEnableSignature = selector("function revokeEnableSignature(bytes32)")
+const enableSessions = Hex.slice(
+  encodeEnableSessions([Session.toSmartSession(sessionWith([Policy.anyCall({ unsafe: true })]))]),
+  0,
+  4
+)
 
 describe("updating a session", () => {
   const transfers = Policy.erc20Transfer({ token, to: [recipient], amount: { lte: 100n } })
@@ -35,20 +40,14 @@ describe("updating a session", () => {
   const next = sessionWith([transfers, Policy.spend({ token, amount: 5n, period: "day" })])
   const permissionId = Session.getPermissionId(previous)
 
-  it("disables what an enabled session loses, enables the new one and spends the old enable signature", () => {
+  it("disables what an enabled session loses, then enables the new one (each call spends the enable nonce)", () => {
     const calls = encodeUpdate({
       permissionId,
       previous: Session.toSmartSession(previous),
       next: Session.toSmartSession(next),
       enabled: true
     })
-    const enableSessions = Hex.slice(calls.at(-2)!, 0, 4)
-    assert.deepStrictEqual(selectorsOf(calls), [
-      disableUserOpPolicies,
-      disableActionId,
-      enableSessions,
-      revokeEnableSignature
-    ])
+    assert.deepStrictEqual(selectorsOf(calls), [disableUserOpPolicies, disableActionId, enableSessions])
     // The native transfer's action, and the rate limit's policy.
     assert.include(calls[1]!, actionId(recipient, "0xffffffff").slice(2))
     assert.include(calls[0]!, contracts.rateLimitPolicy.slice(2).toLowerCase())
@@ -61,8 +60,7 @@ describe("updating a session", () => {
       next: Session.toSmartSession(next),
       enabled: false
     })
-    assert.strictEqual(calls.length, 2)
-    assert.strictEqual(Hex.slice(calls[1]!, 0, 4), revokeEnableSignature)
+    assert.deepStrictEqual(selectorsOf(calls), [enableSessions])
   })
 })
 

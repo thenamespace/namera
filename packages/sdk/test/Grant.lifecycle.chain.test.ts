@@ -45,6 +45,9 @@ const violationOf = (promise: Promise<unknown>) =>
     }
   )
 
+// Every session needs a gas limit (Session.validate): the agent sets each operation's fees.
+const gasLimit = Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
+
 const setUp = async (
   type: AccountType,
   policies: ReadonlyArray<Policy.Policy>,
@@ -55,7 +58,7 @@ const setUp = async (
   const session = Session.from({
     signer: SessionKey.ecdsa(sessionKey.address),
     validUntil: options.validUntil ?? Session.now() + 30 * 86400,
-    policies
+    policies: [...policies, gasLimit]
   })
   const grant = await Grant.create({ account, session })
   const owner = devnet.bundlerClient(account, { bundleOnReceipt: true })
@@ -199,7 +202,7 @@ describe("a grant's lifecycle", { concurrent: false }, () => {
       const session = Session.from({
         signer: SessionKey.ecdsa(sessionKey.address),
         validUntil: Session.now() + 86400,
-        policies: [transfers]
+        policies: [transfers, gasLimit]
       })
       const grant = await Grant.create({ account: [first, other], session })
       assert.isTrue((await send(await Grant.toAccount(client, { grant, signer: sessionKey }), [transfer(1n)])).success)

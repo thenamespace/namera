@@ -167,8 +167,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -194,11 +194,11 @@ declare const abiV1: readonly [{
         readonly type: "address";
         readonly internalType: "address";
     }, {
-        readonly name: "";
+        readonly name: "target";
         readonly type: "address";
         readonly internalType: "address";
     }, {
-        readonly name: "";
+        readonly name: "value";
         readonly type: "uint256";
         readonly internalType: "uint256";
     }, {
@@ -288,8 +288,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -427,8 +427,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -551,8 +551,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -866,8 +866,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -1046,8 +1046,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -1504,8 +1504,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -1675,8 +1675,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -3217,8 +3217,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -3413,8 +3413,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -3601,8 +3601,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -4082,8 +4082,8 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts

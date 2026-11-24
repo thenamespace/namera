@@ -1061,6 +1061,22 @@ export declare class PolicyNotFound extends PolicyNotFound_base {
     /** What to do about it. */
     get hint(): string;
 }
+declare const RemovalWidens_base: Schema.Class<RemovalWidens, Schema.TaggedStruct<"RemovalWidens", {
+    readonly index: Schema.Number;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * Removing a call policy from a session that keeps `Policy.anyCall` would widen it: the call would then go through
+ * `anyCall`, without the removed policy's conditions.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class RemovalWidens extends RemovalWidens_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
 /**
  * Schema for the reason of a `GrantError`.
  *
@@ -1075,7 +1091,8 @@ export declare const GrantErrorReason: Schema.Union<[
     typeof ChainNotCovered,
     typeof DigestMismatch,
     typeof SignerMismatch,
-    typeof PolicyNotFound
+    typeof PolicyNotFound,
+    typeof RemovalWidens
 ]>;
 /**
  * The specific failure behind a `GrantError`.
@@ -1086,7 +1103,7 @@ export declare const GrantErrorReason: Schema.Union<[
  */
 export type GrantErrorReason = typeof GrantErrorReason.Type;
 declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"GrantError", {
-    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch, typeof SignerMismatch, typeof PolicyNotFound]>;
+    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch, typeof SignerMismatch, typeof PolicyNotFound, typeof RemovalWidens]>;
 }>, import("effect/Cause").YieldableError>;
 /**
  * A grant that can't be read or doesn't check out. `reason` says what is wrong.
@@ -1116,7 +1133,7 @@ declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"Gra
 export declare class GrantError extends GrantError_base implements NameraError.Fields {
     readonly [TypeId]: "~@namera-ai/sdk/GrantError";
     readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
-    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | PolicyNotFound | SignerMismatch | VersionUnsupported;
+    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | PolicyNotFound | RemovalWidens | SignerMismatch | VersionUnsupported;
     get shortMessage(): string;
     get details(): string | undefined;
     get docsPath(): string | undefined;
@@ -1540,8 +1557,9 @@ export declare namespace call {
     }
 }
 /**
- * Allows any call to any contract except the account itself and Smart Sessions. Needs `unsafe: true`;
- * `Session.validate` warns.
+ * Allows any call to any contract except the account's own infrastructure: the account itself, Smart Sessions, the
+ * EntryPoint, and the validators, executors and hooks the account has installed (a call there could replace its
+ * owner); those need an explicit policy. Needs `unsafe: true`; `Session.validate` warns.
  *
  * @stability experimental
  * @category constructors
@@ -1640,7 +1658,8 @@ export declare namespace rateLimit {
 }
 /**
  * Limits the gas the session may spend per period, counted at its worst case (`maxFeePerGas` × every gas limit),
- * sponsored operations included.
+ * sponsored operations included. Every session needs one (`Session.validate` reports `GAS_LIMIT_REQUIRED`): the agent
+ * sets each operation's fees, and without a paymaster the account pays them.
  *
  * @stability experimental
  * @category constructors
@@ -1667,13 +1686,16 @@ export declare namespace gas {
     }
 }
 /**
- * Limits ERC-20 approvals (`approve`, `increaseAllowance`) of the listed tokens, and Permit2 approvals of them, to
- * the listed spenders and at most `maxAmount` each. Revoking (amount 0) is always allowed.
+ * Limits ERC-20 `approve` of the listed tokens, and Permit2 approvals of them, to the listed spenders and at most
+ * `maxAmount` each: one cap for every token, or a cap per token (`{ [token]: amount }`) for tokens with different
+ * decimals. Revoking (amount 0) is always allowed; `increaseAllowance` is refused, since repeated calls would add up
+ * past the cap.
  *
  * **Details**
  *
  * It limits approvals other policies allow (`Policy.erc20Approve`, `Policy.call`, `Policy.anyCall`); it allows
- * nothing by itself. With it, `Policy.spend` stops counting that token's approvals.
+ * nothing by itself. With it, `Policy.spend` stops counting that token's approvals. List ERC-20 tokens only: an
+ * ERC-721's `approve(spender, tokenId)` has the same selector.
  *
  * @stability experimental
  * @category constructors
@@ -1697,7 +1719,9 @@ export declare namespace approvals {
     interface Options {
         readonly tokens: ReadonlyArray<`0x${string}`>;
         readonly spenders: ReadonlyArray<`0x${string}`>;
-        readonly maxAmount: bigint;
+        readonly maxAmount: bigint | {
+            readonly [token: `0x${string}`]: bigint;
+        };
     }
 }
 /**
@@ -2179,12 +2203,13 @@ export declare const isSession: (u: unknown) => u is Session;
  *   policies: [
  *     Policy.erc20Transfer({ token: USDC, to: ["0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"], amount: { lte: 50_000000n } }),
  *     Policy.spend({ token: USDC, amount: 200_000000n, period: "day" }),
- *     Policy.rateLimit({ count: 20, period: "hour" })
+ *     Policy.rateLimit({ count: 20, period: "hour" }),
+ *     Policy.gas({ maxCost: 10n ** 16n, period: "day" })
  *   ],
  *   label: "checkout agent"
  * })
  *
- * session.policies.length // => 3
+ * session.policies.length // => 4
  * Session.validate(session).ok // => true
  * ```
  *

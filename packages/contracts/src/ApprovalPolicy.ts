@@ -6,8 +6,8 @@ const abiV1 = [{
   "inputs": [
     { "name": "id", "type": "bytes32", "internalType": "bytes32" },
     { "name": "account", "type": "address", "internalType": "address" },
-    { "name": "", "type": "address", "internalType": "address" },
-    { "name": "", "type": "uint256", "internalType": "uint256" },
+    { "name": "target", "type": "address", "internalType": "address" },
+    { "name": "value", "type": "uint256", "internalType": "uint256" },
     { "name": "data", "type": "bytes", "internalType": "bytes" }
   ],
   "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
@@ -55,8 +55,8 @@ const abiV1 = [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, legacy pipeline), so it is the same on
- * every chain.
+ * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * chain.
  *
  * @stability experimental
  * @category contracts
@@ -64,11 +64,11 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.approval-policy.v1",
-  "address": "0x88762DEcb9cCf7b567aE4e0D441B9B58A779871a",
+  "address": "0xC9A16ed3c1d098de092bD0725b8b8Ff8bF3413a4",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0x2db51a453faf429ee58c1081555990b0dec71ca173a8a25f8e167959ede95a14",
-  "initcodeHash": "0xbab521f7415034ed67de7477a815d5465575bbacb0da058c03e8ed26f7f7a76d",
-  "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": false },
+  "initcodeHash": "0x85eea86a1132940515e3f204ef177d51dc89a7172c391cc1ca1a228b583ec298",
+  "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}
 }

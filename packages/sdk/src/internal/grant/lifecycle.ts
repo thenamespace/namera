@@ -29,6 +29,12 @@ import { chainOf } from "./status.ts"
 // The owner's changes to a grant after it was made, each an owner operation through the owner's bundler client (one
 // per chain): revoking it, and updating its session's policies in place.
 
+// Whether a policy allows calls (an action of its own); `anyCall` covers whatever it no longer allows.
+const allowsCalls = (policy: Policy): boolean =>
+  policy.type === "custom"
+    ? policy.kind === "call"
+    : ["function", "erc20Transfer", "erc20Approve", "nativeTransfer", "call"].includes(policy.type)
+
 /** The owner account of a bundler client, which must be the grant's account. */
 const ownerOf = Effect.fnUntraced(function*(
   client: BundlerClient,
@@ -138,6 +144,16 @@ export const updatedSession = (
   const missing = removed.findIndex((key) => !grant.session.policies.some((policy) => canonical(policy) === key))
   if (missing !== -1) return Result.fail(GrantError.make(new GrantError.PolicyNotFound({ index: missing })))
   const { session } = grant
+  // A call policy removed while `anyCall` stays would let its calls through the fallback, without its conditions.
+  const keepsAnyCall = [
+    ...session.policies.filter((policy) => !removed.includes(canonical(policy))),
+    ...(options.add ?? [])
+  ]
+    .some((policy) => policy.type === "anyCall")
+  const widening = keepsAnyCall
+    ? (options.remove ?? []).findIndex(allowsCalls)
+    : -1
+  if (widening !== -1) return Result.fail(GrantError.make(new GrantError.RemovalWidens({ index: widening })))
   const result = make({
     signer: session.signer,
     policies: [...session.policies.filter((policy) => !removed.includes(canonical(policy))), ...(options.add ?? [])],
@@ -178,8 +194,8 @@ export const updateCalls = (
   })
 
 /**
- * Updates the grant's session on each client's chain: disables what is removed, enables the updated session (adding
- * what is new, reconfiguring what stays) and revokes the old enable signature, so the old grant can't widen the
+ * Updates the grant's session on each client's chain: disables what is removed and enables the updated session
+ * (adding what is new, reconfiguring what stays); each call spends the enable nonce, so the old grant can't widen the
  * session again. Returns the hashes and the updated grant, installed on those chains (no enable signature).
  *
  * @internal
@@ -210,8 +226,8 @@ export const update = Effect.fnUntraced(function*(
     const next = compile(session, contracts)
     const calls = encodeUpdate({ permissionId: grant.id, previous: compile(grant.session, contracts), next, enabled })
     hashes.push(yield* send(client, account, calls.map((data) => ({ to: contracts.smartSession, data }))))
-    // Revoking the enable signature moved the nonce on by one.
-    const after = nonce + BigInt(1)
+    // Each call to Smart Sessions spent the enable nonce once.
+    const after = nonce + BigInt(calls.length)
     chains.push({
       chain: chain.chain,
       contracts,

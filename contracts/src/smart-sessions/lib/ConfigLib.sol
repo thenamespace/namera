@@ -77,6 +77,12 @@ library ConfigLib {
             address policy = policyDatas[i].policy;
 
             policy.requirePolicyType(policyType);
+            // Namera: a policy listed twice would keep only its last configuration, silently dropping the first.
+            for (uint256 j; j < i; ++j) {
+                if (policyDatas[j].policy == policy) {
+                    revert ISmartSession.UnsupportedPolicy(policy);
+                }
+            }
 
             // slither-disable-next-line unused-return
             $policy.policyList[permissionId].add({account: msg.sender, value: policy});

@@ -80,7 +80,7 @@ admin-free, and serves every account and session from one deployment:
 | ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `AllowPolicy`     | action, user op | nothing: the policy for a call allowed without conditions (Smart Sessions needs one per action)                          |
 | `ArgPolicy`       | action          | conditions on static argument words and the value: `Eq`, `Neq`, `Lt`, `Lte`, `Gt`, `Gte`, `Between`, `OneOf`             |
-| `ApprovalPolicy`  | action          | allowed spenders and a maximum for ERC-20 `approve` / `increaseAllowance` and Permit2 `approve`                          |
+| `ApprovalPolicy`  | action          | allowed spenders and a cap per token for ERC-20 `approve` and Permit2 `approve` (`increaseAllowance` refused)            |
 | `SpendPolicy`     | user op         | ERC-20 budgets per token and period across every call (transfers, and approvals unless an `ApprovalPolicy` governs them) |
 | `ValuePolicy`     | user op         | a native-currency budget per period                                                                                      |
 | `RateLimitPolicy` | user op         | operations per period                                                                                                    |
@@ -99,6 +99,15 @@ configurations are stored as words, so no dynamic storage arrays are needed. On 
 session operation is `executeUserOp(execute(…))`: the policies read the wrapped `execute`, and the time before
 `SessionHook`'s tag. `@namera-ai/devnet`'s ERC-7562 test traces
 a real session operation's validation and checks both rules on these contracts.
+
+**What the limits can't see.** `SpendPolicy` counts the amount of `transfer`, `transferFrom` and approvals (Permit2's
+`approve` of the token included), and refuses any other function of a limited token: it can't tell what
+`transferAndCall`, `push` or a share transfer moves. It doesn't see tokens a contract pulls with an allowance given
+before the session, nor what a token paymaster takes in `postOp`; an execution policy measuring balances covers those.
+`ValuePolicy` counts call values, not gas: the agent sets the fees, which the account pays without a paymaster, so
+every session needs a `GasPolicy` (the SDK refuses one without). `SignaturePolicy` checks each signature on its own
+(ERC-1271 is a view), so its caps don't add up across signatures. `ArgPolicy` compares whole words, so the SDK adds a
+range rule to a lower bound on a narrow integer, against contracts that ignore the bits above the type.
 
 **Signatures.** A session key's ERC-1271 signature carries the signed struct's EIP-712 `encodeData`, and Smart Sessions
 checks that it hashes to the signed struct before passing it to policies that implement `I1271TypedDataPolicy`.
@@ -126,6 +135,15 @@ Namera ships the infrastructure; applications write the policies.
   session. During execution the hook reads the tag and runs that session's policies. Calldata, not state, carries the
   session across, so identical operations in one bundle each run them. Untagged operations (the owner's, sessions
   without execution policies) pass through.
+- **Guarding the hook.** Once installed, the hook can't be reinstalled with another flavour or Smart Sessions module
+  without an uninstall, and it refuses `onInstall` and `onUninstall` while a session operation runs (between
+  `preCheck` and `postCheck`). On Kernel it holds that lock around every Smart Sessions operation, tagged or not,
+  since Kernel doesn't report a validator's hook as installed and Smart Sessions' fallback can't tell it apart; on
+  Nexus and Safe7579 Smart Sessions refuses fallback calls to it as an installed module.
+- **Limits.** The owner should remove sessions with execution policies before uninstalling the hook: an operation
+  validated earlier in the same bundle would execute after the uninstall without them. An account that skipped
+  `postCheck` after a failed execution would keep the lock for the rest of the transaction; Kernel, Nexus and Safe7579
+  revert the whole execution instead (sessions only use the default exec type).
 
 ### Writing an execution policy
 

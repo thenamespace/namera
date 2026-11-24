@@ -74,12 +74,13 @@ export const isSession = (u: unknown): u is Session =>
  *   policies: [
  *     Policy.erc20Transfer({ token: USDC, to: ["0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"], amount: { lte: 50_000000n } }),
  *     Policy.spend({ token: USDC, amount: 200_000000n, period: "day" }),
- *     Policy.rateLimit({ count: 20, period: "hour" })
+ *     Policy.rateLimit({ count: 20, period: "hour" }),
+ *     Policy.gas({ maxCost: 10n ** 16n, period: "day" })
  *   ],
  *   label: "checkout agent"
  * })
  *
- * session.policies.length // => 3
+ * session.policies.length // => 4
  * Session.validate(session).ok // => true
  * ```
  *

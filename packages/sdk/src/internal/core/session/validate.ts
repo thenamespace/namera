@@ -1,7 +1,7 @@
 import * as Hex from "ox/Hex"
 
 import { validatorData } from "../sessionKey.ts"
-import { type Contracts, FALLBACK } from "./compile.ts"
+import { compile, type Contracts, FALLBACK } from "./compile.ts"
 import { type Problem, problem } from "./problem.ts"
 import { resolve } from "./resolve.ts"
 import type { Session } from "./session.ts"
@@ -155,6 +155,34 @@ export const validate = (session: Session, options: ValidateOptions): Validation
     }
   }
 
+  // Gas: the session key sets the operation's fees, and without a paymaster (which a sponsored session's agent can
+  // simply leave out) the account pays them, up to its whole balance, to whoever bundles the operation.
+  if (resolved.gas.length === 0) {
+    problems.push(
+      problem(
+        "GAS_LIMIT_REQUIRED",
+        "a session needs Policy.gas: the agent sets each operation's fees, and the account pays them without a paymaster"
+      )
+    )
+  }
+
+  // A policy contract listed twice in one list keeps only its last configuration.
+  const compiled = compile(session, options.contracts)
+  const lists = [
+    compiled.userOpPolicies,
+    compiled.erc7739Policies.erc1271Policies,
+    ...compiled.actions.map((action) => action.actionPolicies)
+  ]
+  for (const list of lists) {
+    const addresses = list.map((entry) => entry.policy.toLowerCase())
+    const repeated = addresses.find((address, index) => addresses.indexOf(address) !== index)
+    if (repeated !== undefined) {
+      problems.push(
+        problem("DUPLICATE_POLICY", `policy contract ${repeated} is listed twice where one configuration is kept`)
+      )
+    }
+  }
+
   // Execution policies.
   if (resolved.executions.length > MAX_EXECUTION_POLICIES) {
     problems.push(
@@ -199,14 +227,6 @@ export const validate = (session: Session, options: ValidateOptions): Validation
   }
   for (const source of resolved.anyCall) {
     warnings.push(problem("ANY_CALL", "Policy.anyCall allows any call on any contract", source))
-  }
-  if (session.sponsored && resolved.gas.length === 0) {
-    warnings.push(
-      problem(
-        "SPONSORED_WITHOUT_GAS_LIMIT",
-        "a sponsored session without Policy.gas can spend the sponsor's gas freely"
-      )
-    )
   }
 
   return { ok: problems.length === 0, problems, warnings }

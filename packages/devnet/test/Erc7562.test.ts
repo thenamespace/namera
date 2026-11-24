@@ -95,7 +95,14 @@ const session = {
       actionPolicies: [
         policy(
           ApprovalPolicy.v1.address,
-          encodeAbiParameters([{ type: "address[]" }, { type: "uint256" }, { type: "address[]" }], [[spender], 50n, []])
+          // `(address[] spenders, (address token, uint256 maxAmount)[] caps)`: the one spender, up to 50 of the token.
+          encodeAbiParameters(
+            [{ type: "address[]" }, {
+              type: "tuple[]",
+              components: [{ name: "token", type: "address" }, { name: "maxAmount", type: "uint256" }]
+            }],
+            [[spender], [{ token, maxAmount: 50n }]]
+          )
         )
       ]
     },

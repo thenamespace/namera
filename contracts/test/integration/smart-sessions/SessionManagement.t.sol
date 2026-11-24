@@ -180,7 +180,8 @@ contract SessionManagementTest is SmartSessionTestBase {
         (uint48 validAfter, uint48 validUntil) =
             smartSession.getSessionValidity(permissionId, address(account));
         assertEq(validAfter + validUntil, 0);
-        assertEq(smartSession.getNonce(permissionId, address(account)), 1);
+        // Enabling the session spent one nonce, removing it another.
+        assertEq(smartSession.getNonce(permissionId, address(account)), 2);
     }
 
     function test_removedSession_cannotValidate() public {
@@ -216,6 +217,55 @@ contract SessionManagementTest is SmartSessionTestBase {
             smartSession.revokeEnableSignature(permissionId);
         }
         vm.stopPrank();
+    }
+
+    /// @dev Regression (internal review, finding 12): reconfiguring a session directly spends its enable nonce, so an
+    /// unused enable signature can't restore what the owner changed.
+    function test_reconfiguring_spendsTheEnableNonce() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        uint256 nonce = smartSession.getNonce(permissionId, address(account));
+        PolicyData[] memory policies = new PolicyData[](1);
+        policies[0] = PolicyData(address(policy), MockPolicyConfig.allow());
+        address[] memory removed = new address[](1);
+        removed[0] = address(policy);
+
+        vm.startPrank(address(account));
+        smartSession.enableUserOpPolicies(permissionId, policies);
+        smartSession.disableUserOpPolicies(permissionId, removed);
+        smartSession.setPermit4337Paymaster(permissionId, true);
+        smartSession.disableActionId(permissionId, IdLib.toActionId(address(target), SET_VALUE));
+        vm.stopPrank();
+
+        assertEq(smartSession.getNonce(permissionId, address(account)), nonce + 4);
+    }
+
+    /// @dev Regression (internal review, finding 17): uninstalling starts a new nonce epoch, so the unused enable
+    /// signature of a session that was never enabled can't enable it after a reinstall.
+    function test_uninstalling_spendsTheUnusedEnableSignaturesOfEverySession() public {
+        Session memory session = defaultSession();
+        PermissionId permissionId = smartSession.getPermissionId(session);
+        ERC4337.PackedUserOperation memory op = signEnable(userOp(callSetValue(1)), session);
+
+        vm.startPrank(address(account));
+        account.uninstallModule(MODULE_TYPE_VALIDATOR, address(smartSession), "");
+        account.installModule(MODULE_TYPE_VALIDATOR, address(smartSession), "");
+        vm.stopPrank();
+
+        assertEq(smartSession.getNonce(permissionId, address(account)), uint256(1) << 128);
+        vm.expectRevert();
+        validate(op);
+    }
+
+    /// @dev Regression (internal review, finding 9): a policy listed twice would keep only its last configuration.
+    function test_RevertWhen_aPolicyIsListedTwice() public {
+        Session memory session = defaultSession()
+            .withUserOpPolicy(address(policy), MockPolicyConfig.allow())
+            .withUserOpPolicy(address(policy), MockPolicyConfig.deny());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(ISmartSession.UnsupportedPolicy.selector, address(policy))
+        );
+        enableSession(session);
     }
 
     function test_RevertWhen_removingTheEmptyPermissionId() public {

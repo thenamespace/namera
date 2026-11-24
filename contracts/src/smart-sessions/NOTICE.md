@@ -85,6 +85,27 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   selector and payload (upstream checked only the exec type); an account interpreting them (ERC-7821
   batch of batches) could decode the execution data differently.
 
+- **Internal review (2026-11-24).**
+  - _The fallback stays off the account's infrastructure._ Beyond the account itself, the fallback
+    action no longer reaches the EntryPoint (`withdrawTo` would move the account's deposit) or a
+    validator, executor or hook the account has installed (`isModuleInstalled`), nor Nexus's default
+    validator (`getDefaultValidator()`): those modules take the account's calls as configuration, so a
+    fallback session could replace the owner. The probes have fixed gas and fail closed. Fallback
+    handlers (type 3) are installed per selector, which a probe can't ask about, so they aren't covered.
+  - _Every reconfiguration spends the enable nonce._ `enableSessions` and every `enable*`/`disable*`
+    function and `setPermit4337Paymaster` increment it (before any policy call), so an unused owner
+    ENABLE signature can't restore a configuration the owner changed directly.
+  - _Uninstalling spends every unused enable signature._ `onUninstall` bumps an epoch per account that
+    forms the enable nonce's high 128 bits (`getNonce` returns `epoch ‖ counter`), covering sessions
+    that were never enabled and so can't be enumerated.
+  - _A policy listed twice in one list is refused_ (`UnsupportedPolicy`): only its last configuration
+    would have been kept.
+  - _Only empty calldata is a plain value transfer._ Calldata of 1 to 3 bytes, or starting with the value
+    selector, is refused (`InvalidTarget`) instead of reaching the target's code under the value action.
+  - _A policy answer longer than one word fails_, rather than being read as its first word.
+  - _An account asking about itself_ (`sender == msg.sender`, as Nexus does for module-enable digests)
+    gets no session ERC-1271 signature: a session signs for apps.
+
 ## Additions
 
 - **Session validity window.** `Session` has `uint48 validAfter, uint48 validUntil` (owner-signed; part of
@@ -124,6 +145,16 @@ Batches are still decoded into `Execution[] calldata` (typed) so Solidity valida
   the content name.
 - **Only `TypedDataSign`.** ERC-7739's `PersonalSign` workflow (`signMessage`) is not supported, as
   upstream.
+- **`executeUserOp` is trusted to execute `callData[4:]`.** Upstream refuses `executeUserOp`
+  (erc7579/smartsessions#17) because an account may run something else inside it. Namera accepts it,
+  checking the wrapped `execute`, since Kernel runs a validator's hook only through it; Kernel and Nexus
+  were tested to execute exactly `callData[4:]` (with the hook), and Safe7579 doesn't execute it. An
+  account with another `executeUserOp` must not install this module.
+- **Any installed validator can sign the enable digest.** The owner's ENABLE signature is checked with
+  the account's ERC-1271, which routes to whichever validator the signature names; an account with
+  another session module installed (one whose sessions sign arbitrary hashes) is only as safe as it.
+- **The paymaster isn't constrained.** `permitERC4337Paymaster` is one flag: a sponsored session may name
+  any paymaster, including a token paymaster the account approved, whose `postOp` pull no policy counts.
 
 ## Behaviour changes
 

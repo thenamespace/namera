@@ -98,7 +98,8 @@ export interface Resolved {
   readonly approvals: ReadonlyArray<{
     readonly tokens: ReadonlyArray<Address.Address>
     readonly spenders: ReadonlyArray<Address.Address>
-    readonly maxAmount: bigint
+    /** The cap of each token, in `tokens`' order. */
+    readonly caps: ReadonlyArray<bigint>
     readonly source: number
   }>
   readonly signatures: ReadonlyArray<Signature>
@@ -389,11 +390,16 @@ const resolveOne = (policy: Policy, index: number, builder: Builder, out: Array<
       if (spenders.length === 0 || spenders.some((spender) => spender === undefined)) {
         return void invalidAddress("spenders")
       }
-      if (!isAmount(policy.maxAmount)) return void invalidAmount("maxAmount")
+      const listed = [...new Set(tokens as Array<Address.Address>)]
+      const perToken = policy.maxAmount !== null && typeof policy.maxAmount === "object"
+        ? Object.fromEntries(Object.entries(policy.maxAmount).map(([token, cap]) => [checksum(token), cap]))
+        : undefined
+      const caps = listed.map((token) => (perToken === undefined ? policy.maxAmount : perToken[token]))
+      if (!caps.every(isAmount)) return void invalidAmount("maxAmount (a cap for every token)")
       builder.approvals.push({
-        tokens: [...new Set(tokens as Array<Address.Address>)],
+        tokens: listed,
         spenders: [...new Set(spenders as Array<Address.Address>)],
-        maxAmount: policy.maxAmount,
+        caps,
         source: index
       })
       return

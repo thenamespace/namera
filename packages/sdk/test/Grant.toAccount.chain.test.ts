@@ -1,4 +1,5 @@
 import { afterEach, assert, beforeEach, describe, inject, it } from "@effect/vitest"
+import { External } from "@namera-ai/contracts"
 import { Devnet } from "@namera-ai/devnet"
 import { Grant, GrantError, Policy, PolicyViolationError, Session, SessionKey } from "@namera-ai/sdk"
 import { encodeFunctionData, hashTypedData, type Hex, parseAbi } from "viem"
@@ -68,6 +69,9 @@ const violationOf = (promise: Promise<unknown>) =>
     }
   )
 
+// Every session needs a gas limit (Session.validate): the agent sets each operation's fees.
+const gasLimit = Policy.gas({ maxCost: 10n ** 18n, period: "lifetime" })
+
 const sessionWith = (policies: ReadonlyArray<Policy.Policy>, options: {
   readonly signer?: SessionKey.SessionKey | undefined
   readonly validUntil?: number | undefined
@@ -76,7 +80,7 @@ const sessionWith = (policies: ReadonlyArray<Policy.Policy>, options: {
   const session = Session.from({
     signer: options.signer ?? SessionKey.ecdsa(sessionKey.address),
     validUntil: options.validUntil ?? Session.now() + 30 * 86400,
-    policies
+    policies: [...policies, gasLimit]
   })
   return { sessionKey, session }
 }
@@ -183,9 +187,9 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
   })
 
   it("refuses calls its policies don't allow before signing", async () => {
-    const { grant, sessionKey } = await grantFor([transfers, Policy.spend({ token, amount: 100n, period: "day" })])
+    const { grant, sessionKey } = await grantFor([transfers])
     const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
-    assert.isTrue((await send(agent, [transfer(60n)])).success)
+    assert.isTrue((await send(agent, [transfer(1n)])).success)
 
     assert.deepInclude(await violationOf(send(agent, [transferTo(stranger, 1n)])), {
       _tag: "ArgumentRejected",
@@ -193,6 +197,13 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
       policy: "arguments"
     })
     assert.strictEqual((await violationOf(send(agent, [{ to: stranger, data: "0x" }])))._tag, "CallNotAllowed")
+  })
+
+  it("refuses spending past a budget before signing, with what is left and when it resets", async () => {
+    const { grant, sessionKey } = await grantFor([transfers, Policy.spend({ token, amount: 100n, period: "day" })])
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
+    assert.isTrue((await send(agent, [transfer(60n)])).success)
+
     const spent = await violationOf(send(agent, [transfer(50n)]))
     assert.deepInclude(spent, { _tag: "SpendLimitExceeded", attempted: 50n, remaining: 40n })
     const now = Number((await client.getBlock()).timestamp)
@@ -200,11 +211,30 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("the agent's account on 
       (spent as PolicyViolationError.SpendLimitExceeded).resetsAt,
       (Math.floor(now / 86400) + 1) * 86400
     )
-
     // Without the check, the bundler refuses it in validation instead.
     const unchecked = await Grant.toAccount(client, { grant, signer: sessionKey, check: false })
     assert.match(await refusal(send(unchecked, [transfer(50n)])), /AA2/)
-    assert.isTrue((await send(agent, [transfer(40n)])).success)
+  })
+
+  // Internal review, finding 1: the fallback (`Policy.anyCall`) never reaches the account's own modules, which take
+  // its calls as configuration; the module probes Smart Sessions makes for that pass the bundler's ERC-7562 rules.
+  it("sends any call through Policy.anyCall, but never to the account's owner validator", async () => {
+    const owners = {
+      kernel: External.kernel["3.3"].ecdsaValidator,
+      nexus: External.nexus["1.3.3"].k1Validator,
+      safe7579: External.safe7579[2].ownableValidator
+    } as const
+    const { grant, sessionKey } = await grantFor([Policy.anyCall({ unsafe: true })])
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey, check: false })
+
+    assert.isTrue((await send(agent, [transfer(1n), { to: stranger, data: "0x12345678" }])).success)
+    // `onUninstall(bytes)` on the owner's validator would remove the owner.
+    const uninstall = encodeFunctionData({
+      abi: parseAbi(["function onUninstall(bytes)"]),
+      functionName: "onUninstall",
+      args: ["0x"]
+    })
+    assert.match(await refusal(send(agent, [{ to: owners[type], data: uninstall }])), /AA2|validateUserOp/)
   })
 
   it("sends with a passkey session key", async () => {

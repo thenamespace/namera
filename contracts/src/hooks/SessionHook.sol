@@ -91,18 +91,31 @@ contract SessionHook is IUserOpPolicy {
 
     /// @param data `abi.encode(uint8 flavour, address smartSession)`.
     function onInstall(bytes calldata data) external {
+        _requireIdle(msg.sender);
         (uint8 flavour, address smartSession) = abi.decode(data, (uint8, address));
         if (flavour == 0 || flavour > uint8(Flavour.Safe7579) || smartSession == address(0)) {
             revert InvalidInstall();
         }
+        // Reinstalling with the same configuration is allowed (Kernel rebinding runs `onInstall` again); changing the
+        // flavour or Smart Sessions needs an uninstall first, so no call can quietly switch the policies off.
+        Install memory installed = _installs[msg.sender];
+        if (
+            installed.flavour != Flavour.None
+                && (uint8(installed.flavour) != flavour || installed.smartSession != smartSession)
+        ) revert InvalidInstall();
         _installs[msg.sender] = Install(Flavour(flavour), smartSession);
+        // Only a transient-storage read (`_requireIdle`) comes before: no external call.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit SessionHookInstalled(msg.sender, Flavour(flavour), smartSession);
     }
 
     /// @dev Policy lists stay: they are reachable only through enabled sessions of the installed Smart Sessions module,
     /// and re-enabling a session sets its list again.
     function onUninstall(bytes calldata) external {
+        _requireIdle(msg.sender);
         delete _installs[msg.sender];
+        // Only a transient-storage read (`_requireIdle`) comes before: no external call.
+        // forge-lint: disable-next-line(reentrancy-events)
         emit SessionHookUninstalled(msg.sender);
     }
 
@@ -204,9 +217,18 @@ contract SessionHook is IUserOpPolicy {
         }
         if (msgData.length < 4 || bytes4(msgData[:4]) != EXECUTE_SELECTOR) return "";
         (bool tagged, bytes32 permissionId) = _readTag(msgData);
-        if (!tagged) return "";
-
         if (_loadContextHash(account) != bytes32(0)) revert ReentrantCheck(account);
+        if (!tagged) {
+            // On Kernel the hook runs only around Smart Sessions' operations, so it holds the lock through untagged
+            // ones too: their calls then can't reinstall or uninstall the hook (Kernel doesn't report a validator's
+            // hook as installed, so Smart Sessions' fallback can't tell it is one). Elsewhere the hook runs for every
+            // operation, the owner's included, which must be able to uninstall it.
+            if (install.flavour != Flavour.Kernel) return "";
+            context = abi.encode(bytes32(0), new address[](0), new bytes32[](0), new bytes[](0));
+            _storeContextHash(account, keccak256(context));
+            return context;
+        }
+
         if (!_isPermissionEnabled(install.smartSession, account, permissionId)) {
             revert PermissionNotEnabled(permissionId);
         }
@@ -417,6 +439,11 @@ contract SessionHook is IUserOpPolicy {
         (success, result) = policy.call(data);
         if (!success) revert ExecutionPolicyViolation(permissionId, policy, result);
         if (result.length != 0) result = abi.decode(result, (bytes));
+    }
+
+    /// @dev Refuses while one of the account's session operations is between `preCheck` and `postCheck`.
+    function _requireIdle(address account) internal view {
+        if (_loadContextHash(account) != bytes32(0)) revert ReentrantCheck(account);
     }
 
     function _contextSlot(address account) internal pure returns (bytes32) {

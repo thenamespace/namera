@@ -8,11 +8,14 @@ import {UserOpCalls} from "./lib/UserOpCalls.sol";
 
 /// @title SpendPolicy
 /// @notice ERC-20 budgets per token and period, across every call of a user operation.
-/// @dev `initData` is `abi.encode(Limit[])`. Each call to a limited token counts the amount of `transfer`,
-/// `transferFrom`, and, when `countApprovals`, `approve` and `increaseAllowance` (an approval lets a spender move
-/// the tokens later, so it is spending unless an `ApprovalPolicy` governs approvals of the token). The requested
-/// amount counts, so fee-on-transfer and rebasing tokens count what was asked, not what moved. A token may have
-/// several limits (a daily budget and a lifetime one); each is checked and charged.
+/// @dev `initData` is `abi.encode(Limit[])`. Each call to a limited token counts the amount of `transfer` and
+/// `transferFrom`, and, when `countApprovals`, of `approve`, `increaseAllowance` and Permit2's `approve` of the token
+/// (an approval lets a spender move the tokens later, so it is spending unless an `ApprovalPolicy` governs approvals
+/// of the token). Any other function of a limited token counts as unlimited, failing the budget: the policy can't
+/// tell what it moves (`transferAndCall`, `push`, share transfers). The requested amount counts, so fee-on-transfer
+/// and rebasing tokens count what was asked, not what moved. Tokens a spender pulls with an allowance given before
+/// the session are not seen; an execution policy measuring balances covers them. A token may have several limits
+/// (a daily budget and a lifetime one); each is checked and charged.
 // slither-disable-next-line missing-inheritance
 contract SpendPolicy is LimitPolicy {
     struct Limit {
@@ -26,6 +29,9 @@ contract SpendPolicy is LimitPolicy {
     bytes4 internal constant TRANSFER_FROM = 0x23b872dd;
     bytes4 internal constant APPROVE = 0x095ea7b3;
     bytes4 internal constant INCREASE_ALLOWANCE = 0x39509351;
+    /// @dev Uniswap's Permit2 (the same address on every chain) and its `approve(address,address,uint160,uint48)`.
+    address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+    bytes4 internal constant PERMIT2_APPROVE = 0x87517c45;
 
     error InvalidLimit(uint256 index);
 
@@ -57,36 +63,53 @@ contract SpendPolicy is LimitPolicy {
         return _end(c);
     }
 
-    /// @dev The amount `call` spends of `limit.token`. A recognised call too short to hold its amount counts as
-    /// unlimited, so it fails the budget.
+    /// @dev The amount `call` spends of `limit.token`. A recognised call too short to hold its amount, or a function
+    /// of the token the policy doesn't know, counts as unlimited, so it fails the budget.
     function _spent(UserOpCalls.Call memory call, Limit memory limit)
         private
         pure
         returns (uint256)
     {
-        if (call.target != limit.token) return 0;
         bytes memory data = call.data;
-        if (data.length < 4) return 0;
+        if (call.target == PERMIT2) {
+            // Permit2's `approve(token, spender, amount, expiration)` lets the spender pull the token through Permit2.
+            // The first four bytes are the selector (at least four are there).
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (!limit.countApprovals || data.length < 4 || bytes4(data) != PERMIT2_APPROVE) {
+                return 0;
+            }
+            if (data.length < 100) return type(uint256).max;
+            // The words hold an `address` and a `uint160`: Permit2's ABI decoder reverts on anything wider.
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (address(uint160(_word(data, 4))) != limit.token) return 0;
+            // forge-lint: disable-next-line(unsafe-typecast)
+            return uint160(_word(data, 68));
+        }
+        if (call.target != limit.token || data.length == 0) return 0;
+        if (data.length < 4) return type(uint256).max;
         // The first four bytes are the selector.
         // forge-lint: disable-next-line(unsafe-typecast)
         bytes4 selector = bytes4(data);
-        uint256 offset = 0;
+        uint256 offset;
         if (selector == TRANSFER) {
             offset = 36;
         } else if (selector == TRANSFER_FROM) {
             offset = 68;
-        } else if (limit.countApprovals && (selector == APPROVE || selector == INCREASE_ALLOWANCE))
-        {
+        } else if (selector == APPROVE || selector == INCREASE_ALLOWANCE) {
+            if (!limit.countApprovals) return 0;
             offset = 36;
         } else {
-            return 0;
+            return type(uint256).max;
         }
         if (data.length < offset + 32) return type(uint256).max;
-        uint256 amount;
+        return _word(data, offset);
+    }
+
+    /// @dev The word at `offset` bytes into `data`, which must hold it.
+    function _word(bytes memory data, uint256 offset) private pure returns (uint256 word) {
         assembly ("memory-safe") {
-            amount := mload(add(add(data, 0x20), offset))
+            word := mload(add(add(data, 0x20), offset))
         }
-        return amount;
     }
 
     function _validateConfig(bytes calldata initData) internal pure override {

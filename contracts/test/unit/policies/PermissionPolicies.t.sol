@@ -47,60 +47,89 @@ contract AllowPolicyTest is Test {
 contract ApprovalPolicyTest is Test {
     ApprovalPolicy internal policy = new ApprovalPolicy();
     address internal account = makeAddr("account");
-    address internal permit2 = makeAddr("permit2");
+    address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     address internal spender = makeAddr("spender");
     address internal token = makeAddr("token");
+    address internal sixDecimals = makeAddr("six decimals");
     bytes32 internal constant ID = keccak256("config");
+    bytes4 internal constant PERMIT2_APPROVE = 0x87517c45;
 
     function setUp() public {
         address[] memory spenders = new address[](1);
         spenders[0] = spender;
-        address[] memory tokens = new address[](1);
-        tokens[0] = token;
-        policy.initializeWithMultiplexer(account, ID, abi.encode(spenders, uint256(100), tokens));
+        ApprovalPolicy.Cap[] memory caps = new ApprovalPolicy.Cap[](2);
+        caps[0] = ApprovalPolicy.Cap(token, 100);
+        caps[1] = ApprovalPolicy.Cap(sixDecimals, 5);
+        policy.initializeWithMultiplexer(account, ID, abi.encode(spenders, caps));
     }
 
     function _check(address target, bytes memory data) internal view returns (uint256) {
         return policy.checkAction(ID, account, target, 0, data);
     }
 
-    function test_allowsListedSpendersUpToTheMaximum() public {
+    function _permit2(address approved, uint160 amount) internal pure returns (bytes memory) {
+        return abi.encodeWithSelector(PERMIT2_APPROVE, approved, address(0), amount, uint48(1));
+    }
+
+    function test_allowsListedSpendersUpToTheTokensCap() public {
         assertEq(_check(token, PolicyCalls.approve(spender, 100)), 0);
         assertEq(_check(token, PolicyCalls.approve(spender, 101)), 1);
         assertEq(_check(token, PolicyCalls.approve(makeAddr("other"), 1)), 1);
-        assertEq(_check(token, abi.encodeWithSelector(0x39509351, spender, 100)), 0);
-        assertEq(_check(token, abi.encodeWithSelector(0x39509351, spender, 101)), 1);
     }
 
-    function test_alwaysAllowsRevoking() public {
+    /// @dev Regression (internal review, finding 14): each token has its own cap, so a cap meant for 18 decimals
+    /// doesn't let a 6-decimal token through for far more.
+    function test_eachTokenHasItsOwnCap() public {
+        assertEq(_check(sixDecimals, PolicyCalls.approve(spender, 5)), 0);
+        assertEq(_check(sixDecimals, PolicyCalls.approve(spender, 6)), 1);
+    }
+
+    /// @dev Regression (internal review, finding 13): repeated `increaseAllowance` calls would add up past the cap.
+    function test_refusesIncreaseAllowance() public {
+        assertEq(_check(token, abi.encodeWithSelector(0x39509351, spender, 1)), 1);
+    }
+
+    /// @dev Regression (internal review, leads): the call must go to a listed token itself, or to Permit2, and carry
+    /// no value.
+    function test_checksTheTargetAndTheValue() public {
+        assertEq(_check(makeAddr("unlisted"), PolicyCalls.approve(spender, 1)), 1);
+        assertEq(_check(makeAddr("unlisted"), PolicyCalls.approve(spender, 0)), 1);
+        assertEq(policy.checkAction(ID, account, token, 1, PolicyCalls.approve(spender, 1)), 1);
+        bytes memory permit2Approve =
+            abi.encodeWithSelector(PERMIT2_APPROVE, token, spender, uint160(1), uint48(1));
+        assertEq(_check(PERMIT2, permit2Approve), 0);
+        assertEq(_check(makeAddr("not permit2"), permit2Approve), 1);
+    }
+
+    function test_alwaysAllowsRevokingOnAListedToken() public {
         assertEq(_check(token, PolicyCalls.approve(makeAddr("anyone"), 0)), 0);
     }
 
-    function test_checksPermit2ApprovalsAgainstTheTokenList() public {
-        bytes4 permit2Approve = 0x87517c45;
+    function test_checksPermit2ApprovalsAgainstTheTokensCap() public {
         assertEq(
             _check(
-                permit2,
-                abi.encodeWithSelector(permit2Approve, token, spender, uint160(100), uint48(1))
+                PERMIT2,
+                abi.encodeWithSelector(PERMIT2_APPROVE, token, spender, uint160(100), uint48(1))
             ),
             0
         );
         assertEq(
             _check(
-                permit2,
+                PERMIT2,
                 abi.encodeWithSelector(
-                    permit2Approve, makeAddr("x"), spender, uint160(1), uint48(1)
+                    PERMIT2_APPROVE, makeAddr("x"), spender, uint160(1), uint48(1)
                 )
             ),
             1
         );
         assertEq(
             _check(
-                permit2,
-                abi.encodeWithSelector(permit2Approve, token, spender, uint160(101), uint48(1))
+                PERMIT2,
+                abi.encodeWithSelector(PERMIT2_APPROVE, token, spender, uint160(101), uint48(1))
             ),
             1
         );
+        assertEq(_check(PERMIT2, _permit2(makeAddr("x"), 0)), 1);
     }
 
     function test_failsAnyOtherFunctionOrTruncatedCalldata() public view {

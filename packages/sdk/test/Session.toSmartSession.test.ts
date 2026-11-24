@@ -156,16 +156,62 @@ describe("Session.toSmartSession", () => {
     ])
     assert.deepStrictEqual(
       AbiParameters.decode(
-        AbiParameters.from(["address[]", "uint256", "address[]"]),
+        AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
         approve.actionPolicies[1]!.initData
       ),
-      [[permit2], 10n, [USDC]]
+      [[permit2], [{ token: USDC, maxAmount: 10n }]]
     )
     const limits = AbiParameters.decode(
       AbiParameters.from(["(address token, uint256 amount, uint256 period, bool countApprovals)[]"]),
       struct.userOpPolicies[0]!.initData
     )[0]
     assert.isFalse(limits[0]!.countApprovals)
+  })
+
+  // Internal review, finding 14: tokens with different decimals get their own caps.
+  it("gives each token of Policy.approvals its own cap", () => {
+    const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    const struct = compile([
+      Policy.anyCall({ unsafe: true }),
+      Policy.approvals({ tokens: [USDC, dai], spenders: [permit2], maxAmount: { [USDC]: 10n, [dai]: 10n ** 19n } })
+    ])
+    const [, caps] = AbiParameters.decode(
+      AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
+      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData
+    )
+    assert.deepStrictEqual(caps, [{ token: USDC, maxAmount: 10n }, { token: dai, maxAmount: 10n ** 19n }])
+    assert.throws(() =>
+      Session.from({
+        signer: SessionKey.ecdsa(permit2),
+        validUntil: 2_000_000_000,
+        policies: [Policy.approvals({ tokens: [USDC, dai], spenders: [permit2], maxAmount: { [USDC]: 10n } })]
+      })
+    )
+  })
+
+  // Internal review, finding 8: a lower bound on a narrow integer also caps the word at the type's range.
+  it("adds a range rule to a lower bound on an integer narrower than 256 bits", () => {
+    const abi = [{
+      type: "function",
+      name: "fill",
+      stateMutability: "nonpayable",
+      inputs: [{ name: "fee", type: "uint24" }, { name: "amount", type: "uint256" }],
+      outputs: []
+    }] as const
+    const struct = compile([
+      Policy.function({
+        address: permit2,
+        abi,
+        functionName: "fill",
+        args: { fee: { gte: 500n }, amount: { gte: 1n } }
+      })
+    ])
+    const [rules] = AbiParameters.decode(
+      AbiParameters.from(["(uint8 condition, uint256 offset, bytes32[] refs)[]"]),
+      actionOf(struct, permit2, AbiFunction.getSelector(AbiFunction.fromAbi(abi, "fill"))).actionPolicies[0]!.initData
+    )
+    assert.deepStrictEqual(rules.map((rule) => [rule.condition, rule.offset]), [[5, 0n], [3, 0n], [5, 32n]])
+    assert.strictEqual(BigInt(rules[1]!.refs[0]!), 2n ** 24n - 1n)
   })
 
   it("with any call allowed, gives approvals actions of their own next to the fallback", () => {
