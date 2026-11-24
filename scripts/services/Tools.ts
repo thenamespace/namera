@@ -12,7 +12,10 @@ import { ToolFailed } from "../errors.ts"
 export class Tools extends Context.Service<
   Tools,
   {
-    /** Runs `command`, failing with its output when it exits non-zero. */
+    /**
+     * Runs `command`, failing with its output when it exits non-zero. `inherit` hands it the terminal (its output is
+     * not captured).
+     */
     readonly run: (
       command: string,
       args: ReadonlyArray<string>,
@@ -36,7 +39,11 @@ export class Tools extends Context.Service<
           .spawn(
             ChildProcess.make(command, [...args], {
               ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
-              ...(options.inherit === true ? { stdout: "inherit", stderr: "inherit" } : {})
+              // Inherited tools stay attached to the terminal (not detached into their own session), so they can
+              // prompt, e.g. forge for a keystore password.
+              ...(options.inherit === true
+                ? { stdin: "inherit", stdout: "inherit", stderr: "inherit", detached: false }
+                : {})
             })
           )
           .pipe(Effect.mapError((cause) => failed(String(cause))))
