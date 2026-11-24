@@ -62,6 +62,10 @@ const abiV1 = [{
   "anonymous": false
 }, {
   "type": "error",
+  "name": "InvalidLimit",
+  "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+}, {
+  "type": "error",
   "name": "PolicyNotInitialized",
   "inputs": [{ "name": "id", "type": "bytes32", "internalType": "bytes32" }, {
     "name": "multiplexer",
@@ -90,10 +94,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.value-policy.v1",
-  "address": "0x8381793A0930358aA37246FF7f306EdC9395fe04",
+  "address": "0xdE5Ce8F803214b54f5BbA9ACC1C8D185733800f9",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0x9bad4ebaeb715215ff6a7c2a57fde4acfe56bac9f9e8b6b227eeab6130ca3f40",
-  "initcodeHash": "0x5af1cdf47c8965cbd4e962d17df48abcadec0f40a33085792cd4e3dea25cd919",
+  "initcodeHash": "0x8b98612dc9699dbe4b5dddde441ce0459f66da8f406b40ccd050c70b175fecfa",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

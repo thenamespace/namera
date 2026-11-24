@@ -19,8 +19,7 @@ contract GasPolicy is LimitPolicy {
         external
         returns (uint256)
     {
-        (uint256 maxCost, uint256 period) =
-            abi.decode(_config(id, userOp.sender), (uint256, uint256));
+        (uint256 maxCost, uint256 period) = _budget(id, userOp.sender);
         Charge memory c = _begin(userOp);
         _charge(c, id, userOp.sender, TAG, maxCost, period, cost(userOp));
         return _end(c);
@@ -40,9 +39,5 @@ contract GasPolicy is LimitPolicy {
             + uint128(bytes16(userOp.paymasterAndData[36:52]));
         }
         return gas * uint128(uint256(userOp.gasFees));
-    }
-
-    function _validateConfig(bytes calldata initData) internal pure override {
-        abi.decode(initData, (uint256, uint256));
     }
 }

@@ -19,6 +19,7 @@ import {
     IUserOpPolicy
 } from "src/policies/interfaces/IPolicy.sol";
 import {Conditions} from "src/policies/lib/Conditions.sol";
+import {LimitPolicy} from "src/policies/lib/LimitPolicy.sol";
 import {Period} from "src/policies/lib/Period.sol";
 import {UserOpCalls} from "src/policies/lib/UserOpCalls.sol";
 
@@ -86,8 +87,22 @@ contract PolicyConfigTest is Test {
         SpendPolicy.Limit[] memory limits = new SpendPolicy.Limit[](2);
         limits[0] = SpendPolicy.Limit(makeAddr("token"), 1, 0, true);
         limits[1] = SpendPolicy.Limit(address(0), 1, 0, true);
-        vm.expectRevert(abi.encodeWithSelector(SpendPolicy.InvalidLimit.selector, 1));
+        vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 1));
         policy.initializeWithMultiplexer(account, "id", abi.encode(limits));
+    }
+
+    /// @dev Stored budgets hold the period in ERC-4337's 48 bits of time.
+    function test_rejectsAPeriodPast48Bits() public {
+        SpendPolicy spend = new SpendPolicy();
+        SpendPolicy.Limit[] memory limits = new SpendPolicy.Limit[](1);
+        limits[0] = SpendPolicy.Limit(makeAddr("token"), 1, uint256(type(uint48).max) + 1, true);
+        vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 0));
+        spend.initializeWithMultiplexer(account, "id", abi.encode(limits));
+
+        ValuePolicy value = new ValuePolicy();
+        vm.expectRevert(abi.encodeWithSelector(LimitPolicy.InvalidLimit.selector, 0));
+        value.initializeWithMultiplexer(account, "id", abi.encode(1, uint256(type(uint48).max) + 1));
+        value.initializeWithMultiplexer(account, "id", abi.encode(1, type(uint48).max));
     }
 
     function test_allowPolicyChecksItsConfigurationForUserOperations() public {
@@ -122,6 +137,26 @@ contract ConditionsBoundaryTest is Test {
 
     function _word(uint256 x) internal pure returns (bytes memory) {
         return abi.encodeWithSelector(0x12345678, x);
+    }
+
+    /// @dev Stored rules hold the offset in 232 bits, the largest standing for `VALUE`.
+    function test_rejectsAnOffsetPast232BitsOtherThanTheValue() public {
+        bytes32[] memory refs = new bytes32[](1);
+        uint256 largest = (1 << 232) - 1;
+        vm.expectRevert(abi.encodeWithSelector(ArgPolicy.InvalidRule.selector, 0));
+        policy.initializeWithMultiplexer(
+            account, "id", abi.encode(_rule(Conditions.Condition.Eq, largest, refs))
+        );
+
+        policy.initializeWithMultiplexer(
+            account, "id", abi.encode(_rule(Conditions.Condition.Eq, largest - 1, refs))
+        );
+        assertEq(policy.checkAction("id", account, address(0), 0, _word(0)), 1);
+        policy.initializeWithMultiplexer(
+            account, "id", abi.encode(_rule(Conditions.Condition.Eq, policy.VALUE(), refs))
+        );
+        assertEq(policy.checkAction("id", account, address(0), 0, _word(1)), 0);
+        assertEq(policy.checkAction("id", account, address(0), 1, _word(0)), 1);
     }
 
     function test_oneOfMatchesOnlyItsMembers() public {

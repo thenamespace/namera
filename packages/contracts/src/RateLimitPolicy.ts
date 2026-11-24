@@ -62,6 +62,10 @@ const abiV1 = [{
   "anonymous": false
 }, {
   "type": "error",
+  "name": "InvalidLimit",
+  "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+}, {
+  "type": "error",
   "name": "PolicyNotInitialized",
   "inputs": [{ "name": "id", "type": "bytes32", "internalType": "bytes32" }, {
     "name": "multiplexer",
@@ -86,10 +90,10 @@ const abiV1 = [{
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.rate-limit-policy.v1",
-  "address": "0xb8A4a259aaA2fb9800b63199c17D19aeE7CA4c47",
+  "address": "0x957FA30B9757C94E206F6A5a569fF7AEC74e62b5",
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xdbd0569b0e7e44b8c6b608bf1feed56dfd06157b869d84a31f4c4a93a30fffa4",
-  "initcodeHash": "0x3f85ff5f72105a0e9eafca21afa715f12a5dbb0b34be471a6c1c3c26229b34eb",
+  "initcodeHash": "0x263e291a6d1c76b125787850ba587ab1914ed2d40e29d4d9117468b658dad80e",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
   "deployments": {}

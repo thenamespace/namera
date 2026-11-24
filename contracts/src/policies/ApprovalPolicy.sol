@@ -32,8 +32,7 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
         uint256 value,
         bytes calldata data
     ) external view returns (uint256) {
-        (address[] memory spenders, Cap[] memory caps) =
-            abi.decode(_config(id, account), (address[], Cap[]));
+        bytes memory packed = _config(id, account);
         if (value != 0 || data.length < 4) return VALIDATION_FAILED;
         bytes4 selector = bytes4(data[:4]);
 
@@ -51,24 +50,35 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
             return VALIDATION_FAILED;
         }
 
-        (bool listed, uint256 maxAmount) = _cap(caps, token);
+        (bool listed, uint256 maxAmount) = _cap(packed, token);
         if (!listed) return VALIDATION_FAILED;
         if (amount == 0) return VALIDATION_SUCCESS;
-        return amount <= maxAmount && _contains(spenders, spender)
-            ? VALIDATION_SUCCESS
-            : VALIDATION_FAILED;
+        return
+            amount <= maxAmount && _isSpender(packed, spender)
+                ? VALIDATION_SUCCESS
+                : VALIDATION_FAILED;
     }
 
-    function _cap(Cap[] memory caps, address token) private pure returns (bool, uint256) {
-        for (uint256 i; i < caps.length; ++i) {
-            if (caps[i].token == token) return (true, caps[i].maxAmount);
+    /// @dev The cap on `token` in a packed configuration: the number of spenders, the spenders, then a
+    /// `(token, maxAmount)` pair of words per cap.
+    function _cap(bytes memory packed, address token) private pure returns (bool, uint256) {
+        uint256 words = packed.length / 32;
+        for (uint256 i = 1 + _wordAt(packed, 0); i < words; i += 2) {
+            // The word holds an address (`_pack`).
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (address(uint160(_wordAt(packed, i))) == token) {
+                return (true, _wordAt(packed, i + 1));
+            }
         }
         return (false, 0);
     }
 
-    function _contains(address[] memory list, address item) private pure returns (bool) {
-        for (uint256 i; i < list.length; ++i) {
-            if (list[i] == item) return true;
+    function _isSpender(bytes memory packed, address spender) private pure returns (bool) {
+        uint256 count = _wordAt(packed, 0);
+        for (uint256 i = 1; i <= count; ++i) {
+            // The word holds an address (`_pack`).
+            // forge-lint: disable-next-line(unsafe-typecast)
+            if (address(uint160(_wordAt(packed, i))) == spender) return true;
         }
         return false;
     }
@@ -77,7 +87,17 @@ contract ApprovalPolicy is PolicyBase, IActionPolicy {
         return interfaceId == type(IActionPolicy).interfaceId;
     }
 
-    function _validateConfig(bytes calldata initData) internal pure override {
-        abi.decode(initData, (address[], Cap[]));
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
+        (address[] memory spenders, Cap[] memory caps) = abi.decode(initData, (address[], Cap[]));
+        packed = new bytes(32 * (1 + spenders.length + 2 * caps.length));
+        _setWordAt(packed, 0, spenders.length);
+        for (uint256 i; i < spenders.length; ++i) {
+            _setWordAt(packed, 1 + i, uint256(uint160(spenders[i])));
+        }
+        uint256 base = 1 + spenders.length;
+        for (uint256 i; i < caps.length; ++i) {
+            _setWordAt(packed, base + 2 * i, uint256(uint160(caps[i].token)));
+            _setWordAt(packed, base + 2 * i + 1, caps[i].maxAmount);
+        }
     }
 }

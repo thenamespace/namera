@@ -9,7 +9,7 @@ pragma solidity 0.8.38;
 library PolicyStorage {
     struct Layout {
         mapping(bytes32 slot => mapping(address account => bytes32 word)) words;
-        mapping(bytes32 counter => mapping(address account => uint256 used)) counters;
+        mapping(bytes32 counter => mapping(address account => uint256 word)) counters;
     }
 
     /// @dev The key of `account`'s configuration of `configId` set by `multiplexer`.

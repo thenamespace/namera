@@ -844,6 +844,14 @@ declare const abiV1: readonly [{
     readonly anonymous: false;
 }, {
     readonly type: "error";
+    readonly name: "InvalidLimit";
+    readonly inputs: readonly [{
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "PolicyNotInitialized";
     readonly inputs: readonly [{
         readonly name: "id";
@@ -1022,6 +1030,14 @@ declare const abiV1: readonly [{
         readonly internalType: "address";
     }];
     readonly anonymous: false;
+}, {
+    readonly type: "error";
+    readonly name: "InvalidLimit";
+    readonly inputs: readonly [{
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
 }, {
     readonly type: "error";
     readonly name: "PolicyNotInitialized";
@@ -3571,6 +3587,14 @@ declare const abiV1: readonly [{
     readonly anonymous: false;
 }, {
     readonly type: "error";
+    readonly name: "InvalidLimit";
+    readonly inputs: readonly [{
+        readonly name: "index";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+}, {
+    readonly type: "error";
     readonly name: "PolicyNotInitialized";
     readonly inputs: readonly [{
         readonly name: "id";
@@ -4082,7 +4106,7 @@ declare const abiV1: readonly [{
  * **Details**
  *
  * The address commits to the salt `keccak256(label)` and to the initcode built with solc
- * 0.8.38+commit.1835d247 for `cancun` (200 optimizer runs, via-IR), so it is the same on every
+ * 0.8.38+commit.1835d247 for `cancun` (10000 optimizer runs, via-IR), so it is the same on every
  * chain.
  *
  * @stability experimental

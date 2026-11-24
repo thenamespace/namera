@@ -92,10 +92,13 @@ as one 32-byte word after the ABI encoding of the account's `execute` calldata (
 the session signature covers it). A limit charges the period containing that time and returns the period's bounds as
 validation data, so the EntryPoint only accepts the operation within that period. Periods are epoch-aligned (a day is
 a UTC day); a period of 0 is the lifetime and needs no time. Counters are keyed by schedule, never by budget, so
-re-enabling a session never resets them.
+re-enabling a session never resets them. A counter keeps only its latest period (`usage` reads 0 for an earlier one),
+so a new period rewrites its slot instead of filling a fresh one; budgets are capped at 2^208 − 1 and periods at
+ERC-4337's 48-bit time.
 
 **Storage.** Every slot is `keccak256(account ‖ x) + n` (`lib/PolicyStorage.sol`), ERC-7562 associated storage;
-configurations are stored as words, so no dynamic storage arrays are needed. On Kernel with `SessionHook`, every
+configurations are stored as words, so no dynamic storage arrays are needed. Each policy takes its ABI configuration
+and stores a packed form (`_pack`), which its checks read back with fewer storage reads. On Kernel with `SessionHook`, every
 session operation is `executeUserOp(execute(…))`: the policies read the wrapped `execute`, and the time before
 `SessionHook`'s tag. `@namera-ai/devnet`'s ERC-7562 test traces
 a real session operation's validation and checks both rules on these contracts.

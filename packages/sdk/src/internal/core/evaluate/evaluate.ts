@@ -204,6 +204,8 @@ const spent = (call: DecodedCall, token: Hex.Hex, countApprovals: boolean): bigi
   return word(data, offset) ?? MAX
 }
 
+const MAX_USED = (BigInt(1) << BigInt(208)) - BigInt(1)
+
 /** A limit's charge: within the budget, or a violation with what is left and when it resets. */
 const charge = (options: {
   readonly key: string
@@ -213,7 +215,9 @@ const charge = (options: {
   readonly state: State
 }) => {
   const used = options.state.usage.get(options.key) ?? BigInt(0)
-  const remaining = used > options.budget ? BigInt(0) : options.budget - used
+  // A counter holds 208 bits of usage, so no budget leaves room past 2^208 - 1.
+  const room = MAX_USED < options.budget ? MAX_USED : options.budget
+  const remaining = used > room ? BigInt(0) : room - used
   return {
     exceeded: options.amount > BigInt(0) && options.amount > remaining,
     remaining,

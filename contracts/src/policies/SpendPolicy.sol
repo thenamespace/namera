@@ -33,19 +33,17 @@ contract SpendPolicy is LimitPolicy {
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     bytes4 internal constant PERMIT2_APPROVE = 0x87517c45;
 
-    error InvalidLimit(uint256 index);
-
     function checkUserOpPolicy(bytes32 id, ERC4337.PackedUserOperation calldata userOp)
         external
         returns (uint256)
     {
-        Limit[] memory limits = abi.decode(_config(id, userOp.sender), (Limit[]));
+        bytes memory packed = _config(id, userOp.sender);
         UserOpCalls.Call[] memory calls = UserOpCalls.decode(userOp.callData, userOp.sender);
         Charge memory c = _begin(userOp);
 
-        uint256 length = limits.length;
+        uint256 length = packed.length / 64;
         for (uint256 i; i < length; ++i) {
-            Limit memory limit = limits[i];
+            Limit memory limit = _limitAt(packed, i);
             uint256 spent = 0;
             for (uint256 j; j < calls.length; ++j) {
                 spent += _spent(calls[j], limit);
@@ -61,6 +59,20 @@ contract SpendPolicy is LimitPolicy {
             );
         }
         return _end(c);
+    }
+
+    /// @dev The `index`th limit of a packed configuration: two words, `countApprovals ‖ token` and the budget.
+    function _limitAt(bytes memory packed, uint256 index)
+        private
+        pure
+        returns (Limit memory limit)
+    {
+        uint256 head = _wordAt(packed, 2 * index);
+        // The low 160 bits are the token.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        limit.token = address(uint160(head));
+        limit.countApprovals = head >> 160 != 0;
+        (limit.amount, limit.period) = _unpackBudget(_wordAt(packed, 2 * index + 1));
     }
 
     /// @dev The amount `call` spends of `limit.token`. A recognised call too short to hold its amount, or a function
@@ -112,10 +124,15 @@ contract SpendPolicy is LimitPolicy {
         }
     }
 
-    function _validateConfig(bytes calldata initData) internal pure override {
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory packed) {
         Limit[] memory limits = abi.decode(initData, (Limit[]));
+        packed = new bytes(64 * limits.length);
         for (uint256 i; i < limits.length; ++i) {
-            if (limits[i].token == address(0)) revert InvalidLimit(i);
+            Limit memory limit = limits[i];
+            if (limit.token == address(0)) revert InvalidLimit(i);
+            uint256 head = uint256(uint160(limit.token)) | (limit.countApprovals ? 1 << 160 : 0);
+            _setWordAt(packed, 2 * i, head);
+            _setWordAt(packed, 2 * i + 1, _packBudget(limit.amount, limit.period, i));
         }
     }
 }

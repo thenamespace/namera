@@ -181,6 +181,16 @@ describe("limits", () => {
     assert.deepStrictEqual(tags(compiled, [call(token, "0xa9059cbb")]), ["SpendLimitExceeded"])
   })
 
+  it("leave no room past 2^208 - 1, which a counter can't hold, whatever the budget", () => {
+    const compiled = compiledOf([
+      Policy.anyCall({ unsafe: true }),
+      Policy.spend({ token, amount: BigInt(2) ** BigInt(256) - BigInt(1), period: "lifetime" })
+    ])
+    const most = (BigInt(1) << BigInt(208)) - BigInt(1)
+    assert.deepStrictEqual(tags(compiled, [transfer(recipient, most)]), [])
+    assert.deepStrictEqual(tags(compiled, [transfer(recipient, most + BigInt(1))]), ["SpendLimitExceeded"])
+  })
+
   // Internal review, findings 4 and 5, as SpendPolicy decides them.
   it("count Permit2 approvals of the token, and any other function of the token as unlimited", () => {
     const compiled = compiledOf([

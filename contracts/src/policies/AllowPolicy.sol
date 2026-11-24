@@ -35,7 +35,8 @@ contract AllowPolicy is PolicyBase, IActionPolicy, IUserOpPolicy {
             || interfaceId == type(IUserOpPolicy).interfaceId;
     }
 
-    /// @dev The policy has no configuration, so there is nothing to check.
-    // forge-lint: disable-next-line(empty-block)
-    function _validateConfig(bytes calldata) internal pure override {}
+    /// @dev The policy has no configuration: it stores nothing but that it is set.
+    function _pack(bytes calldata) internal pure override returns (bytes memory) {
+        return "";
+    }
 }

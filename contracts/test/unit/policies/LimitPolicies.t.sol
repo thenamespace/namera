@@ -140,18 +140,34 @@ contract SpendPolicyTest is LimitPolicyTest {
         assertEq(policy.checkUserOpPolicy(ID, _transferAt(60, nextDay)), 1);
     }
 
-    function test_usageReportsWhatEachPeriodCharged() public {
+    function test_usageReportsTheLatestPeriodsCharge() public {
         _configure(_limit(100, DAY, true));
         bytes32 tag = bytes32(uint256(uint160(token)));
         policy.checkUserOpPolicy(ID, _transferAt(60, T));
-        policy.checkUserOpPolicy(ID, _transferAt(1, T + DAY));
-
         assertEq(policy.usage(ID, address(this), account, tag, DAY, T), 60);
+
+        policy.checkUserOpPolicy(ID, _transferAt(1, T + DAY));
         assertEq(policy.usage(ID, address(this), account, tag, DAY, T + DAY), 1);
         assertEq(policy.usage(ID, address(this), account, tag, DAY, T + 2 * DAY), 0);
+        // Only the latest period is kept.
+        assertEq(policy.usage(ID, address(this), account, tag, DAY, T), 0);
         // Another multiplexer's or another account's counters are separate.
-        assertEq(policy.usage(ID, makeAddr("other"), account, tag, DAY, T), 0);
-        assertEq(policy.usage(ID, address(this), recipient, tag, DAY, T), 0);
+        assertEq(policy.usage(ID, makeAddr("other"), account, tag, DAY, T + DAY), 0);
+        assertEq(policy.usage(ID, address(this), recipient, tag, DAY, T + DAY), 0);
+    }
+
+    /// @dev Once a later period is charged, the EntryPoint's time is past an earlier one, so a charge for it fails.
+    function test_aChargeForAnEarlierPeriodFails() public {
+        _configure(_limit(100, DAY, true));
+        policy.checkUserOpPolicy(ID, _transferAt(1, T + DAY));
+        assertEq(policy.checkUserOpPolicy(ID, _transferAt(1, T)), 1);
+    }
+
+    /// @dev A counter holds 208 bits of usage beside its period, so usage reaching 2^208 fails, even within the budget.
+    function test_usageCannotReach2To208() public {
+        _configure(_limit(type(uint256).max, 0, true));
+        assertEq(policy.checkUserOpPolicy(ID, _transferAt((1 << 208) - 1, T)), 0);
+        assertEq(policy.checkUserOpPolicy(ID, _transferAt(1, T)), 1);
     }
 
     /// @dev Regression (internal review, leads): a one-second period at time 0 would have no time bounds (0 reads as

@@ -16,13 +16,9 @@ contract RateLimitPolicy is LimitPolicy {
         external
         returns (uint256)
     {
-        (uint256 count, uint256 period) = abi.decode(_config(id, userOp.sender), (uint256, uint256));
+        (uint256 count, uint256 period) = _budget(id, userOp.sender);
         Charge memory c = _begin(userOp);
         _charge(c, id, userOp.sender, TAG, count, period, 1);
         return _end(c);
-    }
-
-    function _validateConfig(bytes calldata initData) internal pure override {
-        abi.decode(initData, (uint256, uint256));
     }
 }

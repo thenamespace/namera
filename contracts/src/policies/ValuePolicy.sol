@@ -17,8 +17,7 @@ contract ValuePolicy is LimitPolicy {
         external
         returns (uint256)
     {
-        (uint256 amount, uint256 period) =
-            abi.decode(_config(id, userOp.sender), (uint256, uint256));
+        (uint256 amount, uint256 period) = _budget(id, userOp.sender);
         UserOpCalls.Call[] memory calls = UserOpCalls.decode(userOp.callData, userOp.sender);
         Charge memory c = _begin(userOp);
 
@@ -28,9 +27,5 @@ contract ValuePolicy is LimitPolicy {
         }
         _charge(c, id, userOp.sender, TAG, amount, period, value);
         return _end(c);
-    }
-
-    function _validateConfig(bytes calldata initData) internal pure override {
-        abi.decode(initData, (uint256, uint256));
     }
 }

@@ -114,7 +114,8 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
             || interfaceId == type(I1271TypedDataPolicy).interfaceId;
     }
 
-    function _validateConfig(bytes calldata initData) internal pure override {
+    /// @dev Stores `initData` as is: ERC-1271 checks are views, outside the user operation's gas.
+    function _pack(bytes calldata initData) internal pure override returns (bytes memory) {
         Config memory config = abi.decode(initData, (Config));
         if (config.verifiers.length == 0) revert NoVerifiers();
         for (uint256 i; i < config.types.length; ++i) {
@@ -127,5 +128,6 @@ contract SignaturePolicy is PolicyBase, I1271TypedDataPolicy {
                 ) revert InvalidFieldRule(i, j);
             }
         }
+        return initData;
     }
 }
