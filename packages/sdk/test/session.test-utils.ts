@@ -1,17 +1,7 @@
 import { SessionHook, SmartSession } from "@namera-ai/contracts"
 import type { Devnet } from "@namera-ai/devnet"
-import { type Grant, KernelAccount, NexusAccount, Safe7579Account, Session } from "@namera-ai/sdk"
-import * as FastLz from "@namera-ai/sdk/internal/core/grant/fastLz"
-import {
-  concat,
-  encodeAbiParameters,
-  encodeFunctionData,
-  type Hex,
-  pad,
-  parseAbi,
-  parseAbiParameters,
-  toHex
-} from "viem"
+import { KernelAccount, NexusAccount, Safe7579Account, Session } from "@namera-ai/sdk"
+import { concat, encodeAbiParameters, encodeFunctionData, type Hex, pad, parseAbi, toHex } from "viem"
 import {
   entryPoint07Abi,
   entryPoint07Address,
@@ -24,41 +14,11 @@ import type { PrivateKeyAccount } from "viem/accounts"
 
 import { devnet, newOwner } from "./accounts/accounts.test-utils.ts"
 
-// An agent sending session operations through Smart Sessions on the devnet, until the agent account (phase 012) does
-// it: `execute` calldata, the stated time for periodic limits, SessionHook's tag when asked, and Kernel's
-// `executeUserOp` wrapping (SessionHook is bound to Smart Sessions there).
+// A session agent built by hand, for testing compiled sessions without a grant (an owner enables the session): USE
+// mode, `execute` calldata, the stated time for periodic limits, SessionHook's tag when asked, and Kernel's
+// `executeUserOp` wrapping (SessionHook is bound to Smart Sessions there). Grants' agents use `Grant.toAccount`.
 
 export type AccountType = "kernel" | "nexus" | "safe7579"
-
-// Smart Sessions' ENABLE-mode `userOp.signature` (contracts/src/smart-sessions/lib/EncodeLib.sol):
-// `0x01 ‖ flzCompress(abi.encode(EnableSession, sessionKeySignature))`. The agent account (phase 012) encodes it in
-// the SDK.
-const sessionTuple =
-  "(address sessionValidator, bytes sessionValidatorInitData, bytes32 salt, (address policy, bytes initData)[] userOpPolicies, ((bytes32 appDomainSeparator, string[] contentNames)[] allowedERC7739Content, (address policy, bytes initData)[] erc1271Policies) erc7739Policies, (bytes4 actionTargetSelector, address actionTarget, (address policy, bytes initData)[] actionPolicies)[] actions, bool permitERC4337Paymaster, uint48 validAfter, uint48 validUntil)"
-const enableParameters = parseAbiParameters(
-  `(uint8 chainDigestIndex, (uint64 chainId, bytes32 sessionDigest)[] hashesAndChainIds, ${sessionTuple} sessionToEnable, bytes permissionEnableSig), bytes` as string
-)
-const encodeEnableSignature = (
-  enable: {
-    readonly chainDigestIndex: number
-    readonly hashesAndChainIds: ReadonlyArray<{ readonly chainId: number; readonly sessionDigest: Hex }>
-    readonly sessionToEnable: Session.SmartSession
-    readonly permissionEnableSig: Hex
-  },
-  sessionKeySignature: Hex
-): Hex =>
-  concat([
-    "0x01",
-    FastLz.compress(
-      encodeAbiParameters(enableParameters, [
-        {
-          ...enable,
-          hashesAndChainIds: enable.hashesAndChainIds.map((entry) => ({ ...entry, chainId: BigInt(entry.chainId) }))
-        },
-        sessionKeySignature
-      ] as never)
-    )
-  ])
 
 const execute = parseAbi(["function execute(bytes32 mode, bytes executionCalldata)"])
 const SINGLE = pad("0x00", { dir: "right", size: 32 })
@@ -126,28 +86,10 @@ export const sessionAgent = (options: {
   readonly statesTime?: boolean | undefined
   /** Appends SessionHook's tag, which sessions with execution policies need. */
   readonly tagged?: boolean | undefined
-  /** The devnet chain the agent sends on (the first by default). */
-  readonly on?: Devnet.Devnet | undefined
-  /** Sends in ENABLE mode with this grant's entry for the agent's chain, enabling the session first. */
-  readonly enable?: Grant.Grant | undefined
 }): Promise<SmartAccount> => {
   const permissionId = Session.getPermissionId(options.session)
-  const chain = options.on ?? devnet
-  const client = chain.client
-  const sign = (sessionKeySignature: Hex) => {
-    if (options.enable === undefined) return concat(["0x00", permissionId, sessionKeySignature])
-    const grant = options.enable
-    const index = grant.chains.findIndex((entry) => entry.chain === `eip155:${chain.chain.id}`)
-    return encodeEnableSignature({
-      chainDigestIndex: index,
-      hashesAndChainIds: grant.chains.map((entry) => ({
-        chainId: Number(entry.chain.slice("eip155:".length)),
-        sessionDigest: entry.sessionDigest
-      })),
-      sessionToEnable: Session.toSmartSession(grant.session),
-      permissionEnableSig: grant.chains[index]!.signature
-    }, sessionKeySignature)
-  }
+  const client = devnet.client
+  const sign = (sessionKeySignature: Hex) => concat(["0x00", permissionId, sessionKeySignature])
   return toSmartAccount({
     client,
     entryPoint: { abi: entryPoint07Abi, address: entryPoint07Address, version: "0.7" },
@@ -186,7 +128,7 @@ export const sessionAgent = (options: {
     getStubSignature: async () => sign(STUB),
     signMessage: async () => "0x",
     signTypedData: async () => "0x",
-    signUserOperation: async ({ chainId = chain.chain.id, ...operation }) => {
+    signUserOperation: async ({ chainId = devnet.chain.id, ...operation }) => {
       const hash = getUserOperationHash({
         userOperation: { ...operation, sender: options.address, signature: "0x" },
         entryPointAddress: entryPoint07Address,

@@ -4,7 +4,7 @@
 import * as Effect from "effect/Effect"
 import * as Predicate from "effect/Predicate"
 import type { Chain, Client, Hex, JsonRpcAccount, LocalAccount, PrivateKeyAccount, Transport } from "viem"
-import { call as viemCall, getCode, getStorageAt, verifyHash as viemVerifyHash } from "viem/actions"
+import { call as viemCall, getBlock, getCode, getStorageAt, verifyHash as viemVerifyHash } from "viem/actions"
 
 import type * as ChainError from "../../ChainError.ts"
 import { type Context, fromUnknown } from "../chainError.ts"
@@ -98,11 +98,27 @@ export const storageAt = (
  */
 export const call = (
   client: ReadClient,
-  request: { readonly to: Hex; readonly data: Hex }
+  request: { readonly to: Hex; readonly data: Hex; readonly from?: Hex | undefined }
 ): Effect.Effect<Hex | undefined, ChainError.ChainError> =>
   Effect.tryPromise({
-    try: async () => (await viemCall(client, { to: request.to, data: request.data })).data,
+    try: async () =>
+      (await viemCall(client, {
+        to: request.to,
+        data: request.data,
+        ...(request.from === undefined ? {} : { account: request.from })
+      })).data,
     catch: (cause) => fromUnknown(cause, context(client, "eth_call"))
+  })
+
+/**
+ * The latest block's timestamp, in seconds.
+ *
+ * @internal
+ */
+export const latestTimestamp = (client: ReadClient): Effect.Effect<bigint, ChainError.ChainError> =>
+  Effect.tryPromise({
+    try: async () => (await getBlock(client, { blockTag: "latest" })).timestamp,
+    catch: (cause) => fromUnknown(cause, context(client, "eth_getBlockByNumber"))
   })
 
 /**

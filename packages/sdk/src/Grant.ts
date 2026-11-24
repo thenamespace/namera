@@ -9,6 +9,10 @@
  * deployment, and per chain the contracts, the enable nonce, the session digest and the owner's signature. It
  * serializes to JSON or to a compact `nmr1_` token, and `Grant.parse` reads both.
  *
+ * The agent acts through `Grant.toAccount`: a viem smart account at the owner's address that sends and signs with
+ * the session key, checking each operation against the session's policies first. `Grant.check` runs the same check
+ * without a key.
+ *
  * @stability experimental
  * @since 2.0.0
  */
@@ -19,13 +23,21 @@ import type * as AccountError from "./accounts/AccountError.ts"
 import type * as SmartAccount from "./accounts/SmartAccount.ts"
 import type * as ChainError from "./ChainError.ts"
 import type * as GrantError from "./GrantError.ts"
+import type { Call } from "./internal/core/account/erc7579.ts"
 import * as core from "./internal/core/grant/grant.ts"
 import { describe as describeSession } from "./internal/core/session/describe.ts"
+import * as checkInternal from "./internal/grant/check.ts"
 import * as internal from "./internal/grant/grant.ts"
 import { parse as parseGrant } from "./internal/grant/parse.ts"
+import * as agent from "./internal/grant/toAccount.ts"
 import { run, type RunOptions } from "./internal/promise.ts"
 import type { ReadClient } from "./internal/viem/client.ts"
-import type { BundlerClient, TransactionReceipt } from "./internal/viem/smartAccount.ts"
+import type {
+  BundlerClient,
+  SmartAccount as ViemSmartAccount,
+  TransactionReceipt
+} from "./internal/viem/smartAccount.ts"
+import type * as PolicyViolationError from "./PolicyViolationError.ts"
 import type * as Session from "./Session.ts"
 import type * as SessionError from "./SessionError.ts"
 
@@ -269,6 +281,143 @@ export function verify(client: ReadClient, grant: Grant, options?: RunOptions): 
 export declare namespace verify {
   /**
    * The errors `Grant.verify` can reject with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = ChainError.ChainError | GrantError.GrantError
+}
+
+/**
+ * The agent's account under a grant: a viem smart account at the owner's account address that sends user operations
+ * and signs typed data with the session key, on the client's chain.
+ *
+ * **Details**
+ *
+ * Use it with viem's own tooling: `createBundlerClient({ account, client, transport })`, then `sendUserOperation`
+ * and `waitForUserOperationReceipt`. The first operation on a chain enables the session (Smart Sessions' ENABLE
+ * mode) and deploys the account if the grant carries its deployment and its factory is staked (Kernel); later ones
+ * use the session. `signTypedData` gives an ERC-7739 session signature, where a `Policy.signTypedData` allows it, that
+ * the account accepts once the session is enabled, when the typed data's verifying contract asks (viem's
+ * `verifyTypedData` asks from its own validator contract, which no signing policy names).
+ *
+ * With `check` (the default), every operation and signature is checked against the session's policies first, with
+ * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
+ * signs. The check is advisory: the contracts still decide.
+ *
+ * Each `lane` (Kernel 2^16, Nexus 2^24, Safe7579 2^32) is its own nonce sequence, so lanes send in parallel. Send the
+ * first operation, which enables the session, on one lane before using others.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`SignerMismatch`) for a signer that isn't the session key, or fewer signers than its
+ * threshold, and `ChainNotCovered` for a chain the grant doesn't cover; `AccountError` for a client without a chain or
+ * a lane out of range. `signMessage` is not supported: Smart Sessions verifies typed data only.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function toAccount(client: ReadClient, options: toAccount.Options): Promise<ViemSmartAccount> {
+  return run(agent.toAccount(client, options), options)
+}
+
+/**
+ * Types of `Grant.toAccount`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace toAccount {
+  /**
+   * A session key signer: a viem local account for an ECDSA session key, a viem WebAuthn account for a passkey.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Signer = agent.Signer
+  /**
+   * The grant, the session key's signer (or its signers, as many as its threshold), the nonce lane (0 by default)
+   * and whether to check policies before signing (`true` by default).
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly signer: Signer | ReadonlyArray<Signer>
+    readonly lane?: number | undefined
+    readonly check?: boolean | undefined
+  }
+  /**
+   * The errors `Grant.toAccount` can reject with, and the account's `signUserOperation` and `signTypedData` with
+   * `PolicyViolationError`.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType =
+    | AccountError.AccountError
+    | ChainError.ChainError
+    | GrantError.GrantError
+    | PolicyViolationError.PolicyViolationError
+}
+
+/**
+ * Checks calls against a grant's session on the client's chain without a key: the policies the agent's account checks
+ * before signing, with the limits' usage read from the chain, and a simulation of the calls from the EntryPoint when
+ * the account is deployed.
+ *
+ * **Details**
+ *
+ * `ok` is true when no policy would refuse the calls and the simulation didn't revert. A gas budget isn't charged:
+ * the operation's gas limits aren't known yet. Custom and execution policies are left to the chain.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`ChainNotCovered`) for a chain the grant doesn't cover, and `ChainError` when a chain
+ * can't be read.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export function check(client: ReadClient, options: check.Options): Promise<check.Result> {
+  return run(checkInternal.check(client, options), options)
+}
+
+/**
+ * Types of `Grant.check`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace check {
+  /**
+   * The grant and the calls to check.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly calls: ReadonlyArray<Call>
+  }
+  /**
+   * Whether the calls would pass, every violation, and how the simulation went (`undefined` when not simulated).
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Result = checkInternal.Checked
+  /**
+   * The errors `Grant.check` can reject with.
    *
    * @stability experimental
    * @category utility types

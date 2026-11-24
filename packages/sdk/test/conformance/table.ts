@@ -64,6 +64,7 @@ const prepared: Grant.Prepared = {
   }
 }
 const otherChainGrant = Grant.from({ ...prepared, signature: "0x12" })
+const agentSigner = newOwner()
 
 // A client on the test chain without a chain configured, and one whose node can't be reached.
 const chainless = createClient({ transport: http(client.transport.url) })
@@ -542,6 +543,20 @@ export const table: Record<string, Conformance> = {
     failure: {
       promise: (signal) => Grant.verify(client, otherChainGrant, { signal }),
       effect: () => Effect_.Grant.verify(client, otherChainGrant)
+    }
+  },
+  "Grant.toAccount": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.toAccount(client, { grant: otherChainGrant, signer: agentSigner, signal }),
+      effect: () => Effect_.Grant.toAccount(client, { grant: otherChainGrant, signer: agentSigner })
+    }
+  },
+  "Grant.check": {
+    kind: "async",
+    failure: {
+      promise: (signal) => Grant.check(client, { grant: otherChainGrant, calls: [], signal }),
+      effect: () => Effect_.Grant.check(client, { grant: otherChainGrant, calls: [] })
     }
   },
   "Grant.from": {

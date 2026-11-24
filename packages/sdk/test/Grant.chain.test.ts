@@ -7,10 +7,10 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 import { client, devnet, newOwner } from "./accounts/accounts.test-utils.ts"
 import { newPasskey } from "./accounts/passkey.test-utils.ts"
-import { type AccountType, deployedAccount, sessionAgent } from "./session.test-utils.ts"
+import { type AccountType, deployedAccount } from "./session.test-utils.ts"
 
 // Grants on the devnet (safe-mode alto): the owner signs once and sends nothing, and the agent's first operation
-// enables the session (Smart Sessions' ENABLE mode) and uses it. The devnet's second chain (31338) covers multichain
+// (through `Grant.toAccount`) enables the session (Smart Sessions' ENABLE mode) and uses it. The devnet's second chain (31338) covers multichain
 // grants.
 
 const second = await Devnet.from(inject(Devnet.contextKey), { chain: "second" })
@@ -69,7 +69,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
     assert.strictEqual(grant.chains[0]!.sessionDigest, onChain)
     await Grant.verify(client, grant)
 
-    const agent = await sessionAgent({ type, address: account.address, session, sessionKey, enable: grant })
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
     assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
     assert.isTrue(await isEnabled(devnet, session, account.address))
   })
@@ -105,7 +105,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
     assert.isTrue(await isEnabled(devnet, session, account.address))
     assert.strictEqual(grant.chains[0]!.signature, "0x")
     await Grant.verify(client, grant)
-    const agent = await sessionAgent({ type, address: account.address, session, sessionKey })
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
     assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
   })
 
@@ -115,7 +115,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a grant on a %s account
     const grant = await Grant.create({ account, session })
     await Grant.verify(client, grant)
 
-    const agent = await sessionAgent({ type, address: account.address, session, sessionKey, enable: grant })
+    const agent = await Grant.toAccount(client, { grant, signer: sessionKey })
     assert.isTrue((await devnet.sendUserOperation(agent, [transfer])).success)
     assert.isTrue(await isEnabled(devnet, session, account.address))
   })
@@ -154,7 +154,7 @@ describe.each(["kernel", "nexus", "safe7579"] as const)("a multichain grant on a
   it("is enabled on the second chain by the agent's first operation there", async () => {
     // Only the second chain's account needs to exist: the grant's first-chain entry isn't used here.
     const { address, grant, session } = await multichain({ deployFirst: false })
-    const agent = await sessionAgent({ type, address, session, sessionKey, enable: grant, on: second })
+    const agent = await Grant.toAccount(second.client, { grant, signer: sessionKey })
     assert.isTrue((await second.sendUserOperation(agent, [transfer])).success)
     assert.isTrue(await isEnabled(second, session, address))
     assert.isFalse(await isEnabled(devnet, session, address))

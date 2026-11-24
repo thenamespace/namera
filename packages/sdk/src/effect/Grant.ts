@@ -10,10 +10,12 @@ import type * as AccountError from "../accounts/AccountError.ts"
 import type * as ChainError from "../ChainError.ts"
 import * as Grant_ from "../Grant.ts"
 import type * as GrantError from "../GrantError.ts"
+import * as checkInternal from "../internal/grant/check.ts"
 import * as internal from "../internal/grant/grant.ts"
 import { parse as parseGrant } from "../internal/grant/parse.ts"
+import * as agent from "../internal/grant/toAccount.ts"
 import type { ReadClient } from "../internal/viem/client.ts"
-import type { BundlerClient, TransactionReceipt } from "../internal/viem/smartAccount.ts"
+import type { BundlerClient, SmartAccount, TransactionReceipt } from "../internal/viem/smartAccount.ts"
 import type * as SessionError from "../SessionError.ts"
 
 /**
@@ -127,6 +129,32 @@ export const verify: (
   client: ReadClient,
   grant: Grant
 ) => Effect.Effect<void, ChainError.ChainError | GrantError.GrantError> = internal.verify
+
+/**
+ * The agent's account under a grant, on the client's chain. Its viem hooks reject (as Promises, for viem) with
+ * `PolicyViolationError` when a policy would refuse.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const toAccount: (
+  client: ReadClient,
+  options: Omit<Grant_.toAccount.Options, "signal">
+) => Effect.Effect<SmartAccount, AccountError.AccountError | ChainError.ChainError | GrantError.GrantError> =
+  agent.toAccount
+
+/**
+ * Checks calls against a grant's session without a key.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export const check: (
+  client: ReadClient,
+  options: Omit<Grant_.check.Options, "signal">
+) => Effect.Effect<Grant_.check.Result, ChainError.ChainError | GrantError.GrantError> = checkInternal.check
 
 /**
  * Writes a grant as canonical JSON or as an `nmr1_` token.

@@ -41,6 +41,12 @@ export * as Policy from "./Policy.ts"
  * @stability experimental
  * @since 2.0.0
  */
+export * as PolicyViolationError from "./PolicyViolationError.ts"
+
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as Session from "./Session.ts"
 
 /**

@@ -196,11 +196,15 @@ import type * as AccountError from "./accounts/AccountError.ts";
 import type * as SmartAccount from "./accounts/SmartAccount.ts";
 import type * as ChainError from "./ChainError.ts";
 import type * as GrantError from "./GrantError.ts";
+import type { Call } from "./internal/core/account/erc7579.ts";
 import * as core from "./internal/core/grant/grant.ts";
+import * as checkInternal from "./internal/grant/check.ts";
 import * as internal from "./internal/grant/grant.ts";
+import * as agent from "./internal/grant/toAccount.ts";
 import { type RunOptions } from "./internal/promise.ts";
 import type { ReadClient } from "./internal/viem/client.ts";
-import type { BundlerClient, TransactionReceipt } from "./internal/viem/smartAccount.ts";
+import type { BundlerClient, SmartAccount as ViemSmartAccount, TransactionReceipt } from "./internal/viem/smartAccount.ts";
+import type * as PolicyViolationError from "./PolicyViolationError.ts";
 import type * as Session from "./Session.ts";
 import type * as SessionError from "./SessionError.ts";
 /**
@@ -420,6 +424,131 @@ export declare namespace verify {
     type ErrorType = ChainError.ChainError | GrantError.GrantError;
 }
 /**
+ * The agent's account under a grant: a viem smart account at the owner's account address that sends user operations
+ * and signs typed data with the session key, on the client's chain.
+ *
+ * **Details**
+ *
+ * Use it with viem's own tooling: `createBundlerClient({ account, client, transport })`, then `sendUserOperation`
+ * and `waitForUserOperationReceipt`. The first operation on a chain enables the session (Smart Sessions' ENABLE
+ * mode) and deploys the account if the grant carries its deployment and its factory is staked (Kernel); later ones
+ * use the session. `signTypedData` gives an ERC-7739 session signature, where a `Policy.signTypedData` allows it, that
+ * the account accepts once the session is enabled, when the typed data's verifying contract asks (viem's
+ * `verifyTypedData` asks from its own validator contract, which no signing policy names).
+ *
+ * With `check` (the default), every operation and signature is checked against the session's policies first, with
+ * the limits' usage read from the chain, and a violation rejects with `PolicyViolationError` before the session key
+ * signs. The check is advisory: the contracts still decide.
+ *
+ * Each `lane` (Kernel 2^16, Nexus 2^24, Safe7579 2^32) is its own nonce sequence, so lanes send in parallel. Send the
+ * first operation, which enables the session, on one lane before using others.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`SignerMismatch`) for a signer that isn't the session key, or fewer signers than its
+ * threshold, and `ChainNotCovered` for a chain the grant doesn't cover; `AccountError` for a client without a chain or
+ * a lane out of range. `signMessage` is not supported: Smart Sessions verifies typed data only.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare function toAccount(client: ReadClient, options: toAccount.Options): Promise<ViemSmartAccount>;
+/**
+ * Types of `Grant.toAccount`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace toAccount {
+    /**
+     * A session key signer: a viem local account for an ECDSA session key, a viem WebAuthn account for a passkey.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Signer = agent.Signer;
+    /**
+     * The grant, the session key's signer (or its signers, as many as its threshold), the nonce lane (0 by default)
+     * and whether to check policies before signing (`true` by default).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+        readonly signer: Signer | ReadonlyArray<Signer>;
+        readonly lane?: number | undefined;
+        readonly check?: boolean | undefined;
+    }
+    /**
+     * The errors `Grant.toAccount` can reject with, and the account's `signUserOperation` and `signTypedData` with
+     * `PolicyViolationError`.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | PolicyViolationError.PolicyViolationError;
+}
+/**
+ * Checks calls against a grant's session on the client's chain without a key: the policies the agent's account checks
+ * before signing, with the limits' usage read from the chain, and a simulation of the calls from the EntryPoint when
+ * the account is deployed.
+ *
+ * **Details**
+ *
+ * `ok` is true when no policy would refuse the calls and the simulation didn't revert. A gas budget isn't charged:
+ * the operation's gas limits aren't known yet. Custom and execution policies are left to the chain.
+ *
+ * **Gotchas**
+ *
+ * Rejects with `GrantError` (`ChainNotCovered`) for a chain the grant doesn't cover, and `ChainError` when a chain
+ * can't be read.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare function check(client: ReadClient, options: check.Options): Promise<check.Result>;
+/**
+ * Types of `Grant.check`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace check {
+    /**
+     * The grant and the calls to check.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    interface Options extends RunOptions {
+        readonly grant: Grant;
+        readonly calls: ReadonlyArray<Call>;
+    }
+    /**
+     * Whether the calls would pass, every violation, and how the simulation went (`undefined` when not simulated).
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type Result = checkInternal.Checked;
+    /**
+     * The errors `Grant.check` can reject with.
+     *
+     * @stability experimental
+     * @category utility types
+     * @since 2.0.0
+     */
+    type ErrorType = ChainError.ChainError | GrantError.GrantError;
+}
+/**
  * Writes a grant as canonical JSON (bigints as `{ "$n": "…" }`), or as a compact `nmr1_` token for links and QR
  * codes.
  *
@@ -535,6 +664,22 @@ export declare class DigestMismatch extends DigestMismatch_base {
     /** What to do about it. */
     get hint(): string;
 }
+declare const SignerMismatch_base: Schema.Class<SignerMismatch, Schema.TaggedStruct<"SignerMismatch", {
+    readonly detail: Schema.String;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The signer given to `Grant.toAccount` isn't the grant's session key: an account or passkey the session doesn't name,
+ * or fewer of them than its threshold.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SignerMismatch extends SignerMismatch_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
 /**
  * Schema for the reason of a `GrantError`.
  *
@@ -547,7 +692,8 @@ export declare const GrantErrorReason: Schema.Union<[
     typeof VersionUnsupported,
     typeof InvalidSignature,
     typeof ChainNotCovered,
-    typeof DigestMismatch
+    typeof DigestMismatch,
+    typeof SignerMismatch
 ]>;
 /**
  * The specific failure behind a `GrantError`.
@@ -558,7 +704,7 @@ export declare const GrantErrorReason: Schema.Union<[
  */
 export type GrantErrorReason = typeof GrantErrorReason.Type;
 declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"GrantError", {
-    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch]>;
+    readonly reason: Schema.Union<[typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch, typeof SignerMismatch]>;
 }>, import("effect/Cause").YieldableError>;
 /**
  * A grant that can't be read or doesn't check out. `reason` says what is wrong.
@@ -588,7 +734,7 @@ declare const GrantError_base: Schema.Class<GrantError, Schema.TaggedStruct<"Gra
 export declare class GrantError extends GrantError_base implements NameraError.Fields {
     readonly [TypeId]: "~@namera-ai/sdk/GrantError";
     readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
-    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | VersionUnsupported;
+    readonly cause: ChainNotCovered | DigestMismatch | InvalidSignature | Malformed | SignerMismatch | VersionUnsupported;
     get shortMessage(): string;
     get details(): string | undefined;
     get docsPath(): string | undefined;
@@ -623,6 +769,7 @@ import type { ChainError } from "./ChainError.ts";
 import type { GrantError } from "./GrantError.ts";
 import type { KeystoreError } from "./keys/KeystoreError.ts";
 import type { SessionKeyError } from "./keys/SessionKeyError.ts";
+import type { PolicyViolationError } from "./PolicyViolationError.ts";
 import type { SessionError } from "./SessionError.ts";
 /**
  * Marks every Namera error, whichever copy of the package created it.
@@ -649,7 +796,7 @@ export declare const TypeId: "~@namera-ai/sdk/NameraError";
  * @category models
  * @since 2.0.0
  */
-export type NameraError = AccountError | ChainError | GrantError | KeystoreError | SessionError | SessionKeyError;
+export type NameraError = AccountError | ChainError | GrantError | KeystoreError | PolicyViolationError | SessionError | SessionKeyError;
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
  * the same way.
@@ -1311,6 +1458,291 @@ export declare namespace custom {
         readonly initData: `0x${string}`;
     };
 }
+```
+
+## PolicyViolationError.d.ts
+
+```ts
+import * as Schema from "effect/Schema";
+import type { Violation } from "./internal/core/evaluate/violation.ts";
+import * as NameraError from "./NameraError.ts";
+declare const TypeId: "~@namera-ai/sdk/PolicyViolationError";
+declare const CallNotAllowed_base: Schema.Class<CallNotAllowed, Schema.TaggedStruct<"CallNotAllowed", {
+    readonly call: Schema.Number;
+    readonly to: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+    readonly selector: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A call no policy of the session allows: no action for its target and function, and no `Policy.anyCall`, or a call
+ * Smart Sessions never allows (a nested `execute` on the account, Smart Sessions itself).
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class CallNotAllowed extends CallNotAllowed_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const ArgumentRejected_base: Schema.Class<ArgumentRejected, Schema.TaggedStruct<"ArgumentRejected", {
+    readonly call: Schema.Number;
+    readonly to: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+    readonly selector: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+    readonly policy: Schema.Literals<readonly ["arguments", "approvals"]>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * A call the session allows, with arguments or a value its conditions reject (`policy: "arguments"`), or an approval
+ * of a spender or amount `Policy.approvals` doesn't allow (`policy: "approvals"`).
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class ArgumentRejected extends ArgumentRejected_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SpendLimitExceeded_base: Schema.Class<SpendLimitExceeded, Schema.TaggedStruct<"SpendLimitExceeded", {
+    readonly token: Schema.TemplateLiteral<readonly ["0x", Schema.String]>;
+    readonly attempted: Schema.BigInt;
+    readonly remaining: Schema.BigInt;
+    readonly resetsAt: Schema.optionalKey<Schema.Number>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The calls would spend more of a token than the session's budget has left this period.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SpendLimitExceeded extends SpendLimitExceeded_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const ValueLimitExceeded_base: Schema.Class<ValueLimitExceeded, Schema.TaggedStruct<"ValueLimitExceeded", {
+    readonly attempted: Schema.BigInt;
+    readonly remaining: Schema.BigInt;
+    readonly resetsAt: Schema.optionalKey<Schema.Number>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The calls would send more native currency than the session's budget has left this period.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class ValueLimitExceeded extends ValueLimitExceeded_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const RateLimited_base: Schema.Class<RateLimited, Schema.TaggedStruct<"RateLimited", {
+    readonly remaining: Schema.BigInt;
+    readonly resetsAt: Schema.optionalKey<Schema.Number>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The session has sent as many operations as its rate limit allows this period.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class RateLimited extends RateLimited_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const GasLimitExceeded_base: Schema.Class<GasLimitExceeded, Schema.TaggedStruct<"GasLimitExceeded", {
+    readonly attempted: Schema.BigInt;
+    readonly remaining: Schema.BigInt;
+    readonly resetsAt: Schema.optionalKey<Schema.Number>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The operation's worst-case gas cost exceeds what the session's gas budget has left this period.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class GasLimitExceeded extends GasLimitExceeded_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SignatureNotAllowed_base: Schema.Class<SignatureNotAllowed, Schema.TaggedStruct<"SignatureNotAllowed", {
+    readonly detail: Schema.String;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * No signing policy of the session allows the signature.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SignatureNotAllowed extends SignatureNotAllowed_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const PaymasterNotAllowed_base: Schema.Class<PaymasterNotAllowed, Schema.TaggedStruct<"PaymasterNotAllowed", {}>, import("effect/Cause").YieldableError>;
+/**
+ * The operation uses a paymaster, and the session doesn't allow one (`sponsored: false`).
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class PaymasterNotAllowed extends PaymasterNotAllowed_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SessionExpired_base: Schema.Class<SessionExpired, Schema.TaggedStruct<"SessionExpired", {
+    readonly validUntil: Schema.Number;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The session's window has ended.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionExpired extends SessionExpired_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SessionNotYetValid_base: Schema.Class<SessionNotYetValid, Schema.TaggedStruct<"SessionNotYetValid", {
+    readonly validAfter: Schema.Number;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * The session's window hasn't started.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionNotYetValid extends SessionNotYetValid_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SessionNotEnabled_base: Schema.Class<SessionNotEnabled, Schema.TaggedStruct<"SessionNotEnabled", {}>, import("effect/Cause").YieldableError>;
+/**
+ * The session isn't enabled on the chain yet, which signatures need (operations enable it themselves).
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionNotEnabled extends SessionNotEnabled_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+declare const SessionRevoked_base: Schema.Class<SessionRevoked, Schema.TaggedStruct<"SessionRevoked", {}>, import("effect/Cause").YieldableError>;
+/**
+ * The session was removed, or its grant's enable signature was used up or revoked, so it can't be enabled again.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class SessionRevoked extends SessionRevoked_base {
+    get message(): string;
+    /** What to do about it. */
+    get hint(): string;
+}
+/**
+ * Schema for one reason of a `PolicyViolationError`.
+ *
+ * @stability experimental
+ * @category schemas
+ * @since 2.0.0
+ */
+export declare const PolicyViolationReason: Schema.Union<[
+    typeof CallNotAllowed,
+    typeof ArgumentRejected,
+    typeof SpendLimitExceeded,
+    typeof ValueLimitExceeded,
+    typeof RateLimited,
+    typeof GasLimitExceeded,
+    typeof SignatureNotAllowed,
+    typeof PaymasterNotAllowed,
+    typeof SessionExpired,
+    typeof SessionNotYetValid,
+    typeof SessionNotEnabled,
+    typeof SessionRevoked
+]>;
+/**
+ * One reason the session would refuse.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type PolicyViolationReason = typeof PolicyViolationReason.Type;
+declare const PolicyViolationError_base: Schema.Class<PolicyViolationError, Schema.TaggedStruct<"PolicyViolationError", {
+    readonly violations: Schema.NonEmptyArray<Schema.Union<[typeof CallNotAllowed, typeof ArgumentRejected, typeof SpendLimitExceeded, typeof ValueLimitExceeded, typeof RateLimited, typeof GasLimitExceeded, typeof SignatureNotAllowed, typeof PaymasterNotAllowed, typeof SessionExpired, typeof SessionNotYetValid, typeof SessionNotEnabled, typeof SessionRevoked]>>;
+}>, import("effect/Cause").YieldableError>;
+/**
+ * What the session would refuse, found before signing. `violations` lists every reason; `reason` is the first.
+ *
+ * **Example** (Reading the first reason)
+ *
+ * ```ts import.meta.vitest
+ * import { PolicyViolationError } from "@namera-ai/sdk"
+ *
+ * const error = PolicyViolationError.make([{ _tag: "RateLimited", remaining: 0n, resetsAt: 1_800_000_000 }])
+ * PolicyViolationError.isPolicyViolationError(error) // => true
+ * error.reason._tag // => "RateLimited"
+ * ```
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export declare class PolicyViolationError extends PolicyViolationError_base implements NameraError.Fields {
+    readonly [TypeId]: "~@namera-ai/sdk/PolicyViolationError";
+    readonly [NameraError.TypeId]: "~@namera-ai/sdk/NameraError";
+    /** The first reason. */
+    get reason(): PolicyViolationReason;
+    get cause(): PolicyViolationReason;
+    get shortMessage(): string;
+    get details(): string | undefined;
+    get docsPath(): string | undefined;
+    get metaMessages(): ReadonlyArray<string>;
+    get version(): string;
+    get message(): string;
+}
+/**
+ * Checks whether a value is a `PolicyViolationError`, from any copy of the package.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export declare const isPolicyViolationError: (u: unknown) => u is PolicyViolationError;
+/**
+ * A reason from its plain description (`_tag` and fields).
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const toReason: (violation: Violation) => PolicyViolationReason;
+/**
+ * A `PolicyViolationError` for one or more violations, given as reasons or their plain descriptions.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const make: (violations: readonly [Violation | PolicyViolationReason, ...Array<Violation | PolicyViolationReason>]) => PolicyViolationError;
+export {};
 ```
 
 ## Session.d.ts
@@ -3502,7 +3934,7 @@ import type * as ChainError from "../ChainError.ts";
 import * as Grant_ from "../Grant.ts";
 import type * as GrantError from "../GrantError.ts";
 import type { ReadClient } from "../internal/viem/client.ts";
-import type { BundlerClient, TransactionReceipt } from "../internal/viem/smartAccount.ts";
+import type { BundlerClient, SmartAccount, TransactionReceipt } from "../internal/viem/smartAccount.ts";
 import type * as SessionError from "../SessionError.ts";
 /**
  * A grant, version 1.
@@ -3588,6 +4020,23 @@ export declare const installSync: (client: BundlerClient, options: Omit<Grant_.i
  */
 export declare const verify: (client: ReadClient, grant: Grant) => Effect.Effect<void, ChainError.ChainError | GrantError.GrantError>;
 /**
+ * The agent's account under a grant, on the client's chain. Its viem hooks reject (as Promises, for viem) with
+ * `PolicyViolationError` when a policy would refuse.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export declare const toAccount: (client: ReadClient, options: Omit<Grant_.toAccount.Options, "signal">) => Effect.Effect<SmartAccount, AccountError.AccountError | ChainError.ChainError | GrantError.GrantError>;
+/**
+ * Checks calls against a grant's session without a key.
+ *
+ * @stability experimental
+ * @category utils
+ * @since 2.0.0
+ */
+export declare const check: (client: ReadClient, options: Omit<Grant_.check.Options, "signal">) => Effect.Effect<Grant_.check.Result, ChainError.ChainError | GrantError.GrantError>;
+/**
  * Writes a grant as canonical JSON or as an `nmr1_` token.
  *
  * @stability experimental
@@ -3649,6 +4098,19 @@ export * from "../NameraError.ts";
  * @since 2.0.0
  */
 export * from "../Policy.ts";
+```
+
+## effect/PolicyViolationError.d.ts
+
+```ts
+/**
+ * Operations and signatures a grant's session would refuse, shared with the Promise API: the same classes and
+ * instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../PolicyViolationError.ts";
 ```
 
 ## effect/Session.d.ts
@@ -4293,6 +4755,11 @@ export * as Policy from "./Policy.ts";
  * @stability experimental
  * @since 2.0.0
  */
+export * as PolicyViolationError from "./PolicyViolationError.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
 export * as Session from "./Session.ts";
 /**
  * @stability experimental
@@ -4766,6 +5233,11 @@ export * as NameraError from "./NameraError.ts";
  * @since 2.0.0
  */
 export * as Policy from "./Policy.ts";
+/**
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * as PolicyViolationError from "./PolicyViolationError.ts";
 /**
  * @stability experimental
  * @since 2.0.0

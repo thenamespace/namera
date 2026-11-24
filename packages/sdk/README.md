@@ -205,6 +205,51 @@ canonical; the token is the JSON compressed with FastLZ in base64url. `Grant.par
 versions (`GrantError`: `Malformed`, `VersionUnsupported`); `Grant.verify` refuses altered sessions (`DigestMismatch`)
 and signatures the account doesn't accept (`InvalidSignature`, checked with ERC-6492 while undeployed).
 
+## The agent
+
+`Grant.toAccount` gives the agent a viem smart account at the owner's account address, signed by the session key. It
+works with viem's own tooling:
+
+```ts
+import { Grant } from "@namera-ai/sdk"
+import { createBundlerClient } from "viem/account-abstraction"
+
+const agent = await Grant.toAccount(client, { grant: Grant.parse(token), signer: sessionKey })
+const bundler = createBundlerClient({ account: agent, client, transport: http(bundlerUrl) })
+
+const hash = await bundler.sendUserOperation({ calls }) // the first one enables the session (and deploys the account)
+await bundler.waitForUserOperationReceipt({ hash })
+
+const signature = await agent.signTypedData(permit) // an ERC-7739 session signature, where a signing policy allows it
+
+// Lanes send in parallel, each with its own nonce (Kernel 2^16 lanes, Nexus 2^24, Safe7579 2^32)
+const lanes = await Promise.all(
+  [0, 1, 2, 3].map((lane) => Grant.toAccount(client, { grant, signer: sessionKey, lane }))
+)
+
+// A dry run without a key: the same policy check, and a simulation once the account is deployed
+await Grant.check(client, { grant, calls }) // { ok, violations, simulation }
+```
+
+The signer is a viem local account for an ECDSA session key (several for a threshold), or a viem WebAuthn account for
+a passkey session key; any other refuses with `GrantError` (`SignerMismatch`).
+
+Before the session key signs, every operation and signature is checked against the session's policies, with the
+limits' usage read from the chain: a violation rejects with `PolicyViolationError` (`CallNotAllowed`,
+`ArgumentRejected`, `SpendLimitExceeded` with what is left and when it resets, `RateLimited`, `SignatureNotAllowed`,
+`SessionExpired`, …) instead of sending an operation that would revert. `check: false` skips it. The check is advisory:
+the contracts decide, and two lanes can each pass it and together exceed a budget, in which case one operation fails
+validation. Custom and execution policies are left to the chain.
+
+- **Signatures** need the session enabled on the chain (the agent's first operation, or `Grant.install`). The
+  account accepts one when the typed data's verifying contract asks it, as a token's `permit` does. viem's
+  `verifyTypedData` asks from its own validator contract, which a signing policy doesn't name, so it returns `false`.
+  `signMessage` isn't supported: Smart Sessions verifies typed data only.
+- **Deploying in the first operation** works where the account's factory is staked (Kernel, through ZeroDev's
+  FactoryStaker). Nexus's and Safe7579's factories are unstaked, so a bundler that enforces ERC-7562 refuses it there:
+  deploy those accounts first.
+- **Lanes**: send the first operation, which enables the session, on one lane before using others.
+
 ## Errors
 
 Each failure family is one error class with a tagged `reason` (`ChainError` with `Transport`, `Rpc`, `Reverted` or

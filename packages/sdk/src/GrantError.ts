@@ -1,6 +1,7 @@
 /**
  * Failures reading or checking a grant: input that isn't a grant, a version this SDK doesn't read, an owner signature
- * that doesn't verify, a chain the grant doesn't cover, or digests that don't match its session.
+ * that doesn't verify, a chain the grant doesn't cover, digests that don't match its session, or an agent signer that
+ * isn't its session key.
  *
  * @stability experimental
  * @since 2.0.0
@@ -125,6 +126,29 @@ export class DigestMismatch
 }
 
 /**
+ * The signer given to `Grant.toAccount` isn't the grant's session key: an account or passkey the session doesn't name,
+ * or fewer of them than its threshold.
+ *
+ * @stability experimental
+ * @category errors
+ * @since 2.0.0
+ */
+export class SignerMismatch
+  extends Schema.TaggedError<SignerMismatch>("@namera-ai/sdk/GrantError/SignerMismatch")("SignerMismatch", {
+    detail: Schema.String
+  })
+{
+  override get message(): string {
+    return `The signer is not the grant's session key: ${this.detail}`
+  }
+
+  /** What to do about it. */
+  get hint(): string {
+    return "Pass the session key the grant was made for (`grant.session.signer` names it), as many as its threshold."
+  }
+}
+
+/**
  * Schema for the reason of a `GrantError`.
  *
  * @stability experimental
@@ -132,8 +156,15 @@ export class DigestMismatch
  * @since 2.0.0
  */
 export const GrantErrorReason: Schema.Union<
-  [typeof Malformed, typeof VersionUnsupported, typeof InvalidSignature, typeof ChainNotCovered, typeof DigestMismatch]
-> = Schema.Union([Malformed, VersionUnsupported, InvalidSignature, ChainNotCovered, DigestMismatch])
+  [
+    typeof Malformed,
+    typeof VersionUnsupported,
+    typeof InvalidSignature,
+    typeof ChainNotCovered,
+    typeof DigestMismatch,
+    typeof SignerMismatch
+  ]
+> = Schema.Union([Malformed, VersionUnsupported, InvalidSignature, ChainNotCovered, DigestMismatch, SignerMismatch])
 
 /**
  * The specific failure behind a `GrantError`.

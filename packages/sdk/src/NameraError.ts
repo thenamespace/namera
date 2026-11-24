@@ -18,6 +18,7 @@ import type { ChainError } from "./ChainError.ts"
 import type { GrantError } from "./GrantError.ts"
 import type { KeystoreError } from "./keys/KeystoreError.ts"
 import type { SessionKeyError } from "./keys/SessionKeyError.ts"
+import type { PolicyViolationError } from "./PolicyViolationError.ts"
 import type { SessionError } from "./SessionError.ts"
 
 /**
@@ -46,7 +47,14 @@ export const TypeId = "~@namera-ai/sdk/NameraError" as const
  * @category models
  * @since 2.0.0
  */
-export type NameraError = AccountError | ChainError | GrantError | KeystoreError | SessionError | SessionKeyError
+export type NameraError =
+  | AccountError
+  | ChainError
+  | GrantError
+  | KeystoreError
+  | PolicyViolationError
+  | SessionError
+  | SessionKeyError
 
 /**
  * The fields every Namera error shares with viem's `BaseError`, so code written for viem errors reads Namera errors
