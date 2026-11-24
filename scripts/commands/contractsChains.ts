@@ -2,6 +2,7 @@ import * as Arr from "effect/Array"
 import * as Command from "effect/cli/Command"
 import * as Flag from "effect/cli/Flag"
 import * as Console from "effect/Console"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Formatter from "effect/Formatter"
@@ -19,6 +20,14 @@ import * as Environment from "../contracts/environment.ts"
 import { broadcastCreations, deploymentRecord } from "../contracts/records.ts"
 import * as Rpc from "../contracts/rpc.ts"
 import { BroadcastRun, type Chain, type DeploymentRecord, FoundryArtifact } from "../contracts/schema.ts"
+import {
+  isVerified,
+  submissionStatus,
+  type Verification,
+  verificationProblems,
+  verificationTable,
+  type Verifier
+} from "../contracts/verification.ts"
 import {
   builtContracts,
   chains,
@@ -278,7 +287,51 @@ const sourceIdentifier = Effect.fnUntraced(function*(artifact: string) {
   return `${source}:${name}`
 })
 
-/** Verifies every recorded contract of `chain` on each of its verifiers. */
+/** How long one `forge verify-contract --watch` may wait for the verifier before the contract counts as pending. */
+const submissionTimeout = Duration.minutes(3.5)
+
+/** Pending submissions are looked up this many times, this far apart, before verification gives up on them. */
+const recheckRounds = 6
+const recheckDelay = Duration.seconds(30)
+
+/** Submits one contract to `verifier` with `forge verify-contract --watch`, waiting at most `submissionTimeout`. */
+const submit = Effect.fnUntraced(function*(
+  chain: Chain,
+  verifier: Verifier,
+  contract: { readonly address: string; readonly identifier: string; readonly profile: string },
+  etherscanKey: string
+) {
+  const tools = yield* Tools
+  const submission = yield* tools.run("forge", [
+    "verify-contract",
+    contract.address,
+    contract.identifier,
+    "--chain",
+    String(chain.id),
+    "--verifier",
+    verifier,
+    "--watch",
+    "--compilation-profile",
+    contract.profile,
+    ...(verifier === "etherscan" ? ["--etherscan-api-key", etherscanKey] : [])
+  ], { cwd: contractsDir }).pipe(Effect.timeoutOption(submissionTimeout), Effect.result)
+
+  if (Result.isSuccess(submission)) {
+    if (Option.isSome(submission.success)) return "verified" as const
+    yield* Console.log(`  no result after ${Duration.format(submissionTimeout)}: pending`)
+    return "pending" as const
+  }
+  const status = submissionStatus(submission.failure.output)
+  yield* Console.log(status === "pending" ? "  accepted, still pending" : Str.trim(submission.failure.output))
+  return status
+})
+
+/**
+ * Verifies every recorded contract of `chain` on each of its verifiers. Each contract's status is read from the
+ * verifier's API first, so verified contracts are skipped; the rest are submitted with a bounded wait, and those still
+ * pending are looked up again for a few minutes. Fails, after printing the table, when a contract is still pending or
+ * failed.
+ */
 export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
   const deployments = yield* readDeployments(chain.id)
   if (Option.isNone(deployments)) {
@@ -287,30 +340,57 @@ export const verify = Effect.fn("contracts.verify")(function*(chain: Chain) {
   const etherscanKey = yield* Environment.etherscanApiKey
   const profiles = yield* compilationProfiles
 
+  const key = Option.getOrElse(etherscanKey, () => "")
+
+  const lookup = (verifier: Verifier, address: string) =>
+    isVerified(verifier, chain.id, address, key).pipe(
+      Effect.tapError((error) => Console.log(`  ${verifier} lookup failed: ${error.message}`)),
+      Effect.orElseSucceed(() => false)
+    )
+
+  let verifications: Array<Verification> = []
   for (const [label, entry] of Rec.toEntries(deployments.value.contracts)) {
     const profile = yield* profileOf(profiles, entry.source)
     const identifier = yield* sourceIdentifier(entry.artifact)
     for (const verifier of chain.verifiers) {
+      const verification = { label, address: entry.address, verifier }
       if (verifier === "etherscan" && Option.isNone(etherscanKey)) {
-        yield* Console.log(`skip etherscan for ${label}: ETHERSCAN_API_KEY is not set`)
+        verifications.push({ ...verification, status: "skipped" })
         continue
       }
-      yield* forge([
-        "verify-contract",
-        entry.address,
-        identifier,
-        "--chain",
-        String(chain.id),
-        "--verifier",
-        verifier,
-        "--watch",
-        "--compilation-profile",
-        profile,
-        ...(verifier === "etherscan" && Option.isSome(etherscanKey)
-          ? ["--etherscan-api-key", etherscanKey.value]
-          : [])
-      ])
+      if (yield* lookup(verifier, entry.address)) {
+        yield* Console.log(`${label} on ${verifier}: already verified`)
+        verifications.push({ ...verification, status: "verified" })
+        continue
+      }
+      yield* Console.log(`${label} on ${verifier}: submitting`)
+      const status = yield* submit(chain, verifier, { address: entry.address, identifier, profile }, key)
+      verifications.push({ ...verification, status })
     }
+  }
+
+  for (let round = 1; round <= recheckRounds; round++) {
+    const pending = Arr.filter(verifications, (verification) => verification.status === "pending")
+    if (pending.length === 0) break
+    yield* Console.log(
+      `\n${pending.length} pending; checking again in ${Duration.format(recheckDelay)} (${round}/${recheckRounds})`
+    )
+    yield* Effect.sleep(recheckDelay)
+    verifications = yield* Effect.forEach(verifications, (verification) =>
+      verification.status === "pending"
+        ? lookup(verification.verifier, verification.address).pipe(
+          Effect.map((verified): Verification => verified ? { ...verification, status: "verified" } : verification)
+        )
+        : Effect.succeed(verification))
+  }
+
+  yield* Console.log(`\n${verificationTable(chain.verifiers, verifications)}`)
+  if (Option.isNone(etherscanKey) && Arr.contains(chain.verifiers, "etherscan")) {
+    yield* Console.log("etherscan skipped: ETHERSCAN_API_KEY is not set")
+  }
+  const problems = verificationProblems(chain, verifications)
+  if (problems.length > 0) {
+    return yield* CheckFailed.make({ check: "contracts verify", problems })
   }
   return yield* Effect.void
 })

@@ -46,6 +46,15 @@ The chain commands take `--chain <slug>` (repeatable), `--network mainnet|testne
 `--rpc-url <url>` to override the endpoint of a single chain. Status defaults to every chain.
 Configuration comes from the environment, then `contracts/.env`.
 
+`pnpm contracts:verify` (and the last step of `deploy`) reads each recorded contract's status from
+each verifier's API first (Sourcify's v2 contract endpoint, Etherscan V2's `getsourcecode`) and skips
+what is already verified. The rest are submitted one at a time with `forge verify-contract --watch`,
+waiting at most 3.5 minutes each; a submission that is accepted but still processing, or that times
+out, counts as pending and the run moves on. Pending contracts are looked up again every 30 seconds,
+up to six times. Each chain ends with a table (contract × verifier: `verified`, `pending`, `failed`,
+or `skipped` when `ETHERSCAN_API_KEY` is not set); the command fails when anything is still pending or
+failed and prints `pnpm contracts:verify --chain <slug>` to rerun, which retries only what is left.
+
 ## Layout
 
 ```
