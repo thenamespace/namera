@@ -789,6 +789,40 @@ declare const abiV1: readonly [{
     }];
     readonly stateMutability: "pure";
 }, {
+    readonly type: "function";
+    readonly name: "usage";
+    readonly inputs: readonly [{
+        readonly name: "configId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "tag";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "period";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "time";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
     readonly type: "event";
     readonly name: "PolicySet";
     readonly inputs: readonly [{
@@ -934,6 +968,40 @@ declare const abiV1: readonly [{
         readonly internalType: "bool";
     }];
     readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "usage";
+    readonly inputs: readonly [{
+        readonly name: "configId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "tag";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "period";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "time";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
 }, {
     readonly type: "event";
     readonly name: "PolicySet";
@@ -3252,6 +3320,40 @@ declare const abiV1: readonly [{
     }];
     readonly stateMutability: "pure";
 }, {
+    readonly type: "function";
+    readonly name: "usage";
+    readonly inputs: readonly [{
+        readonly name: "configId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "tag";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "period";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "time";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
+}, {
     readonly type: "event";
     readonly name: "PolicySet";
     readonly inputs: readonly [{
@@ -3413,6 +3515,40 @@ declare const abiV1: readonly [{
         readonly internalType: "bool";
     }];
     readonly stateMutability: "pure";
+}, {
+    readonly type: "function";
+    readonly name: "usage";
+    readonly inputs: readonly [{
+        readonly name: "configId";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "multiplexer";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "account";
+        readonly type: "address";
+        readonly internalType: "address";
+    }, {
+        readonly name: "tag";
+        readonly type: "bytes32";
+        readonly internalType: "bytes32";
+    }, {
+        readonly name: "period";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }, {
+        readonly name: "time";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly outputs: readonly [{
+        readonly name: "";
+        readonly type: "uint256";
+        readonly internalType: "uint256";
+    }];
+    readonly stateMutability: "view";
 }, {
     readonly type: "event";
     readonly name: "PolicySet";
