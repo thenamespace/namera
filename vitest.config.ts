@@ -66,6 +66,23 @@ const runtimeTests = process.env["NAMERA_RUNTIME_TESTS"] === "1"
   ]
   : []
 
+// The live bundler and paymaster matrix (`NAMERA_LIVE=1`, `pnpm test:live`): real testnets, real vendor endpoints and
+// the secrets in `packages/sdk/test/live/.env`, run by hand only. Its cells wait for testnet receipts (up to 180 s on
+// Etherspot), so they get minutes instead of the 10 s every other test has.
+const liveTests = process.env["NAMERA_LIVE"] === "1"
+  ? [
+    project("@namera-ai/sdk/live", "packages/sdk", {
+      test: {
+        include: ["test/live/**/*.test.ts"],
+        globalSetup: ["test/setup/live.ts"],
+        testTimeout: 300_000,
+        hookTimeout: 600_000,
+        sequence: { concurrent: false }
+      }
+    })
+  ]
+  : []
+
 export default defineConfig({
   test: {
     passWithNoTests: true,
@@ -78,14 +95,16 @@ export default defineConfig({
       project("@namera-ai/contracts", "packages/contracts"),
       project("@namera-ai/devnet", "packages/devnet", { test: { globalSetup: ["test/setup/devnet.ts"] } }),
       // The SDK's unit tests need no chain; `*.chain.test.ts` run against the devnet.
-      // `test/browser/` needs a browser (IndexedDB) and runs in the Chromium project of the runtime matrix.
+      // `test/browser/` needs a browser (IndexedDB) and runs in the Chromium project of the runtime matrix; `test/live/`
+      // runs only in the live project.
       project("@namera-ai/sdk", "packages/sdk", {
-        test: { exclude: [...exclude, "**/*.chain.test.ts", "test/browser/**"] }
+        test: { exclude: [...exclude, "**/*.chain.test.ts", "test/browser/**", "test/live/**"] }
       }),
       project("@namera-ai/sdk/chain", "packages/sdk", {
         test: { include: ["test/**/*.chain.test.ts"], globalSetup: ["test/setup/devnet.ts"] }
       }),
-      ...runtimeTests
+      ...runtimeTests,
+      ...liveTests
     ]
   }
 })

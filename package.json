@@ -38,6 +38,7 @@
     "test": "vitest run",
     "test:contracts": "pnpm --filter @namera-ai/contracts-sol test",
     "test:docs": "vitest run --config vitest.docs.ts",
+    "test:live": "NAMERA_LIVE=1 vitest run --project @namera-ai/sdk/live",
     "test:types": "tstyche",
     "test:watch": "vitest",
     "type-cost": "node scripts/bin.ts type-cost",
