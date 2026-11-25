@@ -71,6 +71,10 @@
     "Policy.ts": {
       "rollup": 1024,
       "esbuild": 1024
+    },
+    "decorators.ts": {
+      "rollup": 71680,
+      "esbuild": 72704
     }
   },
   "apps": {

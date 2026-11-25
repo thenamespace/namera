@@ -12,10 +12,11 @@ pnpm add @namera-ai/sdk viem effect
 
 ## Entry points
 
-| Entry                   | What it exports                                                               |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `@namera-ai/sdk`        | The Promise API: `Session`, `Grant`, `Bundler`, `Paymaster`, `Compat`, …      |
-| `@namera-ai/sdk/effect` | The same modules and names, with asynchronous functions returning an `Effect` |
+| Entry                       | What it exports                                                               |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `@namera-ai/sdk`            | The Promise API: `Session`, `Grant`, `Bundler`, `Paymaster`, `Compat`, …      |
+| `@namera-ai/sdk/effect`     | The same modules and names, with asynchronous functions returning an `Effect` |
+| `@namera-ai/sdk/decorators` | `nameraActions()`, the optional viem decorator                                |
 
 Every module is also importable on its own (`@namera-ai/sdk/Session`).
 
@@ -390,6 +391,33 @@ Compat.check({ account, bundler: "candide", paymaster: "pimlico", chainId: base.
 
 `Session.validate(session, { paymaster, chainId })` warns `SESSION_PERMIT_REQUIRED` too, before the owner signs the
 grant.
+
+## The viem decorator
+
+`client.extend(nameraActions())` puts the network functions under one namespace, `client.namera`, bound to the client.
+Each method calls the standalone function (`client.namera.grant.getStatus({ grant })` is
+`Grant.getStatus(client, { grant })`), so the two are interchangeable, and viem's own actions are untouched.
+
+```ts
+import { nameraActions } from "@namera-ai/sdk/decorators"
+import { createPublicClient, http } from "viem"
+import { createBundlerClient } from "viem/account-abstraction"
+import { base } from "viem/chains"
+
+const client = createPublicClient({ chain: base, transport: http() }).extend(nameraActions())
+await client.namera.grant.getStatus({ grant })
+await client.namera.account.detect({ address })
+
+const owner = createBundlerClient({ account, client, transport: http(bundlerUrl) }).extend(nameraActions())
+await owner.namera.grant.revokeSync({ grant })
+await owner.namera.account.installSessions()
+```
+
+A public client gets the reads (`grant`: `create`, `prepare`, `verify`, `toAccount`, `check`, `getStatus`,
+`getRemainingLimit`, `isEnabled`, `getUsage`, `list`, `watchStatus`; `account`: `detect`, `isSessionsInstalled`,
+`getOwners`). A bundler client also gets the owner operations (`grant.install`, `revoke`, `update` and their `*Sync`
+forms; `account.installSessions`, `addOwner`, `removeOwner`, `setThreshold`, `replaceOwner`, `addOwnerValidator` and
+theirs); on a public client they are a type error.
 
 ## Errors
 
