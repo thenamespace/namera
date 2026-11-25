@@ -11,8 +11,6 @@ import { getStatus, type Status } from "./status.ts"
 
 /**
  * A running watch: `off()` stops it.
- *
- * @internal
  */
 export interface Watcher {
   readonly off: () => void

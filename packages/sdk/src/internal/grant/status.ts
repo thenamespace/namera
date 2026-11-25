@@ -23,16 +23,12 @@ import { isEnabled as readEnabled, readState } from "./state.ts"
 
 /**
  * A grant's state on a chain.
- *
- * @internal
  */
 export type State = "pending-enable" | "active" | "expired" | "not-yet-valid" | "revoked"
 
 /**
  * One budget's usage in the current period. `period` is in seconds (0 for the lifetime); `resetsAt` is when the next
  * period starts, in seconds, absent for the lifetime.
- *
- * @internal
  */
 export interface LimitStatus {
   readonly kind: "spend" | "value" | "rateLimit" | "gas"
@@ -46,8 +42,6 @@ export interface LimitStatus {
 
 /**
  * A grant's state on one chain.
- *
- * @internal
  */
 export interface ChainStatus {
   readonly chain: `eip155:${number}`
@@ -60,8 +54,6 @@ export interface ChainStatus {
 
 /**
  * A grant's state: overall (the most usable of its chains'), its window, each chain's, and the first chain's limits.
- *
- * @internal
  */
 export interface Status {
   readonly state: State
@@ -224,8 +216,6 @@ export const isEnabled = Effect.fnUntraced(function*(
 
 /**
  * A session enabled on an account: its permission id and window, and the grant among those given that it belongs to.
- *
- * @internal
  */
 export interface Listed {
   readonly id: Hex.Hex

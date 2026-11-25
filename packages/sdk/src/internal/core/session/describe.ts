@@ -10,8 +10,6 @@ import type { Session } from "./session.ts"
 
 /**
  * Token metadata `describe` formats amounts with, keyed by token address (any case).
- *
- * @internal
  */
 export interface Tokens {
   readonly [address: string]: { readonly symbol: string; readonly decimals: number }

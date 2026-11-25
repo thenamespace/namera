@@ -12,8 +12,6 @@ import * as TypedData from "ox/TypedData"
 
 /**
  * A passkey as the validator stores it: its P-256 public key, and whether assertions need the User Verified flag.
- *
- * @internal
  */
 export interface Passkey {
   readonly publicKey: Hex.Hex

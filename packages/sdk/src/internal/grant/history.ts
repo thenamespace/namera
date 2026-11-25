@@ -18,8 +18,6 @@ import { chainOf } from "./status.ts"
 
 /**
  * One operation sent under a grant.
- *
- * @internal
  */
 export interface Operation {
   readonly chain: `eip155:${number}`

@@ -15,8 +15,6 @@ import { readState } from "./state.ts"
 /**
  * What a dry run found: whether the calls would pass, every policy violation, and how the calls ran when simulated
  * (`undefined` when they weren't, as for an undeployed account).
- *
- * @internal
  */
 export interface Checked {
   readonly ok: boolean

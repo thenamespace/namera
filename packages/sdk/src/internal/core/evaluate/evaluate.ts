@@ -38,8 +38,6 @@ export interface Operation {
  * The chain's state the evaluator reads: the time (the agent's stated time for limits, the block's for the window),
  * whether the session is enabled, whether its grant can still enable it, and what each limit has used in the current
  * period (by `counterKey`).
- *
- * @internal
  */
 export interface State {
   readonly time: bigint

@@ -12,8 +12,6 @@ import type { Session } from "./session.ts"
 
 /**
  * The contracts a compiled session names: Smart Sessions, the session validators, SessionHook and the policies.
- *
- * @internal
  */
 export interface Contracts {
   readonly smartSession: Hex.Hex

@@ -46,8 +46,6 @@ export const entryPoint: {
 
 /**
  * The EntryPoint 0.7 ABI, for typing implementations.
- *
- * @internal
  */
 export type EntryPointAbi = typeof entryPoint07Abi
 
