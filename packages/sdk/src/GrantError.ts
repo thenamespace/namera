@@ -6,16 +6,14 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
 import { version } from "./internal/version.ts"
 import type * as NameraError from "./NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/GrantError" as const
-
-const Chain = Schema.TemplateLiteral(["eip155:", Schema.Number])
 
 /**
  * The input is not a grant: not JSON or a token, missing fields, or a session that doesn't match its id.
@@ -24,9 +22,7 @@ const Chain = Schema.TemplateLiteral(["eip155:", Schema.Number])
  * @category errors
  * @since 2.0.0
  */
-export class Malformed extends Schema.TaggedError<Malformed>("@namera-ai/sdk/GrantError/Malformed")("Malformed", {
-  detail: Schema.String
-}) {
+export class Malformed extends Data.TaggedError("Malformed")<{ readonly detail: string }> {
   override get message(): string {
     return `The input is not a grant: ${this.detail}`
   }
@@ -44,12 +40,7 @@ export class Malformed extends Schema.TaggedError<Malformed>("@namera-ai/sdk/Gra
  * @category errors
  * @since 2.0.0
  */
-export class VersionUnsupported
-  extends Schema.TaggedError<VersionUnsupported>("@namera-ai/sdk/GrantError/VersionUnsupported")(
-    "VersionUnsupported",
-    { version: Schema.Unknown }
-  )
-{
+export class VersionUnsupported extends Data.TaggedError("VersionUnsupported")<{ readonly version: unknown }> {
   override get message(): string {
     return `Grant version ${String(this.version)} is not supported`
   }
@@ -67,11 +58,7 @@ export class VersionUnsupported
  * @category errors
  * @since 2.0.0
  */
-export class InvalidSignature
-  extends Schema.TaggedError<InvalidSignature>("@namera-ai/sdk/GrantError/InvalidSignature")("InvalidSignature", {
-    chain: Chain
-  })
-{
+export class InvalidSignature extends Data.TaggedError("InvalidSignature")<{ readonly chain: `eip155:${number}` }> {
   override get message(): string {
     return `The owner's signature on ${this.chain} does not verify`
   }
@@ -89,11 +76,7 @@ export class InvalidSignature
  * @category errors
  * @since 2.0.0
  */
-export class ChainNotCovered
-  extends Schema.TaggedError<ChainNotCovered>("@namera-ai/sdk/GrantError/ChainNotCovered")("ChainNotCovered", {
-    chain: Chain
-  })
-{
+export class ChainNotCovered extends Data.TaggedError("ChainNotCovered")<{ readonly chain: `eip155:${number}` }> {
   override get message(): string {
     return `The grant does not cover ${this.chain}`
   }
@@ -111,11 +94,7 @@ export class ChainNotCovered
  * @category errors
  * @since 2.0.0
  */
-export class DigestMismatch
-  extends Schema.TaggedError<DigestMismatch>("@namera-ai/sdk/GrantError/DigestMismatch")("DigestMismatch", {
-    chain: Chain
-  })
-{
+export class DigestMismatch extends Data.TaggedError("DigestMismatch")<{ readonly chain: `eip155:${number}` }> {
   override get message(): string {
     return `The grant's session digest on ${this.chain} does not match its session`
   }
@@ -134,11 +113,7 @@ export class DigestMismatch
  * @category errors
  * @since 2.0.0
  */
-export class SignerMismatch
-  extends Schema.TaggedError<SignerMismatch>("@namera-ai/sdk/GrantError/SignerMismatch")("SignerMismatch", {
-    detail: Schema.String
-  })
-{
+export class SignerMismatch extends Data.TaggedError("SignerMismatch")<{ readonly detail: string }> {
   override get message(): string {
     return `The signer is not the grant's session key: ${this.detail}`
   }
@@ -156,11 +131,7 @@ export class SignerMismatch
  * @category errors
  * @since 2.0.0
  */
-export class PolicyNotFound
-  extends Schema.TaggedError<PolicyNotFound>("@namera-ai/sdk/GrantError/PolicyNotFound")("PolicyNotFound", {
-    index: Schema.Number
-  })
-{
+export class PolicyNotFound extends Data.TaggedError("PolicyNotFound")<{ readonly index: number }> {
   override get message(): string {
     return `Policy ${this.index} to remove is not one of the session's policies`
   }
@@ -179,11 +150,7 @@ export class PolicyNotFound
  * @category errors
  * @since 2.0.0
  */
-export class RemovalWidens
-  extends Schema.TaggedError<RemovalWidens>("@namera-ai/sdk/GrantError/RemovalWidens")("RemovalWidens", {
-    index: Schema.Number
-  })
-{
+export class RemovalWidens extends Data.TaggedError("RemovalWidens")<{ readonly index: number }> {
   override get message(): string {
     return `Removing policy ${this.index} would let its calls through Policy.anyCall without its conditions`
   }
@@ -195,42 +162,21 @@ export class RemovalWidens
 }
 
 /**
- * Schema for the reason of a `GrantError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const GrantErrorReason: Schema.Union<
-  [
-    typeof Malformed,
-    typeof VersionUnsupported,
-    typeof InvalidSignature,
-    typeof ChainNotCovered,
-    typeof DigestMismatch,
-    typeof SignerMismatch,
-    typeof PolicyNotFound,
-    typeof RemovalWidens
-  ]
-> = Schema.Union([
-  Malformed,
-  VersionUnsupported,
-  InvalidSignature,
-  ChainNotCovered,
-  DigestMismatch,
-  SignerMismatch,
-  PolicyNotFound,
-  RemovalWidens
-])
-
-/**
  * The specific failure behind a `GrantError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type GrantErrorReason = typeof GrantErrorReason.Type
+export type GrantErrorReason =
+  | Malformed
+  | VersionUnsupported
+  | InvalidSignature
+  | ChainNotCovered
+  | DigestMismatch
+  | SignerMismatch
+  | PolicyNotFound
+  | RemovalWidens
 
 /**
  * A grant that can't be read or doesn't check out. `reason` says what is wrong.
@@ -257,9 +203,9 @@ export type GrantErrorReason = typeof GrantErrorReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class GrantError extends Schema.TaggedError<GrantError>("@namera-ai/sdk/GrantError")("GrantError", {
-  reason: GrantErrorReason
-}) implements NameraError.Fields {
+export class GrantError extends Data.TaggedError("GrantError")<{
+  readonly reason: GrantErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

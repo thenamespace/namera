@@ -1,6 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
 import { ChainError, NameraError } from "@namera-ai/sdk"
-import { Schema } from "effect"
 
 describe("ChainError", () => {
   it("carries viem's error fields, with the cause's message as details", () => {
@@ -56,7 +55,7 @@ describe("ChainError redaction", () => {
       const error = ChainError.transport({ url, cause: new Error(`HTTP request failed. URL: ${url}`) })
 
       assert.isFalse(leaks(error), url)
-      assert.notInclude(JSON.stringify(Schema.encodeSync(ChainError.ChainError)(error).url), key)
+      assert.notInclude(JSON.stringify(error), key)
     }
   })
 

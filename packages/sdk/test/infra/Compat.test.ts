@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Bundler, Compat, CompatError, Paymaster, Policy, Session, SessionKey } from "@namera-ai/sdk"
+import { Bundler, Compat, type CompatError, Paymaster, Policy, Session, SessionKey } from "@namera-ai/sdk"
 
 const BASE = 8453
 const BASE_SEPOLIA = 84532
@@ -199,13 +199,24 @@ describe("Compat.check", () => {
   })
 })
 
+// Every code `CompatError.Problem` can carry: `satisfies` fails to compile when one is missing or unknown.
+const problemCodes = {
+  PAYMASTER_BUNDLER_BOUND: true,
+  PAYMASTER_AGENT_UNSUPPORTED: true,
+  SPONSORSHIP_BUNDLER_BOUND: true,
+  EIP7702_UNSUPPORTED: true,
+  SLOW_INCLUSION: true,
+  SESSION_PERMIT_REQUIRED: true,
+  NOT_ON_CHAIN: true
+} satisfies Record<CompatError.Problem["code"], true>
+
 describe("Compat.matrix", () => {
   it("dates and sources every rule Compat.check reports", () => {
     const { rules, version } = Compat.matrix()
 
     assert.deepStrictEqual(
       rules.map((rule) => rule.code).sort(),
-      [...CompatError.Problem.fields.code.literals].sort()
+      Object.keys(problemCodes).sort()
     )
     for (const rule of rules) assert.match(rule.date, /^\d{4}-\d{2}-\d{2}$/, rule.code)
     assert.isTrue(rules.every((rule) => rule.source.length > 0 && rule.date <= version))

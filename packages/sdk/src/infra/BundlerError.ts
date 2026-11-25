@@ -5,8 +5,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { redactUrl } from "../internal/redact.ts"
@@ -14,8 +14,6 @@ import { version } from "../internal/version.ts"
 import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/BundlerError" as const
-
-const detail = Schema.optionalKey(Schema.String)
 
 const withDetail = (summary: string, detail: string | undefined) =>
   detail === undefined ? summary : `${summary}: ${detail}`
@@ -48,13 +46,13 @@ const aaHints: Record<string, string> = {
  * @category errors
  * @since 2.0.0
  */
-export class Rejected extends Schema.TaggedError<Rejected>("@namera-ai/sdk/BundlerError/Rejected")("Rejected", {
-  code: Schema.Int,
-  aa: Schema.optionalKey(Schema.String),
-  data: Schema.optionalKey(Schema.TemplateLiteral(["0x", Schema.String])),
-  revert: Schema.optionalKey(Schema.String),
-  detail
-}) {
+export class Rejected extends Data.TaggedError("Rejected")<{
+  readonly code: number
+  readonly aa?: string
+  readonly data?: `0x${string}`
+  readonly revert?: string
+  readonly detail?: string
+}> {
   override get message(): string {
     const what = this.aa === undefined ? `code ${this.code}` : this.aa
     const revert = this.revert === undefined ? "" : ` (${this.revert})`
@@ -75,10 +73,10 @@ export class Rejected extends Schema.TaggedError<Rejected>("@namera-ai/sdk/Bundl
  * @category errors
  * @since 2.0.0
  */
-export class Unsupported extends Schema.TaggedError<Unsupported>("@namera-ai/sdk/BundlerError/Unsupported")(
-  "Unsupported",
-  { method: Schema.String, detail }
-) {
+export class Unsupported extends Data.TaggedError("Unsupported")<{
+  readonly method: string
+  readonly detail?: string
+}> {
   override get message(): string {
     return withDetail(`The bundler does not support ${this.method}`, this.detail)
   }
@@ -97,10 +95,7 @@ export class Unsupported extends Schema.TaggedError<Unsupported>("@namera-ai/sdk
  * @category errors
  * @since 2.0.0
  */
-export class Dropped extends Schema.TaggedError<Dropped>("@namera-ai/sdk/BundlerError/Dropped")("Dropped", {
-  hash: Schema.optionalKey(Schema.TemplateLiteral(["0x", Schema.String])),
-  detail
-}) {
+export class Dropped extends Data.TaggedError("Dropped")<{ readonly hash?: `0x${string}`; readonly detail?: string }> {
   override get message(): string {
     return withDetail("The user operation was not included", this.detail)
   }
@@ -112,26 +107,13 @@ export class Dropped extends Schema.TaggedError<Dropped>("@namera-ai/sdk/Bundler
 }
 
 /**
- * Schema for the reason of a `BundlerError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const BundlerErrorReason: Schema.Union<[typeof Rejected, typeof Unsupported, typeof Dropped]> = Schema.Union([
-  Rejected,
-  Unsupported,
-  Dropped
-])
-
-/**
  * The specific failure behind a `BundlerError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type BundlerErrorReason = typeof BundlerErrorReason.Type
+export type BundlerErrorReason = Rejected | Unsupported | Dropped
 
 /**
  * A failure from a bundler. `reason` says which; `vendor` and `url` say where, when known. `url` never includes
@@ -153,11 +135,11 @@ export type BundlerErrorReason = typeof BundlerErrorReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class BundlerError extends Schema.TaggedError<BundlerError>("@namera-ai/sdk/BundlerError")("BundlerError", {
-  vendor: Schema.optionalKey(Schema.String),
-  url: Schema.optionalKey(Schema.String),
-  reason: BundlerErrorReason
-}) implements NameraError.Fields {
+export class BundlerError extends Data.TaggedError("BundlerError")<{
+  readonly vendor?: string
+  readonly url?: string
+  readonly reason: BundlerErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

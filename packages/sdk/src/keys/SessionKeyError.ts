@@ -5,16 +5,14 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { version } from "../internal/version.ts"
 import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/keys/SessionKeyError" as const
-
-const Address = Schema.TemplateLiteral(["0x", Schema.String])
 
 /**
  * A signer is not a 20-byte hex address, or its checksum is wrong.
@@ -23,11 +21,7 @@ const Address = Schema.TemplateLiteral(["0x", Schema.String])
  * @category errors
  * @since 2.0.0
  */
-export class InvalidAddress
-  extends Schema.TaggedError<InvalidAddress>("@namera-ai/sdk/keys/SessionKeyError/InvalidAddress")("InvalidAddress", {
-    value: Schema.String
-  })
-{
+export class InvalidAddress extends Data.TaggedError("InvalidAddress")<{ readonly value: string }> {
   override get message(): string {
     return `${this.value} is not an address`
   }
@@ -45,12 +39,7 @@ export class InvalidAddress
  * @category errors
  * @since 2.0.0
  */
-export class InvalidPublicKey
-  extends Schema.TaggedError<InvalidPublicKey>("@namera-ai/sdk/keys/SessionKeyError/InvalidPublicKey")(
-    "InvalidPublicKey",
-    { value: Schema.String }
-  )
-{
+export class InvalidPublicKey extends Data.TaggedError("InvalidPublicKey")<{ readonly value: string }> {
   override get message(): string {
     return `${this.value} is not a P-256 public key`
   }
@@ -68,9 +57,7 @@ export class InvalidPublicKey
  * @category errors
  * @since 2.0.0
  */
-export class NoSigners
-  extends Schema.TaggedError<NoSigners>("@namera-ai/sdk/keys/SessionKeyError/NoSigners")("NoSigners", {})
-{
+export class NoSigners extends Data.TaggedError("NoSigners") {
   override get message(): string {
     return "The session key has no signers"
   }
@@ -90,10 +77,7 @@ export class NoSigners
  * @since 2.0.0
  */
 export class TooManySigners
-  extends Schema.TaggedError<TooManySigners>("@namera-ai/sdk/keys/SessionKeyError/TooManySigners")(
-    "TooManySigners",
-    { signers: Schema.Int, max: Schema.Int }
-  )
+  extends Data.TaggedError("TooManySigners")<{ readonly signers: number; readonly max: number }>
 {
   override get message(): string {
     return `The session key has ${this.signers} signers, over the ${this.max} its validator's config holds`
@@ -112,12 +96,7 @@ export class TooManySigners
  * @category errors
  * @since 2.0.0
  */
-export class DuplicateSigner
-  extends Schema.TaggedError<DuplicateSigner>("@namera-ai/sdk/keys/SessionKeyError/DuplicateSigner")(
-    "DuplicateSigner",
-    { signer: Address }
-  )
-{
+export class DuplicateSigner extends Data.TaggedError("DuplicateSigner")<{ readonly signer: `0x${string}` }> {
   override get message(): string {
     return `${this.signer} is a signer more than once`
   }
@@ -136,10 +115,7 @@ export class DuplicateSigner
  * @since 2.0.0
  */
 export class InvalidThreshold
-  extends Schema.TaggedError<InvalidThreshold>("@namera-ai/sdk/keys/SessionKeyError/InvalidThreshold")(
-    "InvalidThreshold",
-    { threshold: Schema.Number, signers: Schema.Int }
-  )
+  extends Data.TaggedError("InvalidThreshold")<{ readonly threshold: number; readonly signers: number }>
 {
   override get message(): string {
     return `A threshold of ${this.threshold} with ${this.signers} signer${this.signers === 1 ? "" : "s"}`
@@ -152,31 +128,19 @@ export class InvalidThreshold
 }
 
 /**
- * Schema for the reason of a `SessionKeyError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const SessionKeyErrorReason: Schema.Union<
-  [
-    typeof InvalidAddress,
-    typeof InvalidPublicKey,
-    typeof NoSigners,
-    typeof TooManySigners,
-    typeof DuplicateSigner,
-    typeof InvalidThreshold
-  ]
-> = Schema.Union([InvalidAddress, InvalidPublicKey, NoSigners, TooManySigners, DuplicateSigner, InvalidThreshold])
-
-/**
  * The specific failure behind a `SessionKeyError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type SessionKeyErrorReason = typeof SessionKeyErrorReason.Type
+export type SessionKeyErrorReason =
+  | InvalidAddress
+  | InvalidPublicKey
+  | NoSigners
+  | TooManySigners
+  | DuplicateSigner
+  | InvalidThreshold
 
 /**
  * An invalid session key description. `reason` says what is wrong.
@@ -204,10 +168,9 @@ export type SessionKeyErrorReason = typeof SessionKeyErrorReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class SessionKeyError extends Schema.TaggedError<SessionKeyError>("@namera-ai/sdk/keys/SessionKeyError")(
-  "SessionKeyError",
-  { reason: SessionKeyErrorReason }
-) implements NameraError.Fields {
+export class SessionKeyError extends Data.TaggedError("SessionKeyError")<{
+  readonly reason: SessionKeyErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

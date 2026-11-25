@@ -6,7 +6,7 @@ import * as Path from "node:path"
 import { expected } from "./smoke.test-utils.ts"
 
 describe("the SDK on Cloudflare Workers (workerd)", () => {
-  it("keeps its clock, errors, Schema encoding and Effect API working", async () => {
+  it("keeps its clock, errors, their JSON and the Effect API working", async () => {
     const { outputFiles } = await esbuild.build({
       entryPoints: [Path.join(import.meta.dirname, "worker.ts")],
       bundle: true,

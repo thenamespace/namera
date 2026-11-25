@@ -5,8 +5,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { redactUrls } from "../internal/redact.ts"
@@ -14,10 +14,6 @@ import { version } from "../internal/version.ts"
 import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/accounts/AccountError" as const
-
-const cause = Schema.optional(Schema.Defect())
-const detail = Schema.optionalKey(Schema.String)
-const Address = Schema.TemplateLiteral(["0x", Schema.String])
 
 const withDetail = (summary: string, detail: string | undefined) =>
   detail === undefined ? summary : `${summary}: ${detail}`
@@ -30,10 +26,11 @@ const withDetail = (summary: string, detail: string | undefined) =>
  * @category errors
  * @since 2.0.0
  */
-export class NotSupported extends Schema.TaggedError<NotSupported>("@namera-ai/sdk/accounts/AccountError/NotSupported")(
-  "NotSupported",
-  { implementation: Schema.optionalKey(Address), detail, cause }
-) {
+export class NotSupported extends Data.TaggedError("NotSupported")<{
+  readonly implementation?: `0x${string}`
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail("The account is not a supported smart account", this.detail)
   }
@@ -52,10 +49,7 @@ export class NotSupported extends Schema.TaggedError<NotSupported>("@namera-ai/s
  * @since 2.0.0
  */
 export class SessionsNotInstalled
-  extends Schema.TaggedError<SessionsNotInstalled>("@namera-ai/sdk/accounts/AccountError/SessionsNotInstalled")(
-    "SessionsNotInstalled",
-    { detail, cause }
-  )
+  extends Data.TaggedError("SessionsNotInstalled")<{ readonly detail?: string; readonly cause?: unknown }>
 {
   override get message(): string {
     return withDetail("Smart Sessions is not installed on the account", this.detail)
@@ -75,10 +69,7 @@ export class SessionsNotInstalled
  * @since 2.0.0
  */
 export class SigningFailed
-  extends Schema.TaggedError<SigningFailed>("@namera-ai/sdk/accounts/AccountError/SigningFailed")(
-    "SigningFailed",
-    { detail, cause }
-  )
+  extends Data.TaggedError("SigningFailed")<{ readonly detail?: string; readonly cause?: unknown }>
 {
   override get message(): string {
     return withDetail("The owner could not sign", this.detail)
@@ -99,10 +90,7 @@ export class SigningFailed
  * @since 2.0.0
  */
 export class InvalidOptions
-  extends Schema.TaggedError<InvalidOptions>("@namera-ai/sdk/accounts/AccountError/InvalidOptions")(
-    "InvalidOptions",
-    { detail, cause }
-  )
+  extends Data.TaggedError("InvalidOptions")<{ readonly detail?: string; readonly cause?: unknown }>
 {
   override get message(): string {
     return withDetail("The account options are invalid", this.detail)
@@ -121,12 +109,12 @@ export class InvalidOptions
  * @category errors
  * @since 2.0.0
  */
-export class ChainMismatch
-  extends Schema.TaggedError<ChainMismatch>("@namera-ai/sdk/accounts/AccountError/ChainMismatch")(
-    "ChainMismatch",
-    { expected: Schema.Int, actual: Schema.Int, detail, cause }
-  )
-{
+export class ChainMismatch extends Data.TaggedError("ChainMismatch")<{
+  readonly expected: number
+  readonly actual: number
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`The account is on chain ${this.expected}, not ${this.actual}`, this.detail)
   }
@@ -144,12 +132,11 @@ export class ChainMismatch
  * @category errors
  * @since 2.0.0
  */
-export class OwnerNotFound
-  extends Schema.TaggedError<OwnerNotFound>("@namera-ai/sdk/accounts/AccountError/OwnerNotFound")(
-    "OwnerNotFound",
-    { owner: Address, detail, cause }
-  )
-{
+export class OwnerNotFound extends Data.TaggedError("OwnerNotFound")<{
+  readonly owner: `0x${string}`
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`${this.owner} is not an owner of the account`, this.detail)
   }
@@ -167,10 +154,11 @@ export class OwnerNotFound
  * @category errors
  * @since 2.0.0
  */
-export class OwnerExists extends Schema.TaggedError<OwnerExists>("@namera-ai/sdk/accounts/AccountError/OwnerExists")(
-  "OwnerExists",
-  { owner: Address, detail, cause }
-) {
+export class OwnerExists extends Data.TaggedError("OwnerExists")<{
+  readonly owner: `0x${string}`
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`${this.owner} already owns the account`, this.detail)
   }
@@ -189,12 +177,12 @@ export class OwnerExists extends Schema.TaggedError<OwnerExists>("@namera-ai/sdk
  * @category errors
  * @since 2.0.0
  */
-export class ThresholdUnreachable
-  extends Schema.TaggedError<ThresholdUnreachable>("@namera-ai/sdk/accounts/AccountError/ThresholdUnreachable")(
-    "ThresholdUnreachable",
-    { threshold: Schema.Int, owners: Schema.Int, detail, cause }
-  )
-{
+export class ThresholdUnreachable extends Data.TaggedError("ThresholdUnreachable")<{
+  readonly threshold: number
+  readonly owners: number
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(
       `A threshold of ${this.threshold} with ${this.owners} owner${this.owners === 1 ? "" : "s"} can never sign`,
@@ -216,12 +204,11 @@ export class ThresholdUnreachable
  * @category errors
  * @since 2.0.0
  */
-export class OperationNotSupported
-  extends Schema.TaggedError<OperationNotSupported>("@namera-ai/sdk/accounts/AccountError/OperationNotSupported")(
-    "OperationNotSupported",
-    { operation: Schema.String, detail, cause }
-  )
-{
+export class OperationNotSupported extends Data.TaggedError("OperationNotSupported")<{
+  readonly operation: string
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`The account can't ${this.operation}`, this.detail)
   }
@@ -233,59 +220,34 @@ export class OperationNotSupported
 }
 
 /**
- * Schema for the reason of an `AccountError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const AccountErrorReason: Schema.Union<
-  [
-    typeof NotSupported,
-    typeof SessionsNotInstalled,
-    typeof SigningFailed,
-    typeof InvalidOptions,
-    typeof ChainMismatch,
-    typeof OwnerNotFound,
-    typeof OwnerExists,
-    typeof ThresholdUnreachable,
-    typeof OperationNotSupported
-  ]
-> = Schema.Union([
-  NotSupported,
-  SessionsNotInstalled,
-  SigningFailed,
-  InvalidOptions,
-  ChainMismatch,
-  OwnerNotFound,
-  OwnerExists,
-  ThresholdUnreachable,
-  OperationNotSupported
-])
-
-/**
  * The specific failure behind an `AccountError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type AccountErrorReason = typeof AccountErrorReason.Type
+export type AccountErrorReason =
+  | NotSupported
+  | SessionsNotInstalled
+  | SigningFailed
+  | InvalidOptions
+  | ChainMismatch
+  | OwnerNotFound
+  | OwnerExists
+  | ThresholdUnreachable
+  | OperationNotSupported
 
 /**
- * Schema for the account an `AccountError` is about: its type (`kernel`, or `unknown` before detection) and address.
+ * The account an `AccountError` is about: its type (`kernel`, or `unknown` before detection) and address.
  *
  * @stability experimental
- * @category schemas
+ * @category models
  * @since 2.0.0
  */
-export const AccountRef: Schema.Struct<{
-  readonly type: Schema.Literals<readonly ["kernel", "unknown"]>
-  readonly address: Schema.optionalKey<typeof Address>
-}> = Schema.Struct({
-  type: Schema.Literals(["kernel", "unknown"]),
-  address: Schema.optionalKey(Address)
-})
+export interface AccountRef {
+  readonly type: "kernel" | "unknown"
+  readonly address?: `0x${string}`
+}
 
 /**
  * A failure building or using a smart account. `account` says which account, `reason` what failed.
@@ -306,10 +268,10 @@ export const AccountRef: Schema.Struct<{
  * @category errors
  * @since 2.0.0
  */
-export class AccountError extends Schema.TaggedError<AccountError>("@namera-ai/sdk/accounts/AccountError")(
-  "AccountError",
-  { account: AccountRef, reason: AccountErrorReason }
-) implements NameraError.Fields {
+export class AccountError extends Data.TaggedError("AccountError")<{
+  readonly account: AccountRef
+  readonly reason: AccountErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 
@@ -366,7 +328,7 @@ export const isAccountError = (u: unknown): u is AccountError => Predicate.hasPr
  * @since 2.0.0
  */
 export interface Options {
-  readonly account: typeof AccountRef.Type
+  readonly account: AccountRef
   readonly detail?: string | undefined
   readonly cause?: unknown
 }

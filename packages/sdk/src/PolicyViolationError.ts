@@ -6,8 +6,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import type { Violation } from "./internal/core/evaluate/violation.ts"
 import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
@@ -15,8 +15,6 @@ import { version } from "./internal/version.ts"
 import type * as NameraError from "./NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/PolicyViolationError" as const
-
-const Hex = Schema.TemplateLiteral(["0x", Schema.String])
 
 const resets = (resetsAt: number | undefined) =>
   resetsAt === undefined ? "" : `, until ${new Date(resetsAt * 1000).toISOString()}`
@@ -29,13 +27,11 @@ const resets = (resetsAt: number | undefined) =>
  * @category errors
  * @since 2.0.0
  */
-export class CallNotAllowed
-  extends Schema.TaggedError<CallNotAllowed>("@namera-ai/sdk/PolicyViolationError/CallNotAllowed")("CallNotAllowed", {
-    call: Schema.Number,
-    to: Hex,
-    selector: Hex
-  })
-{
+export class CallNotAllowed extends Data.TaggedError("CallNotAllowed")<{
+  readonly call: number
+  readonly to: `0x${string}`
+  readonly selector: `0x${string}`
+}> {
   override get message(): string {
     return `Call ${this.call} (${this.selector} on ${this.to}) is not allowed by the session`
   }
@@ -54,12 +50,12 @@ export class CallNotAllowed
  * @category errors
  * @since 2.0.0
  */
-export class ArgumentRejected
-  extends Schema.TaggedError<ArgumentRejected>("@namera-ai/sdk/PolicyViolationError/ArgumentRejected")(
-    "ArgumentRejected",
-    { call: Schema.Number, to: Hex, selector: Hex, policy: Schema.Literals(["arguments", "approvals"]) }
-  )
-{
+export class ArgumentRejected extends Data.TaggedError("ArgumentRejected")<{
+  readonly call: number
+  readonly to: `0x${string}`
+  readonly selector: `0x${string}`
+  readonly policy: "arguments" | "approvals"
+}> {
   override get message(): string {
     return `Call ${this.call} (${this.selector} on ${this.to}) breaks the session's ${
       this.policy === "approvals" ? "approval limits" : "conditions on its arguments"
@@ -79,17 +75,12 @@ export class ArgumentRejected
  * @category errors
  * @since 2.0.0
  */
-export class SpendLimitExceeded
-  extends Schema.TaggedError<SpendLimitExceeded>("@namera-ai/sdk/PolicyViolationError/SpendLimitExceeded")(
-    "SpendLimitExceeded",
-    {
-      token: Hex,
-      attempted: Schema.BigInt,
-      remaining: Schema.BigInt,
-      resetsAt: Schema.optionalKey(Schema.Number)
-    }
-  )
-{
+export class SpendLimitExceeded extends Data.TaggedError("SpendLimitExceeded")<{
+  readonly token: `0x${string}`
+  readonly attempted: bigint
+  readonly remaining: bigint
+  readonly resetsAt?: number
+}> {
   override get message(): string {
     return `Spending ${this.attempted} of ${this.token} exceeds the ${this.remaining} left${resets(this.resetsAt)}`
   }
@@ -107,12 +98,11 @@ export class SpendLimitExceeded
  * @category errors
  * @since 2.0.0
  */
-export class ValueLimitExceeded
-  extends Schema.TaggedError<ValueLimitExceeded>("@namera-ai/sdk/PolicyViolationError/ValueLimitExceeded")(
-    "ValueLimitExceeded",
-    { attempted: Schema.BigInt, remaining: Schema.BigInt, resetsAt: Schema.optionalKey(Schema.Number) }
-  )
-{
+export class ValueLimitExceeded extends Data.TaggedError("ValueLimitExceeded")<{
+  readonly attempted: bigint
+  readonly remaining: bigint
+  readonly resetsAt?: number
+}> {
   override get message(): string {
     return `Sending ${this.attempted} wei exceeds the ${this.remaining} left${resets(this.resetsAt)}`
   }
@@ -131,10 +121,7 @@ export class ValueLimitExceeded
  * @since 2.0.0
  */
 export class RateLimited
-  extends Schema.TaggedError<RateLimited>("@namera-ai/sdk/PolicyViolationError/RateLimited")("RateLimited", {
-    remaining: Schema.BigInt,
-    resetsAt: Schema.optionalKey(Schema.Number)
-  })
+  extends Data.TaggedError("RateLimited")<{ readonly remaining: bigint; readonly resetsAt?: number }>
 {
   override get message(): string {
     return `The session's rate limit allows no more operations${resets(this.resetsAt)}`
@@ -153,12 +140,11 @@ export class RateLimited
  * @category errors
  * @since 2.0.0
  */
-export class GasLimitExceeded
-  extends Schema.TaggedError<GasLimitExceeded>("@namera-ai/sdk/PolicyViolationError/GasLimitExceeded")(
-    "GasLimitExceeded",
-    { attempted: Schema.BigInt, remaining: Schema.BigInt, resetsAt: Schema.optionalKey(Schema.Number) }
-  )
-{
+export class GasLimitExceeded extends Data.TaggedError("GasLimitExceeded")<{
+  readonly attempted: bigint
+  readonly remaining: bigint
+  readonly resetsAt?: number
+}> {
   override get message(): string {
     return `A worst-case gas cost of ${this.attempted} wei exceeds the ${this.remaining} left${resets(this.resetsAt)}`
   }
@@ -176,12 +162,7 @@ export class GasLimitExceeded
  * @category errors
  * @since 2.0.0
  */
-export class SignatureNotAllowed
-  extends Schema.TaggedError<SignatureNotAllowed>("@namera-ai/sdk/PolicyViolationError/SignatureNotAllowed")(
-    "SignatureNotAllowed",
-    { detail: Schema.String }
-  )
-{
+export class SignatureNotAllowed extends Data.TaggedError("SignatureNotAllowed")<{ readonly detail: string }> {
   override get message(): string {
     return `The session may not sign this: ${this.detail}`
   }
@@ -199,12 +180,7 @@ export class SignatureNotAllowed
  * @category errors
  * @since 2.0.0
  */
-export class PaymasterNotAllowed
-  extends Schema.TaggedError<PaymasterNotAllowed>("@namera-ai/sdk/PolicyViolationError/PaymasterNotAllowed")(
-    "PaymasterNotAllowed",
-    {}
-  )
-{
+export class PaymasterNotAllowed extends Data.TaggedError("PaymasterNotAllowed") {
   override get message(): string {
     return "The session does not allow a paymaster"
   }
@@ -222,11 +198,7 @@ export class PaymasterNotAllowed
  * @category errors
  * @since 2.0.0
  */
-export class SessionExpired
-  extends Schema.TaggedError<SessionExpired>("@namera-ai/sdk/PolicyViolationError/SessionExpired")("SessionExpired", {
-    validUntil: Schema.Number
-  })
-{
+export class SessionExpired extends Data.TaggedError("SessionExpired")<{ readonly validUntil: number }> {
   override get message(): string {
     return `The session expired at ${new Date(this.validUntil * 1000).toISOString()}`
   }
@@ -244,12 +216,7 @@ export class SessionExpired
  * @category errors
  * @since 2.0.0
  */
-export class SessionNotYetValid
-  extends Schema.TaggedError<SessionNotYetValid>("@namera-ai/sdk/PolicyViolationError/SessionNotYetValid")(
-    "SessionNotYetValid",
-    { validAfter: Schema.Number }
-  )
-{
+export class SessionNotYetValid extends Data.TaggedError("SessionNotYetValid")<{ readonly validAfter: number }> {
   override get message(): string {
     return `The session starts at ${new Date(this.validAfter * 1000).toISOString()}`
   }
@@ -267,12 +234,7 @@ export class SessionNotYetValid
  * @category errors
  * @since 2.0.0
  */
-export class SessionNotEnabled
-  extends Schema.TaggedError<SessionNotEnabled>("@namera-ai/sdk/PolicyViolationError/SessionNotEnabled")(
-    "SessionNotEnabled",
-    {}
-  )
-{
+export class SessionNotEnabled extends Data.TaggedError("SessionNotEnabled") {
   override get message(): string {
     return "The session is not enabled on this chain yet"
   }
@@ -290,12 +252,7 @@ export class SessionNotEnabled
  * @category errors
  * @since 2.0.0
  */
-export class SessionRevoked
-  extends Schema.TaggedError<SessionRevoked>("@namera-ai/sdk/PolicyViolationError/SessionRevoked")(
-    "SessionRevoked",
-    {}
-  )
-{
+export class SessionRevoked extends Data.TaggedError("SessionRevoked") {
   override get message(): string {
     return "The session was revoked"
   }
@@ -307,50 +264,25 @@ export class SessionRevoked
 }
 
 /**
- * Schema for one reason of a `PolicyViolationError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const PolicyViolationReason: Schema.Union<
-  [
-    typeof CallNotAllowed,
-    typeof ArgumentRejected,
-    typeof SpendLimitExceeded,
-    typeof ValueLimitExceeded,
-    typeof RateLimited,
-    typeof GasLimitExceeded,
-    typeof SignatureNotAllowed,
-    typeof PaymasterNotAllowed,
-    typeof SessionExpired,
-    typeof SessionNotYetValid,
-    typeof SessionNotEnabled,
-    typeof SessionRevoked
-  ]
-> = Schema.Union([
-  CallNotAllowed,
-  ArgumentRejected,
-  SpendLimitExceeded,
-  ValueLimitExceeded,
-  RateLimited,
-  GasLimitExceeded,
-  SignatureNotAllowed,
-  PaymasterNotAllowed,
-  SessionExpired,
-  SessionNotYetValid,
-  SessionNotEnabled,
-  SessionRevoked
-])
-
-/**
  * One reason the session would refuse.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type PolicyViolationReason = typeof PolicyViolationReason.Type
+export type PolicyViolationReason =
+  | CallNotAllowed
+  | ArgumentRejected
+  | SpendLimitExceeded
+  | ValueLimitExceeded
+  | RateLimited
+  | GasLimitExceeded
+  | SignatureNotAllowed
+  | PaymasterNotAllowed
+  | SessionExpired
+  | SessionNotYetValid
+  | SessionNotEnabled
+  | SessionRevoked
 
 /**
  * What the session would refuse, found before signing. `violations` lists every reason; `reason` is the first.
@@ -369,12 +301,9 @@ export type PolicyViolationReason = typeof PolicyViolationReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class PolicyViolationError
-  extends Schema.TaggedError<PolicyViolationError>("@namera-ai/sdk/PolicyViolationError")("PolicyViolationError", {
-    violations: Schema.NonEmptyArray(PolicyViolationReason)
-  })
-  implements NameraError.Fields
-{
+export class PolicyViolationError extends Data.TaggedError("PolicyViolationError")<{
+  readonly violations: readonly [PolicyViolationReason, ...Array<PolicyViolationReason>]
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

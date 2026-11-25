@@ -5,8 +5,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { redactUrl } from "../internal/redact.ts"
@@ -14,8 +14,6 @@ import { version } from "../internal/version.ts"
 import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/PaymasterError" as const
-
-const detail = Schema.optionalKey(Schema.String)
 
 const withDetail = (summary: string, detail: string | undefined) =>
   detail === undefined ? summary : `${summary}: ${detail}`
@@ -28,10 +26,7 @@ const withDetail = (summary: string, detail: string | undefined) =>
  * @category errors
  * @since 2.0.0
  */
-export class Rejected extends Schema.TaggedError<Rejected>("@namera-ai/sdk/PaymasterError/Rejected")("Rejected", {
-  vendor: Schema.String,
-  message: Schema.String
-}) {
+export class Rejected extends Data.TaggedError("Rejected")<{ readonly vendor: string; readonly message: string }> {
   /** What to do about it. */
   get hint(): string {
     return "Read the paymaster's message; check the policy and context in the vendor's dashboard."
@@ -45,11 +40,7 @@ export class Rejected extends Schema.TaggedError<Rejected>("@namera-ai/sdk/Payma
  * @category errors
  * @since 2.0.0
  */
-export class PolicyInactive
-  extends Schema.TaggedError<PolicyInactive>("@namera-ai/sdk/PaymasterError/PolicyInactive")("PolicyInactive", {
-    detail
-  })
-{
+export class PolicyInactive extends Data.TaggedError("PolicyInactive")<{ readonly detail?: string }> {
   override get message(): string {
     return withDetail("The paymaster's sponsorship policy is not active", this.detail)
   }
@@ -68,9 +59,7 @@ export class PolicyInactive
  * @category errors
  * @since 2.0.0
  */
-export class InsufficientBalance extends Schema.TaggedError<InsufficientBalance>(
-  "@namera-ai/sdk/PaymasterError/InsufficientBalance"
-)("InsufficientBalance", { detail }) {
+export class InsufficientBalance extends Data.TaggedError("InsufficientBalance")<{ readonly detail?: string }> {
   override get message(): string {
     return withDetail("The paymaster's sponsor or the paying account has too little balance", this.detail)
   }
@@ -91,10 +80,7 @@ export class InsufficientBalance extends Schema.TaggedError<InsufficientBalance>
  * @since 2.0.0
  */
 export class BundlerBound
-  extends Schema.TaggedError<BundlerBound>("@namera-ai/sdk/PaymasterError/BundlerBound")("BundlerBound", {
-    bundler: Schema.optionalKey(Schema.TemplateLiteral(["0x", Schema.String])),
-    detail
-  })
+  extends Data.TaggedError("BundlerBound")<{ readonly bundler?: `0x${string}`; readonly detail?: string }>
 {
   override get message(): string {
     return withDetail("The paymaster does not accept operations from this bundler", this.detail)
@@ -107,24 +93,13 @@ export class BundlerBound
 }
 
 /**
- * Schema for the reason of a `PaymasterError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const PaymasterErrorReason: Schema.Union<
-  [typeof Rejected, typeof PolicyInactive, typeof InsufficientBalance, typeof BundlerBound]
-> = Schema.Union([Rejected, PolicyInactive, InsufficientBalance, BundlerBound])
-
-/**
  * The specific failure behind a `PaymasterError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type PaymasterErrorReason = typeof PaymasterErrorReason.Type
+export type PaymasterErrorReason = Rejected | PolicyInactive | InsufficientBalance | BundlerBound
 
 /**
  * A failure from a paymaster. `reason` says which; `vendor` and `url` say where, when known. `url` never includes
@@ -145,14 +120,11 @@ export type PaymasterErrorReason = typeof PaymasterErrorReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class PaymasterError
-  extends Schema.TaggedError<PaymasterError>("@namera-ai/sdk/PaymasterError")("PaymasterError", {
-    vendor: Schema.optionalKey(Schema.String),
-    url: Schema.optionalKey(Schema.String),
-    reason: PaymasterErrorReason
-  })
-  implements NameraError.Fields
-{
+export class PaymasterError extends Data.TaggedError("PaymasterError")<{
+  readonly vendor?: string
+  readonly url?: string
+  readonly reason: PaymasterErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

@@ -10,7 +10,7 @@ const reason = (problem: core.Problem): SessionKeyError.SessionKeyErrorReason =>
     case "InvalidPublicKey":
       return new SessionKeyError.InvalidPublicKey({ value: problem.value })
     case "NoSigners":
-      return new SessionKeyError.NoSigners({})
+      return new SessionKeyError.NoSigners()
     case "TooManySigners":
       return new SessionKeyError.TooManySigners({ signers: problem.signers, max: problem.max })
     case "DuplicateSigner":

@@ -4,18 +4,14 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { version } from "../internal/version.ts"
 import type * as NameraError from "../NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/keys/KeystoreError" as const
-
-const cause = Schema.optional(Schema.Defect())
-const detail = Schema.optionalKey(Schema.String)
-const Curve = Schema.Literals(["secp256k1", "ed25519", "p256"])
 
 const withDetail = (summary: string, detail: string | undefined) =>
   detail === undefined ? summary : `${summary}: ${detail}`
@@ -27,11 +23,11 @@ const withDetail = (summary: string, detail: string | undefined) =>
  * @category errors
  * @since 2.0.0
  */
-export class NotFound extends Schema.TaggedError<NotFound>("@namera-ai/sdk/keys/KeystoreError/NotFound")("NotFound", {
-  id: Schema.String,
-  detail,
-  cause
-}) {
+export class NotFound extends Data.TaggedError("NotFound")<{
+  readonly id: string
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`No key ${this.id} in the store`, this.detail)
   }
@@ -49,10 +45,7 @@ export class NotFound extends Schema.TaggedError<NotFound>("@namera-ai/sdk/keys/
  * @category errors
  * @since 2.0.0
  */
-export class Locked extends Schema.TaggedError<Locked>("@namera-ai/sdk/keys/KeystoreError/Locked")("Locked", {
-  detail,
-  cause
-}) {
+export class Locked extends Data.TaggedError("Locked")<{ readonly detail?: string; readonly cause?: unknown }> {
   override get message(): string {
     return withDetail("The store could not decrypt the key", this.detail)
   }
@@ -70,12 +63,12 @@ export class Locked extends Schema.TaggedError<Locked>("@namera-ai/sdk/keys/Keys
  * @category errors
  * @since 2.0.0
  */
-export class CurveUnsupported
-  extends Schema.TaggedError<CurveUnsupported>("@namera-ai/sdk/keys/KeystoreError/CurveUnsupported")(
-    "CurveUnsupported",
-    { curve: Curve, supported: Schema.optionalKey(Schema.Array(Curve)), detail, cause }
-  )
-{
+export class CurveUnsupported extends Data.TaggedError("CurveUnsupported")<{
+  readonly curve: "secp256k1" | "ed25519" | "p256"
+  readonly supported?: ReadonlyArray<"secp256k1" | "ed25519" | "p256">
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`The ${this.curve} curve is not supported here`, this.detail)
   }
@@ -95,12 +88,11 @@ export class CurveUnsupported
  * @category errors
  * @since 2.0.0
  */
-export class NamespaceUnsupported
-  extends Schema.TaggedError<NamespaceUnsupported>("@namera-ai/sdk/keys/KeystoreError/NamespaceUnsupported")(
-    "NamespaceUnsupported",
-    { namespace: Schema.String, detail, cause }
-  )
-{
+export class NamespaceUnsupported extends Data.TaggedError("NamespaceUnsupported")<{
+  readonly namespace: string
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`Addresses on the ${this.namespace} namespace are not supported`, this.detail)
   }
@@ -120,10 +112,7 @@ export class NamespaceUnsupported
  * @since 2.0.0
  */
 export class Unavailable
-  extends Schema.TaggedError<Unavailable>("@namera-ai/sdk/keys/KeystoreError/Unavailable")("Unavailable", {
-    detail,
-    cause
-  })
+  extends Data.TaggedError("Unavailable")<{ readonly detail?: string; readonly cause?: unknown }>
 {
   override get message(): string {
     return withDetail("The key store is not available", this.detail)
@@ -142,13 +131,11 @@ export class Unavailable
  * @category errors
  * @since 2.0.0
  */
-export class InvalidDigest
-  extends Schema.TaggedError<InvalidDigest>("@namera-ai/sdk/keys/KeystoreError/InvalidDigest")("InvalidDigest", {
-    digest: Schema.String,
-    detail,
-    cause
-  })
-{
+export class InvalidDigest extends Data.TaggedError("InvalidDigest")<{
+  readonly digest: string
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail("The digest to sign is not 32 bytes", this.detail)
   }
@@ -160,46 +147,30 @@ export class InvalidDigest
 }
 
 /**
- * Schema for the reason of a `KeystoreError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const KeystoreErrorReason: Schema.Union<
-  [
-    typeof NotFound,
-    typeof Locked,
-    typeof CurveUnsupported,
-    typeof NamespaceUnsupported,
-    typeof InvalidDigest,
-    typeof Unavailable
-  ]
-> = Schema.Union([NotFound, Locked, CurveUnsupported, NamespaceUnsupported, InvalidDigest, Unavailable])
-
-/**
  * The specific failure behind a `KeystoreError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type KeystoreErrorReason = typeof KeystoreErrorReason.Type
+export type KeystoreErrorReason =
+  | NotFound
+  | Locked
+  | CurveUnsupported
+  | NamespaceUnsupported
+  | InvalidDigest
+  | Unavailable
 
 /**
- * Schema for the store a `KeystoreError` is about.
+ * The store a `KeystoreError` is about.
  *
  * @stability experimental
- * @category schemas
+ * @category models
  * @since 2.0.0
  */
-export const StoreRef: Schema.Struct<{
-  readonly type: Schema.Literals<
-    readonly ["memory", "encryptedJson", "file", "osKeychain", "webCrypto", "custom"]
-  >
-}> = Schema.Struct({
-  type: Schema.Literals(["memory", "encryptedJson", "file", "osKeychain", "webCrypto", "custom"])
-})
+export interface StoreRef {
+  readonly type: "memory" | "encryptedJson" | "file" | "osKeychain" | "webCrypto" | "custom"
+}
 
 /**
  * A failure storing, reading or signing with a key. `store` says which store, when one was involved; `reason` what
@@ -221,10 +192,10 @@ export const StoreRef: Schema.Struct<{
  * @category errors
  * @since 2.0.0
  */
-export class KeystoreError extends Schema.TaggedError<KeystoreError>("@namera-ai/sdk/keys/KeystoreError")(
-  "KeystoreError",
-  { store: Schema.optionalKey(StoreRef), reason: KeystoreErrorReason }
-) implements NameraError.Fields {
+export class KeystoreError extends Data.TaggedError("KeystoreError")<{
+  readonly store?: StoreRef
+  readonly reason: KeystoreErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 
@@ -277,7 +248,7 @@ export const isKeystoreError = (u: unknown): u is KeystoreError => Predicate.has
  * @since 2.0.0
  */
 export interface Options {
-  readonly store?: typeof StoreRef.Type | undefined
+  readonly store?: StoreRef | undefined
   readonly detail?: string | undefined
   readonly cause?: unknown
 }

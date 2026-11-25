@@ -5,10 +5,10 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
-import { problemCodes } from "./internal/core/session/problem.ts"
+import type { ProblemCode } from "./internal/core/session/problem.ts"
 import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
 import { version } from "./internal/version.ts"
 import type * as NameraError from "./NameraError.ts"
@@ -20,27 +20,14 @@ const TypeId = "~@namera-ai/sdk/SessionError" as const
  * about, if any.
  *
  * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const Problem: Schema.Struct<{
-  readonly code: Schema.Literals<typeof problemCodes>
-  readonly message: Schema.String
-  readonly policy: Schema.optionalKey<Schema.Number>
-}> = Schema.Struct({
-  code: Schema.Literals(problemCodes),
-  message: Schema.String,
-  policy: Schema.optionalKey(Schema.Number)
-})
-
-/**
- * One problem with a session.
- *
- * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type Problem = typeof Problem.Type
+export interface Problem {
+  readonly code: ProblemCode
+  readonly message: string
+  readonly policy?: number
+}
 
 /**
  * The session can't be built or used as described. `problems` lists everything wrong at once.
@@ -49,10 +36,7 @@ export type Problem = typeof Problem.Type
  * @category errors
  * @since 2.0.0
  */
-export class InvalidSession extends Schema.TaggedError<InvalidSession>("@namera-ai/sdk/SessionError/InvalidSession")(
-  "InvalidSession",
-  { problems: Schema.Array(Problem) }
-) {
+export class InvalidSession extends Data.TaggedError("InvalidSession")<{ readonly problems: ReadonlyArray<Problem> }> {
   override get message(): string {
     const [first, ...rest] = this.problems
     if (first === undefined) return "The session is invalid"
@@ -67,10 +51,10 @@ export class InvalidSession extends Schema.TaggedError<InvalidSession>("@namera-
 }
 
 /**
- * Schema for the reason of a `SessionError`.
+ * The class of a `SessionError`'s reason.
  *
  * @stability experimental
- * @category schemas
+ * @category errors
  * @since 2.0.0
  */
 export const SessionErrorReason: typeof InvalidSession = InvalidSession
@@ -113,9 +97,9 @@ export type SessionErrorReason = InvalidSession
  * @category errors
  * @since 2.0.0
  */
-export class SessionError extends Schema.TaggedError<SessionError>("@namera-ai/sdk/SessionError")("SessionError", {
-  reason: InvalidSession
-}) implements NameraError.Fields {
+export class SessionError extends Data.TaggedError("SessionError")<{
+  readonly reason: InvalidSession
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

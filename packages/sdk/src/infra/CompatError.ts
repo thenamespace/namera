@@ -5,8 +5,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "../internal/nameraError.ts"
 import { version } from "../internal/version.ts"
@@ -23,43 +23,20 @@ const TypeId = "~@namera-ai/sdk/CompatError" as const
  * `SESSION_PERMIT_REQUIRED` and `NOT_ON_CHAIN`; `Compat.matrix()` lists the rule behind each.
  *
  * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const Problem: Schema.Struct<{
-  readonly code: Schema.Literals<
-    readonly [
-      "PAYMASTER_BUNDLER_BOUND",
-      "PAYMASTER_AGENT_UNSUPPORTED",
-      "SPONSORSHIP_BUNDLER_BOUND",
-      "EIP7702_UNSUPPORTED",
-      "SLOW_INCLUSION",
-      "SESSION_PERMIT_REQUIRED",
-      "NOT_ON_CHAIN"
-    ]
-  >
-  readonly message: Schema.String
-}> = Schema.Struct({
-  code: Schema.Literals([
-    "PAYMASTER_BUNDLER_BOUND",
-    "PAYMASTER_AGENT_UNSUPPORTED",
-    "SPONSORSHIP_BUNDLER_BOUND",
-    "EIP7702_UNSUPPORTED",
-    "SLOW_INCLUSION",
-    "SESSION_PERMIT_REQUIRED",
-    "NOT_ON_CHAIN"
-  ]),
-  message: Schema.String
-})
-
-/**
- * One problem with a combination.
- *
- * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type Problem = typeof Problem.Type
+export interface Problem {
+  readonly code:
+    | "PAYMASTER_BUNDLER_BOUND"
+    | "PAYMASTER_AGENT_UNSUPPORTED"
+    | "SPONSORSHIP_BUNDLER_BOUND"
+    | "EIP7702_UNSUPPORTED"
+    | "SLOW_INCLUSION"
+    | "SESSION_PERMIT_REQUIRED"
+    | "NOT_ON_CHAIN"
+  readonly message: string
+}
 
 /**
  * The account, bundler and paymaster can't work together on the chain. `problems` lists every reason.
@@ -68,10 +45,7 @@ export type Problem = typeof Problem.Type
  * @category errors
  * @since 2.0.0
  */
-export class Incompatible extends Schema.TaggedError<Incompatible>("@namera-ai/sdk/CompatError/Incompatible")(
-  "Incompatible",
-  { problems: Schema.Array(Problem) }
-) {
+export class Incompatible extends Data.TaggedError("Incompatible")<{ readonly problems: ReadonlyArray<Problem> }> {
   override get message(): string {
     const [first, ...rest] = this.problems
     if (first === undefined) return "The combination is not supported"
@@ -85,10 +59,10 @@ export class Incompatible extends Schema.TaggedError<Incompatible>("@namera-ai/s
 }
 
 /**
- * Schema for the reason of a `CompatError`.
+ * The class of a `CompatError`'s reason.
  *
  * @stability experimental
- * @category schemas
+ * @category errors
  * @since 2.0.0
  */
 export const CompatErrorReason: typeof Incompatible = Incompatible
@@ -121,9 +95,9 @@ export type CompatErrorReason = Incompatible
  * @category errors
  * @since 2.0.0
  */
-export class CompatError extends Schema.TaggedError<CompatError>("@namera-ai/sdk/CompatError")("CompatError", {
-  reason: Incompatible
-}) implements NameraError.Fields {
+export class CompatError extends Data.TaggedError("CompatError")<{
+  readonly reason: Incompatible
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 

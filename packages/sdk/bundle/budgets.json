@@ -2,71 +2,71 @@
   "fixtures": {
     "agent.ts": {
       "rollup": 82944,
-      "esbuild": 108544
+      "esbuild": 109568
     },
     "owner.ts": {
-      "rollup": 73728,
-      "esbuild": 104448
+      "rollup": 60416,
+      "esbuild": 105472
     },
     "index.ts": {
-      "rollup": 143360,
-      "esbuild": 154624
+      "rollup": 142336,
+      "esbuild": 155648
     },
     "effectIndex.ts": {
       "rollup": 142336,
       "esbuild": 154624
     },
     "Session.ts": {
-      "rollup": 56320,
-      "esbuild": 71680
+      "rollup": 36864,
+      "esbuild": 50176
     },
     "SessionKey.ts": {
-      "rollup": 46080,
-      "esbuild": 49152
+      "rollup": 24576,
+      "esbuild": 26624
     },
     "KernelAccount.ts": {
-      "rollup": 56320,
-      "esbuild": 64512
+      "rollup": 39936,
+      "esbuild": 47104
     },
     "SmartAccount.ts": {
-      "rollup": 61440,
-      "esbuild": 70656
+      "rollup": 45056,
+      "esbuild": 54272
     },
     "Keystore.ts": {
-      "rollup": 76800,
-      "esbuild": 72704
+      "rollup": 53248,
+      "esbuild": 55296
     },
     "BrowserKeystore.ts": {
-      "rollup": 35840,
-      "esbuild": 35840
+      "rollup": 14336,
+      "esbuild": 17408
     },
     "NodeKeystore.ts": {
-      "rollup": 63488,
-      "esbuild": 69632
+      "rollup": 51200,
+      "esbuild": 53248
     },
     "ChainError.ts": {
-      "rollup": 46080,
-      "esbuild": 31744
+      "rollup": 6144,
+      "esbuild": 7168
     },
     "NameraError.ts": {
-      "rollup": 49152,
-      "esbuild": 62464
+      "rollup": 30720,
+      "esbuild": 38912
     },
     "GrantParse.ts": {
       "rollup": 51200,
-      "esbuild": 99328
+      "esbuild": 100352
     },
     "Bundler.ts": {
-      "rollup": 63488,
-      "esbuild": 76800
+      "rollup": 49152,
+      "esbuild": 61440
     },
     "Paymaster.ts": {
-      "rollup": 54272,
-      "esbuild": 72704
+      "rollup": 37888,
+      "esbuild": 56320
     },
     "Compat.ts": {
       "rollup": 23552,
-      "esbuild": 26624
+      "esbuild": 27648
     },
     "Policy.ts": {
       "rollup": 1024,
@@ -76,9 +76,9 @@
   "apps": {
     "viem": "viemApp.ts",
     "budgets": {
-      "agentApp.ts": 86016,
-      "ownerApp.ts": 76800,
-      "indexApp.ts": 145408
+      "agentApp.ts": 84992,
+      "ownerApp.ts": 63488,
+      "indexApp.ts": 146432
     }
   }
 }

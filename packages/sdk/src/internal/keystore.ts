@@ -14,7 +14,7 @@ import { type LocalAccount, localAccount } from "./viem/account.ts"
 const TypeId = "~@namera-ai/sdk/keys/Keystore" as const
 
 /** Which kind of store holds the keys. */
-export type StoreType = typeof KeystoreError.StoreRef.Type["type"]
+export type StoreType = KeystoreError.StoreRef["type"]
 
 /**
  * A key store: where keys live and sign. Private keys never leave it.

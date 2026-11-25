@@ -10,8 +10,8 @@
  * @stability experimental
  * @since 2.0.0
  */
+import * as Data from "effect/Data"
 import * as Predicate from "effect/Predicate"
-import * as Schema from "effect/Schema"
 
 import { TypeId as NameraErrorTypeId } from "./internal/nameraError.ts"
 import { redactUrl, redactUrls } from "./internal/redact.ts"
@@ -19,9 +19,6 @@ import { version } from "./internal/version.ts"
 import type * as NameraError from "./NameraError.ts"
 
 const TypeId = "~@namera-ai/sdk/ChainError" as const
-
-const cause = Schema.optional(Schema.Defect())
-const detail = Schema.optionalKey(Schema.String)
 
 const withDetail = (summary: string, detail: string | undefined) =>
   detail === undefined ? summary : `${summary}: ${detail}`
@@ -33,10 +30,7 @@ const withDetail = (summary: string, detail: string | undefined) =>
  * @category errors
  * @since 2.0.0
  */
-export class Transport extends Schema.TaggedError<Transport>("@namera-ai/sdk/ChainError/Transport")("Transport", {
-  detail,
-  cause
-}) {
+export class Transport extends Data.TaggedError("Transport")<{ readonly detail?: string; readonly cause?: unknown }> {
   override get message(): string {
     return withDetail("The chain could not be reached", this.detail)
   }
@@ -54,11 +48,11 @@ export class Transport extends Schema.TaggedError<Transport>("@namera-ai/sdk/Cha
  * @category errors
  * @since 2.0.0
  */
-export class Rpc extends Schema.TaggedError<Rpc>("@namera-ai/sdk/ChainError/Rpc")("Rpc", {
-  code: Schema.Int,
-  detail,
-  cause
-}) {
+export class Rpc extends Data.TaggedError("Rpc")<{
+  readonly code: number
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail(`The node rejected the request with code ${this.code}`, this.detail)
   }
@@ -76,11 +70,11 @@ export class Rpc extends Schema.TaggedError<Rpc>("@namera-ai/sdk/ChainError/Rpc"
  * @category errors
  * @since 2.0.0
  */
-export class Reverted extends Schema.TaggedError<Reverted>("@namera-ai/sdk/ChainError/Reverted")("Reverted", {
-  data: Schema.optionalKey(Schema.TemplateLiteral(["0x", Schema.String])),
-  detail,
-  cause
-}) {
+export class Reverted extends Data.TaggedError("Reverted")<{
+  readonly data?: `0x${string}`
+  readonly detail?: string
+  readonly cause?: unknown
+}> {
   override get message(): string {
     return withDetail("The call reverted", this.detail)
   }
@@ -98,10 +92,7 @@ export class Reverted extends Schema.TaggedError<Reverted>("@namera-ai/sdk/Chain
  * @category errors
  * @since 2.0.0
  */
-export class Timeout extends Schema.TaggedError<Timeout>("@namera-ai/sdk/ChainError/Timeout")("Timeout", {
-  detail,
-  cause
-}) {
+export class Timeout extends Data.TaggedError("Timeout")<{ readonly detail?: string; readonly cause?: unknown }> {
   override get message(): string {
     return withDetail("The request to the chain timed out", this.detail)
   }
@@ -113,23 +104,13 @@ export class Timeout extends Schema.TaggedError<Timeout>("@namera-ai/sdk/ChainEr
 }
 
 /**
- * Schema for the reason of a `ChainError`.
- *
- * @stability experimental
- * @category schemas
- * @since 2.0.0
- */
-export const ChainErrorReason: Schema.Union<[typeof Transport, typeof Rpc, typeof Reverted, typeof Timeout]> = Schema
-  .Union([Transport, Rpc, Reverted, Timeout])
-
-/**
  * The specific failure behind a `ChainError`.
  *
  * @stability experimental
  * @category models
  * @since 2.0.0
  */
-export type ChainErrorReason = typeof ChainErrorReason.Type
+export type ChainErrorReason = Transport | Rpc | Reverted | Timeout
 
 /**
  * A failure talking to a chain. `reason` says which; `method`, `chainId` and `url` say where, when known. `url` never
@@ -151,12 +132,12 @@ export type ChainErrorReason = typeof ChainErrorReason.Type
  * @category errors
  * @since 2.0.0
  */
-export class ChainError extends Schema.TaggedError<ChainError>("@namera-ai/sdk/ChainError")("ChainError", {
-  method: Schema.optionalKey(Schema.String),
-  chainId: Schema.optionalKey(Schema.Int),
-  url: Schema.optionalKey(Schema.String),
-  reason: ChainErrorReason
-}) implements NameraError.Fields {
+export class ChainError extends Data.TaggedError("ChainError")<{
+  readonly method?: string
+  readonly chainId?: number
+  readonly url?: string
+  readonly reason: ChainErrorReason
+}> implements NameraError.Fields {
   readonly [TypeId] = TypeId
   readonly [NameraErrorTypeId] = NameraErrorTypeId
 
