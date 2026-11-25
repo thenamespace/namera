@@ -1,20 +1,20 @@
 {
   "fixtures": {
     "agent.ts": {
-      "rollup": 82944,
-      "esbuild": 109568
+      "rollup": 69632,
+      "esbuild": 93184
     },
     "owner.ts": {
       "rollup": 60416,
-      "esbuild": 105472
+      "esbuild": 89088
     },
     "index.ts": {
-      "rollup": 142336,
-      "esbuild": 155648
+      "rollup": 130048,
+      "esbuild": 139264
     },
     "effectIndex.ts": {
-      "rollup": 142336,
-      "esbuild": 154624
+      "rollup": 129024,
+      "esbuild": 139264
     },
     "Session.ts": {
       "rollup": 36864,
@@ -53,8 +53,8 @@
       "esbuild": 38912
     },
     "GrantParse.ts": {
-      "rollup": 51200,
-      "esbuild": 100352
+      "rollup": 32768,
+      "esbuild": 83968
     },
     "Bundler.ts": {
       "rollup": 49152,
@@ -76,9 +76,9 @@
   "apps": {
     "viem": "viemApp.ts",
     "budgets": {
-      "agentApp.ts": 84992,
+      "agentApp.ts": 72704,
       "ownerApp.ts": 63488,
-      "indexApp.ts": 146432
+      "indexApp.ts": 133120
     }
   }
 }
