@@ -168,3 +168,34 @@ describe("Grant.describe", () => {
     assert.notInclude(lines, "May do anything.")
   })
 })
+
+describe("Grant.parse on a malformed session key", () => {
+  // Found by mutating grants (017b): each threw a TypeError or an ox error instead of a GrantError, or (a string
+  // threshold) was accepted.
+  const signerOf = (index: number) => {
+    const grant = JSON.parse(Grant.serialize(grantOf(sessions[index]!))) as { session: { signer: object } }
+    return (signer: unknown) => JSON.stringify({ ...grant, session: { ...grant.session, signer } })
+  }
+  const ecdsa = signerOf(0)
+  const passkeys = signerOf(1)
+  const key = { publicKey: passkey, requireUserVerification: true }
+
+  it("refuses it as Malformed", () => {
+    for (
+      const grant of [
+        ecdsa({ type: "ecdsa", threshold: 1, signers: null }),
+        ecdsa({ type: "ecdsa", threshold: 1, signers: [1] }),
+        ecdsa({ type: "ecdsa", threshold: 1, signers: ["0x12"] }),
+        ecdsa({ type: "ecdsa", threshold: "1", signers: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"] }),
+        ecdsa({ type: "ecdsa", signers: ["0x70997970C51812dc3A010C7d01b50e0d17dc79C8"] }),
+        passkeys({ type: "passkey", threshold: 1, passkeys: {} }),
+        passkeys({ type: "passkey", threshold: 1, passkeys: [null] }),
+        passkeys({ type: "passkey", threshold: 1, passkeys: [{ ...key, publicKey: 5 }] }),
+        passkeys({ type: "passkey", threshold: 1, passkeys: [{ ...key, publicKey: "0x12" }] }),
+        passkeys({ type: "passkey", threshold: 1, passkeys: [{ ...key, requireUserVerification: "yes" }] })
+      ]
+    ) {
+      assert.strictEqual(reasonOf(() => Grant.parse(grant))._tag, "Malformed", grant)
+    }
+  })
+})
