@@ -1,7 +1,7 @@
 {
   "name": "@namera-ai/sdk",
   "version": "1.8.0",
-  "description": "Scoped, revocable session keys for agents on Kernel 3.3 smart accounts, built on viem.",
+  "description": "Scoped, revocable session keys for agents on Kernel 3.3 smart accounts, built on viem (unaudited).",
   "keywords": [
     "account-abstraction",
     "agent-wallet",

@@ -1,13 +1,17 @@
 # namera
 
-Scoped, revocable permissions for agent wallets on ERC-7579 smart accounts.
+Scoped, revocable permissions for agent wallets on Kernel 3.3 smart accounts (EntryPoint v0.7, deployed or through
+EIP-7702), on Base, Sepolia, Base Sepolia, Arbitrum Sepolia and OP Sepolia.
+
+> **Unaudited.** Namera v2 is a release candidate (`2.0.0-rc`, npm tag `rc`). Its contracts have had internal security
+> reviews only, no external audit, and there is no bug bounty yet. See [SECURITY.md](./SECURITY.md).
 
 ## Packages
 
-| Package                                                  | Description                                                                          |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [`@namera-ai/contracts`](./packages/contracts/README.md) | ABIs and deployment addresses of Namera's Smart Sessions contracts.                  |
-| [`@namera-ai/sdk`](./packages/sdk/README.md)             | Scoped, revocable session keys for agents on ERC-7579 smart accounts, built on viem. |
+| Package                                                  | Description                                                                            |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [`@namera-ai/contracts`](./packages/contracts/README.md) | ABIs and deployment addresses of Namera's Smart Sessions contracts.                    |
+| [`@namera-ai/sdk`](./packages/sdk/README.md)             | Scoped, revocable session keys for agents on Kernel 3.3 smart accounts, built on viem. |
 
 ## Development
 

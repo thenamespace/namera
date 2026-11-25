@@ -1,7 +1,7 @@
 {
   "name": "@namera-ai/contracts",
   "version": "0.0.0",
-  "description": "ABIs and deployment addresses of Namera's Smart Sessions contracts.",
+  "description": "ABIs and deployment addresses of Namera's Smart Sessions contracts (unaudited).",
   "keywords": [
     "abi",
     "erc-7579",

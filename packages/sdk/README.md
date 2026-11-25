@@ -2,13 +2,34 @@
 
 Scoped, revocable session keys for agents on Kernel 3.3 smart accounts (ERC-7579, EntryPoint 0.7), built on viem.
 
-> Version 2 is a rewrite and is in development. It is not compatible with 1.x, and nothing in it is released yet.
+> **Unaudited release candidate.** Version 2 is a rewrite, not compatible with 1.x. Its contracts have had internal
+> security reviews only, no external audit, and there is no bug bounty yet. Use small amounts. Report
+> vulnerabilities as [`SECURITY.md`](../../SECURITY.md) describes.
 
 ## Install
 
+The release candidate is published under the `rc` tag; `latest` is still 1.x.
+
 ```sh
-pnpm add @namera-ai/sdk viem effect
+pnpm add @namera-ai/sdk@rc viem effect
 ```
+
+## Supported
+
+- **Account:** Kernel 3.3 on EntryPoint v0.7, deployed through its factory or on an EOA through EIP-7702. No other
+  account or EntryPoint.
+- **Chains:** Base (8453); testnets Sepolia (11155111), Base Sepolia (84532), Arbitrum Sepolia (421614) and OP Sepolia
+  (11155420). Namera's contracts are at the same addresses on each, listed in
+  [`@namera-ai/contracts`](../contracts/README.md).
+- **Bundlers:** Pimlico, Alchemy, Candide, ZeroDev and Etherspot through `Bundler.*`, and any other ERC-4337 bundler
+  through `Bundler.from({ url })`. All five sent owner operations and agent ENABLE and USE operations in Namera's live
+  tests on Base Sepolia and Sepolia.
+- **Paymasters:** Pimlico (and its ERC-20 paymaster), Alchemy's Gas Manager, Candide, ZeroDev, Etherspot's Arka, Circle
+  (USDC) and any ERC-7677 paymaster. Some combinations don't work (Pimlico's and ZeroDev's sponsorship only through
+  their own bundlers, Arka for owner operations only, Alchemy's Gas Manager not with Candide's bundler on Base
+  Sepolia); `Compat.check` refuses them before signing. See [Bundlers and paymasters](#bundlers-and-paymasters).
+- **Runtimes:** Node 22.19 and later, Bun, Deno, Cloudflare Workers and browsers; `./node` needs Node, Bun or Deno, and
+  `./browser` a browser.
 
 ## Entry points
 

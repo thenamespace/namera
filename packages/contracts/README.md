@@ -1,14 +1,28 @@
 # @namera-ai/contracts
 
 ABIs, CREATE2 addresses and deployment provenance of Namera's Smart Sessions contracts: `SmartSession`,
-`ECDSASessionValidator` and the policies (`AllowPolicy`, `ArgPolicy`, `ApprovalPolicy`, `SpendPolicy`, `ValuePolicy`,
-`RateLimitPolicy`, `GasPolicy`, `SignaturePolicy`). No runtime dependencies: every export is generated data.
+`ECDSASessionValidator`, `WebAuthnValidator`, `SessionHook` and the policies (`AllowPolicy`, `ArgPolicy`,
+`ApprovalPolicy`, `SpendPolicy`, `ValuePolicy`, `RateLimitPolicy`, `GasPolicy`, `SignaturePolicy`). No runtime
+dependencies: every export is generated data.
+
+> **Unaudited release candidate.** The contracts have had internal security reviews only, no external audit, and
+> there is no bug bounty yet. Report vulnerabilities as [`SECURITY.md`](../../SECURITY.md) describes.
 
 ## Install
 
+The release candidate is published under the `rc` tag.
+
 ```sh
-pnpm add @namera-ai/contracts
+pnpm add @namera-ai/contracts@rc
 ```
+
+## Supported
+
+- **Account:** Kernel 3.3 on EntryPoint v0.7, deployed or through EIP-7702. Smart Sessions and `SessionHook` refuse to
+  install on any other account.
+- **Chains:** every contract is deployed and verified (Sourcify and Etherscan) at the same address on Base (8453),
+  Sepolia (11155111), Base Sepolia (84532), Arbitrum Sepolia (421614) and OP Sepolia (11155420). `deployments` lists
+  exactly these chains.
 
 ## Usage
 
@@ -26,7 +40,7 @@ const removeSessionCall = encodeFunctionData({
 })
 
 SmartSession.v1.address // "0x26e62071c25F003BA503898e0d716Cd98CEF6e80"
-SmartSession.v1.deployments[8453]?.blockNumber // creation block on Base, once deployed there
+SmartSession.v1.deployments[8453]?.blockNumber // its creation block on Base
 ```
 
 Each part of a version is also its own export: `abiV1`, `errorsV1` (the ABI's error fragments), `addressV1` and
