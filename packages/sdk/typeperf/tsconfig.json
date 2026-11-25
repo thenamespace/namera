@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": [
+      "ES2024",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "types": [],
+    "paths": {
+      "@namera-ai/sdk": [
+        "../dist/index.d.ts"
+      ],
+      "@namera-ai/sdk/effect": [
+        "../dist/effect/index.d.ts"
+      ],
+      "@namera-ai/sdk/*": [
+        "../dist/*.d.ts"
+      ],
+      "@namera-ai/sdk/decorators": [
+        "../dist/decorators/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "consumer.ts",
+    "errors.ts",
+    "owner.ts",
+    "agent.ts",
+    "viem.ts",
+    "decorators.ts",
+    "provider.ts"
+  ]
+}

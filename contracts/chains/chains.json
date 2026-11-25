@@ -1,0 +1,384 @@
+{
+  "chains": [
+    {
+      "id": 1,
+      "slug": "ethereum",
+      "name": "Ethereum",
+      "network": "mainnet",
+      "testnet": "sepolia",
+      "rpcEnv": "RPC_ETHEREUM",
+      "publicRpc": "https://ethereum.reth.rs/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 8453,
+      "slug": "base",
+      "name": "Base",
+      "network": "mainnet",
+      "testnet": "base-sepolia",
+      "rpcEnv": "RPC_BASE",
+      "publicRpc": "https://mainnet.base.org",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 42161,
+      "slug": "arbitrum",
+      "name": "Arbitrum One",
+      "network": "mainnet",
+      "testnet": "arbitrum-sepolia",
+      "rpcEnv": "RPC_ARBITRUM",
+      "publicRpc": "https://arb1.arbitrum.io/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 10,
+      "slug": "optimism",
+      "name": "OP Mainnet",
+      "network": "mainnet",
+      "testnet": "optimism-sepolia",
+      "rpcEnv": "RPC_OPTIMISM",
+      "publicRpc": "https://mainnet.optimism.io",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 137,
+      "slug": "polygon",
+      "name": "Polygon",
+      "network": "mainnet",
+      "testnet": "polygon-amoy",
+      "rpcEnv": "RPC_POLYGON",
+      "publicRpc": "https://polygon.drpc.org",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 56,
+      "slug": "bnb",
+      "name": "BNB Smart Chain",
+      "network": "mainnet",
+      "testnet": "bnb-testnet",
+      "rpcEnv": "RPC_BNB",
+      "publicRpc": "https://56.rpc.thirdweb.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 43114,
+      "slug": "avalanche",
+      "name": "Avalanche C-Chain",
+      "network": "mainnet",
+      "testnet": "avalanche-fuji",
+      "rpcEnv": "RPC_AVALANCHE",
+      "publicRpc": "https://api.avax.network/ext/bc/C/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 130,
+      "slug": "unichain",
+      "name": "Unichain",
+      "network": "mainnet",
+      "testnet": "unichain-sepolia",
+      "rpcEnv": "RPC_UNICHAIN",
+      "publicRpc": "https://mainnet.unichain.org/",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 480,
+      "slug": "world-chain",
+      "name": "World Chain",
+      "network": "mainnet",
+      "testnet": "world-chain-sepolia",
+      "rpcEnv": "RPC_WORLD_CHAIN",
+      "publicRpc": "https://worldchain-mainnet.g.alchemy.com/public",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 100,
+      "slug": "gnosis",
+      "name": "Gnosis",
+      "network": "mainnet",
+      "testnet": "gnosis-chiado",
+      "rpcEnv": "RPC_GNOSIS",
+      "publicRpc": "https://rpc.gnosischain.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 146,
+      "slug": "sonic",
+      "name": "Sonic",
+      "network": "mainnet",
+      "testnet": "sonic-testnet",
+      "rpcEnv": "RPC_SONIC",
+      "publicRpc": "https://rpc.soniclabs.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 143,
+      "slug": "monad",
+      "name": "Monad",
+      "network": "mainnet",
+      "testnet": "monad-testnet",
+      "rpcEnv": "RPC_MONAD",
+      "publicRpc": "https://rpc3.monad.xyz",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 999,
+      "slug": "hyperevm",
+      "name": "HyperEVM",
+      "network": "mainnet",
+      "testnet": "hyperevm-testnet",
+      "rpcEnv": "RPC_HYPEREVM",
+      "publicRpc": "https://rpc.hyperliquid.xyz/evm",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 9745,
+      "slug": "plasma",
+      "name": "Plasma",
+      "network": "mainnet",
+      "testnet": "plasma-testnet",
+      "rpcEnv": "RPC_PLASMA",
+      "publicRpc": "https://rpc.plasma.to",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 4663,
+      "slug": "robinhood",
+      "name": "Robinhood Chain",
+      "network": "mainnet",
+      "testnet": "robinhood-testnet",
+      "rpcEnv": "RPC_ROBINHOOD",
+      "publicRpc": "https://rpc.mainnet.chain.robinhood.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 5042,
+      "slug": "arc",
+      "name": "Arc",
+      "network": "mainnet",
+      "testnet": "arc-testnet",
+      "rpcEnv": "RPC_ARC",
+      "publicRpc": "https://rpc.mainnet.arc.io",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 4217,
+      "slug": "tempo",
+      "name": "Tempo",
+      "network": "mainnet",
+      "testnet": "tempo-testnet",
+      "rpcEnv": "RPC_TEMPO",
+      "publicRpc": "https://rpc.tempo.xyz",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 4326,
+      "slug": "megaeth",
+      "name": "MegaETH",
+      "network": "mainnet",
+      "testnet": "megaeth-testnet",
+      "rpcEnv": "RPC_MEGAETH",
+      "publicRpc": "https://mainnet.megaeth.com/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 57073,
+      "slug": "ink",
+      "name": "Ink",
+      "network": "mainnet",
+      "testnet": "ink-sepolia",
+      "rpcEnv": "RPC_INK",
+      "publicRpc": "https://rpc-gel.inkonchain.com",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 59144,
+      "slug": "linea",
+      "name": "Linea",
+      "network": "mainnet",
+      "testnet": "linea-sepolia",
+      "rpcEnv": "RPC_LINEA",
+      "publicRpc": "https://rpc.linea.build",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 11155111,
+      "slug": "sepolia",
+      "name": "Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_SEPOLIA",
+      "publicRpc": "https://11155111.rpc.thirdweb.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 84532,
+      "slug": "base-sepolia",
+      "name": "Base Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_BASE_SEPOLIA",
+      "publicRpc": "https://sepolia.base.org",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 421614,
+      "slug": "arbitrum-sepolia",
+      "name": "Arbitrum Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_ARBITRUM_SEPOLIA",
+      "publicRpc": "https://sepolia-rollup.arbitrum.io/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 11155420,
+      "slug": "optimism-sepolia",
+      "name": "OP Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_OPTIMISM_SEPOLIA",
+      "publicRpc": "https://sepolia.optimism.io",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 80002,
+      "slug": "polygon-amoy",
+      "name": "Polygon Amoy",
+      "network": "testnet",
+      "rpcEnv": "RPC_POLYGON_AMOY",
+      "publicRpc": "https://polygon-amoy-bor-rpc.publicnode.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 97,
+      "slug": "bnb-testnet",
+      "name": "BNB Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_BNB_TESTNET",
+      "publicRpc": "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 43113,
+      "slug": "avalanche-fuji",
+      "name": "Avalanche Fuji",
+      "network": "testnet",
+      "rpcEnv": "RPC_AVALANCHE_FUJI",
+      "publicRpc": "https://api.avax-test.network/ext/bc/C/rpc",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 1301,
+      "slug": "unichain-sepolia",
+      "name": "Unichain Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_UNICHAIN_SEPOLIA",
+      "publicRpc": "https://sepolia.unichain.org",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 4801,
+      "slug": "world-chain-sepolia",
+      "name": "World Chain Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_WORLD_CHAIN_SEPOLIA",
+      "publicRpc": "https://worldchain-sepolia.g.alchemy.com/public",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 10200,
+      "slug": "gnosis-chiado",
+      "name": "Gnosis Chiado",
+      "network": "testnet",
+      "rpcEnv": "RPC_GNOSIS_CHIADO",
+      "publicRpc": "https://rpc.chiadochain.net",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 14601,
+      "slug": "sonic-testnet",
+      "name": "Sonic Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_SONIC_TESTNET",
+      "publicRpc": "https://rpc.testnet.soniclabs.com",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 10143,
+      "slug": "monad-testnet",
+      "name": "Monad Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_MONAD_TESTNET",
+      "publicRpc": "https://testnet-rpc.monad.xyz",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 998,
+      "slug": "hyperevm-testnet",
+      "name": "HyperEVM Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_HYPEREVM_TESTNET",
+      "publicRpc": "https://rpc.hyperliquid-testnet.xyz/evm",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 9746,
+      "slug": "plasma-testnet",
+      "name": "Plasma Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_PLASMA_TESTNET",
+      "publicRpc": "https://testnet-rpc.plasma.to",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 46630,
+      "slug": "robinhood-testnet",
+      "name": "Robinhood Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_ROBINHOOD_TESTNET",
+      "publicRpc": "https://rpc.testnet.chain.robinhood.com",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 5042002,
+      "slug": "arc-testnet",
+      "name": "Arc Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_ARC_TESTNET",
+      "publicRpc": "https://rpc.testnet.arc.io",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 42431,
+      "slug": "tempo-testnet",
+      "name": "Tempo Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_TEMPO_TESTNET",
+      "publicRpc": "https://rpc.moderato.tempo.xyz",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 6343,
+      "slug": "megaeth-testnet",
+      "name": "MegaETH Testnet",
+      "network": "testnet",
+      "rpcEnv": "RPC_MEGAETH_TESTNET",
+      "publicRpc": "https://carrot.megaeth.com/rpc",
+      "verifiers": ["sourcify", "etherscan"]
+    },
+    {
+      "id": 763373,
+      "slug": "ink-sepolia",
+      "name": "Ink Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_INK_SEPOLIA",
+      "publicRpc": "https://rpc-gel-sepolia.inkonchain.com",
+      "verifiers": ["sourcify"]
+    },
+    {
+      "id": 59141,
+      "slug": "linea-sepolia",
+      "name": "Linea Sepolia",
+      "network": "testnet",
+      "rpcEnv": "RPC_LINEA_SEPOLIA",
+      "publicRpc": "https://rpc.sepolia.linea.build",
+      "verifiers": ["sourcify", "etherscan"]
+    }
+  ]
+}

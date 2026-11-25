@@ -1,0 +1,88 @@
+# Compiler settings determine the bytecode and therefore every CREATE2 address. They live only in
+# [profile.default] and no other profile may override them. The IR pipeline at 200 runs: it leaves
+# SmartSession ~1.5 KB under the 24,576-byte limit for the internal review's fixes (legacy left 13 bytes),
+# and USE-mode validateUserOp costs ~10% less (ENABLE ~1% more), measured on the real-account suite. More runs
+# make SmartSession too large and save the other contracts 0.5–2%, except WebAuthnValidator: its Solidity P-256
+# verifier (chains without the precompile) costs ~31% less at 10,000 runs, so it alone compiles with them. Only its
+# own tests import it, so no file needs both profiles. After changing profiles, build with --force: the cache keeps
+# old artifacts.
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["dependencies"]
+solc_version = "0.8.38"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+bytecode_hash = "none"
+cbor_metadata = false
+auto_detect_remappings = false
+ignored_warnings_from = ["dependencies"]
+gas_reports = ["*"]
+additional_compiler_profiles = [{ name = "webauthn", via_ir = true, optimizer_runs = 10_000 }]
+compilation_restrictions = [
+  { paths = "src/validators/WebAuthnValidator.sol", min_optimizer_runs = 10_000 },
+]
+fs_permissions = [
+  { access = "read", path = "./chains" },
+  { access = "read", path = "./test/fixtures" },
+  { access = "read", path = "./deployments" },
+  { access = "read", path = "./out" },
+  { access = "read", path = "./script/config" },
+]
+
+[profile.default.fuzz]
+runs = 256
+
+[profile.default.invariant]
+runs = 256
+depth = 100
+
+[profile.ci.fuzz]
+runs = 10_000
+
+[profile.ci.invariant]
+runs = 1_000
+depth = 200
+
+[profile.deep.fuzz]
+runs = 100_000
+
+[profile.deep.invariant]
+runs = 10_000
+depth = 500
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "thousands"
+sort_imports = true
+ignore = ["dependencies/**"]
+
+[lint]
+severity = ["high", "medium", "low"]
+# Smart Sessions checks every policy in a loop and must revert on the first violation; both lints describe
+# that design.
+exclude_lints = ["calls-loop", "require-revert-in-loop"]
+ignore = ["dependencies/**"]
+lint_on_build = false
+
+[soldeer]
+remappings_generate = true
+remappings_regenerate = false
+remappings_version = false
+remappings_location = "txt"
+recursive_deps = false
+
+[dependencies]
+forge-std = "1.17.0"
+solady = "0.1.26"
+eth-infinitism-account-abstraction = "0.7"
+"@openzeppelin-contracts" = "5.6.1"

@@ -1,4 +1,0 @@
-{
-  "title": "Authentication",
-  "pages": ["login", "logout", "auth-status"]
-}

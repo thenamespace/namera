@@ -1,0 +1,52 @@
+{
+  "contracts": [
+    {
+      "artifact": "SmartSession.sol:SmartSession",
+      "label": "namera.smart-session.v1"
+    },
+    {
+      "artifact": "ECDSASessionValidator.sol:ECDSASessionValidator",
+      "label": "namera.ecdsa-session-validator.v1"
+    },
+    {
+      "artifact": "WebAuthnValidator.sol:WebAuthnValidator",
+      "label": "namera.webauthn-validator.v1"
+    },
+    {
+      "artifact": "SessionHook.sol:SessionHook",
+      "label": "namera.session-hook.v1"
+    },
+    {
+      "artifact": "AllowPolicy.sol:AllowPolicy",
+      "label": "namera.allow-policy.v1"
+    },
+    {
+      "artifact": "ArgPolicy.sol:ArgPolicy",
+      "label": "namera.arg-policy.v1"
+    },
+    {
+      "artifact": "SpendPolicy.sol:SpendPolicy",
+      "label": "namera.spend-policy.v1"
+    },
+    {
+      "artifact": "ValuePolicy.sol:ValuePolicy",
+      "label": "namera.value-policy.v1"
+    },
+    {
+      "artifact": "RateLimitPolicy.sol:RateLimitPolicy",
+      "label": "namera.rate-limit-policy.v1"
+    },
+    {
+      "artifact": "GasPolicy.sol:GasPolicy",
+      "label": "namera.gas-policy.v1"
+    },
+    {
+      "artifact": "ApprovalPolicy.sol:ApprovalPolicy",
+      "label": "namera.approval-policy.v1"
+    },
+    {
+      "artifact": "SignaturePolicy.sol:SignaturePolicy",
+      "label": "namera.signature-policy.v1"
+    }
+  ]
+}

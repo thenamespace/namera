@@ -1,101 +1,146 @@
 {
   "name": "@namera-ai/sdk",
-  "version": "1.8.0",
-  "description": "Browser and Node.js SDK for Namera's programmable wallet API.",
+  "version": "2.0.0-rc.0",
+  "description": "Scoped, revocable session keys for agents on Kernel 3.3 smart accounts, built on viem (unaudited).",
   "keywords": [
-    "ethereum",
-    "namera",
-    "sdk",
+    "account-abstraction",
+    "agent-wallet",
+    "erc-4337",
+    "erc-7579",
+    "permissions",
     "session-keys",
-    "smart-account",
-    "typescript",
-    "wallet"
+    "smart-accounts",
+    "smart-sessions",
+    "viem"
   ],
-  "homepage": "https://namera.ai",
+  "homepage": "https://github.com/thenamespace/namera/tree/main/packages/sdk#readme",
   "bugs": {
     "url": "https://github.com/thenamespace/namera/issues"
   },
   "license": "Apache-2.0",
+  "author": "Vedant Chainani (https://github.com/envoy1084)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thenamespace/namera.git",
     "directory": "packages/sdk"
   },
   "files": [
-    "dist"
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "CHANGELOG.md"
   ],
   "type": "module",
-  "sideEffects": false,
-  "imports": {
-    "#/*": "./src/*.ts"
-  },
+  "sideEffects": [],
   "exports": {
-    ".": {
-      "namera-source": {
-        "node": "./src/index.node.ts",
-        "default": "./src/index.ts"
-      },
-      "node": "./dist/index.node.js",
-      "default": "./dist/index.js"
-    },
-    "./node": {
-      "browser": null,
-      "namera-source": {
-        "node": "./src/node/index.ts",
-        "default": "./src/node/index.ts"
-      },
-      "node": "./dist/node.js",
-      "default": "./dist/node.js"
-    },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./accounts": "./src/accounts/index.ts",
+    "./browser": "./src/browser/index.ts",
+    "./decorators": "./src/decorators/index.ts",
+    "./effect": "./src/effect/index.ts",
+    "./effect/accounts": "./src/effect/accounts/index.ts",
+    "./effect/browser": "./src/effect/browser/index.ts",
+    "./effect/infra": "./src/effect/infra/index.ts",
+    "./effect/keys": "./src/effect/keys/index.ts",
+    "./effect/node": "./src/effect/node/index.ts",
+    "./infra": "./src/infra/index.ts",
+    "./keys": "./src/keys/index.ts",
+    "./node": "./src/node/index.ts",
+    "./otel": "./src/otel/index.ts",
+    "./*": "./src/*.ts",
+    "./accounts/internal/*": null,
+    "./browser/internal/*": null,
+    "./infra/internal/*": null,
+    "./internal/*": null,
+    "./keys/internal/*": null,
+    "./node/internal/*": null,
+    "./testing/internal/*": null,
+    "./index": null,
+    "./*/index": null
   },
   "publishConfig": {
-    "imports": {
-      "#/*": "./dist/*.js"
-    },
-    "exports": {
-      ".": {
-        "node": "./dist/index.node.js",
-        "default": "./dist/index.js"
-      },
-      "./node": {
-        "browser": null,
-        "node": "./dist/node.js",
-        "default": "./dist/node.js"
-      },
-      "./package.json": "./package.json"
-    },
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./accounts": "./dist/accounts/index.js",
+      "./browser": "./dist/browser/index.js",
+      "./decorators": "./dist/decorators/index.js",
+      "./effect": "./dist/effect/index.js",
+      "./effect/accounts": "./dist/effect/accounts/index.js",
+      "./effect/browser": "./dist/effect/browser/index.js",
+      "./effect/infra": "./dist/effect/infra/index.js",
+      "./effect/keys": "./dist/effect/keys/index.js",
+      "./effect/node": "./dist/effect/node/index.js",
+      "./infra": "./dist/infra/index.js",
+      "./keys": "./dist/keys/index.js",
+      "./node": "./dist/node/index.js",
+      "./otel": "./dist/otel/index.js",
+      "./*": "./dist/*.js",
+      "./accounts/internal/*": null,
+      "./browser/internal/*": null,
+      "./infra/internal/*": null,
+      "./internal/*": null,
+      "./keys/internal/*": null,
+      "./node/internal/*": null,
+      "./testing/internal/*": null,
+      "./index": null,
+      "./*/index": null
+    }
   },
   "scripts": {
-    "build": "tsdown --config tsdown.config.ts",
-    "format": "oxfmt . --write --no-error-on-unmatched-pattern",
-    "format:check": "oxfmt . --check --no-error-on-unmatched-pattern",
-    "lint": "oxlint . --no-error-on-unmatched-pattern",
-    "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
-    "prepack": "pnpm run build",
-    "test": "NODE_OPTIONS=--conditions=namera-source vitest run",
-    "test:watch": "NODE_OPTIONS=--conditions=namera-source vitest",
-    "typecheck:test": "tsc -p tsconfig.test.json --pretty false",
-    "typecheck": "tsc -p tsconfig.json --pretty false"
+    "build": "tsc -b tsconfig.json && babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "codegen": "cd ../.. && node scripts/bin.ts codegen --dir packages/sdk",
+    "mutation": "stryker run"
+  },
+  "peerDependencies": {
+    "@effect/opentelemetry": "^4.1.5",
+    "@napi-rs/keyring": "^2.1.2",
+    "@opentelemetry/api": "^1.9.0",
+    "effect": "^4.1.5",
+    "viem": "^2.58.4"
   },
   "dependencies": {
-    "@alchemy/smart-accounts": "catalog:",
-    "@namera-ai/api": "workspace:*",
-    "@namera-ai/protocol": "workspace:*",
-    "@napi-rs/keyring": "catalog:",
-    "effect": "catalog:",
-    "viem": "catalog:"
+    "@namera-ai/contracts": "workspace:^",
+    "ox": "0.14.67"
   },
   "devDependencies": {
+    "@effect/opentelemetry": "4.1.5",
+    "@effect/vitest": "catalog:",
+    "@namera-ai/devnet": "workspace:*",
+    "@napi-rs/keyring": "2.1.2",
+    "@opentelemetry/api": "1.10.0",
+    "@opentelemetry/context-async-hooks": "3.1.1",
+    "@opentelemetry/sdk-trace": "3.1.1",
+    "@opentelemetry/semantic-conventions": "1.45.0",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "@types/node": "catalog:",
-    "klarity": "catalog:",
-    "tsdown": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "@wagmi/core": "3.6.9",
+    "effect": "catalog:",
+    "esbuild": "0.28.2",
+    "miniflare": "4.20260730.0",
+    "permissionless": "0.5.2",
+    "tstyche": "7.2.5",
+    "viem": "catalog:",
+    "zod": "4.6.6"
   },
   "engines": {
-    "node": ">=24.14.0"
+    "node": ">=22.19.0"
+  },
+  "peerDependenciesMeta": {
+    "@effect/opentelemetry": {
+      "optional": true
+    },
+    "@napi-rs/keyring": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    }
   }
 }

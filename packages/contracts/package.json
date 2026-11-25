@@ -1,0 +1,64 @@
+{
+  "name": "@namera-ai/contracts",
+  "version": "2.0.0-rc.0",
+  "description": "ABIs and deployment addresses of Namera's Smart Sessions contracts (unaudited).",
+  "keywords": [
+    "abi",
+    "erc-7579",
+    "session-keys",
+    "smart-sessions",
+    "solidity",
+    "viem"
+  ],
+  "homepage": "https://github.com/thenamespace/namera/tree/main/packages/contracts#readme",
+  "bugs": {
+    "url": "https://github.com/thenamespace/namera/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Vedant Chainani (https://github.com/envoy1084)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenamespace/namera.git",
+    "directory": "packages/contracts"
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null,
+    "./index": null
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./internal/*": null,
+      "./index": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && babel dist --plugins annotate-pure-calls --out-dir dist --source-maps"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "effect": "catalog:",
+    "tstyche": "7.2.5",
+    "viem": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

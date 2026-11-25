@@ -1,0 +1,15 @@
+{
+  "consumers": {
+    "consumer.ts": 4383,
+    "errors.ts": 1513
+  },
+  "apps": {
+    "viem": "viem.ts",
+    "baselines": {
+      "owner.ts": 2450,
+      "agent.ts": 2120,
+      "decorators.ts": 591,
+      "provider.ts": 1460
+    }
+  }
+}

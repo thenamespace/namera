@@ -1,0 +1,22 @@
+{
+  "name": "scripts",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "dependencies": {
+    "@effect/platform-node": "4.1.5",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "effect": "catalog:",
+    "esbuild": "0.28.2",
+    "glob": "14.0.6",
+    "madge": "8.0.0",
+    "rollup": "4.68.8",
+    "rollup-plugin-esbuild": "6.2.1",
+    "viem": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@oxlint/plugins": "1.94.0",
+    "@types/madge": "5.0.3"
+  }
+}

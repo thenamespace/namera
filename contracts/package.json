@@ -1,0 +1,25 @@
+{
+  "name": "@namera-ai/contracts-sol",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Namera's Solidity contracts (Foundry). Published ABIs and addresses ship separately.",
+  "type": "module",
+  "scripts": {
+    "postinstall": "forge soldeer install",
+    "build": "forge build",
+    "test": "forge test",
+    "lint": "forge fmt --check && forge lint",
+    "format": "forge fmt",
+    "analyze": "forge clean && slither .",
+    "symbolic": "halmos --match-contract Symbolic",
+    "coverage": "forge coverage --no-match-coverage '(test|script|dependencies)/' --report summary --report lcov",
+    "coverage:html": "pnpm coverage && genhtml lcov.info --branch-coverage --ignore-errors inconsistent,corrupt --output-directory coverage --quiet",
+    "mutation": "forge test --mutate $(find src -name '*.sol') --match-path 'test/{unit,integration}/**' --json > mutation-report.json",
+    "snapshot": "forge snapshot",
+    "fixtures:accounts": "node --env-file-if-exists=.env script/fixtures/fetch-account-code.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

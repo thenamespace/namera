@@ -1,211 +1,316 @@
-# -------------------------------------
-# OS / Editor Junk
-# -------------------------------------
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# Ignores generated, local and secret files for every language this repository may grow into.
+# Lockfiles (pnpm-lock.yaml, Cargo.lock, uv.lock, go.sum, …) and tool configs are committed.
 
-# VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/launch.json
-.history
-
-# JetBrains
-.idea/
-*.iml
-
-# Backup / Temp
-*.swp
-*.swo
-*~
-*.bak
-*.tmp
-*.temp
-
-# -------------------------------------
-# Node.js / TypeScript
-# -------------------------------------
-
-# Dependencies
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
-.pnp/
-.pnp.js
+.pnpm-store/
+.pnp.*
+.yarn/*
+!.yarn/patches/
+!.yarn/plugins/
+!.yarn/releases/
+bower_components/
+jspm_packages/
+web_modules/
 
-# Environment
+# ── JavaScript and TypeScript builds ──────────────────────────────────────────
+dist/
+build/
+out/
+lib-cov/
+*.tsbuildinfo
+*.tgz
+next-env.d.ts
+
+# ── Repository tooling output ─────────────────────────────────────────────────
+# jsdocs model, bundle-size reports, local release packs, scratchpad probes.
+.data/
+stats.txt
+tmp/
+scratchpad/*
+!scratchpad/index.ts
+!scratchpad/package.json
+!scratchpad/tsconfig.json
+
+# ── Frameworks ────────────────────────────────────────────────────────────────
+# Next.js
+.next/
+# TanStack Start / Router, Nitro, Vinxi, Vite
+.output/
+.nitro/
+.vinxi/
+.tanstack/
+.vite/
+vite.config.*.timestamp-*
+vitest.config.*.timestamp-*
+# Astro, Svelte, Nuxt, Remix / React Router, Solid, Qwik
+.astro/
+.svelte-kit/
+.nuxt/
+.react-router/
+.solid/
+.vercel_build_output/
+# Docs generators (Fumadocs, Docusaurus, VitePress, Mintlify)
+.source/
+.docusaurus/
+**/.vitepress/cache/
+**/.vitepress/dist/
+.mintlify/
+# Expo / React Native
+.expo/
+.expo-shared/
+web-build/
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+*.jks
+*.keystore
+!debug.keystore
+*.p8
+*.mobileprovision
+# Storybook
+storybook-static/
+# Deploy targets
+.vercel/
+.netlify/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+.serverless/
+.sst/
+.amplify/
+.firebase/
+.railway/
+.fly/
+
+# ── Tool caches ───────────────────────────────────────────────────────────────
+.turbo/
+.nx/
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.swc/
+.esbuild/
+.rollup.cache/
+.webpack/
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# ── Tests and reports ─────────────────────────────────────────────────────────
+# Vitest browser-mode screenshot baselines (__screenshots__/) are committed; only failures are not.
+coverage/
+.nyc_output/
+.stryker-tmp/
+stryker-setup-*.js
+reports/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+**/__screenshots__/**/*-actual.*
+**/__screenshots__/**/*-diff.*
+junit.xml
+.vitest-reports/
+
+# ── Rust ──────────────────────────────────────────────────────────────────────
+target/
+**/*.rs.bk
+*.pdb
+.cargo/credentials*
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+.env/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.pytype/
+.pyre/
+.tox/
+.nox/
+.hypothesis/
+.ipynb_checkpoints/
+htmlcov/
+.coverage
+.coverage.*
+.python-version.local
+
+# ── Go ────────────────────────────────────────────────────────────────────────
+/bin/
+*.test
+*.out
+go.work
+go.work.sum
+
+# ── JVM: Java, Kotlin, Gradle, Maven ──────────────────────────────────────────
+.gradle/
+.kotlin/
+*.class
+hs_err_pid*
+replay_pid*
+local.properties
+
+# ── Swift and Xcode ───────────────────────────────────────────────────────────
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.swiftpm/
+.build/
+
+# ── C, C++ and Zig ────────────────────────────────────────────────────────────
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+.zig-cache/
+zig-cache/
+zig-out/
+
+# ── Dart and Flutter ──────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# ── Ruby ──────────────────────────────────────────────────────────────────────
+.bundle/
+vendor/bundle/
+
+# ── Solidity: Foundry and Hardhat ─────────────────────────────────────────────
+# Foundry and Hardhat projects live in their own folder (for example contracts/).
+**/contracts/cache/
+**/contracts/out/
+**/contracts/artifacts/
+**/contracts/broadcast/*/31337/
+typechain-types/
+# This repository's Foundry project: Soldeer dependencies, every broadcast (deployments are
+# recorded in contracts/deployments/), coverage and mutation reports.
+contracts/broadcast/
+contracts/dependencies/
+contracts/lcov.info
+contracts/mutation-report.json
+contracts/gas-report.*
+
+# ── Containers, infrastructure and Nix ────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.pulumi/
+docker-compose.override.yml
+compose.override.yml
+.direnv/
+/result
+/result-*
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+pgdata/
+dump.rdb
+
+# ── Environment and secrets ───────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
-!/apps/server/.env.prod.example
-
-# Local development data
-.data/
-/admin-scripts/
-
-# Generated/uploadable assets
-/assets/
-
-# TypeScript
-*.tsbuildinfo
-
-# Build Output
-dist/
-build/
-.next/
-.output/
-.nitro/
-out/
-
-# Lint / Type Check
-eslintcache
-.cache/
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log
-
-# Turbo
-.turbo/
-
-# Testing & Coverage
-coverage/
-.vitest/
-test-results/
-*.log
-.jest/
-.nyc_output/
-.tap-snapshots/
-
-# Benchmarking
-benchmarks/results/
-artillery-report.json
-*.bench.*
-
-# Package Managers
-yarn-error.log
-lerna-debug.log
-pnpm-debug.log
-
-# Husky
-.husky/_
-
-# next.js
-next-env.d.ts
-
-# Vercel
-.vercel/
-
-# tanstack
-.tanstack
-/apps/web/.source/
-
-# -------------------------------------
-# Rust
-# -------------------------------------
-
-# Build Output
-target/
-
-# Dependencies / Package
-Cargo.toml.bk
-
-# Debugging
-*.profraw
-*.dSYM/
-*.ll
-*.bc
-*.exe
-*.out
-*.pyc
-
-# Benchmark / Coverage
-flamegraph.svg
-*.bench
-*.bench.*
-htmlcov/
-grcov_report/
-tarpaulin-report.html
-tarpaulin-report.*
-lcov.info
-
-# Docs
-book/
-*.rs.bk
-
-
-# -------------------------------------
-# Git / Misc
-# -------------------------------------
+!.env.*.example
+.envrc.local
 *.pem
 *.key
 *.crt
+*.p12
+*.pfx
+*.gpg
+id_rsa*
+id_ed25519*
+.npmrc.local
+gha-creds-*.json
+service-account*.json
+credentials.json
+.secrets/
 
-# Git Hooks
-.githooks/
-pre-commit.log
+# ── Local working state ───────────────────────────────────────────────────────
+research/
+scratch/
+temp/
+*.local
+*.local.*
 
-# Binaries
-*.dll
-*.so
-*.dylib
-*.exe
-*.bin
-*.o
-*.obj
-*.rlib
-*.a
-*.lib
+# ── Agents ────────────────────────────────────────────────────────────────────
+# Shared instructions and skills (AGENTS.md, .agents/, .claude/skills/) are committed; per-user
+# state is not.
+.claude/settings.local.json
+.claude/worktrees/
+.codex/
+.cursor/
+.aider*
+.continue/
+.windsurf/
 
-# database
-prisma/db.sqlite
-prisma/db.sqlite-journal
-db.sqlite
-
-# Repos
-.repos
-
-# -------------------------------------
-# Solidity
-# -------------------------------------
-# Dependencies
-dependencies/
-
-# Foundry build artifacts & caches
-out/
-cache/
-
-# Forge test artifacts
-test_*.json
-*.dbg.json
-
-# Keystores
-/*.keystore
-
-# Coverage & gas reports
-coverage/
-gas-report.*
-
-# Logs & temporary files
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
-*.tmp
-*.temp
+logs/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Local Deployments
-broadcast/**/31337
+# ── Editors ───────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.code-workspace
+.fleet/
+.zed/
+.history/
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+*.sublime-workspace
 
-# Research
-/research/
-
-# Local catalog authoring data and generated uploads
-/catalog/
-
-# Personal notes (maintained project documentation belongs in architecture/)
-/*.local.md
-
-# Package publication artifacts
-*.tgz
+# ── Operating systems ─────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.directory
+.Trash-*
+.nfs*

@@ -1,82 +1,238 @@
+# Pull requests, pushes to main, the merge queue and manual runs. Each job runs one stage of
+# `pnpm check`, so a failure names the stage; tests also run on the oldest supported Node, the SDK's
+# runtime smoke test on Bun, Deno and Chromium, and the contracts through Slither and Halmos.
 name: CI
+
 on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FOUNDRY_VERSION: v1.9.0
+
 jobs:
-  check:
+  static:
+    name: Static
+    # GitHub does not run workflows on PRs the workflow token opens: the version PR is checked by
+    # dispatching CI on its branch, and again by the release before publishing.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login != 'github-actions[bot]' ||
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.namera.ai' }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - name: Restore Turbo cache
-        uses: actions/cache@v6
         with:
-          path: .turbo/cache
-          key: turbo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', '.node-version') }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', '.node-version') }}-
-      - run: pnpm check
-      - run: pnpm pack:check
-  tests:
-    name: Tests (${{ matrix.group }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - group: cli
-            filters: --filter=@namera-ai/cli
-          - group: packages
-            filters: --filter=!@namera-ai/server --filter=!@namera-ai/cli
-    steps:
-      - uses: actions/checkout@v7
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/setup
-      - name: Test with bounded package and worker concurrency
-        run: pnpm exec turbo run test ${{ matrix.filters }} --concurrency=2
-  browser:
-    name: Browser components
+        with:
+          cache: pnpm
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm ox-pin
+      - run: pnpm circular
+      - run: pnpm docs:check
+      # Barrels, exports maps, the version module, @namera-ai/contracts and the devnet's bytecode.
+      - name: Require generated files to be committed
+        run: pnpm codegen:check
+
+  types:
+    name: Types
+    needs: static
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/setup
-      - name: Install Chromium and system dependencies
-        run: pnpm --filter @namera-ai/dashboard exec playwright install --with-deps chromium
-      - run: pnpm --filter @namera-ai/dashboard test:browser
-      - run: pnpm --filter @namera-ai/admin-portal test:browser
-      - run: pnpm --filter @namera-ai/web test:browser
-  postgres:
-    name: PostgreSQL integration
+        with:
+          cache: pnpm
+      - run: pnpm typecheck:tsc
+      - run: pnpm test:types
+
+  build:
+    name: Build
+    needs: static
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: namera_test
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432/tcp
-        options: >-
-          --health-cmd "pg_isready -U postgres -d namera_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/setup
-      - run: pnpm --filter @namera-ai/server... build
-      - name: Test PostgreSQL with reproducible shuffled order
-        run: pnpm --filter @namera-ai/server test --sequence.shuffle --sequence.seed=${{ github.run_number }}
-        env:
-          NAMERA_TEST_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
-      - name: Test repositories on PostgreSQL
-        run: pnpm --filter @namera-ai/database test --sequence.shuffle --sequence.seed=${{ github.run_number }}
-        env:
-          NAMERA_TEST_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+        with:
+          cache: pnpm
+      - run: pnpm build
+      - run: pnpm check:dist
+      - run: pnpm api-snapshot --check
+      - run: pnpm bundle-size
+      - run: pnpm type-cost
+      - run: pnpm pack:check
+
+  test:
+    name: Test (Node ${{ matrix.node || 'from .node-version' }})
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Empty uses .node-version; 22.19.0 is the oldest Node the packages support (`engines`).
+        node: ["", "22.19.0"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+          node-version: ${{ matrix.node }}
+      - run: pnpm test
+      - run: pnpm test:docs
+
+  contracts:
+    name: Contracts
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FOUNDRY_PROFILE: ci
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Foundry must be on PATH before install: the contracts package installs Soldeer deps then.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pnpm test:contracts
+
+  # The SDK's runtime smoke test on the runtimes the Test job doesn't cover (it runs Node and workerd).
+  runtime:
+    name: Runtime (${{ matrix.runtime }})
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno, chromium]
+    env:
+      NAMERA_RUNTIME_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      # Vitest's default forks pool needs Node's IPC channel; Bun runs the threads pool.
+      - if: matrix.runtime == 'bun'
+        run: bun run --bun vitest run --pool=threads --project @namera-ai/sdk/runtime
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - if: matrix.runtime == 'deno'
+        run: deno run -A node_modules/vitest/vitest.mjs run --project @namera-ai/sdk/runtime
+      - if: matrix.runtime == 'chromium'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: matrix.runtime == 'chromium'
+        run: pnpm exec vitest run --project @namera-ai/sdk/browser
+
+  # The Node key stores against a real OS keychain: the suite only runs when asked, as it writes to the machine's
+  # keychain (a unique service, removed afterwards).
+  keychain:
+    name: Keychain (macOS)
+    needs: static
+    runs-on: macos-latest
+    timeout-minutes: 15
+    env:
+      NAMERA_KEYCHAIN_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pnpm exec vitest run --project @namera-ai/sdk packages/sdk/test/node
+
+  analyze:
+    name: Contract analysis
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: ./.github/actions/setup
+        with:
+          cache: pnpm
+      - run: pipx install slither-analyzer==0.11.6 && pipx install halmos==0.3.3
+      - name: Slither
+        run: pnpm --filter @namera-ai/contracts-sol analyze
+      - name: Halmos
+        run: pnpm --filter @namera-ai/contracts-sol symbolic
+
+  zizmor:
+    name: Workflow audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Annotations instead of code scanning: SARIF uploads would need `security-events: write`.
+      - uses: zizmorcore/zizmor-action@v0.8.1
+        with:
+          version: 1.32.0
+          config: .github/zizmor.yml
+          advanced-security: false
+          annotations: true

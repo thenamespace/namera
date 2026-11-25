@@ -1,0 +1,174 @@
+diff --git a/esm/rpc/validation/BundlerCollectorTracerV06.js b/esm/rpc/validation/BundlerCollectorTracerV06.js
+index e4cac0bd40c10fab7f306e9f87f7e08dab1f134f..552cde42b49a5fc1a54837febd9fcd5b0bf98332 100644
+--- a/esm/rpc/validation/BundlerCollectorTracerV06.js
++++ b/esm/rpc/validation/BundlerCollectorTracerV06.js
+@@ -63,7 +63,7 @@ export function bundlerCollectorTracer() {
+                 return;
+             }
+             this.calls.push({
+-                type: frame.getError() === null ? "RETURN" : "REVERT",
++                type: frame.getError() == null ? "RETURN" : "REVERT",
+                 gasUsed: frame.getGasUsed(),
+                 data: toHex(frame.getOutput()).slice(0, 4000)
+             });
+diff --git a/esm/rpc/validation/BundlerCollectorTracerV07.js b/esm/rpc/validation/BundlerCollectorTracerV07.js
+index 611e2e27d040c9e59aecd8c943540ba2e0b12a06..44495b0a1b451dd48c1d6e284f0b8e61e8604483 100644
+--- a/esm/rpc/validation/BundlerCollectorTracerV07.js
++++ b/esm/rpc/validation/BundlerCollectorTracerV07.js
+@@ -27,6 +27,7 @@ export function bundlerCollectorTracer() {
+         stopCollectingTopic: "bb47ee3e183a558b1a2ff0874b079f3fc5478b7454eacf2bfc5af2ff5878f972",
+         stopCollecting: false,
+         topLevelCallCounter: 0,
++        tracerErrors: [],
+         fault(log, _db) {
+             this.debug.push(JSON.stringify({
+                 type: "fault",
+@@ -42,7 +43,8 @@ export function bundlerCollectorTracer() {
+                 keccak: this.keccak,
+                 logs: this.logs,
+                 calls: this.calls,
+-                debug: this.debug // for internal debugging.
++                debug: this.debug, // for internal debugging.
++                tracerErrors: this.tracerErrors
+             };
+         },
+         enter(frame) {
+@@ -63,7 +65,7 @@ export function bundlerCollectorTracer() {
+                 return;
+             }
+             this.calls.push({
+-                type: frame.getError() === null ? "RETURN" : "REVERT",
++                type: frame.getError() == null ? "RETURN" : "REVERT",
+                 gasUsed: frame.getGasUsed(),
+                 data: toHex(frame.getOutput()).slice(0, 4000)
+             });
+@@ -81,6 +83,15 @@ export function bundlerCollectorTracer() {
+         },
+         // biome-ignore lint/suspicious/noExplicitAny: it's a generic type
+         step(log, db) {
++            try {
++                this.collect(log, db);
++            }
++            catch (e) {
++                this.tracerErrors.push(`${log.op.toString()} at depth ${log.getDepth()}: ${e}`);
++            }
++        },
++        // biome-ignore lint/suspicious/noExplicitAny: it's a generic type
++        collect(log, db) {
+             if (log.getDepth() < 3) {
+                 return;
+             }
+@@ -108,7 +119,7 @@ export function bundlerCollectorTracer() {
+                     // from opcode
+                     const ofs = Number.parseInt(log.stack.peek(0).toString());
+                     const len = Number.parseInt(log.stack.peek(1).toString());
+-                    const data = toHex(log.memory.slice(ofs, ofs + len)).slice(0, 4000);
++                    const data = len === 0 ? "0x" : toHex(log.memory.slice(ofs, ofs + len)).slice(0, 4000);
+                     // this.debug.push(opcode + ' ' + data)
+                     this.calls.push({
+                         type: opcode,
+@@ -169,7 +180,9 @@ export function bundlerCollectorTracer() {
+                 const addrHex = toHex(address);
+                 const addressInt = Number.parseInt(addrHex);
+                 // this.debug.push(`isPrecompiled address=${addrHex} addressInt=${addressInt}`)
+-                return addressInt > 0 && addressInt < 10;
++                // Namera patch: ERC-7562 OP-062 allows the core precompiles 0x01-0x11 and the P-256 precompile
++                // (RIP-7212 / EIP-7951) at 0x100 on chains that have it; upstream allowed 0x01-0x09 only.
++                return (addressInt > 0 && addressInt <= 0x11) || addressInt === 0x100;
+             };
+             // [OP-041]
+             if (opcode.match(/^(EXT.*|CALL|CALLCODE|DELEGATECALL|STATICCALL)$/) != null) {
+@@ -245,7 +258,7 @@ export function bundlerCollectorTracer() {
+                     // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+                     topics.push(`0x${log.stack.peek(2 + i).toString(16)}`);
+                 }
+-                const data = toHex(log.memory.slice(ofs, ofs + len));
++                const data = len === 0 ? "0x" : toHex(log.memory.slice(ofs, ofs + len));
+                 this.logs.push({
+                     topics,
+                     data
+diff --git a/esm/rpc/validation/SafeValidator.js b/esm/rpc/validation/SafeValidator.js
+index cbf1bf88c897409f156083f26e75d28909d97dd1..b9b6ee69c640ae6e6770bdc517c341aff48de4d3 100644
+--- a/esm/rpc/validation/SafeValidator.js
++++ b/esm/rpc/validation/SafeValidator.js
+@@ -1,6 +1,6 @@
+-import { CodeHashGetterAbi, CodeHashGetterBytecode, ERC7769Errors, EntryPointV06Abi, RpcError, pimlicoSimulationsAbi } from "../../types/index.js";
++import { CodeHashGetterAbi, CodeHashGetterBytecode, ERC7769Errors, EntryPointV06Abi, EntryPointV07Abi, RpcError, pimlicoSimulationsAbi } from "../../types/index.js";
+ import { getAddressFromInitCodeOrPaymasterAndData, getAuthorizationStateOverrides, getEntryPointSimulationsAddress, getViemEntryPointVersion, jsonStringifyWithBigint, toPackedUserOp } from "../../utils/index.js";
+-import { decodeErrorResult, encodeDeployData, encodeFunctionData, zeroAddress } from "viem";
++import { decodeErrorResult, decodeFunctionResult, encodeDeployData, encodeFunctionData, zeroAddress } from "viem";
+ import { bundlerCollectorTracer } from "./BundlerCollectorTracerV07.js";
+ import { tracerResultParserV06 } from "./TracerResultParserV06.js";
+ import { tracerResultParserV07 } from "./TracerResultParserV07.js";
+@@ -262,19 +262,23 @@ export class SafeValidator extends UnsafeValidator {
+             stateOverrides
+         });
+         this.logger.info(`tracerResult: ${jsonStringifyWithBigint(tracerResult)}`);
++        // Namera patch: a tracer exception reverts the traced frame on anvil, so the result cannot be trusted.
++        if (tracerResult.tracerErrors?.length > 0) {
++            throw new Error(`bundlerCollectorTracer threw: ${tracerResult.tracerErrors.slice(0, 3).join("; ")}`);
++        }
+         const lastResult = tracerResult.calls.slice(-1)[0];
+         if (lastResult.type !== "REVERT") {
+             throw new Error("Invalid response. simulateCall must revert");
+         }
+         const resultData = lastResult.data;
+         // Decode the validation result from the revert data
+-        const { errorName, args } = decodeErrorResult({
+-            abi: pimlicoSimulationsAbi,
+-            data: resultData
+-        });
+-        if (errorName !== "ValidationResult") {
++        // Namera patch (pimlicolabs/alto#810): PimlicoSimulations validates through EntryPoint.delegateAndRevert, so
++        // the last frame is the EntryPoint reverting with DelegateAndRevert(success, data). On success `data` is the
++        // ValidationResult; otherwise it is the failed validation's revert data (FailedOp, FailedOpWithRevert).
++        const delegateAndRevert = decodeDelegateAndRevert(resultData);
++        if (!delegateAndRevert.success) {
+             let errorCode = ERC7769Errors.SimulateValidation;
+-            const errorMessage = errorName || "Unknown validation error";
++            const errorMessage = decodeValidationRevertReason(delegateAndRevert.data);
+             if (errorMessage.includes("AA24")) {
+                 errorCode = ERC7769Errors.InvalidSignature;
+             }
+@@ -283,7 +287,11 @@ export class SafeValidator extends UnsafeValidator {
+             }
+             throw new RpcError(errorMessage, errorCode);
+         }
+-        const validationResult = args[0];
++        const validationResult = decodeFunctionResult({
++            abi: pimlicoSimulationsAbi,
++            functionName: "simulateValidation",
++            data: delegateAndRevert.data
++        });
+         const mergedValidation = this.mergeValidationDataValues(validationResult.returnInfo.accountValidationData, validationResult.returnInfo.paymasterValidationData);
+         const res = {
+             returnInfo: {
+@@ -331,3 +339,28 @@ export class SafeValidator extends UnsafeValidator {
+     }
+ }
+ //# sourceMappingURL=SafeValidator.js.map
++function decodeDelegateAndRevert(data) {
++    try {
++        const decoded = decodeErrorResult({ abi: EntryPointV07Abi, data });
++        if (decoded.errorName === "DelegateAndRevert") {
++            const [success, returnData] = decoded.args;
++            return { success, data: returnData };
++        }
++    }
++    catch {
++        // not an EntryPoint error, reported below
++    }
++    throw new RpcError(`Unexpected simulateValidation revert data: ${data}`, ERC7769Errors.SimulateValidation);
++}
++function decodeValidationRevertReason(data) {
++    try {
++        const decoded = decodeErrorResult({ abi: EntryPointV07Abi, data });
++        if (decoded.errorName === "FailedOp" || decoded.errorName === "FailedOpWithRevert") {
++            return decoded.args[1];
++        }
++        return decoded.errorName;
++    }
++    catch {
++        return data;
++    }
++}

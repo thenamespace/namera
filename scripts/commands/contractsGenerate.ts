@@ -1,0 +1,123 @@
+import * as Arr from "effect/Array"
+import * as Command from "effect/cli/Command"
+import * as Flag from "effect/cli/Flag"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
+import * as Option from "effect/Option"
+import * as Path from "effect/Path"
+import * as Rec from "effect/Record"
+import * as Str from "effect/String"
+
+import { isAddressEqual } from "viem"
+
+import { packageSources } from "../contracts/render.ts"
+import {
+  allDeployments,
+  builtContracts,
+  contractsDir,
+  externalContracts,
+  packageSourceDir
+} from "../contracts/workspace.ts"
+import { CheckFailed, SetupError } from "../errors.ts"
+import { Tools } from "../services/Tools.ts"
+
+/**
+ * Generates `packages/contracts/src` from the Foundry build and the deployment records, formatted
+ * with dprint. With `check`, writes nothing and fails when the committed sources are stale. Every
+ * record must sit at the address the current build deploys its label to.
+ */
+export const generate = Effect.fn("contracts.generate")(
+  function*(check: boolean) {
+    const fs = yield* FileSystem.FileSystem
+    const path = yield* Path.Path
+    const tools = yield* Tools
+
+    yield* tools.run("forge", ["build"], { cwd: contractsDir })
+    const contracts = yield* builtContracts()
+    // Alpha: changed code keeps its label, so a chain may still hold the previous build's record. The package
+    // lists only chains where the current build is deployed; redeploy there to list them again.
+    const stale: Array<string> = []
+    const deployments = Arr.map(yield* allDeployments(), (file) => ({
+      ...file,
+      contracts: Rec.filter(file.contracts, (record, label) => {
+        const built = Arr.findFirst(contracts, (contract) => contract.label === label)
+        if (Option.isNone(built) || isAddressEqual(record.address, built.value.address)) return true
+        stale.push(
+          `not listed on ${file.chainId}: ${label} is recorded at ${record.address}; redeploy the current build`
+        )
+        return false
+      })
+    }))
+    for (const line of stale) yield* Console.log(line)
+
+    const staging = yield* fs.makeTempDirectoryScoped({ prefix: "namera-contracts-" })
+    const sources = packageSources(contracts, deployments, yield* externalContracts())
+    for (const [file, source] of sources) {
+      yield* fs.writeFileString(path.join(staging, file), source)
+    }
+    yield* tools.run("pnpm", [
+      "exec",
+      "dprint",
+      "fmt",
+      "--config",
+      path.resolve("dprint.json"),
+      ...Arr.map(Arr.fromIterable(sources.keys()), (file) => path.join(staging, file))
+    ])
+
+    const committed = (yield* fs.exists(packageSourceDir))
+      ? yield* fs.readDirectory(packageSourceDir, { recursive: true })
+      : []
+    const committedFiles = Arr.filter(committed, (file) => Str.endsWith(".ts")(file))
+
+    if (check) {
+      const stale: Array<string> = []
+      for (const file of sources.keys()) {
+        const expected = yield* fs.readFileString(path.join(staging, file))
+        const target = path.join(packageSourceDir, file)
+        const exists = yield* fs.exists(target)
+        const actual = exists
+          ? yield* fs.readFileString(target).pipe(Effect.asSome)
+          : Option.none<string>()
+        if (Option.getOrUndefined(actual) !== expected) stale.push(target)
+      }
+      for (const file of committedFiles) {
+        if (!sources.has(file)) stale.push(path.join(packageSourceDir, file))
+      }
+      if (stale.length > 0) {
+        return yield* CheckFailed.make({
+          check: "contracts generate --check",
+          problems: [...stale, "run `pnpm contracts:generate` and commit the result"]
+        })
+      }
+      return yield* Console.log(`contracts generate: up to date (${sources.size} files)`)
+    }
+
+    yield* fs.remove(packageSourceDir, { recursive: true }).pipe(Effect.ignore)
+    yield* fs.makeDirectory(packageSourceDir, { recursive: true })
+    for (const file of sources.keys()) {
+      yield* fs.copyFile(path.join(staging, file), path.join(packageSourceDir, file))
+    }
+    return yield* Console.log(
+      `contracts generate: wrote ${sources.size} files from ${contracts.length} contracts and ${deployments.length} deployment files`
+    )
+  },
+  Effect.scoped,
+  Effect.catchTag("PlatformError", (cause) => SetupError.make({ message: String(cause) }))
+)
+
+/** `contracts generate [--check]`. */
+export const generateCommand = Command.make(
+  "generate",
+  {
+    check: Flag.Boolean("check").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Fail when the committed sources differ instead of writing them")
+    )
+  },
+  ({ check }) => generate(check)
+).pipe(
+  Command.withDescription(
+    "Generate @namera-ai/contracts from the Foundry build and the deployment records"
+  )
+)

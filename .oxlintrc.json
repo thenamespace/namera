@@ -1,0 +1,185 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "extends": [
+    "./node_modules/@effect-kit/oxc/oxlintrc.json"
+  ],
+  "jsPlugins": [
+    "@effect-kit/oxc/oxlint",
+    "./scripts/oxlint/namera.ts",
+    {
+      "name": "landmines-testing",
+      "specifier": "@interfere/landmines/testing"
+    },
+    {
+      "name": "landmines-structure",
+      "specifier": "@interfere/landmines/structure"
+    }
+  ],
+  "ignorePatterns": [
+    "**/dist",
+    "**/build",
+    "**/coverage",
+    "**/.data",
+    "tmp/**",
+    "research/**",
+    "**/.next/**",
+    "**/.output/**",
+    "**/routeTree.gen.ts",
+    "**/CHANGELOG.md",
+    "contracts/broadcast/**",
+    "contracts/cache/**",
+    "contracts/dependencies/**",
+    "contracts/out/**",
+    "scripts/test/oxlint/fixtures/**"
+  ],
+  "rules": {
+    "effect/no-import-from-barrel-package": [
+      "error",
+      {
+        "checkPatterns": [
+          "^effect$",
+          "^effect/(.+/)?[a-z][a-z0-9]*$",
+          "^@effect/[^/]+$",
+          "^@effect/[^/]+/(.+/)?[a-z][a-z0-9]*$",
+          "^@namera-ai/[^/]+$",
+          "^@namera-ai/[^/]+/(.+/)?[a-z][a-z0-9]*$"
+        ],
+        "checkRelativeIndexImports": true
+      }
+    ],
+    "landmines-testing/no-fixed-sleep": "error",
+    "landmines-testing/no-flake-masking": "off",
+    "landmines-testing/no-test-doubles": "error",
+    "landmines-testing/no-unsignaled-poll": "error",
+    "landmines-testing/strict-msw": "error",
+    "landmines-structure/test-file-names": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/{test,typetest,examples,benchmark,typeperf,bundle,scripts,script,scratchpad}/**",
+        "**/vitest.*.ts",
+        "commitlint.config.ts"
+      ],
+      "rules": {
+        "effect/no-bigint-literals": "off",
+        "eslint/no-console": "off",
+        "effect/no-import-from-barrel-package": "off"
+      }
+    },
+    {
+      "files": [
+        "**/test/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "vitest",
+                "message": "Import from @effect/vitest instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/**"
+      ],
+      "rules": {
+        "namera/no-effect-run": "error",
+        "namera/no-foreign-internal": "error"
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/promise.ts"
+      ],
+      "rules": {
+        "namera/no-effect-run": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "Only the viem adapter (src/internal/viem/) imports viem, so another viem major needs another adapter, not changes across the SDK. Import from the adapter."
+              },
+              {
+                "group": [
+                  "@effect/opentelemetry",
+                  "@effect/opentelemetry/*",
+                  "@opentelemetry/*"
+                ],
+                "message": "Only the optional ./otel entry (src/otel/) imports OpenTelemetry, so it never reaches another entry's bundle."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/otel/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "Only the viem adapter (src/internal/viem/) imports viem, so another viem major needs another adapter, not changes across the SDK. Import from the adapter."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/core/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "src/internal/core is viem-free; use ox."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/internal/viem/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

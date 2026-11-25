@@ -1,0 +1,116 @@
+/**
+ * The Effect form of `SessionKey`: the agent's signer as a session sees it, failing in the error channel.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+import * as Effect from "effect/Effect"
+
+import * as internal from "../../keys/internal/sessionKey.ts"
+import * as SessionKey_ from "../../keys/SessionKey.ts"
+import type * as SessionKeyError from "../../keys/SessionKeyError.ts"
+
+/**
+ * A session key: `threshold` of the `signers` sign the session's user operations.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type SessionKey = SessionKey_.SessionKey
+
+/**
+ * A session key of secp256k1 keys, checked by `ECDSASessionValidator`.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Ecdsa = SessionKey_.Ecdsa
+
+/**
+ * A session key of passkeys, checked by `WebAuthnValidator` from the session's config.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Passkey = SessionKey_.Passkey
+
+/**
+ * Checks whether a value is a `SessionKey`.
+ *
+ * @stability experimental
+ * @category guards
+ * @since 2.0.0
+ */
+export const isSessionKey: (u: unknown) => u is SessionKey = SessionKey_.isSessionKey
+
+/**
+ * Returns what `ECDSASessionValidator` reads for the session key: a session's `sessionValidatorInitData`.
+ *
+ * @stability experimental
+ * @category conversions
+ * @since 2.0.0
+ */
+export const toValidatorData: (sessionKey: SessionKey) => `0x${string}` = SessionKey_.toValidatorData
+
+/**
+ * A session key of one secp256k1 key: the agent's address.
+ *
+ * **Example** (Refusing an address that isn't one)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const reason = SessionKey.ecdsa("0x1234").pipe(
+ *   Effect.flip,
+ *   Effect.map((error) => error.reason._tag)
+ * )
+ *
+ * await Effect.runPromise(reason) // => "InvalidAddress"
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const ecdsa = (
+  address: string
+): Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError> =>
+  Effect.fromResult(internal.ecdsaThreshold({ threshold: 1, signers: [address] }))
+
+/**
+ * A session key of several secp256k1 keys, `threshold` of which must sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const ecdsaThreshold = (
+  options: SessionKey_.ecdsaThreshold.Options
+): Effect.Effect<Ecdsa, SessionKeyError.SessionKeyError> => Effect.fromResult(internal.ecdsaThreshold(options))
+
+/**
+ * A session key of one passkey: its P-256 public key.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const passkey = (
+  passkey: SessionKey_.passkey.Passkey
+): Effect.Effect<Passkey, SessionKeyError.SessionKeyError> =>
+  Effect.fromResult(internal.passkeyThreshold({ threshold: 1, passkeys: [passkey] }))
+
+/**
+ * A session key of several passkeys, `threshold` of which must sign.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const passkeyThreshold = (
+  options: SessionKey_.passkeyThreshold.Options
+): Effect.Effect<Passkey, SessionKeyError.SessionKeyError> => Effect.fromResult(internal.passkeyThreshold(options))

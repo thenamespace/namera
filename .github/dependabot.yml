@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Workflows reference actions by major tag; this proposes new majors, grouped weekly.
+  - package-ecosystem: github-actions
+    directories: ["/", "/.github/actions/*"]
+    schedule:
+      interval: weekly
+    # Releases at least a week old, so a compromised release is likely found before it lands.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # npm dependencies, including the pnpm catalog. The 1-day cooldown matches `minimumReleaseAge`
+  # in pnpm-workspace.yaml, and the same packages are exempt from it.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    versioning-strategy: increase
+    cooldown:
+      default-days: 1
+      exclude:
+        - "effect"
+        - "@effect/*"
+        - "@effect-kit/*"
+    ignore:
+      # TypeScript majors change the compiler API and the language service patch: move them by hand.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      effect:
+        patterns: ["effect", "@effect/*", "@effect-kit/*"]
+      dependencies:
+        patterns: ["*"]

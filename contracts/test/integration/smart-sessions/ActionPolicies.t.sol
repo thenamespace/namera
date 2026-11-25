@@ -1,0 +1,432 @@
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity 0.8.38;
+
+import {ERC4337} from "solady/accounts/ERC4337.sol";
+import {LibERC7579} from "solady/accounts/LibERC7579.sol";
+
+import {FALLBACK_TARGET_FLAG, PermissionId, Session} from "src/smart-sessions/DataTypes.sol";
+import {ISmartSession} from "src/smart-sessions/ISmartSession.sol";
+import {ISessionValidator} from "src/smart-sessions/interfaces/ISessionValidator.sol";
+import {Execution} from "src/smart-sessions/lib/ExecutionLib.sol";
+
+import {SessionBuilder} from "../../utils/SessionBuilder.sol";
+import {SmartSessionTestBase} from "../../utils/SmartSessionTestBase.sol";
+import {MockAccount} from "../../utils/mocks/MockAccount.sol";
+import {MockPolicyConfig} from "../../utils/mocks/MockPolicy.sol";
+import {MockSilentPolicy} from "../../utils/mocks/MockSilentPolicy.sol";
+import {MockTarget} from "../../utils/mocks/MockTarget.sol";
+
+/// @dev A policy answering with two words, the first zero (valid).
+contract MockTwoWordPolicy {
+    function supportsInterface(bytes4) external pure returns (bool) {
+        return true;
+    }
+
+    function initializeWithMultiplexer(address, bytes32, bytes calldata) external {}
+
+    fallback() external {
+        assembly ("memory-safe") {
+            mstore(0, 0)
+            mstore(0x20, 0)
+            return(0, 0x40)
+        }
+    }
+}
+
+contract ActionPoliciesTest is SmartSessionTestBase {
+    using SessionBuilder for Session;
+
+    bytes4 internal constant VALUE_SELECTOR = 0xFFFFFFFF;
+    bytes4 internal constant EXECUTE = 0xe9ae5c53;
+    bytes4 internal constant EXECUTE_USER_OP = 0x8dd7712f;
+
+    function test_singleCall_passesCallDetailsToActionPolicy() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes memory data = abi.encodeCall(MockTarget.setValue, (7));
+
+        handleOp(signUse(userOp(executeSingle(address(target), 0, data)), permissionId));
+
+        (address calledTarget, uint256 value, bytes memory calledData) = policy.lastAction();
+        assertEq(calledTarget, address(target));
+        assertEq(value, 0);
+        assertEq(calledData, data);
+        assertEq(target.value(), 7);
+    }
+
+    function test_RevertWhen_actionHasNoPoliciesAndNoFallback() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        MockTarget otherTarget = new MockTarget();
+        ERC4337.PackedUserOperation memory op = signUse(
+            userOp(
+                executeSingle(address(otherTarget), 0, abi.encodeCall(MockTarget.setValue, (1)))
+            ),
+            permissionId
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    function test_RevertWhen_actionPolicyRejects() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), SET_VALUE, address(policy), MockPolicyConfig.deny());
+        PermissionId permissionId = enableSession(session);
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.PolicyViolation.selector, permissionId, address(policy)
+            )
+        );
+        validate(op);
+    }
+
+    function test_fallbackAction_coversActionsWithoutPolicies() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        handleOp(signUse(userOp(callSetValue(3)), permissionId));
+
+        assertEq(target.value(), 3);
+    }
+
+    function test_actionPolicies_takePrecedenceOverFallback() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), SET_VALUE, address(policy), MockPolicyConfig.deny())
+            .withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.PolicyViolation.selector, permissionId, address(policy)
+            )
+        );
+        validate(op);
+    }
+
+    function test_valueTransfer_usesValueSelectorAction() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), VALUE_SELECTOR, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        handleOp(signUse(userOp(executeSingle(address(target), 1 ether, "")), permissionId));
+
+        assertEq(target.received(), 1 ether);
+    }
+
+    function test_batch_checksEveryExecution() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        Execution[] memory executions = new Execution[](2);
+        executions[0] = Execution(address(target), 0, abi.encodeCall(MockTarget.setValue, (1)));
+        executions[1] = Execution(address(target), 0, abi.encodeCall(MockTarget.setValue, (2)));
+
+        handleOp(signUse(userOp(executeBatch(executions)), permissionId));
+
+        assertEq(target.calls(), 2);
+        assertEq(target.value(), 2);
+    }
+
+    function test_RevertWhen_oneBatchExecutionHasNoPolicy() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        Execution[] memory executions = new Execution[](2);
+        executions[0] = Execution(address(target), 0, abi.encodeCall(MockTarget.setValue, (1)));
+        executions[1] = Execution(makeAddr("unlisted"), 0, "");
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeBatch(executions)), permissionId);
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    function test_RevertWhen_batchIsEmpty() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeBatch(new Execution[](0))), permissionId);
+
+        vm.expectRevert(ISmartSession.NoExecutionsInBatch.selector);
+        validate(op);
+    }
+
+    function test_RevertWhen_executionCallsAccountExecute() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory nested = callSetValue(1);
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeSingle(address(account), 0, nested)), permissionId);
+
+        vm.expectRevert(ISmartSession.InvalidSelfCall.selector);
+        validate(op);
+    }
+
+    function test_RevertWhen_targetIsFallbackFlag() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeSingle(FALLBACK_TARGET_FLAG, 0, "")), permissionId);
+
+        vm.expectRevert(ISmartSession.InvalidTarget.selector);
+        validate(op);
+    }
+
+    function test_RevertWhen_callIntoModuleIsNotPermitted() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory removeCall = abi.encodeCall(ISmartSession.removeSession, (permissionId));
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeSingle(address(smartSession), 0, removeCall)), permissionId);
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    /// @dev A fallback meant for ordinary calls must not authorize admin calls such as module installs.
+    function test_RevertWhen_fallbackActionWouldCoverAccountSelfCall() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory install =
+            abi.encodeCall(MockAccount.installModule, (1, makeAddr("validator"), ""));
+        ERC4337.PackedUserOperation memory op =
+            signUse(userOp(executeSingle(address(account), 0, install)), permissionId);
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    function test_RevertWhen_policyReturnsNoData() public {
+        MockSilentPolicy silent = new MockSilentPolicy();
+        Session memory session =
+            _emptySession().withAction(address(target), SET_VALUE, address(silent), "");
+        PermissionId permissionId = enableSession(session);
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.PolicyViolation.selector, permissionId, address(silent)
+            )
+        );
+        validate(op);
+    }
+
+    function test_callIntoModule_isAllowedWithModuleCallAction() public {
+        Session memory session =
+            _emptySession().withModuleCallAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory revokeCall =
+            abi.encodeCall(ISmartSession.revokeEnableSignature, (permissionId));
+
+        handleOp(signUse(userOp(executeSingle(address(smartSession), 0, revokeCall)), permissionId));
+
+        // Enabling the session spent one nonce, the revocation another.
+        assertEq(smartSession.getNonce(permissionId, address(account)), 2);
+    }
+
+    function test_RevertWhen_accountFunctionHasNoPolicy() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes memory callData =
+            abi.encodeCall(MockAccount.uninstallModule, (2, makeAddr("module"), ""));
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callData), permissionId);
+
+        vm.expectRevert(abi.encodeWithSelector(ISmartSession.NoPoliciesSet.selector, permissionId));
+        validate(op);
+    }
+
+    function testFuzz_anyAccountFunction_isCheckedAsActionOnAccount(bytes4 selector) public {
+        vm.assume(selector != EXECUTE && selector != EXECUTE_USER_OP);
+        Session memory session = _emptySession()
+            .withAction(address(account), selector, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(validate(signUse(userOp(abi.encodePacked(selector)), permissionId)), VALID);
+    }
+
+    function test_selectorOnlyCalldata_usesTheSelectorAction() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes memory callData = abi.encodePacked(SET_VALUE);
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 0, callData)), permissionId)),
+            VALID
+        );
+    }
+
+    /// @dev Only `execute` on the account itself is a nested execution; either part alone is a normal action.
+    function test_executeSelectorOnOtherTarget_isANormalAction() public {
+        // A target below the account's address as well, so ordering comparisons cannot pass for equality.
+        address lowTarget = address(0x1234);
+        Session memory session = _emptySession()
+            .withAction(address(target), EXECUTE, address(policy), MockPolicyConfig.allow())
+            .withAction(lowTarget, EXECUTE, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory callData = abi.encodeWithSelector(EXECUTE, bytes32(0), "");
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 0, callData)), permissionId)),
+            VALID
+        );
+        assertEq(
+            validate(signUse(userOp(executeSingle(lowTarget, 0, callData)), permissionId)), VALID
+        );
+    }
+
+    function test_otherFunctionOnAccountViaExecute_isANormalAction() public {
+        bytes4 selector = MockAccount.uninstallModule.selector;
+        Session memory session = _emptySession()
+            .withAction(address(account), selector, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+        bytes memory callData = abi.encodeWithSelector(selector, 2, makeAddr("module"), "");
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(account), 0, callData)), permissionId)),
+            VALID
+        );
+    }
+
+    function test_targetBelowModuleAddress_usesItsOwnAction() public {
+        address lowTarget = address(0x1234);
+        Session memory session = _emptySession()
+            .withAction(lowTarget, SET_VALUE, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(
+            validate(
+                signUse(
+                    userOp(executeSingle(lowTarget, 0, abi.encodeCall(MockTarget.setValue, (1)))),
+                    permissionId
+                )
+            ),
+            VALID
+        );
+    }
+
+    function test_zeroTarget_isCoveredByFallbackAction() public {
+        Session memory session =
+            _emptySession().withFallbackAction(address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(validate(signUse(userOp(executeSingle(address(0), 0, "")), permissionId)), VALID);
+    }
+
+    function test_RevertWhen_execTypeIsTry() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes32 mode = LibERC7579.encodeMode(
+            LibERC7579.CALLTYPE_SINGLE, LibERC7579.EXECTYPE_TRY, bytes4(0), bytes22(0)
+        );
+        bytes memory callData = abi.encodeCall(
+            MockAccount.execute, (mode, abi.encodePacked(address(target), uint256(0), ""))
+        );
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callData), permissionId);
+
+        vm.expectRevert(ISmartSession.UnsupportedExecutionType.selector);
+        validate(op);
+    }
+
+    function test_RevertWhen_modeHasSelectorOrPayload() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes32[2] memory modes = [
+            LibERC7579.encodeMode(
+                LibERC7579.CALLTYPE_BATCH,
+                LibERC7579.EXECTYPE_DEFAULT,
+                bytes4(0x78210001),
+                bytes22(0)
+            ),
+            LibERC7579.encodeMode(
+                LibERC7579.CALLTYPE_SINGLE,
+                LibERC7579.EXECTYPE_DEFAULT,
+                bytes4(0),
+                bytes22(uint176(1))
+            )
+        ];
+        for (uint256 i; i < modes.length; ++i) {
+            bytes memory callData = abi.encodeCall(
+                MockAccount.execute, (modes[i], abi.encodePacked(address(target), uint256(0), ""))
+            );
+            ERC4337.PackedUserOperation memory op = signUse(userOp(callData), permissionId);
+
+            vm.expectRevert(ISmartSession.UnsupportedExecutionType.selector);
+            validate(op);
+        }
+    }
+
+    function test_RevertWhen_callTypeIsDelegatecall() public {
+        PermissionId permissionId = enableSession(defaultSession());
+        bytes32 mode = LibERC7579.encodeMode(
+            LibERC7579.CALLTYPE_DELEGATECALL, LibERC7579.EXECTYPE_DEFAULT, bytes4(0), bytes22(0)
+        );
+        bytes memory callData =
+            abi.encodeCall(MockAccount.execute, (mode, abi.encodePacked(address(target), "")));
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callData), permissionId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISmartSession.UnsupportedCallType.selector, LibERC7579.CALLTYPE_DELEGATECALL
+            )
+        );
+        validate(op);
+    }
+
+    function test_userOpAndActionTimeBounds_areIntersected() public {
+        uint256 userOpBounds = (uint256(3000) << 160) | (uint256(1000) << 208);
+        uint256 actionBounds = (uint256(4000) << 160) | (uint256(2000) << 208);
+        Session memory session = _emptySession()
+            .withUserOpPolicy(address(policy), MockPolicyConfig.returning(userOpBounds))
+            .withAction(
+                address(target),
+                SET_VALUE,
+                address(policy),
+                MockPolicyConfig.returning(actionBounds)
+            );
+        PermissionId permissionId = enableSession(session);
+
+        uint256 validationData = validate(signUse(userOp(callSetValue(1)), permissionId));
+
+        assertEq(validationData, (uint256(3000) << 160) | (uint256(2000) << 208));
+    }
+
+    function _emptySession() internal view returns (Session memory) {
+        return SessionBuilder.create(
+            ISessionValidator(address(sessionValidator)),
+            SessionBuilder.ecdsaConfig(sessionSigner),
+            keccak256("actions")
+        );
+    }
+
+    /// @dev Regression (internal review, leads): only empty calldata is a plain value transfer; calldata of 1 to 3
+    /// bytes, or starting with the value selector, can't reach the target's code under the value action.
+    function test_onlyEmptyCalldataUsesTheValueAction() public {
+        Session memory session = _emptySession()
+            .withAction(address(target), VALUE_SELECTOR, address(policy), MockPolicyConfig.allow());
+        PermissionId permissionId = enableSession(session);
+
+        assertEq(
+            validate(signUse(userOp(executeSingle(address(target), 1, "")), permissionId)), VALID
+        );
+        bytes[2] memory data = [bytes(hex"01"), abi.encodePacked(VALUE_SELECTOR, uint256(1))];
+        for (uint256 i; i < data.length; ++i) {
+            ERC4337.PackedUserOperation memory op =
+                signUse(userOp(executeSingle(address(target), 1, data[i])), permissionId);
+            vm.expectRevert(ISmartSession.InvalidTarget.selector);
+            validate(op);
+        }
+    }
+
+    /// @dev Regression (internal review, leads): a policy's answer longer than one word is cut to its first word when
+    /// copied, so it must not read as that word.
+    function test_RevertWhen_aPolicyAnswersWithMoreThanOneWord() public {
+        address twoWords = address(new MockTwoWordPolicy());
+        Session memory session =
+            _emptySession().withAction(address(target), SET_VALUE, twoWords, "");
+        PermissionId permissionId = enableSession(session);
+
+        ERC4337.PackedUserOperation memory op = signUse(userOp(callSetValue(1)), permissionId);
+        vm.expectRevert(
+            abi.encodeWithSelector(ISmartSession.PolicyViolation.selector, permissionId, twoWords)
+        );
+        validate(op);
+    }
+}

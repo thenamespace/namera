@@ -1,0 +1,39 @@
+/**
+ * The ERC-4337 EntryPoint (v0.7) Kernel 3.3 and every bundler use.
+ *
+ * **Details**
+ *
+ * Keyed by version (`0.7`). The addresses are the same on every chain Namera supports.
+ *
+ * @stability experimental
+ * @category addresses
+ * @since 2.0.0
+ */
+export const entryPoint = {
+  "0.7": {
+    "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "senderCreator": "0xEFC2c1444eBCC4Db75e7613d20C6a62fF67A167C"
+  }
+} as const
+
+/**
+ * ZeroDev's Kernel smart account: its factory, the staked FactoryStaker that accounts deploy
+ * through, the implementation, and the ECDSA validator, the root validator of a key owner (passkey
+ * owners use Namera's WebAuthnValidator).
+ *
+ * **Details**
+ *
+ * Keyed by version (`3.3`). The addresses are the same on every chain Namera supports.
+ *
+ * @stability experimental
+ * @category addresses
+ * @since 2.0.0
+ */
+export const kernel = {
+  "3.3": {
+    "factory": "0x2577507b78c2008Ff367261CB6285d44ba5eF2E9",
+    "factoryStaker": "0xd703aaE79538628d27099B8c4f621bE4CCd142d5",
+    "implementation": "0xd6CEDDe84be40893d153Be9d467CD6aD37875b28",
+    "ecdsaValidator": "0x845ADb2C711129d4f3966735eD98a9F09fC4cE57"
+  }
+} as const

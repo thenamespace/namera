@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in namera does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security issues go through [private reporting](https://github.com/thenamespace/namera/security/advisories/new), not here.
+        Redact API keys, tokens and credentials.
+  - type: dropdown
+    id: packages
+    attributes:
+      label: Packages
+      multiple: true
+      options:
+        - "@namera-ai/contracts"
+        - "@namera-ai/sdk"
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: The namera version or commit, Node.js and your OS.
+      placeholder: "0.1.0, Node.js 26.13.1, macOS"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: The smallest code or steps that show the problem, or a link to a repository.
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: What you expected, what happened instead, and the error (`_tag` and message) if any.
+    validations:
+      required: true

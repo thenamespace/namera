@@ -1,1 +1,0 @@
-ALTER TABLE "core"."wallet_operation" DROP CONSTRAINT "wallet_operation_kind_check", ADD CONSTRAINT "wallet_operation_kind_check" CHECK ("kind" IN ('set-primary-name', 'transaction'));
