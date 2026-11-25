@@ -10,8 +10,9 @@
  * serializes to JSON or to a compact `nmr1_` token, and `Grant.parse` reads both.
  *
  * The agent acts through `Grant.toAccount`: a viem smart account at the owner's address that sends and signs with
- * the session key, checking each operation against the session's policies first. `Grant.check` runs the same check
- * without a key.
+ * the session key, checking each operation against the session's policies first, or through `Grant.toProvider`, the same
+ * account as an EIP-1193 / EIP-5792 provider for wallet-expecting tools. `Grant.check` runs the same check without a
+ * key.
  *
  * The owner revokes (`Grant.revoke`) and updates (`Grant.update`) a grant with owner operations; anyone reads its
  * status, limits and history without a key (`Grant.getStatus`, `Grant.getRemainingLimit`, `Grant.getUsage`,
@@ -27,6 +28,8 @@ import type * as AccountError from "./accounts/AccountError.ts"
 import type * as SmartAccount from "./accounts/SmartAccount.ts"
 import type * as ChainError from "./ChainError.ts"
 import type * as GrantError from "./GrantError.ts"
+import type * as Bundler from "./infra/Bundler.ts"
+import type * as Paymaster from "./infra/Paymaster.ts"
 import type { Call } from "./internal/core/account/erc7579.ts"
 import * as core from "./internal/core/grant/grant.ts"
 import { describe as describeSession } from "./internal/core/session/describe.ts"
@@ -35,6 +38,7 @@ import * as internal from "./internal/grant/grant.ts"
 import * as history from "./internal/grant/history.ts"
 import * as lifecycle from "./internal/grant/lifecycle.ts"
 import { parse as parseGrant } from "./internal/grant/parse.ts"
+import * as provider from "./internal/grant/provider.ts"
 import * as status from "./internal/grant/status.ts"
 import * as agent from "./internal/grant/toAccount.ts"
 import * as watch from "./internal/grant/watch.ts"
@@ -376,6 +380,137 @@ export declare namespace toAccount {
     | ChainError.ChainError
     | GrantError.GrantError
     | PolicyViolationError.PolicyViolationError
+}
+
+/**
+ * The agent's account under a grant as an EIP-1193 provider on the client's chain, for wagmi, viem's `custom`
+ * transport and other tools that expect a wallet. It answers EIP-5792's wallet call API with user operations.
+ *
+ * **Details**
+ *
+ * The provider is built on `Grant.toAccount` (same `signer`, `lane` and `check`) and a viem bundler client configured
+ * by `bundler` (a `Bundler.*` helper's result) and `paymaster` (a `Paymaster.*` helper's result), so fees and
+ * `Compat.check` run as they do everywhere else.
+ *
+ * | Method | Answer |
+ * | --- | --- |
+ * | `eth_accounts`, `eth_requestAccounts` | `[address]`, the owner's account address |
+ * | `eth_chainId` | The client's chain |
+ * | `wallet_getCapabilities` | `{ [chainId]: { atomic: { status: "supported" }, paymasterService: { supported: true } } }` |
+ * | `wallet_sendCalls` (version 2.0.0) | One user operation with the batch's calls; `{ id }`, the operation's hash unless the request names an `id` |
+ * | `wallet_getCallsStatus` | The operation's status and receipt, as below |
+ * | `eth_signTypedData_v4` | An ERC-7739 session signature, as the account's `signTypedData` |
+ * | `personal_sign` | Refused (4200), as the account's `signMessage`: Smart Sessions verifies typed data only |
+ * | `wallet_switchEthereumChain` | `null` for the client's chain, 4902 for any other |
+ * | Other `eth_`, `net_` and `web3_` reads | Forwarded to the client's node |
+ * | Everything else (`eth_sendTransaction`, `eth_sign`, `wallet_showCallsStatus`, …) | Refused (4200) |
+ *
+ * A batch's calls are always atomic (one operation), so `atomicRequired` is honoured either way. Its
+ * `paymasterService` capability (ERC-7677) sponsors it through `Paymaster.erc7677({ url, context })` instead of
+ * `paymaster`; any other capability that isn't `optional` is refused (5700). A `from` other than the account is
+ * refused with 4100, a `chainId` other than the client's with 5710, and an `id` already used with 5720.
+ *
+ * `wallet_getCallsStatus` reads the bundler's receipt: 200 when the operation succeeded, 500 when its calls reverted
+ * (the batch reverted completely; only the gas charge changed state), 400 when it has no receipt and the account's
+ * nonce has moved past it (dropped: another operation used its nonce, so it is never included), and 100 otherwise.
+ * An operation the bundler drops without another one using its nonce reads as pending: no standard bundler method
+ * says it was dropped, so give `waitForCallsStatus` a timeout. Receipts hold the operation's own logs and gas. An id
+ * the request named is known only to the provider that sent it; an operation's hash is found by any provider of the
+ * account, and anything else is refused with 5730.
+ *
+ * Refusals are EIP-1193 errors with `code`, `message` (the error's `shortMessage`) and, for Namera's errors,
+ * `NameraError.toJSON(error)` as `data`, which `NameraError.fromJSON` turns back into the error: a policy or the grant
+ * refusing (`PolicyViolationError`, `GrantError`) is 4100, before anything is signed; the node's, bundler's and
+ * paymaster's failures are -32603.
+ *
+ * The provider emits `connect` and `accountsChanged` on the first `eth_requestAccounts`; it is on one chain and one
+ * account, so `chainChanged` and `disconnect` are never emitted.
+ *
+ * **Gotchas**
+ *
+ * Send one batch per lane at a time: a batch's nonce is read from the chain, so one sent before the last is included
+ * takes the same nonce, which the bundler refuses or treats as a replacement. Wait for the last batch's status, or use
+ * one provider per lane.
+ *
+ * Rejects with what `Grant.toAccount` rejects with.
+ *
+ * **Example** (A viem wallet client over the agent's provider)
+ *
+ * ```ts
+ * import { Bundler, Grant } from "@namera-ai/sdk"
+ * import { createPublicClient, createWalletClient, custom, http } from "viem"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const provider = await Grant.toProvider({
+ *   grant: Grant.parse(token),
+ *   signer: sessionKey,
+ *   client,
+ *   bundler: Bundler.pimlico({ apiKey })
+ * })
+ *
+ * const [address] = await provider.request({ method: "eth_requestAccounts" }) as Array<`0x${string}`>
+ * const wallet = createWalletClient({ account: address, chain: base, transport: custom(provider) })
+ * const { id } = await wallet.sendCalls({ calls: [{ to: recipient, value: 1n }] })
+ * await wallet.waitForCallsStatus({ id, timeout: 60_000 })
+ * ```
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export function toProvider(options: toProvider.Options): Promise<toProvider.Provider> {
+  return run(provider.toProvider(options), options)
+}
+
+/**
+ * Types of `Grant.toProvider`.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export declare namespace toProvider {
+  /**
+   * The grant, the session key's signer (or signers), the client on the chain to act on, the bundler and the default
+   * paymaster as `Bundler.*` and `Paymaster.*` helpers return them, and `Grant.toAccount`'s `lane` and `check`.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export interface Options extends RunOptions {
+    readonly grant: Grant
+    readonly signer: toAccount.Signer | ReadonlyArray<toAccount.Signer>
+    readonly client: ReadClient
+    readonly bundler: Bundler.Bundler
+    readonly paymaster?: Paymaster.Paymaster | undefined
+    readonly lane?: number | undefined
+    readonly check?: boolean | undefined
+  }
+  /**
+   * An EIP-1193 provider: `request`, and `on` / `removeListener` for its events.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Provider = provider.Provider
+  /**
+   * The events a provider emits, with their payloads.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type Events = provider.Events
+  /**
+   * The errors `Grant.toProvider` can reject with.
+   *
+   * @stability experimental
+   * @category utility types
+   * @since 2.0.0
+   */
+  export type ErrorType = AccountError.AccountError | ChainError.ChainError | GrantError.GrantError
 }
 
 /**

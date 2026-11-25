@@ -2,11 +2,11 @@
   "fixtures": {
     "agent.ts": {
       "rollup": 63488,
-      "esbuild": 79872
+      "esbuild": 81920
     },
     "owner.ts": {
       "rollup": 57344,
-      "esbuild": 73728
+      "esbuild": 80896
     },
     "index.ts": {
       "rollup": 119808,
@@ -54,7 +54,11 @@
     },
     "GrantParse.ts": {
       "rollup": 30720,
-      "esbuild": 69632
+      "esbuild": 76800
+    },
+    "GrantProvider.ts": {
+      "rollup": 65536,
+      "esbuild": 81920
     },
     "Bundler.ts": {
       "rollup": 43008,

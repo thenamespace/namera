@@ -40,6 +40,7 @@ import * as internal from "../internal/grant/grant.ts"
 import * as history from "../internal/grant/history.ts"
 import * as lifecycle from "../internal/grant/lifecycle.ts"
 import { parse as parseGrant } from "../internal/grant/parse.ts"
+import * as provider from "../internal/grant/provider.ts"
 import * as status from "../internal/grant/status.ts"
 import * as agent from "../internal/grant/toAccount.ts"
 import type { ReadClient } from "../internal/viem/client.ts"
@@ -172,6 +173,21 @@ export const toAccount: (
   options: Omit<Grant_.toAccount.Options, "signal">
 ) => Effect.Effect<SmartAccount, AccountError.AccountError | ChainError.ChainError | GrantError.GrantError> =
   agent.toAccount
+
+/**
+ * The agent's account under a grant as an EIP-1193 / EIP-5792 provider on the client's chain. The provider is
+ * Promise-based (wagmi and viem call it), and rejects with EIP-1193 errors carrying `NameraError.toJSON` as `data`.
+ *
+ * @stability experimental
+ * @category constructors
+ * @since 2.0.0
+ */
+export const toProvider: (
+  options: Omit<Grant_.toProvider.Options, "signal">
+) => Effect.Effect<
+  Grant_.toProvider.Provider,
+  AccountError.AccountError | ChainError.ChainError | GrantError.GrantError
+> = provider.toProvider
 
 /**
  * Checks calls against a grant's session without a key.

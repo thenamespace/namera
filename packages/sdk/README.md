@@ -268,6 +268,62 @@ validation. Custom and execution policies are left to the chain.
   staked FactoryStaker.
 - **Lanes**: send the first operation, which enables the session, on one lane before using others.
 
+### As a wallet (EIP-1193 and EIP-5792)
+
+`Grant.toProvider` wraps the same account in an EIP-1193 provider, for wagmi, viem's `custom` transport and other
+tools that expect a wallet. Each EIP-5792 batch (`wallet_sendCalls`, version 2.0.0) is one user operation, sent
+through a bundler client configured by the `Bundler.*` and `Paymaster.*` helpers, so fees and `Compat.check` run as
+everywhere else:
+
+```ts
+import { Bundler, Grant, NameraError } from "@namera-ai/sdk"
+import { createWalletClient, custom } from "viem"
+
+const provider = await Grant.toProvider({ grant, signer: sessionKey, client, bundler: Bundler.pimlico({ apiKey }) })
+const wallet = createWalletClient({ account: grant.account.split(":")[2], chain, transport: custom(provider) })
+
+const { id } = await wallet.sendCalls({ calls }) // id: the user operation's hash
+await wallet.waitForCallsStatus({ id, timeout: 60_000 })
+
+// Sponsored by an ERC-7677 paymaster service instead of the provider's `paymaster`
+await wallet.sendCalls({ calls, capabilities: { paymasterService: { url: paymasterUrl } } })
+```
+
+| Request                                                                                     | Answer                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eth_accounts`, `eth_requestAccounts`, `eth_chainId`                                        | The account address, the client's chain                                                                                                                                       |
+| `wallet_getCapabilities`                                                                    | `atomic: { status: "supported" }`, `paymasterService: { supported: true }` on the client's chain                                                                              |
+| `wallet_sendCalls`                                                                          | One operation; always atomic; `paymasterService` (ERC-7677) honoured, other non-optional capabilities refused (5700)                                                          |
+| `wallet_getCallsStatus`                                                                     | 100 pending, 200 confirmed, 400 dropped (no receipt, and the account's nonce moved past it), 500 reverted (the operation's calls reverted; only the gas charge changed state) |
+| `eth_signTypedData_v4`                                                                      | An ERC-7739 session signature, where a signing policy allows it                                                                                                               |
+| Other `eth_`, `net_`, `web3_` reads                                                         | Forwarded to the client's node                                                                                                                                                |
+| `personal_sign`, `eth_sendTransaction`, `eth_sign`, `wallet_showCallsStatus`, anything else | Refused with 4200                                                                                                                                                             |
+
+Refusals are EIP-1193 errors: a policy or the grant refusing is 4100, before anything is signed, with
+`NameraError.toJSON(error)` as `data`, so the app reads the Namera error back:
+
+```ts
+import type { BaseError } from "viem"
+
+try {
+  await wallet.sendCalls({ calls })
+} catch (error) {
+  // viem keeps the provider's error in its cause chain
+  const { data } = (error as BaseError).walk((cause) => (cause as { data?: unknown }).data !== undefined) as {
+    data: unknown
+  }
+  const refusal = NameraError.fromJSON(data) // a PolicyViolationError, with every violation
+}
+```
+
+- One chain and one account: `wallet_switchEthereumChain` to another chain is refused (4902), and the provider emits
+  `connect` and `accountsChanged` once, on the first `eth_requestAccounts`.
+- An operation the bundler drops without another one taking its nonce reads as pending: give `waitForCallsStatus` a
+  timeout. An id the app chose is known only to the provider that sent it.
+- Send one batch per lane at a time, or use one provider per lane.
+- Coinbase AgentKit's `ViemWalletProvider` sends with `eth_sendTransaction` and signs with `personal_sign`, which a
+  session key can't do; reads and `signTypedData` work through it.
+
 ## After a grant
 
 The owner revokes or updates a grant with owner operations through its bundler client (one per chain for a

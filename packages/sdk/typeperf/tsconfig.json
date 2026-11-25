@@ -34,6 +34,7 @@
     "owner.ts",
     "agent.ts",
     "viem.ts",
-    "decorators.ts"
+    "decorators.ts",
+    "provider.ts"
   ]
 }

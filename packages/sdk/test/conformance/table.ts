@@ -1,5 +1,6 @@
 import { assert } from "@effect/vitest"
 import {
+  Bundler,
   ChainError,
   Grant,
   KernelAccount,
@@ -18,7 +19,7 @@ import { entryPoint07Abi, entryPoint07Address } from "viem/account-abstraction"
 
 import { contracts } from "@namera-ai/sdk/internal/session/contracts"
 
-import { client, newOwner } from "../accounts/accounts.test-utils.ts"
+import { client, devnet, newOwner } from "../accounts/accounts.test-utils.ts"
 
 /** A call in both forms: the Promise one takes the abort signal. */
 interface Call {
@@ -65,6 +66,7 @@ const prepared: Grant.Prepared = {
 }
 const otherChainGrant = Grant.from({ ...prepared, signature: "0x12" })
 const agentSigner = newOwner()
+const devnetBundler = Bundler.from({ url: devnet.bundlerUrl })
 
 // A client on the test chain without a chain configured, and one whose node can't be reached.
 const chainless = createClient({ transport: http(client.transport.url) })
@@ -556,6 +558,15 @@ export const table: Record<string, Conformance> = {
     failure: {
       promise: (signal) => Grant.toAccount(client, { grant: otherChainGrant, signer: agentSigner, signal }),
       effect: () => Effect_.Grant.toAccount(client, { grant: otherChainGrant, signer: agentSigner })
+    }
+  },
+  "Grant.toProvider": {
+    kind: "async",
+    failure: {
+      promise: (signal) =>
+        Grant.toProvider({ grant: otherChainGrant, signer: agentSigner, client, bundler: devnetBundler, signal }),
+      effect: () =>
+        Effect_.Grant.toProvider({ grant: otherChainGrant, signer: agentSigner, client, bundler: devnetBundler })
     }
   },
   "Grant.check": {
