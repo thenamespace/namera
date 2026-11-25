@@ -1329,7 +1329,7 @@ export declare const decode: <E>(error: E) => NameraError | E;
  */
 import type * as Abi from "ox/Abi";
 import type * as AbiFunction from "ox/AbiFunction";
-import type * as AbiParameter from "ox/AbiParameter";
+import type * as AbiParameters from "ox/AbiParameters";
 import type * as internal from "./internal/core/session/policy.ts";
 /**
  * A condition on a value: the value itself (equal), a list (one of), or one bound: `{ lt }`, `{ lte }`, `{ gt }`,
@@ -1375,7 +1375,7 @@ export type Policy = internal.Policy;
  */
 export type ConditionOf<parameter> = parameter extends {
     readonly type: "tuple";
-    readonly components: infer components extends ReadonlyArray<AbiParameter.AbiParameter>;
+    readonly components: infer components extends ReadonlyArray<AbiParameters.Parameter>;
 } ? ArgumentConditions<components> : parameter extends {
     readonly type: "address";
 } ? Equality<`0x${string}`> : parameter extends {
@@ -1394,7 +1394,7 @@ export type ConditionOf<parameter> = parameter extends {
  * @category utility types
  * @since 2.0.0
  */
-export type ArgumentConditions<parameters extends ReadonlyArray<AbiParameter.AbiParameter>> = {
+export type ArgumentConditions<parameters extends ReadonlyArray<AbiParameters.Parameter>> = {
     readonly [parameter in parameters[number] as parameter["name"] extends `${infer name}` ? name extends "" ? never : name : never]?: ConditionOf<parameter>;
 };
 /**

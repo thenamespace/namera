@@ -1,5 +1,6 @@
 import * as AbiFunction from "ox/AbiFunction"
 import * as AbiParameters from "ox/AbiParameters"
+import * as Address from "ox/Address"
 import * as Hash from "ox/Hash"
 import * as Hex from "ox/Hex"
 import * as TypedData from "ox/TypedData"
@@ -178,7 +179,8 @@ export const replaceEcdsaOwnerData = (owner: Hex.Hex): readonly [Hex.Hex, Hex.He
 export const encodeEcdsaOwner = (account: Hex.Hex): Hex.Hex => AbiFunction.encodeData(ecdsaValidatorStorage, [account])
 
 /** Decodes the ECDSA validator's owner. @internal */
-export const decodeEcdsaOwner = (result: Hex.Hex): Hex.Hex => AbiFunction.decodeResult(ecdsaValidatorStorage, result)
+export const decodeEcdsaOwner = (result: Hex.Hex): Hex.Hex =>
+  Address.checksum(AbiFunction.decodeResult(ecdsaValidatorStorage, result))
 
 /** Kernel's `rootValidator()` view. @internal */
 export const encodeRootValidator: Hex.Hex = AbiFunction.encodeData(rootValidator)

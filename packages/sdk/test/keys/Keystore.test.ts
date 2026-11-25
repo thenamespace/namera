@@ -3,7 +3,8 @@ import { Key, Keystore, type KeystoreError } from "@namera-ai/sdk"
 import { parseEther, recoverMessageAddress, recoverTransactionAddress, recoverTypedDataAddress } from "viem"
 import { recoverAuthorizationAddress } from "viem/utils"
 
-import { conformance, reasonOf, rejection } from "./keystore.test-utils.ts"
+import { oxV1Export } from "./encryptedJson.fixture.ts"
+import { conformance, digest, reasonOf, rejection, verifies } from "./keystore.test-utils.ts"
 
 // A cheap key derivation keeps the tests fast; the default (scrypt n = 262144) takes about a second per key.
 const kdf = { type: "scrypt", n: 1024 } as const
@@ -23,6 +24,16 @@ describe("Keystore.encryptedJson", () => {
     assert.deepStrictEqual(await Keystore.list(reopened), [key])
     const signature = await Keystore.sign(reopened, { id: key.id, digest: `0x${"01".repeat(32)}` })
     assert.strictEqual(signature.length, 132)
+  })
+
+  it("opens an export an earlier ox encrypted, and signs with every key in it", async () => {
+    const store = Keystore.encryptedJson({ password, data: oxV1Export })
+    const keys = await Keystore.list(store)
+
+    assert.deepStrictEqual(keys.map((key) => key.curve), ["secp256k1", "ed25519", "p256"])
+    for (const key of keys) {
+      assert.isTrue(await verifies(key, await Keystore.sign(store, { id: key.id, digest })), key.curve)
+    }
   })
 
   it("fails with Locked when the password is wrong, once a key is used", async () => {

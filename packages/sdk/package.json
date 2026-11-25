@@ -100,7 +100,7 @@
   },
   "dependencies": {
     "@namera-ai/contracts": "workspace:^",
-    "ox": "^1.8.19"
+    "ox": "0.14.67"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",

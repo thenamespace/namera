@@ -342,8 +342,8 @@ importers:
         specifier: workspace:^
         version: link:../contracts
       ox:
-        specifier: ^1.8.19
-        version: 1.8.19(typescript@7.0.2)
+        specifier: 0.14.67
+        version: 0.14.67(typescript@7.0.2)(zod@4.6.6)
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'

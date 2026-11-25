@@ -9,6 +9,7 @@ import { contractsCommand } from "./commands/contracts.ts"
 import { devnetCommand } from "./commands/devnet.ts"
 import { distTypes } from "./commands/distTypes.ts"
 import { lint } from "./commands/lint.ts"
+import { oxPin } from "./commands/oxPin.ts"
 import { packCheck } from "./commands/packCheck.ts"
 import { releaseCommand } from "./commands/release.ts"
 import { typeCost } from "./commands/typeCost.ts"
@@ -26,6 +27,7 @@ export const cli = Command.make("scripts").pipe(
     devnetCommand,
     distTypes,
     lint,
+    oxPin,
     packCheck,
     releaseCommand,
     typeCost

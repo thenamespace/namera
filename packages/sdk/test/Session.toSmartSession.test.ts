@@ -130,7 +130,8 @@ describe("Session.toSmartSession", () => {
     assert.deepStrictEqual(
       AbiParameters.decode(
         AbiParameters.from(["(address token, uint256 amount, uint256 period, bool countApprovals)[]"]),
-        byPolicy.get(SpendPolicy.v1.address)!
+        byPolicy.get(SpendPolicy.v1.address)!,
+        { checksumAddress: true }
       )[0],
       [
         { token: USDC, amount: 200n, period: 86400n, countApprovals: true },
@@ -157,13 +158,15 @@ describe("Session.toSmartSession", () => {
     assert.deepStrictEqual(
       AbiParameters.decode(
         AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
-        approve.actionPolicies[1]!.initData
+        approve.actionPolicies[1]!.initData,
+        { checksumAddress: true }
       ),
       [[permit2], [{ token: USDC, maxAmount: 10n }]]
     )
     const limits = AbiParameters.decode(
       AbiParameters.from(["(address token, uint256 amount, uint256 period, bool countApprovals)[]"]),
-      struct.userOpPolicies[0]!.initData
+      struct.userOpPolicies[0]!.initData,
+      { checksumAddress: true }
     )[0]
     // Rerun review: a capped approval still counts against the spend budget, or approve-then-pull would bypass it.
     assert.isTrue(limits[0]!.countApprovals)
@@ -178,7 +181,8 @@ describe("Session.toSmartSession", () => {
     ])
     const [, caps] = AbiParameters.decode(
       AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
-      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData
+      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData,
+      { checksumAddress: true }
     )
     assert.deepStrictEqual(caps, [{ token: USDC, maxAmount: 10n }, { token: dai, maxAmount: 10n ** 19n }])
     assert.throws(() =>
@@ -198,7 +202,8 @@ describe("Session.toSmartSession", () => {
     ])
     const [, caps] = AbiParameters.decode(
       AbiParameters.from(["address[]", "(address token, uint256 maxAmount)[]"]),
-      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData
+      actionOf(struct, USDC, "0x095ea7b3").actionPolicies[0]!.initData,
+      { checksumAddress: true }
     )
     assert.deepStrictEqual(caps, [{ token: USDC, maxAmount: 10n }])
 
@@ -282,7 +287,9 @@ describe("Session.toSmartSession", () => {
     const hook = struct.userOpPolicies.find((entry) => entry.policy === SessionHook.v1.address)!
 
     assert.deepStrictEqual(
-      AbiParameters.decode(AbiParameters.from(["(address policy, bytes initData)[]"]), hook.initData)[0],
+      AbiParameters.decode(AbiParameters.from(["(address policy, bytes initData)[]"]), hook.initData, {
+        checksumAddress: true
+      })[0],
       [{ policy: guard, initData: "0xabcd" }]
     )
   })
@@ -308,7 +315,13 @@ describe("Session.toSmartSession", () => {
     ])
     const policy = struct.erc7739Policies.erc1271Policies[0]!
     assert.strictEqual(policy.policy, SignaturePolicy.v1.address)
-    const [config] = AbiParameters.decode(AbiParameters.from(["(address[] verifiers, bytes[] types)"]), policy.initData)
+    const [config] = AbiParameters.decode(
+      AbiParameters.from(["(address[] verifiers, bytes[] types)"]),
+      policy.initData,
+      {
+        checksumAddress: true
+      }
+    )
     assert.deepStrictEqual(config.verifiers, [USDC])
     assert.deepStrictEqual(
       AbiParameters.decode(

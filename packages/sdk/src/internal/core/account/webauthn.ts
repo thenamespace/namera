@@ -83,7 +83,7 @@ const stubWord: Hex.Hex = "0xfffffffffffffffffffffffffffffffffffffffffffffffffff
 
 const coordinates = (publicKey: Hex.Hex) => {
   const { x, y } = PublicKey.fromHex(publicKey)
-  return { x: Hex.padLeft(x, 32), y: Hex.padLeft(y, 32) }
+  return { x: Hex.fromNumber(x, { size: 32 }), y: Hex.fromNumber(y, { size: 32 }) }
 }
 
 /**

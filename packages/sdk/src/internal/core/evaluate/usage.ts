@@ -68,7 +68,7 @@ export interface Limit extends Counter {
 export const limitsOf = (compiled: Compiled, contracts: Contracts): ReadonlyArray<Limit> =>
   compiled.userOpPolicies.flatMap(({ initData, policy }): ReadonlyArray<Limit> => {
     if (same(policy, contracts.spendPolicy)) {
-      const [entries] = AbiParameters.decode(limits, initData)
+      const [entries] = AbiParameters.decode(limits, initData, { checksumAddress: true })
       return entries.map((limit) => ({
         kind: "spend",
         policy,

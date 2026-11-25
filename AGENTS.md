@@ -50,6 +50,7 @@ Dependencies point inward: apps depend on packages, packages never depend on app
 | `pnpm api-snapshot`       | Rewrite `packages/<name>/etc/<name>.api.md`; review the diff, it is the API      |
 | `pnpm bundle-size`        | Bundle `bundle/budgets.json` fixtures with rollup and esbuild, fail over budget  |
 | `pnpm type-cost`          | Type-check cost of each `typeperf/` consumer against its baseline (`--update`)   |
+| `pnpm ox-pin`             | Fail when the SDK's `ox` is not the exact version viem depends on                |
 | `pnpm pack:check`         | Pack each package and check it with publint and attw                             |
 | `pnpm contracts:<action>` | `status`, `deploy`, `record`, `verify`, `generate`: see `contracts/README.md`    |
 | `pnpm changeset`          | Record a change to a published package                                           |
@@ -123,6 +124,8 @@ call it). No JavaScript under `scripts/`: `pnpm lint` fails on `.js`/`.mjs`/`.cj
 - Root and development dependencies are exact versions; published packages declare ranges
   (`^4.1.5`) for `dependencies` and `peerDependencies`. `effect` is a peer of every library.
 - The pnpm catalog holds versions more than one package.json uses.
+- The SDK pins `ox` to the exact version its viem depends on (`pnpm ox-pin` checks it), so an app bundles one ox and
+  one `@noble/*`; upgrade them together.
 - New releases must be a day old before they install (`minimumReleaseAge`), except `effect`,
   `@effect/*` and `@effect-kit/*`. Dependency install scripts are denied unless listed in
   `allowBuilds`.

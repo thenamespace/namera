@@ -66,7 +66,7 @@ export const sign = (curve: Curve, privateKey: Hex.Hex, digest: Hex.Hex): Hex.He
       return Signature.toHex(Secp256k1.sign({ payload: digest, privateKey }))
     case "p256": {
       const { r, s } = P256.sign({ payload: digest, privateKey })
-      return Hex.concat(Hex.padLeft(r, 32), Hex.padLeft(s, 32))
+      return Hex.concat(Hex.fromNumber(r, { size: 32 }), Hex.fromNumber(s, { size: 32 }))
     }
     case "ed25519":
       return Ed25519.sign({ payload: digest, privateKey })

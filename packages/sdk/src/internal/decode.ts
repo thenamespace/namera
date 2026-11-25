@@ -2,6 +2,7 @@ import * as SessionHook from "@namera-ai/contracts/SessionHook"
 import * as SmartSession from "@namera-ai/contracts/SmartSession"
 import * as Predicate from "effect/Predicate"
 import * as AbiError from "ox/AbiError"
+import * as AbiParameters from "ox/AbiParameters"
 import * as Hex from "ox/Hex"
 
 import * as BundlerError from "../infra/BundlerError.ts"
@@ -198,13 +199,11 @@ const decodeRevert = (data: Hex.Hex): Revert | undefined => {
   const error = bySelector.get(Hex.slice(data, 0, 4).toLowerCase() as Hex.Hex)
   if (error === undefined) return undefined
   try {
-    const decoded = AbiError.decode(error, data, { as: "Array" }) as unknown
-    return {
-      data,
-      error,
-      args: Array.isArray(decoded) ? decoded : decoded === undefined ? [] : [decoded],
-      complete: true
-    }
+    // `AbiError.decode` without its unwrapping of a single argument, and with addresses checksummed for the errors.
+    const args: ReadonlyArray<unknown> = AbiParameters.decode(error.inputs, Hex.slice(data, 4), {
+      checksumAddress: true
+    })
+    return { data, error, args, complete: true }
   } catch {
     // Candide cuts the address argument to 20 bytes.
     return (error === bundlerNotAllowed || error === senderNotAllowed) && Hex.size(data) >= 24

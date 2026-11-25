@@ -7,7 +7,8 @@ import * as PublicKey from "ox/PublicKey"
 import * as Signature from "ox/Signature"
 import { recoverAddress } from "viem"
 
-const digest = `0x${"5a".repeat(32)}` as const
+/** The digest `verifies` checks a signature of. */
+export const digest = `0x${"5a".repeat(32)}` as const
 
 export const rejection = (promise: Promise<unknown>) =>
   promise.then(
@@ -20,7 +21,7 @@ export const reasonOf = (error: unknown) => {
   return (error as KeystoreError.KeystoreError).reason
 }
 
-/** Whether `signature` is the key's signature of the digest, by the key's curve. */
+/** Whether `signature` is the key's signature of `digest`, by the key's curve. */
 export const verifies = async (
   key: Key.Key,
   signature: `0x${string}`,
@@ -33,7 +34,11 @@ export const verifies = async (
       return P256.verify({
         payload: prehash === "sha256" ? Hash.sha256(digest) : digest,
         publicKey: PublicKey.fromHex(key.publicKey),
-        signature: Signature.from({ r: `0x${signature.slice(2, 66)}`, s: `0x${signature.slice(66, 130)}`, yParity: 0 })
+        signature: Signature.from({
+          r: BigInt(`0x${signature.slice(2, 66)}`),
+          s: BigInt(`0x${signature.slice(66, 130)}`),
+          yParity: 0
+        })
       })
     case "ed25519":
       return Ed25519.verify({ payload: digest, publicKey: key.publicKey, signature })

@@ -243,7 +243,7 @@ const limitViolations = (
 ): ReadonlyArray<Violation> =>
   compiled.userOpPolicies.flatMap(({ initData, policy }): ReadonlyArray<Violation> => {
     if (same(policy, contracts.spendPolicy)) {
-      const [entries] = AbiParameters.decode(limits, initData)
+      const [entries] = AbiParameters.decode(limits, initData, { checksumAddress: true })
       return entries.flatMap((limit): ReadonlyArray<Violation> => {
         const amount = operation.calls.reduce(
           (sum, call) => sum + spent(call, limit.token, limit.countApprovals),

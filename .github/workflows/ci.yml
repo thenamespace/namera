@@ -45,6 +45,7 @@ jobs:
           cache: pnpm
       - run: pnpm format:check
       - run: pnpm lint
+      - run: pnpm ox-pin
       - run: pnpm circular
       - run: pnpm docs:check
       # Barrels, exports maps, the version module, @namera-ai/contracts and the devnet's bytecode.
