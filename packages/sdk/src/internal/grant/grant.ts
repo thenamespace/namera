@@ -18,6 +18,7 @@ import { describe } from "../core/session/describe.ts"
 import type { Session } from "../core/session/session.ts"
 import { validate } from "../core/session/validate.ts"
 import { contracts } from "../session/contracts.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import { call, code, type ReadClient, verifyHash } from "../viem/client.ts"
 import {
   type BundlerClient,
@@ -110,6 +111,11 @@ export const prepare = Effect.fnUntraced(function*(options: {
   yield* requireValid(options.session, first.address)
 
   const id = permissionId(options.session, contracts)
+  yield* annotate({
+    chainId: chainIdsOf(accounts.map((account) => account.client)),
+    accountType: first.namera?.type,
+    grantId: id
+  })
   const chains: Array<Prepared["chains"][number]> = []
   for (const account of accounts) {
     const nonce = yield* readNonce(account.client, id, account.address)
@@ -154,7 +160,7 @@ export const prepare = Effect.fnUntraced(function*(options: {
     chains,
     typedData: toTypedData(core.entries(grant))
   }
-})
+}, traced("Namera.Grant.prepare"))
 
 // Grants keep the raw ERC-1271 signature: an undeployed account's signer wraps it for ERC-6492, which Smart Sessions'
 // on-chain check (after the account is deployed) would refuse. `verify` wraps it again while the account is undeployed.
@@ -211,13 +217,18 @@ export const create = Effect.fnUntraced(function*(options: {
 > {
   const accounts = yield* accountsOf(options.account)
   const prepared = yield* prepare(options)
+  yield* annotate({
+    chainId: chainIdsOf(accounts.map((account) => account.client)),
+    accountType: prepared.accountType.type,
+    grantId: permissionId(options.session, contracts)
+  })
 
   const signatures: Record<number, Hex.Hex> = {}
   for (const account of accounts) {
     signatures[account.client.chain!.id] = yield* signTypedData(account, prepared.typedData)
   }
   return yield* Effect.fromResult(from({ ...prepared, signatures }))
-})
+}, traced("Namera.Grant.create"))
 
 const withoutSignature = (chain: Prepared["chains"][number]): core.GrantChain => ({ ...chain, signature: "0x" })
 
@@ -236,11 +247,16 @@ export const install = Effect.fnUntraced(function*(
 ): Effect.fn.Return<Hex.Hex, AccountError.AccountError | ChainError.ChainError | SessionError.SessionError> {
   const account = yield* bundlerAccount(client)
   yield* requireValid(options.session, account.address)
+  yield* annotate({
+    chainId: chainIdsOf(client),
+    accountType: account.namera?.type,
+    grantId: permissionId(options.session, contracts)
+  })
   return yield* sendUserOperation(client, {
     account,
     calls: [{ to: contracts.smartSession, data: encodeEnableSessions([compile(options.session, contracts)]) }]
   })
-})
+}, traced("Namera.Grant.install"))
 
 /**
  * Enables the session and waits for it, returning the receipt and the grant of the installed session: its chains
@@ -257,6 +273,11 @@ export const installSync = Effect.fnUntraced(function*(
 > {
   const account = yield* bundlerAccount(client)
   const prepared = yield* prepare({ account, session: options.session })
+  yield* annotate({
+    chainId: chainIdsOf(client),
+    accountType: prepared.accountType.type,
+    grantId: permissionId(options.session, contracts)
+  })
   const hash = yield* install(client, options)
   const { receipt, success } = yield* waitForUserOperationReceipt(client, hash)
   if (!success) {
@@ -277,7 +298,7 @@ export const installSync = Effect.fnUntraced(function*(
     summary: describe(options.session)
   }
   return { grant, receipt }
-})
+}, traced("Namera.Grant.installSync"))
 
 /**
  * Checks a grant on the client's chain: every chain's digest against its session, then the owner's signature on
@@ -290,6 +311,7 @@ export const verify = Effect.fnUntraced(function*(
   client: ReadClient,
   grant: core.Grant
 ): Effect.fn.Return<void, ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(grant) })
   const chainId = client.chain?.id
   const chain = grant.chains.find((entry) => core.chainId(entry.chain) === chainId)
   if (chain === undefined) {
@@ -319,4 +341,4 @@ export const verify = Effect.fnUntraced(function*(
     : chain.signature
   const valid = yield* verifyHash(client, { address, hash: multichainDigest(entries), signature })
   if (!valid) return yield* invalid
-})
+}, traced("Namera.Grant.verify"))

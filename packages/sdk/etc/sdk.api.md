@@ -5245,6 +5245,9 @@ export * as Keystore from "./Keystore.ts";
  *   either side.
  * - Services exist only here: `Keystore.CurrentKeystore`, with `Keystore.layer`, `layerMemory`, `layerEncryptedJson`
  *   and the node and browser entries' layers. A service in context wins over an option that names the same thing.
+ * - Tracing: Namera's spans (`Namera.Grant.create`, …) go to the program's `Tracer` once `Otel.layer` from
+ *   `@namera-ai/sdk/otel` is provided; a tracer in the program's context wins over the one `Otel.install()` sets for
+ *   the Promise API.
  *
  * @stability experimental
  * @since 2.0.0
@@ -8640,4 +8643,89 @@ export declare namespace osKeychain {
  * @since 2.0.0
  */
 export * as Keystore from "./Keystore.ts";
+```
+
+## otel/Otel.d.ts
+
+```ts
+import * as Layer from "effect/Layer";
+/**
+ * Layer that sends Namera's spans to the global OpenTelemetry tracer provider, as the `@namera-ai/sdk` tracer.
+ *
+ * **When to use**
+ *
+ * Use with the Effect API: provide it to a program, and its Namera spans nest under the program's spans or, at the
+ * top, under the active OpenTelemetry span. A program that already provides an OpenTelemetry tracer (the
+ * `@effect/opentelemetry` Node SDK) needs nothing: Namera's spans go to the tracer in context.
+ *
+ * **Details**
+ *
+ * Built from `@effect/opentelemetry`'s `OtelTracer` (the global provider, as `OtelTracer.layerGlobal` reads it), with
+ * failures redacted as the module describes.
+ *
+ * **Example** (Tracing an Effect program)
+ *
+ * ```ts
+ * import { Grant } from "@namera-ai/sdk/effect"
+ * import { Otel } from "@namera-ai/sdk/otel"
+ * import { Effect } from "effect"
+ *
+ * const program = Grant.getStatus(client, { grant }).pipe(Effect.withSpan("checkout"), Effect.provide(Otel.layer))
+ * ```
+ *
+ * @stability unstable
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layer: Layer.Layer<never>;
+/**
+ * Sends the Promise API's spans to the global OpenTelemetry tracer provider, and returns a function that stops it.
+ *
+ * **When to use**
+ *
+ * Use when an app on the Promise API has OpenTelemetry set up: call it once at startup, and each Namera call then
+ * nests its span under the span active where it was called.
+ *
+ * **Details**
+ *
+ * Installs `Otel.layer` for every later Promise call. The Effect API is unaffected: Effect programs provide
+ * `Otel.layer` or their own tracer, and the tracer in a program's context always wins.
+ *
+ * **Example** (Tracing the Promise API)
+ *
+ * ```ts
+ * import { Grant } from "@namera-ai/sdk"
+ * import { Otel } from "@namera-ai/sdk/otel"
+ * import { trace } from "@opentelemetry/api"
+ *
+ * Otel.install()
+ *
+ * await trace.getTracer("app").startActiveSpan("checkout", async (span) => {
+ *   await Grant.getStatus(client, { grant }) // a `Namera.Grant.getStatus` span under "checkout"
+ *   span.end()
+ * })
+ * ```
+ *
+ * @stability unstable
+ * @category tracing
+ * @since 2.0.0
+ */
+export declare const install: () => () => void;
+```
+
+## otel/index.d.ts
+
+```ts
+/**
+ * The OpenTelemetry bridge, an optional entry: `Otel.install()` for the Promise API, `Otel.layer` for the Effect API.
+ * Needs `@effect/opentelemetry` and `@opentelemetry/api`.
+ *
+ * @stability unstable
+ * @since 2.0.0
+ */
+/**
+ * @stability unstable
+ * @since 2.0.0
+ */
+export * as Otel from "./Otel.ts";
 ```

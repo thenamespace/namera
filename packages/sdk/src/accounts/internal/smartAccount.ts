@@ -5,6 +5,7 @@ import { fromUnknown, isForeign } from "../../internal/chainError.ts"
 import type { Call } from "../../internal/core/account/erc7579.ts"
 import { isNameraError } from "../../internal/nameraError.ts"
 import { run } from "../../internal/promise.ts"
+import { annotate, chainIdsOf, traced } from "../../internal/span.ts"
 import {
   type AccountClient,
   type ChainClient,
@@ -115,7 +116,10 @@ export const from = <const Implementation extends SmartAccountImplementation>(
           detail: "viem could not build the account",
           cause
         })
-  })
+  }).pipe(
+    Effect.tap(() => annotate({ chainId: chainIdsOf(implementation.client) })),
+    traced("Namera.SmartAccount.from")
+  )
 
 /**
  * Everything that differs between the ways to build an account (key or passkey owner, deployed or EIP-7702); `define`

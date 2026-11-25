@@ -17,6 +17,7 @@ pnpm add @namera-ai/sdk viem effect
 | `@namera-ai/sdk`            | The Promise API: `Session`, `Grant`, `Bundler`, `Paymaster`, `Compat`, …      |
 | `@namera-ai/sdk/effect`     | The same modules and names, with asynchronous functions returning an `Effect` |
 | `@namera-ai/sdk/decorators` | `nameraActions()`, the optional viem decorator                                |
+| `@namera-ai/sdk/otel`       | `Otel`, the optional OpenTelemetry bridge                                     |
 
 Every module is also importable on its own (`@namera-ai/sdk/Session`).
 
@@ -436,6 +437,29 @@ await Effect.runPromise(program.pipe(Effect.provide(Keystore.layerMemory)))
 ```
 
 Precedence: where an API accepts both an option and a service for the same thing, the service in context wins.
+
+## OpenTelemetry
+
+`@namera-ai/sdk/otel` sends Namera's spans to the app's OpenTelemetry tracer provider (the global one, registered by
+the app or the OpenTelemetry Node SDK). It needs the optional peers `@effect/opentelemetry` and `@opentelemetry/api`.
+
+```ts
+import { Otel } from "@namera-ai/sdk/otel"
+
+Otel.install() // the Promise API; returns a function that uninstalls it
+
+const traced = program.pipe(Effect.provide(Otel.layer)) // the Effect API
+```
+
+- Spans are named `Namera.<Module>.<function>` (`Namera.Grant.create`, `Namera.Grant.getStatus`,
+  `Namera.SmartAccount.addOwnerSync`, `Namera.KernelAccount.from`, …) and nest under the span active where the call
+  was made: the app's OpenTelemetry span, or the Effect program's span.
+- Attributes: `namera.chain.id` (the chain, or the chains of a call on several), `namera.account.type` and
+  `namera.grant.id` where they apply. Never keys, signatures, addresses or endpoint URLs.
+- Failures are recorded with URLs redacted from the message and the stack, including the viem error a `ChainError`
+  keeps as its cause, whose message has the request URL and any API key in it.
+- Until `./otel` is used, Namera creates no spans and bundles none of Effect's span code (about 4.4 KB gzip).
+- The tracer in an Effect program's context wins: `Otel.install()` affects only the Promise API.
 
 ## The viem decorator
 

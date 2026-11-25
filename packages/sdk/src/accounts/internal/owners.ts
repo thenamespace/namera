@@ -10,6 +10,7 @@ import {
 } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
 import * as WebAuthn from "../../internal/core/account/webauthn.ts"
+import { annotate, chainIdsOf, traced } from "../../internal/span.ts"
 import { call, type Hex, type Owner, type ReadClient } from "../../internal/viem/client.ts"
 import {
   type BundlerClient,
@@ -81,6 +82,7 @@ export const getOwners = Effect.fnUntraced(function*(
   client: ReadClient,
   address: Hex
 ): Effect.fn.Return<ReadonlyArray<OwnerSet>, AccountError.AccountError | ChainError.ChainError> {
+  yield* annotate({ chainId: chainIdsOf(client) })
   const detected = yield* detect(client, address)
   switch (detected.type) {
     case "undeployed":
@@ -117,7 +119,7 @@ export const getOwners = Effect.fnUntraced(function*(
     }
   }
   return sets
-})
+}, traced("Namera.SmartAccount.getOwners"))
 
 /** What the owner functions know about the account they change. */
 interface Target {
@@ -365,40 +367,54 @@ const bundlerAccount = (client: BundlerClient): Effect.Effect<NameraSmartAccount
     )
     : Effect.succeed(client.account as NameraSmartAccount)
 
-/**
- * Sends the calls an owner function builds for the bundler client's account, returning the user operation hash.
- *
- * @internal
- */
-export const send = Effect.fnUntraced(function*(
+type Calls = (
+  account: NameraSmartAccount
+) => Effect.Effect<ReadonlyArray<Call>, AccountError.AccountError | ChainError.ChainError>
+
+const sendCalls = Effect.fnUntraced(function*(
   client: BundlerClient,
-  calls: (
-    account: NameraSmartAccount
-  ) => Effect.Effect<ReadonlyArray<Call>, AccountError.AccountError | ChainError.ChainError>
+  calls: Calls
 ): Effect.fn.Return<Hex, AccountError.AccountError | ChainError.ChainError> {
   const account = yield* bundlerAccount(client)
   return yield* sendUserOperation(client, { account, calls: yield* calls(account) })
 })
 
 /**
- * Sends the calls an owner function builds and waits until the operation is included, returning its receipt.
+ * Sends the calls an owner function builds for the bundler client's account, returning the user operation hash, in a
+ * `Namera.SmartAccount.<operation>` span.
  *
  * @internal
  */
-export const sendSync = Effect.fnUntraced(function*(
+export const send = (
+  operation: string,
   client: BundlerClient,
-  calls: (
-    account: NameraSmartAccount
-  ) => Effect.Effect<ReadonlyArray<Call>, AccountError.AccountError | ChainError.ChainError>
-): Effect.fn.Return<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> {
-  const hash = yield* send(client, calls)
-  const { receipt, success } = yield* waitForUserOperationReceipt(client, hash)
-  if (!success) {
-    return yield* ChainError.reverted({
-      method: "eth_sendUserOperation",
-      chainId: client.chain?.id,
-      detail: `user operation ${hash} reverted`
-    })
-  }
-  return receipt
-})
+  calls: Calls
+): Effect.Effect<Hex, AccountError.AccountError | ChainError.ChainError> =>
+  Effect.andThen(annotate({ chainId: chainIdsOf(client) }), sendCalls(client, calls)).pipe(
+    traced(`Namera.SmartAccount.${operation}`)
+  )
+
+/**
+ * Sends the calls an owner function builds and waits until the operation is included, returning its receipt, in a
+ * `Namera.SmartAccount.<operation>Sync` span.
+ *
+ * @internal
+ */
+export const sendSync = (
+  operation: string,
+  client: BundlerClient,
+  calls: Calls
+): Effect.Effect<TransactionReceipt, AccountError.AccountError | ChainError.ChainError> =>
+  Effect.gen(function*() {
+    yield* annotate({ chainId: chainIdsOf(client) })
+    const hash = yield* sendCalls(client, calls)
+    const { receipt, success } = yield* waitForUserOperationReceipt(client, hash)
+    if (!success) {
+      return yield* ChainError.reverted({
+        method: "eth_sendUserOperation",
+        chainId: client.chain?.id,
+        detail: `user operation ${hash} reverted`
+      })
+    }
+    return receipt
+  }).pipe(traced(`Namera.SmartAccount.${operation}Sync`))

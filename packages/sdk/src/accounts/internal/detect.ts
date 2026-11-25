@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect"
 
 import type * as ChainError from "../../ChainError.ts"
 import { decodeRootValidator, encodeRootValidator } from "../../internal/core/account/kernel.ts"
+import { annotate, chainIdsOf, traced } from "../../internal/span.ts"
 import {
   type AccountClient,
   call,
@@ -54,6 +55,7 @@ export const detect = Effect.fnUntraced(function*(
   client: ReadClient,
   address: Hex
 ): Effect.fn.Return<Detected, ChainError.ChainError> {
+  yield* annotate({ chainId: chainIdsOf(client) })
   const deployed = yield* code(client, address)
   if (deployed === undefined) return { type: "undeployed" }
 
@@ -72,7 +74,7 @@ export const detect = Effect.fnUntraced(function*(
     implementation,
     sessionsInstalled: yield* isSessionsInstalled(client, address)
   }
-})
+}, traced("Namera.SmartAccount.detect"))
 
 // Whether `validator` is a Kernel account's root validator, rather than one installed next to it.
 const isKernelRoot = (client: AccountClient, address: Hex, validator: Hex) =>
@@ -95,6 +97,7 @@ export interface FromAddressOptions {
 export const fromAddress = Effect.fnUntraced(function*(
   options: FromAddressOptions
 ): Effect.fn.Return<NameraSmartAccount, AccountError.AccountError | ChainError.ChainError> {
+  yield* annotate({ chainId: chainIdsOf(options.client) })
   const ref = { type: "unknown", address: options.address } as const
   const owners: ReadonlyArray<Owner | Passkeys.Owner> = options.owners ??
     (options.owner === undefined ? [] : [options.owner])
@@ -155,4 +158,4 @@ export const fromAddress = Effect.fnUntraced(function*(
     version,
     sessions: false
   })
-})
+}, traced("Namera.SmartAccount.fromAddress"))

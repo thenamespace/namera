@@ -691,7 +691,7 @@ export declare namespace addOwnerCalls {
  * @since 2.0.0
  */
 export function addOwner(client: BundlerClient, options: addOwnerCalls.Options): Promise<Hex> {
-  return run(owners.send(client, (account) => owners.addOwnerCalls(account, options.owner)), options)
+  return run(owners.send("addOwner", client, (account) => owners.addOwnerCalls(account, options.owner)), options)
 }
 
 /**
@@ -706,7 +706,7 @@ export function addOwner(client: BundlerClient, options: addOwnerCalls.Options):
  * @since 2.0.0
  */
 export function addOwnerSync(client: BundlerClient, options: addOwnerCalls.Options): Promise<TransactionReceipt> {
-  return run(owners.sendSync(client, (account) => owners.addOwnerCalls(account, options.owner)), options)
+  return run(owners.sendSync("addOwner", client, (account) => owners.addOwnerCalls(account, options.owner)), options)
 }
 
 /**
@@ -760,7 +760,7 @@ export declare namespace removeOwnerCalls {
  * @since 2.0.0
  */
 export function removeOwner(client: BundlerClient, options: removeOwnerCalls.Options): Promise<Hex> {
-  return run(owners.send(client, (account) => owners.removeOwnerCalls(account, options.owner)), options)
+  return run(owners.send("removeOwner", client, (account) => owners.removeOwnerCalls(account, options.owner)), options)
 }
 
 /**
@@ -775,7 +775,10 @@ export function removeOwner(client: BundlerClient, options: removeOwnerCalls.Opt
  * @since 2.0.0
  */
 export function removeOwnerSync(client: BundlerClient, options: removeOwnerCalls.Options): Promise<TransactionReceipt> {
-  return run(owners.sendSync(client, (account) => owners.removeOwnerCalls(account, options.owner)), options)
+  return run(
+    owners.sendSync("removeOwner", client, (account) => owners.removeOwnerCalls(account, options.owner)),
+    options
+  )
 }
 
 /**
@@ -829,7 +832,7 @@ export declare namespace setThresholdCalls {
  * @since 2.0.0
  */
 export function setThreshold(client: BundlerClient, options: setThresholdCalls.Options): Promise<Hex> {
-  return run(owners.send(client, (account) => owners.setThresholdCalls(account, options)), options)
+  return run(owners.send("setThreshold", client, (account) => owners.setThresholdCalls(account, options)), options)
 }
 
 /**
@@ -847,7 +850,7 @@ export function setThresholdSync(
   client: BundlerClient,
   options: setThresholdCalls.Options
 ): Promise<TransactionReceipt> {
-  return run(owners.sendSync(client, (account) => owners.setThresholdCalls(account, options)), options)
+  return run(owners.sendSync("setThreshold", client, (account) => owners.setThresholdCalls(account, options)), options)
 }
 
 /**
@@ -901,7 +904,7 @@ export declare namespace replaceOwnerCalls {
  * @since 2.0.0
  */
 export function replaceOwner(client: BundlerClient, options: replaceOwnerCalls.Options): Promise<Hex> {
-  return run(owners.send(client, (account) => owners.replaceOwnerCalls(account, options)), options)
+  return run(owners.send("replaceOwner", client, (account) => owners.replaceOwnerCalls(account, options)), options)
 }
 
 /**
@@ -919,7 +922,7 @@ export function replaceOwnerSync(
   client: BundlerClient,
   options: replaceOwnerCalls.Options
 ): Promise<TransactionReceipt> {
-  return run(owners.sendSync(client, (account) => owners.replaceOwnerCalls(account, options)), options)
+  return run(owners.sendSync("replaceOwner", client, (account) => owners.replaceOwnerCalls(account, options)), options)
 }
 
 /**
@@ -973,7 +976,10 @@ export declare namespace addOwnerValidatorCalls {
  * @since 2.0.0
  */
 export function addOwnerValidator(client: BundlerClient, options: addOwnerValidatorCalls.Options): Promise<Hex> {
-  return run(owners.send(client, (account) => owners.addOwnerValidatorCalls(account, options.owner)), options)
+  return run(
+    owners.send("addOwnerValidator", client, (account) => owners.addOwnerValidatorCalls(account, options.owner)),
+    options
+  )
 }
 
 /**
@@ -991,5 +997,8 @@ export function addOwnerValidatorSync(
   client: BundlerClient,
   options: addOwnerValidatorCalls.Options
 ): Promise<TransactionReceipt> {
-  return run(owners.sendSync(client, (account) => owners.addOwnerValidatorCalls(account, options.owner)), options)
+  return run(
+    owners.sendSync("addOwnerValidator", client, (account) => owners.addOwnerValidatorCalls(account, options.owner)),
+    options
+  )
 }

@@ -7,6 +7,7 @@ import { type Call, encodeCalls } from "../core/account/erc7579.ts"
 import { evaluateOperation } from "../core/evaluate/evaluate.ts"
 import * as core from "../core/grant/grant.ts"
 import { compile } from "../core/session/compile.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import { call, code, latestTimestamp, type ReadClient } from "../viem/client.ts"
 import { entryPoint } from "../viem/smartAccount.ts"
 import { readState } from "./state.ts"
@@ -34,6 +35,7 @@ export const check = Effect.fnUntraced(function*(
   client: ReadClient,
   options: { readonly grant: core.Grant; readonly calls: ReadonlyArray<Call> }
 ): Effect.fn.Return<Checked, ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(options.grant) })
   const { grant } = options
   const chainId = client.chain?.id
   const chain = grant.chains.find((entry) => core.chainId(entry.chain) === chainId)
@@ -67,4 +69,4 @@ export const check = Effect.fnUntraced(function*(
     )
     : undefined
   return { ok: violations.length === 0 && simulation?.reverted !== true, violations, simulation }
-})
+}, traced("Namera.Grant.check"))

@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect"
 import type * as ChainError from "../../ChainError.ts"
 import { encodeCalls } from "../../internal/core/account/erc7579.ts"
 import * as Kernel from "../../internal/core/account/kernel.ts"
+import { annotate, chainIdsOf, traced } from "../../internal/span.ts"
 import type { AccountClient, ChainClient, Hex, Owner, PrivateKeyAccount } from "../../internal/viem/client.ts"
 import { hashMessage, hashTypedData, ownerSigner } from "../../internal/viem/signing.ts"
 import * as AccountError from "../AccountError.ts"
@@ -192,10 +193,10 @@ export const fromValidator = Effect.fnUntraced(function*(
 export const from = (
   options: FromOptions
 ): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> =>
-  fromValidator(options, true)
+  Effect.andThen(annotate({ chainId: chainIdsOf(options.client), accountType: "kernel" }), fromValidator(options, true))
+    .pipe(traced("Namera.KernelAccount.from"))
 
-/** @internal */
-export const fromEip7702 = (
+const buildEip7702 = (
   options: FromEip7702Options
 ): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> => {
   const version = options.version ?? "3.3"
@@ -219,3 +220,10 @@ export const fromEip7702 = (
     firstCalls: options.sessions === false ? undefined : installSessionsCalls(options.owner.address)
   })
 }
+
+/** @internal */
+export const fromEip7702 = (
+  options: FromEip7702Options
+): Effect.Effect<NameraSmartAccount<"kernel">, AccountError.AccountError | ChainError.ChainError> =>
+  Effect.andThen(annotate({ chainId: chainIdsOf(options.client), accountType: "kernel" }), buildEip7702(options))
+    .pipe(traced("Namera.KernelAccount.fromEip7702"))

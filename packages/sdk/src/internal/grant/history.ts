@@ -7,6 +7,7 @@ import { laneOf } from "../core/agent/nonce.ts"
 import { signaturePermissionId } from "../core/grant/enable.ts"
 import * as core from "../core/grant/grant.ts"
 import { decodeUserOperationEvent, operationSignature, userOperationTopics } from "../core/grant/history.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import { blockNumber, logs, type ReadClient, transactionInput } from "../viem/client.ts"
 import { entryPoint } from "../viem/smartAccount.ts"
 import { chainOf } from "./status.ts"
@@ -48,6 +49,7 @@ export const getUsage = Effect.fnUntraced(function*(
     readonly pageSize?: bigint | undefined
   }
 ): Effect.fn.Return<ReadonlyArray<Operation>, ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(options.grant) })
   const { grant } = options
   const chain = yield* chainOf(client, grant)
   const account = core.accountAddress(grant)
@@ -91,4 +93,4 @@ export const getUsage = Effect.fnUntraced(function*(
     }
   }
   return operations
-})
+}, traced("Namera.Grant.getUsage"))

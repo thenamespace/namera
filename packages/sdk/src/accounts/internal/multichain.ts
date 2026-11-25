@@ -1,6 +1,7 @@
 import * as Effect from "effect/Effect"
 
 import * as WebAuthn from "../../internal/core/account/webauthn.ts"
+import { annotate, traced } from "../../internal/span.ts"
 import type { Hex } from "../../internal/viem/client.ts"
 import { type SmartAccount, userOperationHash, type UserOperationToSign } from "../../internal/viem/smartAccount.ts"
 import * as AccountError from "../AccountError.ts"
@@ -40,6 +41,9 @@ const signingOf = (account: SmartAccount): Effect.Effect<Passkeys.Signing, Accou
 export const signUserOperations = Effect.fnUntraced(function*(
   entries: ReadonlyArray<Entry>
 ): Effect.fn.Return<ReadonlyArray<Hex>, AccountError.AccountError> {
+  yield* annotate({
+    chainId: entries.flatMap(({ account }) => account.client.chain === undefined ? [] : [account.client.chain.id])
+  })
   const [first] = entries
   if (first === undefined) return []
   const signings = yield* Effect.forEach(entries, ({ account }) => signingOf(account))
@@ -64,7 +68,7 @@ export const signUserOperations = Effect.fnUntraced(function*(
       assertions
     })
   )
-})
+}, traced("Namera.SmartAccount.signUserOperations"))
 
 /**
  * A stub signature of a multichain signature's shape, for preparing one of `count` user operations: it covers the

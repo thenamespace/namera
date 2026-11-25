@@ -21,6 +21,7 @@ import * as core from "../core/grant/grant.ts"
 import { compile } from "../core/session/compile.ts"
 import type { EcdsaSessionKey, PasskeySessionKey } from "../core/sessionKey.ts"
 import { run } from "../promise.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import type { LocalAccount } from "../viem/account.ts"
 import { call, type ChainClient, code, hasP256Precompile, latestTimestamp, type ReadClient } from "../viem/client.ts"
 import { passkeySigner, type TypedDataDefinition, type WebAuthnAccount } from "../viem/signing.ts"
@@ -140,6 +141,7 @@ export const toAccount = Effect.fnUntraced(function*(
   client: ReadClient,
   options: Options
 ): Effect.fn.Return<SmartAccount, AccountError.AccountError | ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(options.grant) })
   const { grant } = options
   const account = ref(grant)
   if (client.chain === undefined) {
@@ -293,4 +295,4 @@ export const toAccount = Effect.fnUntraced(function*(
     try: () => build(implementation) as Promise<SmartAccount>,
     catch: (cause) => AccountError.invalidOptions({ account, detail: "viem could not build the account", cause })
   })
-})
+}, traced("Namera.Grant.toAccount"))

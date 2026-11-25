@@ -16,6 +16,7 @@ import { compile } from "../core/session/compile.ts"
 import { describe } from "../core/session/describe.ts"
 import type { Policy } from "../core/session/policy.ts"
 import { canonical, make, type Session } from "../core/session/session.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import {
   type BundlerClient,
   sendUserOperation,
@@ -92,6 +93,7 @@ export const revoke = Effect.fnUntraced(function*(
   ReadonlyArray<Hex.Hex | undefined>,
   AccountError.AccountError | ChainError.ChainError | GrantError.GrantError
 > {
+  yield* annotate({ chainId: chainIdsOf(clients), ...ofGrant(grant) })
   const hashes: Array<Hex.Hex | undefined> = []
   for (const client of clients) {
     const account = yield* ownerOf(client, grant)
@@ -109,7 +111,7 @@ export const revoke = Effect.fnUntraced(function*(
     )
   }
   return hashes
-})
+}, traced("Namera.Grant.revoke"))
 
 /**
  * Revokes the grant and waits: the receipt of each chain's operation, `undefined` where nothing was sent.
@@ -123,12 +125,13 @@ export const revokeSync = Effect.fnUntraced(function*(
   ReadonlyArray<TransactionReceipt | undefined>,
   AccountError.AccountError | ChainError.ChainError | GrantError.GrantError
 > {
+  yield* annotate({ chainId: chainIdsOf(clients), ...ofGrant(grant) })
   const hashes = yield* revoke(clients, grant)
   return yield* Effect.forEach(
     hashes,
     (hash, index) => hash === undefined ? Effect.succeed(undefined) : settle(clients[index]!, hash)
   )
-})
+}, traced("Namera.Grant.revokeSync"))
 
 /**
  * The grant's session with `remove` taken out (each must be one of its policies) and `add` put in: same signer, salt
@@ -211,6 +214,7 @@ export const update = Effect.fnUntraced(function*(
   { readonly hashes: ReadonlyArray<Hex.Hex>; readonly grant: core.Grant },
   AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | SessionError.SessionError
 > {
+  yield* annotate({ chainId: chainIdsOf(clients), ...ofGrant(options.grant) })
   const { grant } = options
   const session = yield* Effect.fromResult(updatedSession(grant, options))
   yield* requireValid(session, core.accountAddress(grant))
@@ -243,7 +247,7 @@ export const update = Effect.fnUntraced(function*(
     })
   }
   return { hashes, grant: { ...grant, session, chains, summary: describe(session) } }
-})
+}, traced("Namera.Grant.update"))
 
 /**
  * Updates the grant and waits: the receipts and the updated grant.
@@ -257,7 +261,8 @@ export const updateSync = Effect.fnUntraced(function*(
   { readonly receipts: ReadonlyArray<TransactionReceipt>; readonly grant: core.Grant },
   AccountError.AccountError | ChainError.ChainError | GrantError.GrantError | SessionError.SessionError
 > {
+  yield* annotate({ chainId: chainIdsOf(clients), ...ofGrant(options.grant) })
   const { grant, hashes } = yield* update(clients, options)
   const receipts = yield* Effect.forEach(hashes, (hash, index) => settle(clients[index]!, hash))
   return { receipts, grant }
-})
+}, traced("Namera.Grant.updateSync"))

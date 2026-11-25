@@ -117,6 +117,35 @@
                   "viem/*"
                 ],
                 "message": "Only the viem adapter (src/internal/viem/) imports viem, so another viem major needs another adapter, not changes across the SDK. Import from the adapter."
+              },
+              {
+                "group": [
+                  "@effect/opentelemetry",
+                  "@effect/opentelemetry/*",
+                  "@opentelemetry/*"
+                ],
+                "message": "Only the optional ./otel entry (src/otel/) imports OpenTelemetry, so it never reaches another entry's bundle."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/sdk/src/otel/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "viem",
+                  "viem/*"
+                ],
+                "message": "Only the viem adapter (src/internal/viem/) imports viem, so another viem major needs another adapter, not changes across the SDK. Import from the adapter."
               }
             ]
           }

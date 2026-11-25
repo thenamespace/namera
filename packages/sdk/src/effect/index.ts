@@ -9,6 +9,9 @@
  *   either side.
  * - Services exist only here: `Keystore.CurrentKeystore`, with `Keystore.layer`, `layerMemory`, `layerEncryptedJson`
  *   and the node and browser entries' layers. A service in context wins over an option that names the same thing.
+ * - Tracing: Namera's spans (`Namera.Grant.create`, …) go to the program's `Tracer` once `Otel.layer` from
+ *   `@namera-ai/sdk/otel` is provided; a tracer in the program's context wins over the one `Otel.install()` sets for
+ *   the Promise API.
  *
  * @stability experimental
  * @since 2.0.0

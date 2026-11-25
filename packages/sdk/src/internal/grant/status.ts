@@ -14,6 +14,7 @@ import {
 } from "../core/grant/lifecycle.ts"
 import { compile, type Compiled } from "../core/session/compile.ts"
 import { contracts } from "../session/contracts.ts"
+import { annotate, chainIdsOf, ofGrant, traced } from "../span.ts"
 import { call, latestTimestamp, type ReadClient } from "../viem/client.ts"
 import { isEnabled as readEnabled, readState } from "./state.ts"
 
@@ -161,6 +162,7 @@ export const getStatus = Effect.fnUntraced(function*(
   clients: ReadonlyArray<ReadClient>,
   grant: core.Grant
 ): Effect.fn.Return<Status, ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(clients), ...ofGrant(grant) })
   const chains = yield* Effect.all(clients.map((client) => chainStatus(client, grant)), { concurrency: "unbounded" })
   const [first] = chains
   if (first === undefined) {
@@ -173,7 +175,7 @@ export const getStatus = Effect.fnUntraced(function*(
     chains,
     limits: first.limits
   }
-})
+}, traced("Namera.Grant.getStatus"))
 
 /**
  * What is left of the grant's budget for a token (or native value without one) on the client's chain: the tightest of
@@ -188,6 +190,7 @@ export const getRemainingLimit = Effect.fnUntraced(function*(
   { readonly remaining: bigint; readonly resetsAt?: number | undefined } | undefined,
   ChainError.ChainError | GrantError.GrantError
 > {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(options.grant) })
   const { limits } = yield* chainStatus(client, options.grant)
   const { token } = options
   const matching = limits.filter((limit) =>
@@ -204,7 +207,7 @@ export const getRemainingLimit = Effect.fnUntraced(function*(
     remaining: tightest.remaining,
     ...(tightest.resetsAt === undefined ? {} : { resetsAt: tightest.resetsAt })
   }
-})
+}, traced("Namera.Grant.getRemainingLimit"))
 
 /**
  * Whether the grant's session is enabled on the client's chain.
@@ -215,8 +218,9 @@ export const isEnabled = Effect.fnUntraced(function*(
   client: ReadClient,
   grant: core.Grant
 ): Effect.fn.Return<boolean, ChainError.ChainError | GrantError.GrantError> {
+  yield* annotate({ chainId: chainIdsOf(client), ...ofGrant(grant) })
   return yield* readEnabled(client, grant, yield* chainOf(client, grant))
-})
+}, traced("Namera.Grant.isEnabled"))
 
 /**
  * A session enabled on an account: its permission id and window, and the grant among those given that it belongs to.
@@ -241,6 +245,7 @@ export const list = Effect.fnUntraced(function*(
   client: ReadClient,
   options: { readonly account: Hex.Hex; readonly grants?: ReadonlyArray<core.Grant> | undefined }
 ): Effect.fn.Return<ReadonlyArray<Listed>, ChainError.ChainError> {
+  yield* annotate({ chainId: chainIdsOf(client) })
   const { account } = options
   const ids = yield* call(client, { to: contracts.smartSession, data: encodeGetPermissionIDs(account) }).pipe(
     Effect.map((result) => (result === undefined || result === "0x" ? [] : decodeGetPermissionIDs(result)))
@@ -265,4 +270,4 @@ export const list = Effect.fnUntraced(function*(
     ),
     { concurrency: "unbounded" }
   )
-})
+}, traced("Namera.Grant.list"))

@@ -75,6 +75,10 @@
     "decorators.ts": {
       "rollup": 71680,
       "esbuild": 72704
+    },
+    "otel.ts": {
+      "rollup": 21504,
+      "esbuild": 25600
     }
   },
   "apps": {
