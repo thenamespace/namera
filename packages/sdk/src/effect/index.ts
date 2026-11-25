@@ -1,6 +1,15 @@
 /**
  * Namera's Effect API: the same modules and names as `@namera-ai/sdk`, with every asynchronous function returning an `Effect` that fails with the same error instances.
  *
+ * **Details**
+ *
+ * - Functions take the same options as their Promise forms, without `signal`: interrupting the fiber cancels them.
+ * - Every effect has `never` as its requirements. Pure functions (`Policy.*`, `Session.describe`) are the same values
+ *   in both APIs, and so are the error classes, so `instanceof`, `Effect.catchTag` and `Effect.catchReason` work on
+ *   either side.
+ * - Services exist only here: `Keystore.CurrentKeystore`, with `Keystore.layer`, `layerMemory`, `layerEncryptedJson`
+ *   and the node and browser entries' layers. A service in context wins over an option that names the same thing.
+ *
  * @stability experimental
  * @since 2.0.0
  */

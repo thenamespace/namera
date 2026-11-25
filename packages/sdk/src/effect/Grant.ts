@@ -1,6 +1,30 @@
 /**
  * The Effect form of `Grant`: grants, with failures in the error channel.
  *
+ * **Example** (Creating a grant and reading its status)
+ *
+ * ```ts
+ * import { Grant, KernelAccount, Policy, Session, SessionKey } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ * import { createPublicClient, http } from "viem"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owner = privateKeyToAccount("0x…")
+ *
+ * const program = Effect.gen(function*() {
+ *   const account = yield* KernelAccount.from({ client, owner })
+ *   const session = yield* Session.from({
+ *     signer: yield* SessionKey.ecdsa("0x…"),
+ *     validUntil: (yield* Session.now()) + 86400,
+ *     policies: [Policy.nativeTransfer({ to: "0x…", value: { lte: 10n ** 16n } })]
+ *   })
+ *   const grant = yield* Grant.create({ account, session })
+ *   return yield* Grant.getStatus(client, { grant })
+ * }).pipe(Effect.catchTag("SessionError", (error) => Effect.die(error.reason.problems)))
+ * ```
+ *
  * @stability experimental
  * @since 2.0.0
  */
@@ -366,6 +390,20 @@ export const serialize: (grant: Grant, options?: { readonly format?: "json" | "t
 
 /**
  * Reads a grant from its JSON or token, failing with `GrantError`.
+ *
+ * **Example** (Recovering from input that isn't a grant)
+ *
+ * ```ts import.meta.vitest
+ * import { Grant } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const program = Grant.parse("not a grant").pipe(
+ *   Effect.map(() => "a grant"),
+ *   Effect.catchReason("GrantError", "Malformed", () => Effect.succeed("not a grant"))
+ * )
+ *
+ * await Effect.runPromise(program) // => "not a grant"
+ * ```
  *
  * @stability experimental
  * @category constructors

@@ -1,7 +1,11 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { KernelAccount, SmartAccount } from "@namera-ai/sdk"
 import * as PromiseApi from "@namera-ai/sdk"
+import * as PromiseBrowser from "@namera-ai/sdk/browser"
 import * as EffectApi from "@namera-ai/sdk/effect"
+import * as EffectBrowser from "@namera-ai/sdk/effect/browser"
+import * as EffectNode from "@namera-ai/sdk/effect/node"
+import * as PromiseNode from "@namera-ai/sdk/node"
 import { Cause, Effect, Exit } from "effect"
 import { http, zeroAddress } from "viem"
 import { createBundlerClient } from "viem/account-abstraction"
@@ -13,6 +17,16 @@ const exportsOf = (api: Record<string, unknown>) =>
   Object.entries(api).flatMap(([module, members]) =>
     Object.entries(members as Record<string, unknown>).map(([name, value]) => [`${module}.${name}`, value] as const)
   )
+
+// Services and their layers exist only in the Effect API: a Promise has no context to provide them in.
+const effectOnly = {
+  root: ["Keystore.CurrentKeystore", "Keystore.layer", "Keystore.layerEncryptedJson", "Keystore.layerMemory"],
+  node: ["Keystore.layerFile", "Keystore.layerOsKeychain"],
+  browser: ["Keystore.layerWebCrypto"]
+}
+
+const namesOf = (api: Record<string, unknown>, without: ReadonlyArray<string> = []) =>
+  exportsOf(api).map(([name]) => name).filter((name) => !without.includes(name)).sort()
 
 const rejection = (promise: Promise<unknown>) =>
   promise.then(
@@ -29,18 +43,25 @@ const identity = (error: unknown) => {
 describe("the Promise and Effect APIs", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
 
-  it("export the same modules and names", () => {
-    assert.deepStrictEqual(
-      exportsOf(EffectApi).map(([name]) => name).sort(),
-      exportsOf(PromiseApi).map(([name]) => name).sort()
-    )
+  it("export the same modules and names, besides the Effect API's services and layers", () => {
+    assert.deepStrictEqual(namesOf(EffectApi, effectOnly.root), namesOf(PromiseApi))
+    assert.deepStrictEqual(namesOf(EffectNode, effectOnly.node), namesOf(PromiseNode))
+    assert.deepStrictEqual(namesOf(EffectBrowser, effectOnly.browser), namesOf(PromiseBrowser))
   })
 
   it("share every export that has no conformance row", () => {
     const promise = new Map(exportsOf(PromiseApi))
-    const differing = exportsOf(EffectApi).filter(([name, value]) => promise.get(name) !== value).map(([name]) => name)
+    const differing = exportsOf(EffectApi)
+      .filter(([name, value]) => !effectOnly.root.includes(name) && promise.get(name) !== value)
+      .map(([name]) => name)
 
     assert.deepStrictEqual(differing.sort(), Object.keys(table).sort())
+    for (const [effect, promise] of [[EffectNode, PromiseNode], [EffectBrowser, PromiseBrowser]] as const) {
+      const shared = new Map(exportsOf(promise))
+      for (const [name, value] of exportsOf(effect)) {
+        if (shared.has(name)) assert.strictEqual(value, shared.get(name), name)
+      }
+    }
   })
 
   for (const [name, row] of Object.entries(table)) {

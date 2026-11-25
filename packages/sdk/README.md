@@ -392,6 +392,51 @@ Compat.check({ account, bundler: "candide", paymaster: "pimlico", chainId: base.
 `Session.validate(session, { paymaster, chainId })` warns `SESSION_PERMIT_REQUIRED` too, before the owner signs the
 grant.
 
+## The Effect API
+
+`@namera-ai/sdk/effect` has the same modules, names and options as the Promise API (without `signal`: interrupt the
+fiber instead). Every asynchronous function returns an `Effect<A, E, never>` that fails with the same error instances,
+and pure functions and error classes are the same values in both. Errors are tagged, with a tagged `reason`:
+
+```ts
+import { Grant } from "@namera-ai/sdk/effect"
+import { Effect } from "effect"
+
+const program = Effect.gen(function*() {
+  const grant = yield* Grant.create({ account, session })
+  return yield* Grant.getStatus(client, { grant })
+}).pipe(
+  Effect.catchTag("SessionError", (error) => Effect.die(error.reason.problems)),
+  Effect.catchReason("ChainError", "Timeout", () => Effect.succeed(undefined))
+)
+```
+
+Services exist only in the Effect API. `Keystore.CurrentKeystore` carries the program's key store, so it is chosen
+once where the program is assembled:
+
+| Layer                                                   | Store                    |
+| ------------------------------------------------------- | ------------------------ |
+| `Keystore.layer(store)`                                 | the given store          |
+| `Keystore.layerMemory`                                  | a new in-memory store    |
+| `Keystore.layerEncryptedJson({ password, data? })`      | an `encryptedJson` store |
+| `Keystore.layerFile(options)` (`/effect/node`)          | a `file` store           |
+| `Keystore.layerOsKeychain(options)` (`/effect/node`)    | the OS keychain          |
+| `Keystore.layerWebCrypto(options?)` (`/effect/browser`) | a WebCrypto store        |
+
+```ts
+import { Keystore } from "@namera-ai/sdk/effect"
+import { Effect } from "effect"
+
+const program = Effect.gen(function*() {
+  const store = yield* Keystore.CurrentKeystore
+  return yield* Keystore.create(store, { curve: "secp256k1" })
+})
+
+await Effect.runPromise(program.pipe(Effect.provide(Keystore.layerMemory)))
+```
+
+Precedence: where an API accepts both an option and a service for the same thing, the service in context wins.
+
 ## The viem decorator
 
 `client.extend(nameraActions())` puts the network functions under one namespace, `client.namera`, bound to the client.

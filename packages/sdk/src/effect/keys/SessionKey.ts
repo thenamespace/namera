@@ -58,6 +58,20 @@ export const toValidatorData: (sessionKey: SessionKey) => `0x${string}` = Sessio
 /**
  * A session key of one secp256k1 key: the agent's address.
  *
+ * **Example** (Refusing an address that isn't one)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const reason = SessionKey.ecdsa("0x1234").pipe(
+ *   Effect.flip,
+ *   Effect.map((error) => error.reason._tag)
+ * )
+ *
+ * await Effect.runPromise(reason) // => "InvalidAddress"
+ * ```
+ *
  * @stability experimental
  * @category constructors
  * @since 2.0.0

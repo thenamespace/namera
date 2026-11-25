@@ -4347,6 +4347,30 @@ export * from "../ChainError.ts";
 /**
  * The Effect form of `Grant`: grants, with failures in the error channel.
  *
+ * **Example** (Creating a grant and reading its status)
+ *
+ * ```ts
+ * import { Grant, KernelAccount, Policy, Session, SessionKey } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ * import { createPublicClient, http } from "viem"
+ * import { privateKeyToAccount } from "viem/accounts"
+ * import { base } from "viem/chains"
+ *
+ * const client = createPublicClient({ chain: base, transport: http() })
+ * const owner = privateKeyToAccount("0x…")
+ *
+ * const program = Effect.gen(function*() {
+ *   const account = yield* KernelAccount.from({ client, owner })
+ *   const session = yield* Session.from({
+ *     signer: yield* SessionKey.ecdsa("0x…"),
+ *     validUntil: (yield* Session.now()) + 86400,
+ *     policies: [Policy.nativeTransfer({ to: "0x…", value: { lte: 10n ** 16n } })]
+ *   })
+ *   const grant = yield* Grant.create({ account, session })
+ *   return yield* Grant.getStatus(client, { grant })
+ * }).pipe(Effect.catchTag("SessionError", (error) => Effect.die(error.reason.problems)))
+ * ```
+ *
  * @stability experimental
  * @since 2.0.0
  */
@@ -4598,6 +4622,20 @@ export declare const serialize: (grant: Grant, options?: {
 }) => string;
 /**
  * Reads a grant from its JSON or token, failing with `GrantError`.
+ *
+ * **Example** (Recovering from input that isn't a grant)
+ *
+ * ```ts import.meta.vitest
+ * import { Grant } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const program = Grant.parse("not a grant").pipe(
+ *   Effect.map(() => "a grant"),
+ *   Effect.catchReason("GrantError", "Malformed", () => Effect.succeed("not a grant"))
+ * )
+ *
+ * await Effect.runPromise(program) // => "not a grant"
+ * ```
  *
  * @stability experimental
  * @category constructors
@@ -5158,12 +5196,23 @@ export * as SmartAccount from "./SmartAccount.ts";
 ```ts
 /**
  * The Effect form of `@namera-ai/sdk/browser`'s `Keystore`: the same store, used with the Effect API's `Keystore`
- * functions.
+ * functions, and a layer that provides it as `Keystore.CurrentKeystore`.
  *
  * @stability experimental
  * @since 2.0.0
  */
+import * as Layer from "effect/Layer";
+import * as Keystore from "../../browser/Keystore.ts";
+import { CurrentKeystore } from "../keys/Keystore.ts";
 export * from "../../browser/Keystore.ts";
+/**
+ * Layer that provides a `webCrypto` store as `Keystore.CurrentKeystore`.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layerWebCrypto: (options?: Keystore.webCrypto.Options) => Layer.Layer<CurrentKeystore>;
 ```
 
 ## effect/browser/index.d.ts
@@ -5187,6 +5236,15 @@ export * as Keystore from "./Keystore.ts";
 ```ts
 /**
  * Namera's Effect API: the same modules and names as `@namera-ai/sdk`, with every asynchronous function returning an `Effect` that fails with the same error instances.
+ *
+ * **Details**
+ *
+ * - Functions take the same options as their Promise forms, without `signal`: interrupting the fiber cancels them.
+ * - Every effect has `never` as its requirements. Pure functions (`Policy.*`, `Session.describe`) are the same values
+ *   in both APIs, and so are the error classes, so `instanceof`, `Effect.catchTag` and `Effect.catchReason` work on
+ *   either side.
+ * - Services exist only here: `Keystore.CurrentKeystore`, with `Keystore.layer`, `layerMemory`, `layerEncryptedJson`
+ *   and the node and browser entries' layers. A service in context wins over an option that names the same thing.
  *
  * @stability experimental
  * @since 2.0.0
@@ -5482,13 +5540,24 @@ export declare const caip10: (key: Key, chain: `${Namespace}:${string}`) => Effe
 
 ```ts
 /**
- * The Effect form of `Keystore`: where an agent's keys live and sign, with failures in the error channel.
+ * The Effect form of `Keystore`: where an agent's keys live and sign, with failures in the error channel, and the
+ * `CurrentKeystore` service that carries a store through a program's context.
+ *
+ * **Details**
+ *
+ * The functions here take the store as their first argument. A program that would rather not pass it along reads it
+ * from context with `yield* Keystore.CurrentKeystore`, provided by `Keystore.layer(store)`, `layerMemory`,
+ * `layerEncryptedJson`, or the node and browser entries' layers. Where an API accepts a store both ways, the service in
+ * context wins over the option.
  *
  * @stability experimental
  * @since 2.0.0
  */
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import type { Curve } from "../../internal/core/key/key.ts";
+import * as internal from "../../internal/keystore.ts";
 import type { LocalAccount } from "../../internal/viem/account.ts";
 import type { Key } from "../../keys/Key.ts";
 import type * as Keystore_ from "../../keys/Keystore.ts";
@@ -5620,6 +5689,66 @@ export declare const toAccount: (store: Keystore, options: {
  * @since 2.0.0
  */
 export declare const toJson: (store: Keystore) => Effect.Effect<string, KeystoreError.KeystoreError>;
+declare const CurrentKeystore_base: Context.ServiceClass<CurrentKeystore, "@namera-ai/sdk/keys/Keystore/CurrentKeystore", internal.Store>;
+/**
+ * Service that holds the program's key store.
+ *
+ * **When to use**
+ *
+ * Use to choose the store once, where the program is assembled, instead of passing it to every function: production
+ * provides `layerEncryptedJson` or a node or browser store, tests provide `layerMemory`.
+ *
+ * **Details**
+ *
+ * Where an API accepts both a store option and this service, the service in context wins.
+ *
+ * **Example** (Reading the store from context)
+ *
+ * ```ts import.meta.vitest
+ * import { Keystore } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function*() {
+ *   const store = yield* Keystore.CurrentKeystore
+ *   const key = yield* Keystore.create(store, { curve: "secp256k1" })
+ *   return (yield* Keystore.list(store)).map(({ id }) => id).includes(key.id)
+ * })
+ *
+ * await Effect.runPromise(program.pipe(Effect.provide(Keystore.layerMemory))) // => true
+ * ```
+ *
+ * @stability experimental
+ * @category services
+ * @since 2.0.0
+ */
+export declare class CurrentKeystore extends CurrentKeystore_base {
+}
+/**
+ * Layer that provides a given store as `CurrentKeystore`.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layer: (store: Keystore) => Layer.Layer<CurrentKeystore>;
+/**
+ * Layer that provides a new in-memory store as `CurrentKeystore`, each time the layer is built.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layerMemory: Layer.Layer<CurrentKeystore>;
+/**
+ * Layer that provides an `encryptedJson` store as `CurrentKeystore`. Fails with `KeystoreError` (`Unavailable`) when
+ * `data` is not an export of this store.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layerEncryptedJson: (options: Keystore_.encryptedJson.Options) => Layer.Layer<CurrentKeystore, KeystoreError.KeystoreError>;
+export {};
 ```
 
 ## effect/keys/KeystoreError.d.ts
@@ -5688,6 +5817,20 @@ export declare const isSessionKey: (u: unknown) => u is SessionKey;
 export declare const toValidatorData: (sessionKey: SessionKey) => `0x${string}`;
 /**
  * A session key of one secp256k1 key: the agent's address.
+ *
+ * **Example** (Refusing an address that isn't one)
+ *
+ * ```ts import.meta.vitest
+ * import { SessionKey } from "@namera-ai/sdk/effect"
+ * import { Effect } from "effect"
+ *
+ * const reason = SessionKey.ecdsa("0x1234").pipe(
+ *   Effect.flip,
+ *   Effect.map((error) => error.reason._tag)
+ * )
+ *
+ * await Effect.runPromise(reason) // => "InvalidAddress"
+ * ```
  *
  * @stability experimental
  * @category constructors
@@ -5773,12 +5916,31 @@ export * as SessionKeyError from "./SessionKeyError.ts";
 ```ts
 /**
  * The Effect form of `@namera-ai/sdk/node`'s `Keystore`: the same stores, used with the Effect API's `Keystore`
- * functions.
+ * functions, and layers that provide them as `Keystore.CurrentKeystore`.
  *
  * @stability experimental
  * @since 2.0.0
  */
+import * as Layer from "effect/Layer";
+import * as Keystore from "../../node/Keystore.ts";
+import { CurrentKeystore } from "../keys/Keystore.ts";
 export * from "../../node/Keystore.ts";
+/**
+ * Layer that provides a `file` store as `Keystore.CurrentKeystore`.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layerFile: (options: Keystore.file.Options) => Layer.Layer<CurrentKeystore>;
+/**
+ * Layer that provides an `osKeychain` store as `Keystore.CurrentKeystore`.
+ *
+ * @stability experimental
+ * @category layers
+ * @since 2.0.0
+ */
+export declare const layerOsKeychain: (options: Keystore.osKeychain.Options) => Layer.Layer<CurrentKeystore>;
 ```
 
 ## effect/node/index.d.ts
