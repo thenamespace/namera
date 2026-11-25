@@ -513,6 +513,33 @@ try {
 }
 ```
 
+### Sending errors to another process
+
+`NameraError.toJSON(error)` writes an error as plain, versioned JSON (`format: 1`) for an EIP-1193 provider's error
+`data`, an agent tool's result or a worker's message; `NameraError.fromJSON(json)` rebuilds it as the same family and
+reason classes, so `instanceof`, `NameraError.isNameraError`, the family guards and `Effect.catchReason` work on the
+other side.
+
+```ts
+import { ChainError, NameraError } from "@namera-ai/sdk"
+
+const json = JSON.stringify(NameraError.toJSON(error)) // in the worker
+
+const received = NameraError.fromJSON(JSON.parse(json)) // in the app
+if (received instanceof ChainError.ChainError && received.reason._tag === "Rpc") console.log(received.reason.code)
+```
+
+- The JSON holds the family's `_tag` and fields, the reason's `_tag` and fields (every violation, for a
+  `PolicyViolationError`), bigints as `{ "$n": "<decimal>" }`, and viem's error fields for readers without the SDK.
+- A reason's `cause` is reduced to `{ name, message }` (the cause's `shortMessage`, URLs redacted): viem's full message
+  holds the request body and URL, so it, the stack and the cause's fields never leave. `fromJSON` rebuilds the cause as
+  an `Error` with that name and message.
+- Only the fields Namera's errors declare are written, URLs are redacted in every string, and no key or signature is
+  among them.
+- `fromJSON` reads strictly and throws `SerializationError`: `Malformed` for anything that isn't a serialized error
+  (an unknown family or reason, a missing, mistyped or unknown field), `VersionUnsupported` for a format other than 1.
+  The Effect API's `NameraError.fromJSON` fails with it instead.
+
 ## Development
 
 `src/` follows the Effect v4 source layout: PascalCase public modules, `internal/` implementation, and an `effect/`

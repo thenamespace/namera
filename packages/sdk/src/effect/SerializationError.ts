@@ -1,0 +1,7 @@
+/**
+ * Failures reading a serialized Namera error, shared with the Promise API: the same classes and instances.
+ *
+ * @stability experimental
+ * @since 2.0.0
+ */
+export * from "../SerializationError.ts"

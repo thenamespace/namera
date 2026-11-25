@@ -4,24 +4,28 @@
  * **Details**
  *
  * Namera has one error class per failure family (`ChainError`, …), each with a tagged `reason` for the specific
- * failure. This module is not a class: it holds the `NameraError` union, a guard that recognises every family, and
- * the fields every family shares with viem's `BaseError` (`shortMessage`, `details`, `docsPath`, `metaMessages`,
- * `version`).
+ * failure. This module is not a class: it holds the `NameraError` union, a guard that recognises every family, the
+ * fields every family shares with viem's `BaseError` (`shortMessage`, `details`, `docsPath`, `metaMessages`,
+ * `version`), `decode` for failed viem calls, and `toJSON` and `fromJSON` for sending errors to another process.
  *
  * @stability experimental
  * @since 2.0.0
  */
+import * as Result from "effect/Result"
 import type { AccountError } from "./accounts/AccountError.ts"
 import type { ChainError } from "./ChainError.ts"
 import type { GrantError } from "./GrantError.ts"
+
 import type { BundlerError } from "./infra/BundlerError.ts"
 import type { CompatError } from "./infra/CompatError.ts"
 import type { PaymasterError } from "./infra/PaymasterError.ts"
 import { decode as decodeFailure } from "./internal/decode.ts"
+import * as errorJson from "./internal/errorJson.ts"
 import * as internal from "./internal/nameraError.ts"
 import type { KeystoreError } from "./keys/KeystoreError.ts"
 import type { SessionKeyError } from "./keys/SessionKeyError.ts"
 import type { PolicyViolationError } from "./PolicyViolationError.ts"
+import type * as SerializationError from "./SerializationError.ts"
 import type { SessionError } from "./SessionError.ts"
 
 /**
@@ -59,6 +63,7 @@ export type NameraError =
   | KeystoreError
   | PaymasterError
   | PolicyViolationError
+  | SerializationError.SerializationError
   | SessionError
   | SessionKeyError
 
@@ -149,3 +154,92 @@ export const isNameraError: (u: unknown) => u is NameraError = internal.isNamera
  * @since 2.0.0
  */
 export const decode: <E>(error: E) => NameraError | E = decodeFailure
+
+/**
+ * A Namera error as plain JSON, version 1: what `NameraError.toJSON` writes and `NameraError.fromJSON` reads.
+ *
+ * **Details**
+ *
+ * - `format`: `1`.
+ * - `_tag`: the family (`ChainError`, …), and the family's own fields beside it (`method`, `chainId`, `url`;
+ *   `account`; `store`; `vendor`), as on the error.
+ * - `reason`: the reason's `_tag` and fields; for a `PolicyViolationError`, the first of `violations`, which lists
+ *   them all. Bigints are `{ "$n": "<decimal>" }`, as in grants.
+ * - A reason's `cause` is reduced to `{ name, message }`: the cause's `shortMessage` (or its message's first line),
+ *   URLs redacted. Its full message, stack and fields are dropped: viem's message holds the request body and URL.
+ * - viem's fields (`shortMessage`, `details`, `docsPath`, `metaMessages`, `version`), for readers without the SDK.
+ *   `fromJSON` ignores them and derives them again from the fields.
+ *
+ * Text never includes credentials: URLs are redacted in every string, as errors show them. No key or signature is
+ * among the fields.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type Json = errorJson.Json
+
+/**
+ * A reason as plain JSON: its `_tag` and fields.
+ *
+ * @stability experimental
+ * @category models
+ * @since 2.0.0
+ */
+export type ReasonJson = errorJson.ReasonJson
+
+/**
+ * Writes a Namera error as plain, versioned JSON, to send to another process.
+ *
+ * **When to use**
+ *
+ * Use when an error crosses a process boundary: an EIP-1193 provider's error `data`, an agent tool's result, a worker's
+ * message. `JSON.stringify` the result, and rebuild the error on the other side with `NameraError.fromJSON`.
+ *
+ * **Details**
+ *
+ * The JSON holds the family's and reason's fields, a summary of the cause, and viem's error fields, as `Json`
+ * describes: never keys, signatures or URLs with credentials.
+ *
+ * **Example** (Sending an error and reading it back)
+ *
+ * ```ts import.meta.vitest
+ * import { ChainError, NameraError } from "@namera-ai/sdk"
+ *
+ * const json = NameraError.toJSON(
+ *   ChainError.rpc({ code: -32601, method: "eth_chainId", url: "https://rpc.example/v2/sk_0123456789abcdef" })
+ * )
+ * json.url // => "https://rpc.example/v2/***"
+ *
+ * const error = NameraError.fromJSON(JSON.parse(JSON.stringify(json)))
+ * error instanceof ChainError.ChainError && error.reason._tag // => "Rpc"
+ * ```
+ *
+ * @see {@link fromJSON} for reading it back
+ * @stability experimental
+ * @category encoding
+ * @since 2.0.0
+ */
+export const toJSON: (error: NameraError) => Json = errorJson.toJson
+
+/**
+ * Rebuilds the Namera error `NameraError.toJSON` wrote, as an instance of the same family and reason classes, so
+ * `instanceof`, `isNameraError`, the family guards and `Effect.catchReason` work on it.
+ *
+ * **Details**
+ *
+ * The input is read strictly: an unknown family or reason, a missing field, a field of the wrong kind or an unknown
+ * field throws. A reason's cause comes back as an `Error` with the summary's name and message. viem's fields are
+ * derived again from the fields, so `version` is this SDK's.
+ *
+ * **Gotchas**
+ *
+ * Throws `SerializationError`: `Malformed` for input that isn't a serialized error, `VersionUnsupported` for a format
+ * other than 1.
+ *
+ * @see {@link toJSON} for writing it
+ * @stability experimental
+ * @category decoding
+ * @since 2.0.0
+ */
+export const fromJSON = (json: unknown): NameraError => Result.getOrThrow(errorJson.fromJson(json))

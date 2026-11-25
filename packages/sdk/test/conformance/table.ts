@@ -1,5 +1,16 @@
 import { assert } from "@effect/vitest"
-import { Grant, KernelAccount, Key, Keystore, Policy, Session, SessionKey, SmartAccount } from "@namera-ai/sdk"
+import {
+  ChainError,
+  Grant,
+  KernelAccount,
+  Key,
+  Keystore,
+  NameraError,
+  Policy,
+  Session,
+  SessionKey,
+  SmartAccount
+} from "@namera-ai/sdk"
 import * as Effect_ from "@namera-ai/sdk/effect"
 import { Effect, Exit } from "effect"
 import { createClient, http, zeroAddress } from "viem"
@@ -640,6 +651,15 @@ export const table: Record<string, Conformance> = {
         Grant.from({ ...prepared, signature: "0x12" }),
         await Effect.runPromise(Effect_.Grant.from({ ...prepared, signature: "0x12" }))
       )
+    }
+  },
+  "NameraError.fromJSON": {
+    kind: "sync",
+    check: async () => {
+      const json = NameraError.toJSON(ChainError.rpc({ code: -32601 }))
+      assert.deepStrictEqual(NameraError.fromJSON(json), await Effect.runPromise(Effect_.NameraError.fromJSON(json)))
+      assert.throws(() => NameraError.fromJSON({ format: 2 }))
+      assert.isTrue(Exit.isFailure(await Effect.runPromiseExit(Effect_.NameraError.fromJSON({ format: 2 }))))
     }
   },
   "Grant.parse": {

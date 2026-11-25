@@ -50,7 +50,7 @@
     },
     "NameraError.ts": {
       "rollup": 26624,
-      "esbuild": 27648
+      "esbuild": 32768
     },
     "GrantParse.ts": {
       "rollup": 30720,
