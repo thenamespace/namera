@@ -1,3 +1,13 @@
 {
-  "instantiations": 26211
+  "consumers": {
+    "consumer.ts": 26211,
+    "errors.ts": 24881
+  },
+  "apps": {
+    "viem": "viem.ts",
+    "baselines": {
+      "owner.ts": 23830,
+      "agent.ts": 23500
+    }
+  }
 }

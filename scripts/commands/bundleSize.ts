@@ -8,15 +8,29 @@ import { gzipSync } from "node:zlib"
 import { nodeResolve } from "@rollup/plugin-node-resolve"
 import { Console, Effect, FileSystem, Path, Schema } from "effect"
 import { Command } from "effect/cli"
+import { build } from "esbuild"
 import { type Plugin, rollup } from "rollup"
 import esbuild from "rollup-plugin-esbuild"
 
 import { CheckFailed, SetupError, ToolFailed } from "../errors.ts"
 import { publishablePackages } from "../publishable.ts"
 
-const external = ["viem", /^viem\//]
+// The OS keychain store imports `@napi-rs/keyring`, an optional native peer, at run time; Node resolves it, never a
+// bundler.
+const runtimeOnly = ["@napi-rs/keyring", /^node:/]
+const external = ["viem", /^viem\//, ...runtimeOnly]
 
-const Budgets = Schema.fromJsonString(Schema.Record(Schema.String, Schema.Number))
+/**
+ * A package's `bundle/budgets.json`: gzip budgets in bytes.
+ *
+ * - `fixtures`: bundled with viem external, by rollup and by esbuild, each with its own budget.
+ * - `apps`: bundled with viem for a browser. Each is budgeted by its size over `viem`, a viem-only app, so a viem
+ *   upgrade moves none of them.
+ */
+const Budgets = Schema.fromJsonString(Schema.Struct({
+  fixtures: Schema.Record(Schema.String, Schema.Struct({ rollup: Schema.Number, esbuild: Schema.Number })),
+  apps: Schema.optionalKey(Schema.Struct({ viem: Schema.String, budgets: Schema.Record(Schema.String, Schema.Number) }))
+}))
 
 /** Whether a manifest's `sideEffects` declares every module free of side effects (`false` or `[]`). */
 export const declaresNoSideEffects = (sideEffects: unknown) =>
@@ -46,22 +60,35 @@ const packageSideEffects = (): Plugin => {
   }
 }
 
-/** The minified, gzipped size of `input` bundled for a browser, with viem external. */
-const gzippedSize = (input: string) =>
+// rollup-plugin-esbuild without its resolveId, so node-resolve alone resolves every import: with it, rollup kept or
+// dropped Effect's core modules from run to run (Compat: 21 or 25 KB gzip).
+const minify = (): Plugin => {
+  const { resolveId: _resolveId, ...plugin } = esbuild({ target: "es2022", minify: true })
+  return plugin
+}
+
+const gzipped = (code: string) => gzipSync(code, { level: 9 }).length
+
+/** The minified, gzipped size of `input` bundled by rollup, with viem external or, for an app, bundled for a browser. */
+const rollupSize = (input: string, options: { readonly app: boolean }) =>
   Effect.tryPromise({
     try: async () => {
       const bundle = await rollup({
         input,
-        external,
+        external: options.app ? runtimeOnly : external,
         treeshake: { preset: "recommended" },
         plugins: [
           packageSideEffects(),
-          nodeResolve({ exportConditions: ["import", "default"] }),
-          esbuild({ target: "es2022", minify: true })
+          nodeResolve(
+            options.app
+              ? { browser: true, exportConditions: ["browser", "import", "default"] }
+              : { exportConditions: ["import", "default"] }
+          ),
+          minify()
         ],
         onwarn: (warning) => {
-          // Cycles and misplaced `@__PURE__` comments inside dependencies (ox, Effect, @scure) are theirs to keep; the
-          // same warning in our own code still fails.
+          // Cycles and misplaced `@__PURE__` comments inside dependencies (ox, Effect, @scure, viem) are theirs to
+          // keep; the same warning in our own code still fails.
           const thirdParty = (warning.code === "CIRCULAR_DEPENDENCY" &&
             (warning.ids ?? []).every((id) => id.includes("/node_modules/")))
             || (warning.code === "INVALID_ANNOTATION" && (warning.id ?? "").includes("/node_modules/"))
@@ -70,30 +97,93 @@ const gzippedSize = (input: string) =>
       })
       const { output } = await bundle.generate({ format: "esm" })
       await bundle.close()
-      return gzipSync(output.map((chunk) => chunk.type === "chunk" ? chunk.code : "").join(""), { level: 9 }).length
+      return gzipped(output.map((chunk) => chunk.type === "chunk" ? chunk.code : "").join(""))
     },
     catch: (cause) => ToolFailed.make({ tool: `rollup ${input}`, output: String(cause) })
   })
 
+// esbuild users (tsup, Bun, esbuild itself) get no property-level tree shaking of object literals, so their bundles
+// differ from rollup's; the same conditions as the rollup pass keep the two comparable.
+const esbuildSize = (input: string) =>
+  Effect.tryPromise({
+    try: async () => {
+      const result = await build({
+        entryPoints: [input],
+        bundle: true,
+        minify: true,
+        format: "esm",
+        target: "es2022",
+        platform: "neutral",
+        mainFields: ["module", "main"],
+        external: ["viem", "viem/*", "@napi-rs/keyring", "node:*"],
+        write: false,
+        logLevel: "silent"
+      })
+      return gzipped(result.outputFiles.map((file) => file.text).join(""))
+    },
+    catch: (cause) => ToolFailed.make({ tool: `esbuild ${input}`, output: String(cause) })
+  })
+
 const kilobytes = (bytes: number) => `${(bytes / 1024).toFixed(2)} KB`
 
-/** Bundles each fixture in a package's `bundle/budgets.json` and fails when one exceeds its gzip budget. */
+/** One measured bundle against its budget: the report line, and whether it is over. */
+export interface Measurement {
+  readonly line: string
+  readonly over: boolean
+}
+
+/** A fixture's gzip size against its budget. */
+export const fixtureMeasurement = (name: string, size: number, budget: number): Measurement => ({
+  line: `${name}: ${kilobytes(size)} gzip (budget ${kilobytes(budget)})`,
+  over: size > budget
+})
+
+/** An app's gzip size over the viem-only app's, against its budget; the app's own size is only reported. */
+export const appMeasurement = (
+  name: string,
+  sizes: { readonly app: number; readonly viem: number },
+  budget: number
+): Measurement => {
+  const share = sizes.app - sizes.viem
+  return {
+    line: `${name}: ${kilobytes(sizes.app)} gzip, ${kilobytes(share)} over viem (budget ${kilobytes(budget)})`,
+    over: share > budget
+  }
+}
+
+/** Bundles each fixture and app in a package's `bundle/budgets.json` and fails when one exceeds its gzip budget. */
 const run = Effect.fn("bundleSize")(
   function*() {
     const fs = yield* FileSystem.FileSystem
     const path = yield* Path.Path
     const failures: Array<string> = []
+    const report = (pkg: string, measurement: Measurement) => {
+      const line = `${pkg} ${measurement.line}`
+      if (measurement.over) failures.push(line)
+      return Console.log(line)
+    }
 
     for (const pkg of yield* publishablePackages(process.cwd())) {
       const budgetsFile = path.join(pkg.dir, "bundle", "budgets.json")
       if (!(yield* fs.exists(budgetsFile))) continue
       const budgets = yield* fs.readFileString(budgetsFile).pipe(Effect.flatMap(Schema.decodeUnknownEffect(Budgets)))
+      const fixture = (name: string) => path.join(pkg.dir, "bundle", name)
 
-      for (const [fixture, budget] of Object.entries(budgets)) {
-        const size = yield* gzippedSize(path.join(pkg.dir, "bundle", fixture))
-        const line = `${pkg.name} ${fixture}: ${kilobytes(size)} gzip (budget ${kilobytes(budget)})`
-        yield* Console.log(line)
-        if (size > budget) failures.push(line)
+      for (const [name, budget] of Object.entries(budgets.fixtures)) {
+        const [rollupBytes, esbuildBytes] = yield* Effect.all([
+          rollupSize(fixture(name), { app: false }),
+          esbuildSize(fixture(name))
+        ], { concurrency: 2 })
+        yield* report(pkg.name, fixtureMeasurement(`${name} rollup`, rollupBytes, budget.rollup))
+        yield* report(pkg.name, fixtureMeasurement(`${name} esbuild`, esbuildBytes, budget.esbuild))
+      }
+
+      if (budgets.apps === undefined) continue
+      const viem = yield* rollupSize(fixture(budgets.apps.viem), { app: true })
+      yield* Console.log(`${pkg.name} ${budgets.apps.viem}: ${kilobytes(viem)} gzip (viem only)`)
+      for (const [name, budget] of Object.entries(budgets.apps.budgets)) {
+        const app = yield* rollupSize(fixture(name), { app: true })
+        yield* report(pkg.name, appMeasurement(name, { app, viem }, budget))
       }
     }
 

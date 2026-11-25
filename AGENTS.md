@@ -48,7 +48,7 @@ Dependencies point inward: apps depend on packages, packages never depend on app
 | `pnpm codegen:check`      | Fail when a generated file (`@namera-ai/contracts` included) is stale            |
 | `pnpm check:dist`         | Type-check the built declarations like a consumer                                |
 | `pnpm api-snapshot`       | Rewrite `packages/<name>/etc/<name>.api.md`; review the diff, it is the API      |
-| `pnpm bundle-size`        | Bundle each `bundle/budgets.json` fixture and fail over its gzip budget          |
+| `pnpm bundle-size`        | Bundle `bundle/budgets.json` fixtures with rollup and esbuild, fail over budget  |
 | `pnpm type-cost`          | Type-check cost of each `typeperf/` consumer against its baseline (`--update`)   |
 | `pnpm pack:check`         | Pack each package and check it with publint and attw                             |
 | `pnpm contracts:<action>` | `status`, `deploy`, `record`, `verify`, `generate`: see `contracts/README.md`    |

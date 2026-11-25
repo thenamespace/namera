@@ -16,5 +16,5 @@
       "@namera-ai/sdk/*": ["../dist/*.d.ts"]
     }
   },
-  "files": ["consumer.ts"]
+  "files": ["consumer.ts", "errors.ts", "owner.ts", "agent.ts", "viem.ts"]
 }

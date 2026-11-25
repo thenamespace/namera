@@ -1,3 +1,5 @@
 {
-  "SmartSession.ts": 20480
+  "fixtures": {
+    "SmartSession.ts": { "rollup": 20480, "esbuild": 4096 }
+  }
 }

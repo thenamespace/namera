@@ -1,10 +1,84 @@
 {
-  "Session.ts": 56320,
-  "ChainError.ts": 46080,
-  "index.ts": 143360,
-  "KernelAccount.ts": 56320,
-  "SmartAccount.ts": 61440,
-  "Keystore.ts": 76800,
-  "SessionKey.ts": 46080,
-  "BrowserKeystore.ts": 35840
+  "fixtures": {
+    "agent.ts": {
+      "rollup": 82944,
+      "esbuild": 108544
+    },
+    "owner.ts": {
+      "rollup": 73728,
+      "esbuild": 104448
+    },
+    "index.ts": {
+      "rollup": 143360,
+      "esbuild": 154624
+    },
+    "effectIndex.ts": {
+      "rollup": 142336,
+      "esbuild": 154624
+    },
+    "Session.ts": {
+      "rollup": 56320,
+      "esbuild": 71680
+    },
+    "SessionKey.ts": {
+      "rollup": 46080,
+      "esbuild": 49152
+    },
+    "KernelAccount.ts": {
+      "rollup": 56320,
+      "esbuild": 64512
+    },
+    "SmartAccount.ts": {
+      "rollup": 61440,
+      "esbuild": 70656
+    },
+    "Keystore.ts": {
+      "rollup": 76800,
+      "esbuild": 72704
+    },
+    "BrowserKeystore.ts": {
+      "rollup": 35840,
+      "esbuild": 35840
+    },
+    "NodeKeystore.ts": {
+      "rollup": 63488,
+      "esbuild": 69632
+    },
+    "ChainError.ts": {
+      "rollup": 46080,
+      "esbuild": 31744
+    },
+    "NameraError.ts": {
+      "rollup": 49152,
+      "esbuild": 62464
+    },
+    "GrantParse.ts": {
+      "rollup": 51200,
+      "esbuild": 99328
+    },
+    "Bundler.ts": {
+      "rollup": 63488,
+      "esbuild": 76800
+    },
+    "Paymaster.ts": {
+      "rollup": 54272,
+      "esbuild": 72704
+    },
+    "Compat.ts": {
+      "rollup": 23552,
+      "esbuild": 26624
+    },
+    "Policy.ts": {
+      "rollup": 1024,
+      "esbuild": 1024
+    }
+  },
+  "apps": {
+    "viem": "viemApp.ts",
+    "budgets": {
+      "agentApp.ts": 86016,
+      "ownerApp.ts": 76800,
+      "indexApp.ts": 145408
+    }
+  }
 }
