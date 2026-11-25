@@ -91,11 +91,14 @@ export const binNames = (name: string, bin: string | Readonly<Record<string, str
 
 /**
  * A module importing every entry: run by Node as `.mjs`. An entry that exports nothing fails the
- * run.
+ * run, unless its file is what TypeScript emits for a module of types only (`export {};`, such as a
+ * module of interfaces), whose exports exist only in its declarations.
  */
 export const entriesModule = (specifiers: ReadonlyArray<string>) =>
   Arr.join(
     [
+      `import { readFileSync } from "node:fs";`,
+      `import { fileURLToPath } from "node:url";`,
       ...Arr.map(
         specifiers,
         (specifier, index) =>
@@ -108,7 +111,8 @@ export const entriesModule = (specifiers: ReadonlyArray<string>) =>
           ", "
         )
       } };`,
-      "const empty = Object.entries(entries).filter(([, entry]) => Object.keys(entry).length === 0);",
+      "const typeOnly = (specifier) => /^export \\{\\};\\s*(\\/\\/# sourceMappingURL=\\S+\\s*)?$/.test(readFileSync(fileURLToPath(import.meta.resolve(specifier)), \"utf8\"));",
+      "const empty = Object.entries(entries).filter(([name, entry]) => Object.keys(entry).length === 0 && !typeOnly(name));",
       "if (empty.length > 0) throw new Error(\"no exports: \" + empty.map(([name]) => name).join(\", \"));",
       ""
     ],

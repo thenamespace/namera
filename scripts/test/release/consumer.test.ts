@@ -1,4 +1,8 @@
+import { NodeServices } from "@effect/platform-node"
 import { assert, describe, it } from "@effect/vitest"
+import { Effect, FileSystem, Path } from "effect"
+import { spawnSync } from "node:child_process"
+
 import { binNames, entriesModule, publicEntries } from "../../release/consumer.ts"
 
 describe("publicEntries", () => {
@@ -49,4 +53,31 @@ describe("entriesModule", () => {
     assert.include(module, `import * as entry0 from "pkg/Main";`)
     assert.include(module, `import * as entry1 from "pkg/Glob";`)
   })
+
+  // Runs the module with Node against an installed package whose modules are TypeScript's emit.
+  const run = Effect.fn(function*(specifiers: ReadonlyArray<string>) {
+    const fs = yield* FileSystem.FileSystem
+    const path = yield* Path.Path
+    const dir = yield* fs.makeTempDirectoryScoped({ prefix: "entries-" })
+    const pkg = path.join(dir, "node_modules", "pkg")
+    yield* fs.makeDirectory(pkg, { recursive: true })
+    yield* fs.writeFileString(
+      path.join(pkg, "package.json"),
+      JSON.stringify({ type: "module", exports: { "./*": "./*.js" } })
+    )
+    yield* fs.writeFileString(path.join(pkg, "Main.js"), "export const main = 1;\n")
+    yield* fs.writeFileString(path.join(pkg, "Types.js"), "export {};\n//# sourceMappingURL=Types.js.map")
+    yield* fs.writeFileString(path.join(pkg, "Empty.js"), "const unused = 1;\n")
+    yield* fs.writeFileString(path.join(dir, "entries.mjs"), entriesModule(specifiers))
+    return spawnSync(process.execPath, ["entries.mjs"], { cwd: dir, encoding: "utf8" })
+  })
+
+  it.effect("accepts an entry of types only and refuses any other entry without exports", () =>
+    Effect.gen(function*() {
+      assert.strictEqual((yield* run(["pkg/Main", "pkg/Types"])).status, 0)
+
+      const empty = yield* run(["pkg/Main", "pkg/Empty"])
+      assert.notStrictEqual(empty.status, 0)
+      assert.include(empty.stderr, "no exports: pkg/Empty")
+    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)))
 })
