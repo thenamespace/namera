@@ -1,5 +1,14 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest"
 import { Bundler, Grant, NameraError, Policy, PolicyViolationError, Session, SessionKey } from "@namera-ai/sdk"
+import {
+  connect,
+  createConfig,
+  getCallsStatus,
+  getCapabilities,
+  sendCalls,
+  signTypedData,
+  waitForCallsStatus
+} from "@wagmi/core"
 import { createServer, type Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import {
@@ -16,10 +25,12 @@ import {
 import { entryPoint07Abi, entryPoint07Address } from "viem/account-abstraction"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
+import { namera } from "../examples/wagmiConnector.ts"
 import { client, devnet } from "./accounts/accounts.test-utils.ts"
 import { deployedAccount } from "./session.test-utils.ts"
 
-// The agent's EIP-1193 provider on the devnet (safe-mode alto): viem's wallet client through `custom`, a policy refusal that reaches the app as the Namera error, and a batch sponsored by an
+// The agent's EIP-1193 provider on the devnet (safe-mode alto): wagmi through the example connector, viem's wallet
+// client through `custom`, a policy refusal that reaches the app as the Namera error, and a batch sponsored by an
 // ERC-7677 paymaster service.
 
 const token = privateKeyToAccount(generatePrivateKey()).address
@@ -84,6 +95,37 @@ const rejection = (promise: Promise<unknown>) =>
 
 describe("Grant.toProvider on a Kernel account", { concurrent: false }, () => {
   devnet.isolate({ beforeEach, afterEach })
+
+  it("sends a batch and reads its status through wagmi's sendCalls and getCallsStatus", async () => {
+    const { address, grant, sessionKey } = await grantFor()
+    const config = createConfig({
+      chains: [devnet.chain],
+      connectors: [namera({ grant, signer: sessionKey, client, bundler: bundler() })],
+      transports: { [devnet.chain.id]: http(devnet.rpcUrl) },
+      multiInjectedProviderDiscovery: false,
+      storage: null
+    })
+
+    const connection = await connect(config, { connector: config.connectors[0]! })
+    assert.deepStrictEqual(connection.accounts, [address])
+    assert.deepInclude(await getCapabilities(config), {
+      [devnet.chain.id]: { atomic: { status: "supported" }, paymasterService: { supported: true } }
+    })
+
+    const { id } = await sendCalls(config, { calls: [transfer(10n), transfer(20n)] })
+    // alto bundles only when told: the operation waits in its mempool.
+    assert.deepInclude(await getCallsStatus(config, { id }), { status: "pending", statusCode: 100, atomic: true })
+
+    await devnet.sendBundleNow()
+    const status = await waitForCallsStatus(config, { id, pollingInterval: 50 })
+    assert.deepInclude(status, { status: "success", statusCode: 200, chainId: devnet.chain.id, version: "2.0.0" })
+    assert.strictEqual(status.receipts?.length, 1)
+    assert.strictEqual(status.receipts![0]!.status, "success")
+
+    // The session is enabled now, so the session key signs typed data its policy allows.
+    const signature = await signTypedData(config, permit(5n))
+    assert.strictEqual(await verifiedByToken(address, permit(5n), signature), "0x1626ba7e")
+  })
 
   it("works as viem's custom transport, forwarding reads and refusing transactions", async () => {
     const { address, grant, sessionKey } = await grantFor()

@@ -14,6 +14,7 @@
     "./packages/*/typetest/**/*.ts",
     "./packages/*/benchmark/**/*.ts",
     "./packages/*/bundle/**/*.ts",
+    "./packages/*/examples/**/*.ts",
     "./contracts/script/**/*.ts"
   ],
   "exclude": [

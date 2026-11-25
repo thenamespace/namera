@@ -316,6 +316,24 @@ try {
 }
 ```
 
+For wagmi, [`examples/wagmiConnector.ts`](https://github.com/thenamespace/namera/blob/main/packages/sdk/examples/wagmiConnector.ts) is a minimal `createConnector` over the
+provider to copy into an app (it isn't published; the SDK's chain tests run it through wagmi's `sendCalls`,
+`getCallsStatus` and `signTypedData`):
+
+```ts
+import { createConfig, sendCalls, waitForCallsStatus } from "@wagmi/core"
+
+import { namera } from "./wagmiConnector.ts"
+
+const config = createConfig({
+  chains: [base],
+  connectors: [namera({ grant, signer: sessionKey, client, bundler: Bundler.pimlico({ apiKey }) })],
+  transports: { [base.id]: http() }
+})
+const { id } = await sendCalls(config, { calls })
+await waitForCallsStatus(config, { id })
+```
+
 - One chain and one account: `wallet_switchEthereumChain` to another chain is refused (4902), and the provider emits
   `connect` and `accountsChanged` once, on the first `eth_requestAccounts`.
 - An operation the bundler drops without another one taking its nonce reads as pending: give `waitForCallsStatus` a
