@@ -167,10 +167,8 @@ const senderNotAllowed = AbiError.from("error SenderNotAllowed(address sender)")
 const known = [
   bundlerNotAllowed,
   senderNotAllowed,
-  ...SmartSession.v1.abi.filter((item) => item.type === "error").map((item) =>
-    AbiError.from(item as AbiError.AbiError)
-  ),
-  ...SessionHook.v1.abi.filter((item) => item.type === "error").map((item) => AbiError.from(item as AbiError.AbiError))
+  ...SmartSession.errorsV1.map((item) => AbiError.from(item)),
+  ...SessionHook.errorsV1.map((item) => AbiError.from(item))
 ]
 const bySelector = new Map(known.map((error) => [AbiError.getSelector(error), error] as const))
 

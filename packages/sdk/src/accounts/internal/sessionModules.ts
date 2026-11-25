@@ -9,6 +9,6 @@ import type { Sessions } from "../../internal/core/account/sessionHook.ts"
  * @internal
  */
 export const sessionModules: Sessions = {
-  smartSession: SmartSession.v1.address,
-  sessionHook: SessionHook.v1.address
+  smartSession: SmartSession.addressV1,
+  sessionHook: SessionHook.addressV1
 }

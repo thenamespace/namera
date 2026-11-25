@@ -1,5 +1,12 @@
 {
   "fixtures": {
-    "SmartSession.ts": { "rollup": 20480, "esbuild": 4096 }
+    "SmartSession.ts": {
+      "rollup": 1024,
+      "esbuild": 4096
+    },
+    "SmartSessionFlat.ts": {
+      "rollup": 1024,
+      "esbuild": 1024
+    }
   }
 }

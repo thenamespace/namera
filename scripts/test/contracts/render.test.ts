@@ -30,8 +30,29 @@ describe("packageSources", () => {
       sources.get("Example.ts"),
       "export const v1: Contract.Version<typeof abiV1> = {"
     )
-    assert.include(sources.get("Example.ts"), `"address": "${contract.address}"`)
+    assert.include(sources.get("Example.ts"), "\"address\": addressV1")
     assert.include(sources.get("Example.ts"), "\"abi\": abiV1")
+    assert.include(sources.get("Example.ts"), "\"deployments\": deploymentsV1")
+  })
+
+  it("exports each part of a version on its own, the errors alone in ABI order", () => {
+    const failing = {
+      ...contract,
+      abi: [
+        { type: "error", name: "First", inputs: [] },
+        ...contract.abi,
+        { type: "error", name: "Second", inputs: [{ name: "code", type: "uint8" }] }
+      ]
+    }
+    const module = packageSources([failing], [], external).get("Example.ts") ?? ""
+
+    assert.include(module, `export const addressV1 = "${contract.address}" as const;`)
+    assert.include(module, "export const abiV1 = [{\"type\": \"error\", \"name\": \"First\"")
+    assert.include(
+      module,
+      "export const errorsV1 = [{\"type\": \"error\", \"name\": \"First\", \"inputs\": []}, {\"type\": \"error\", \"name\": \"Second\""
+    )
+    assert.include(module, "export const deploymentsV1: Contract.Version<typeof abiV1>[\"deployments\"] = {};")
   })
 
   it("renders each deployment by chain id with its block number as a bigint", () => {
@@ -60,7 +81,7 @@ describe("packageSources", () => {
 
     const module = sources.get("Example.ts") ?? ""
     assert.include(module, `84532: {"runtimeCodeHash": "0x${Str.repeat(32)("ef")}"`)
-    assert.include(module, `"blockNumber": BigInt("${transaction.blockNumber}")`)
+    assert.include(module, `"blockNumber": /* @__PURE__ */ BigInt("${transaction.blockNumber}")`)
   })
 
   it("wraps doc comments within 100 columns", () => {

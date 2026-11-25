@@ -110,7 +110,7 @@ export const matrix: Matrix = {
   account: {
     type: "kernel",
     version: "3.3",
-    sessionChains: Object.keys(SmartSession.v1.deployments).map(Number)
+    sessionChains: Object.keys(SmartSession.deploymentsV1).map(Number)
   },
   bundlers: [
     {

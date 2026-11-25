@@ -24,6 +24,17 @@ describe("contract versions", () => {
     }
   })
 
+  it("are built from the flat exports, with the errors alone in ABI order", () => {
+    assert.strictEqual(SmartSession.v1.abi, SmartSession.abiV1)
+    assert.strictEqual(SmartSession.v1.address, SmartSession.addressV1)
+    assert.strictEqual(SmartSession.v1.deployments, SmartSession.deploymentsV1)
+    assert.deepStrictEqual<ReadonlyArray<unknown>>(
+      SmartSession.errorsV1,
+      SmartSession.abiV1.filter((item) => item.type === "error")
+    )
+    assert.isAbove(SmartSession.errorsV1.length, 0)
+  })
+
   it("include the SmartSession entry points the SDK calls", () => {
     const smartSessionSelectors = selectors(SmartSession.v1.abi)
 

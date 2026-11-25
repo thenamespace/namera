@@ -19,16 +19,16 @@ import type { Contracts } from "../core/session/compile.ts"
  * @internal
  */
 export const contracts: Contracts = {
-  smartSession: SmartSession.v1.address,
-  ecdsaSessionValidator: ECDSASessionValidator.v1.address,
-  webAuthnValidator: WebAuthnValidator.v1.address,
-  sessionHook: SessionHook.v1.address,
-  allowPolicy: AllowPolicy.v1.address,
-  argPolicy: ArgPolicy.v1.address,
-  spendPolicy: SpendPolicy.v1.address,
-  valuePolicy: ValuePolicy.v1.address,
-  rateLimitPolicy: RateLimitPolicy.v1.address,
-  gasPolicy: GasPolicy.v1.address,
-  approvalPolicy: ApprovalPolicy.v1.address,
-  signaturePolicy: SignaturePolicy.v1.address
+  smartSession: SmartSession.addressV1,
+  ecdsaSessionValidator: ECDSASessionValidator.addressV1,
+  webAuthnValidator: WebAuthnValidator.addressV1,
+  sessionHook: SessionHook.addressV1,
+  allowPolicy: AllowPolicy.addressV1,
+  argPolicy: ArgPolicy.addressV1,
+  spendPolicy: SpendPolicy.addressV1,
+  valuePolicy: ValuePolicy.addressV1,
+  rateLimitPolicy: RateLimitPolicy.addressV1,
+  gasPolicy: GasPolicy.addressV1,
+  approvalPolicy: ApprovalPolicy.addressV1,
+  signaturePolicy: SignaturePolicy.addressV1
 }

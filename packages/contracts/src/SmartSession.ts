@@ -1,6 +1,14 @@
 import type * as Contract from "./Contract.ts"
 
-const abiV1 = [
+/**
+ * The ABI of version 1 of Namera's `SmartSession` contract (`namera.smart-session.v1`): `v1.abi`,
+ * exported on its own so a bundler keeps only what is imported.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 2.0.0
+ */
+export const abiV1 = [
   {
     "type": "function",
     "name": "areActionsEnabled",
@@ -937,6 +945,241 @@ const abiV1 = [
 ] as const
 
 /**
+ * The error fragments of `abiV1`, in ABI order: what decoding a revert needs, without the rest of
+ * the ABI.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 2.0.0
+ */
+export const errorsV1 = [
+  {
+    "type": "error",
+    "name": "AssociatedArray_OutOfBounds",
+    "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "error",
+    "name": "AssociatedArray_OutOfBounds",
+    "inputs": [{ "name": "index", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "error",
+    "name": "ChainIdMismatch",
+    "inputs": [{ "name": "providedChainId", "type": "uint64", "internalType": "uint64" }]
+  },
+  {
+    "type": "error",
+    "name": "DataTooLong",
+    "inputs": [{ "name": "length", "type": "uint256", "internalType": "uint256" }]
+  },
+  { "type": "error", "name": "ForbiddenValidationData", "inputs": [] },
+  {
+    "type": "error",
+    "name": "HashMismatch",
+    "inputs": [{ "name": "providedHash", "type": "bytes32", "internalType": "bytes32" }, {
+      "name": "computedHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+    }]
+  },
+  { "type": "error", "name": "InvalidActionId", "inputs": [] },
+  { "type": "error", "name": "InvalidData", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InvalidEnableSignature",
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }, {
+      "name": "hash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+    }]
+  },
+  {
+    "type": "error",
+    "name": "InvalidISessionValidator",
+    "inputs": [{ "name": "sessionValidator", "type": "address", "internalType": "contract ISessionValidator" }]
+  },
+  { "type": "error", "name": "InvalidMode", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InvalidPermissionId",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  { "type": "error", "name": "InvalidSelfCall", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InvalidSession",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSessionHookTag",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSessionValidity",
+    "inputs": [{ "name": "validAfter", "type": "uint48", "internalType": "uint48" }, {
+      "name": "validUntil",
+      "type": "uint48",
+      "internalType": "uint48"
+    }]
+  },
+  { "type": "error", "name": "InvalidTarget", "inputs": [] },
+  {
+    "type": "error",
+    "name": "InvalidUserOpSender",
+    "inputs": [{ "name": "sender", "type": "address", "internalType": "address" }]
+  },
+  { "type": "error", "name": "NoExecutionsInBatch", "inputs": [] },
+  {
+    "type": "error",
+    "name": "NoPoliciesSet",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  {
+    "type": "error",
+    "name": "PaymasterValidationNotEnabled",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }]
+  },
+  {
+    "type": "error",
+    "name": "PolicyViolation",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }, {
+      "name": "policy",
+      "type": "address",
+      "internalType": "address"
+    }]
+  },
+  {
+    "type": "error",
+    "name": "SignerNotFound",
+    "inputs": [{ "name": "permissionId", "type": "bytes32", "internalType": "PermissionId" }, {
+      "name": "account",
+      "type": "address",
+      "internalType": "address"
+    }]
+  },
+  {
+    "type": "error",
+    "name": "SmartSessionModuleAlreadyInstalled",
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAccount",
+    "inputs": [{ "name": "account", "type": "address", "internalType": "address" }]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedCallType",
+    "inputs": [{ "name": "callType", "type": "bytes1", "internalType": "bytes1" }]
+  },
+  { "type": "error", "name": "UnsupportedExecutionType", "inputs": [] },
+  {
+    "type": "error",
+    "name": "UnsupportedPolicy",
+    "inputs": [{ "name": "policy", "type": "address", "internalType": "address" }]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedSmartSessionMode",
+    "inputs": [{ "name": "mode", "type": "uint8", "internalType": "enum SmartSessionMode" }]
+  }
+] as const
+
+/**
+ * The CREATE2 address of version 1 of Namera's `SmartSession` contract (`namera.smart-session.v1`),
+ * the same on every chain: `v1.address`.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 2.0.0
+ */
+export const addressV1 = "0x26e62071c25F003BA503898e0d716Cd98CEF6e80" as const
+
+/**
+ * The record of every chain version 1 of Namera's `SmartSession` contract
+ * (`namera.smart-session.v1`) is deployed on, keyed by chain id: `v1.deployments`.
+ *
+ * @stability experimental
+ * @category contracts
+ * @since 2.0.0
+ */
+export const deploymentsV1: Contract.Version<typeof abiV1>["deployments"] = {
+  8453: {
+    "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+    "transactionHash": "0xd2630435446ada9297fb959098c64b09574a4ee139431ff7f1082384fad4e95e",
+    "blockNumber": /* @__PURE__ */ BigInt("61800554"),
+    "blockHash": "0xe6c388e40301a4db133c8214e8f607f6eb0969ce92f1af062c5eb3d61d3fa019",
+    "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+    "source": {
+      "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+      "compiler": "0.8.38+commit.1835d247",
+      "evmVersion": "cancun",
+      "optimizerRuns": 200,
+      "viaIR": true
+    }
+  },
+  84532: {
+    "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+    "transactionHash": "0x383d1c7b6123f1d0497bc4068da94245a785ea97d9e12af59965cf95cf12ca50",
+    "blockNumber": /* @__PURE__ */ BigInt("63140054"),
+    "blockHash": "0x8518e8e91d40e02fdb2daeab57a710629dc672e99ab3cbce9e6e7e98867dc9dd",
+    "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+    "source": {
+      "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+      "compiler": "0.8.38+commit.1835d247",
+      "evmVersion": "cancun",
+      "optimizerRuns": 200,
+      "viaIR": true
+    }
+  },
+  421614: {
+    "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+    "transactionHash": "0x1eac2f4511ac4e76931e391b200fc333c91c4c37a4faad19e7360a3b411247a5",
+    "blockNumber": /* @__PURE__ */ BigInt("332385624"),
+    "blockHash": "0xde1bb02e4d0d1666869a1369018fa6ee797815adeb1a936b9f3791e96455051a",
+    "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+    "source": {
+      "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+      "compiler": "0.8.38+commit.1835d247",
+      "evmVersion": "cancun",
+      "optimizerRuns": 200,
+      "viaIR": true
+    }
+  },
+  11155111: {
+    "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+    "transactionHash": "0x245508e14f7f4be58725483da65bae9b93edb24af6787124675fca352482ef38",
+    "blockNumber": /* @__PURE__ */ BigInt("12204736"),
+    "blockHash": "0xd7caf178dd4d80e07a0cc19c2c366b932059983d3456bc317f88a136e2a8c4c8",
+    "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+    "source": {
+      "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+      "compiler": "0.8.38+commit.1835d247",
+      "evmVersion": "cancun",
+      "optimizerRuns": 200,
+      "viaIR": true
+    }
+  },
+  11155420: {
+    "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
+    "transactionHash": "0xe478538f810ba7a6fb58d61c3161d643320ba0b31d00d3d59339fa0d31c502a2",
+    "blockNumber": /* @__PURE__ */ BigInt("51873769"),
+    "blockHash": "0xdf4cfcc9422a6c731c8bcfd676ab4fe5bb7a367ad99640020cf913b6e757570b",
+    "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
+    "source": {
+      "commit": "34564781592a433d7fea777752d8c0854b5aed55",
+      "compiler": "0.8.38+commit.1835d247",
+      "evmVersion": "cancun",
+      "optimizerRuns": 200,
+      "viaIR": true
+    }
+  }
+}
+
+/**
  * Version 1 of Namera's `SmartSession` contract (`namera.smart-session.v1`): its ABI, CREATE2
  * address and the record of every chain it is deployed on.
  *
@@ -952,82 +1195,11 @@ const abiV1 = [
  */
 export const v1: Contract.Version<typeof abiV1> = {
   "label": "namera.smart-session.v1",
-  "address": "0x26e62071c25F003BA503898e0d716Cd98CEF6e80",
+  "address": addressV1,
   "factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
   "salt": "0xe5477940b2a0ba409edc569d78a14f3f55213a84dcbc656ead555a2d5e6fe9c9",
   "initcodeHash": "0xe52ddf284d3e18192453afab9b56626e0005b40b9d384e5a511b9cd5c7ca7ddb",
   "compiler": { "compiler": "0.8.38+commit.1835d247", "evmVersion": "cancun", "optimizerRuns": 200, "viaIR": true },
   "abi": abiV1,
-  "deployments": {
-    8453: {
-      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
-      "transactionHash": "0xd2630435446ada9297fb959098c64b09574a4ee139431ff7f1082384fad4e95e",
-      "blockNumber": BigInt("61800554"),
-      "blockHash": "0xe6c388e40301a4db133c8214e8f607f6eb0969ce92f1af062c5eb3d61d3fa019",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    },
-    84532: {
-      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
-      "transactionHash": "0x383d1c7b6123f1d0497bc4068da94245a785ea97d9e12af59965cf95cf12ca50",
-      "blockNumber": BigInt("63140054"),
-      "blockHash": "0x8518e8e91d40e02fdb2daeab57a710629dc672e99ab3cbce9e6e7e98867dc9dd",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    },
-    421614: {
-      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
-      "transactionHash": "0x1eac2f4511ac4e76931e391b200fc333c91c4c37a4faad19e7360a3b411247a5",
-      "blockNumber": BigInt("332385624"),
-      "blockHash": "0xde1bb02e4d0d1666869a1369018fa6ee797815adeb1a936b9f3791e96455051a",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    },
-    11155111: {
-      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
-      "transactionHash": "0x245508e14f7f4be58725483da65bae9b93edb24af6787124675fca352482ef38",
-      "blockNumber": BigInt("12204736"),
-      "blockHash": "0xd7caf178dd4d80e07a0cc19c2c366b932059983d3456bc317f88a136e2a8c4c8",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    },
-    11155420: {
-      "runtimeCodeHash": "0xd698d06f9e2d93beabe240e688147e83b595300cc0b3d2df33ab4418db176797",
-      "transactionHash": "0xe478538f810ba7a6fb58d61c3161d643320ba0b31d00d3d59339fa0d31c502a2",
-      "blockNumber": BigInt("51873769"),
-      "blockHash": "0xdf4cfcc9422a6c731c8bcfd676ab4fe5bb7a367ad99640020cf913b6e757570b",
-      "deployer": "0xA1f0cf3974F1023FbD16322a137dad3A538eB6c6",
-      "source": {
-        "commit": "34564781592a433d7fea777752d8c0854b5aed55",
-        "compiler": "0.8.38+commit.1835d247",
-        "evmVersion": "cancun",
-        "optimizerRuns": 200,
-        "viaIR": true
-      }
-    }
-  }
+  "deployments": deploymentsV1
 }

@@ -44,8 +44,9 @@ const literal: (value: unknown) => string = (value) => {
   if (Predicate.isTagged(value, "Identifier") && Predicate.hasProperty(value, "name")) {
     return String(value.name)
   }
-  // A call rather than a literal: the repository lints out bigint literals (`effect/no-bigint-literals`).
-  if (Predicate.isBigInt(value)) return `BigInt("${value}")`
+  // A call rather than a literal: the repository lints out bigint literals (`effect/no-bigint-literals`). Marked pure,
+  // or esbuild keeps every deployment record, which holds it, even when only an address is imported.
+  if (Predicate.isBigInt(value)) return `/* @__PURE__ */ BigInt("${value}")`
   if (Arr.isArray(value)) return `[${Arr.join(Arr.map(value, literal), ", ")}]`
   if (Predicate.isObject(value)) {
     const fields = Arr.map(
@@ -132,12 +133,45 @@ const versionSource = (contract: BuiltContract, deployments: ReadonlyArray<Chain
     const record = contracts[contract.label]
     return record === undefined ? [] : [[String(chainId), deploymentSource(record)] as const]
   })
-  const abiName = `abiV${contract.version}`
+  const suffix = `V${contract.version}`
+  const errors = Arr.filter(contract.abi, (item) => Predicate.hasProperty(item, "type") && item.type === "error")
   const { compiler } = contract
+  const subject = `version ${contract.version} of Namera's \`${contract.contract}\` contract (\`${contract.label}\`)`
+  const flatTags = ["@stability experimental", "@category contracts", `@since ${since}`]
 
   return Arr.join(
     [
-      `const ${abiName} = ${literal(contract.abi)} as const;`,
+      docComment(
+        [
+          `The ABI of ${subject}: \`v${contract.version}.abi\`, exported on its own so a bundler keeps only what is imported.`
+        ],
+        flatTags
+      ),
+      `export const abi${suffix} = ${literal(contract.abi)} as const;`,
+      "",
+      docComment(
+        [
+          `The error fragments of \`abi${suffix}\`, in ABI order: what decoding a revert needs, without the rest of the ABI.`
+        ],
+        flatTags
+      ),
+      `export const errors${suffix} = ${literal(errors)} as const;`,
+      "",
+      docComment(
+        [`The CREATE2 address of ${subject}, the same on every chain: \`v${contract.version}.address\`.`],
+        flatTags
+      ),
+      `export const address${suffix} = ${literal(contract.address)} as const;`,
+      "",
+      docComment(
+        [
+          `The record of every chain ${subject} is deployed on, keyed by chain id: \`v${contract.version}.deployments\`.`
+        ],
+        flatTags
+      ),
+      `export const deployments${suffix}: Contract.Version<typeof abi${suffix}>["deployments"] = ${
+        literal(Rec.fromEntries(deployed))
+      };`,
       "",
       docComment(
         [
@@ -147,18 +181,18 @@ const versionSource = (contract: BuiltContract, deployments: ReadonlyArray<Chain
             compiler.viaIR ? "via-IR" : "legacy pipeline"
           }), so it is the same on every chain.`
         ],
-        ["@stability experimental", "@category contracts", `@since ${since}`]
+        flatTags
       ),
-      `export const v${contract.version}: Contract.Version<typeof ${abiName}> = ${
+      `export const v${contract.version}: Contract.Version<typeof abi${suffix}> = ${
         literal({
           label: contract.label,
-          address: contract.address,
+          address: identifier(`address${suffix}`),
           factory,
           salt: contract.salt,
           initcodeHash: contract.initcodeHash,
           compiler,
-          abi: identifier(abiName),
-          deployments: Rec.fromEntries(deployed)
+          abi: identifier(`abi${suffix}`),
+          deployments: identifier(`deployments${suffix}`)
         })
       };`,
       ""
@@ -231,7 +265,7 @@ export const packageSources = (
       ...Arr.map(names, (name) =>
         namespaceExport(
           name,
-          `Namera's \`${name}\` contract: ABI, CREATE2 address and deployment records, one export per version (\`${name}.v1\`, …).`,
+          `Namera's \`${name}\` contract: ABI, CREATE2 address and deployment records, one export per version (\`${name}.v1\`, …) and one per part of it (\`${name}.addressV1\`, …).`,
           false
         )),
       namespaceExport(

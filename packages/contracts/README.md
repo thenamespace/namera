@@ -25,8 +25,18 @@ const removeSessionCall = encodeFunctionData({
   args: [pad("0x01", { size: 32 })]
 })
 
-SmartSession.v1.address // "0xe98939a39E5faA47861D9Af4f10689c90239d3D0"
+SmartSession.v1.address // "0x26e62071c25F003BA503898e0d716Cd98CEF6e80"
 SmartSession.v1.deployments[8453]?.blockNumber // creation block on Base, once deployed there
+```
+
+Each part of a version is also its own export: `abiV1`, `errorsV1` (the ABI's error fragments), `addressV1` and
+`deploymentsV1`, which `v1` is built from. Import them from the contract's subpath when bundle size matters: esbuild
+keeps a whole object, or a whole namespace re-exported from the package root, once any property of it is used.
+
+```ts
+import * as SmartSession from "@namera-ai/contracts/SmartSession"
+
+SmartSession.addressV1 // "0x26e62071c25F003BA503898e0d716Cd98CEF6e80", without the ABI
 ```
 
 `Contract.Version`, `Contract.Deployment` and `Contract.Compiler` type the generated values.

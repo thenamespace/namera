@@ -36,7 +36,13 @@ export type { TransactionReceipt }
  *
  * @internal
  */
-export const entryPoint = { abi: entryPoint07Abi, address: entryPoint07Address, version: "0.7" } as const
+// Annotated so the declaration names `entryPoint07Abi` instead of inlining its whole literal type (about 21 KB of
+// `.d.ts`).
+export const entryPoint: {
+  readonly abi: typeof entryPoint07Abi
+  readonly address: typeof entryPoint07Address
+  readonly version: "0.7"
+} = { abi: entryPoint07Abi, address: entryPoint07Address, version: "0.7" }
 
 /**
  * The EntryPoint 0.7 ABI, for typing implementations.

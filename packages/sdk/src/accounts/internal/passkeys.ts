@@ -50,7 +50,7 @@ export const fromOwner = (
  *
  * @internal
  */
-export const validator: Hex = WebAuthnValidator.v1.address
+export const validator: Hex = WebAuthnValidator.addressV1
 
 /**
  * Checks passkey owners the validator accepts: 1 to 16 distinct passkeys and a threshold between 1 and their count.
